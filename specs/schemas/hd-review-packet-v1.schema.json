@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/hd-review-packet-v1.schema.json",
+  "title": "Aico 8 HD identity review packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "gameId", "visualRuntimeSha256", "replaySemanticsSha256",
+    "identityMapSha256", "browserEvidenceSha256", "status", "reviewer", "elements",
+    "sceneComparisons", "temporalComparisons", "screenshots", "document"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.hd-review-packet.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "visualRuntimeSha256": { "$ref": "#/$defs/sha256" },
+    "replaySemanticsSha256": { "$ref": "#/$defs/sha256" },
+    "identityMapSha256": { "$ref": "#/$defs/sha256" },
+    "browserEvidenceSha256": { "$ref": "#/$defs/sha256" },
+    "status": { "enum": ["pending-human-side-by-side-review", "accepted"] },
+    "reviewer": { "$ref": "#/$defs/nonEmptyString" },
+    "elements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/element" }
+    },
+    "sceneComparisons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sceneComparison" }
+    },
+    "temporalComparisons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/temporalComparison" }
+    },
+    "screenshots": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/screenshot" }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonEmptyString": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\/$).+$"
+    },
+    "idList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "stringList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewer", "silhouettePassed", "requiredPartsPassed", "proportionsPassed",
+        "expressionPassed", "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed",
+        "visualGrammarPassed"
+      ],
+      "properties": {
+        "reviewer": { "$ref": "#/$defs/nonEmptyString" },
+        "silhouettePassed": { "type": "boolean" },
+        "requiredPartsPassed": { "type": "boolean" },
+        "proportionsPassed": { "type": "boolean" },
+        "expressionPassed": { "type": "boolean" },
+        "colorHierarchyPassed": { "type": "boolean" },
+        "motionPassed": { "type": "boolean" },
+        "gameplayCuesPassed": { "type": "boolean" },
+        "visualGrammarPassed": { "type": "boolean" }
+      }
+    },
+    "criteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "silhouetteTraits", "requiredParts", "proportionChecks", "faceAndExpressionTraits",
+        "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations",
+        "allowedModernization"
+      ],
+      "properties": {
+        "silhouetteTraits": { "$ref": "#/$defs/stringList" },
+        "requiredParts": { "$ref": "#/$defs/stringList" },
+        "proportionChecks": { "$ref": "#/$defs/stringList" },
+        "faceAndExpressionTraits": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "colorHierarchy": { "$ref": "#/$defs/stringList" },
+        "motionCues": { "$ref": "#/$defs/stringList" },
+        "gameplayCues": { "$ref": "#/$defs/stringList" },
+        "forbiddenTransformations": { "$ref": "#/$defs/stringList" },
+        "allowedModernization": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    },
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "semanticRole", "sourceScreenshotIds", "targetScreenshotIds", "criteria", "review"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["character", "environment", "ui", "effect", "text"] },
+        "semanticRole": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceScreenshotIds": { "$ref": "#/$defs/idList" },
+        "targetScreenshotIds": { "$ref": "#/$defs/idList" },
+        "criteria": { "$ref": "#/$defs/criteria" },
+        "review": { "$ref": "#/$defs/review" }
+      }
+    },
+    "screenshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256", "width", "height", "presentationMode", "sceneId", "stateBoundary", "visualRuntimeSha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "presentationMode": { "enum": ["reference", "hd"] },
+        "sceneId": { "$ref": "#/$defs/id" },
+        "stateBoundary": { "$ref": "#/$defs/nonEmptyString" },
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "sceneComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sceneId", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sceneId": { "$ref": "#/$defs/id" },
+        "sourceScreenshotId": { "$ref": "#/$defs/id" },
+        "targetScreenshotId": { "$ref": "#/$defs/id" },
+        "sameRuntimeState": { "const": true }
+      }
+    },
+    "temporalFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["update", "presentationMilliseconds", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"],
+      "properties": {
+        "update": { "type": "integer", "minimum": 0 },
+        "presentationMilliseconds": { "type": "integer", "minimum": 0 },
+        "sourceScreenshotId": { "$ref": "#/$defs/id" },
+        "targetScreenshotId": { "$ref": "#/$defs/id" },
+        "sameRuntimeState": { "const": true }
+      }
+    },
+    "temporalComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sceneId", "elementIds", "frames"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sceneId": { "$ref": "#/$defs/id" },
+        "elementIds": { "$ref": "#/$defs/idList" },
+        "frames": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/temporalFrame" }
+        }
+      }
+    }
+  }
+}

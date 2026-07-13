@@ -140,6 +140,9 @@ The complete policy is owned by
   source/HD identity anchors, exact-update temporal source/HD sequences,
   thumbnail/silhouette recognition, and full-replay legibility; a model judgment
   alone cannot pass fidelity, motion, timing, completeness, or aesthetics.
+- Human review consumes a generated packet that hashes its identity map, browser
+  record, visual-runtime identity, every displayed screenshot, and review HTML;
+  stale or cross-state review material cannot promote an accepted build.
 - Reference framebuffer available as an explicit diagnostic comparison. An
   unforeseen mapping fault may switch the whole scene atomically to reference
   mode, never individual elements; any such event fails release acceptance.

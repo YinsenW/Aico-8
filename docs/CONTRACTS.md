@@ -40,7 +40,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-GAME-MODULE-001 | One remake's compatible payload, mappings, assets, saves, provenance, validation references, and runtime constraints | Internal game-module schema |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
 | DATA-TARGET-PROFILE-001 | Browser Web/PWA, Android WebView, Linux handheld Web, and future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
-| DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, and measured release budgets | `specs/schemas/release-validation-v1.schema.json` plus domain validation schemas |
+| DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, and measured release budgets | `specs/schemas/hd-review-packet-v1.schema.json`, `specs/schemas/release-validation-v1.schema.json`, and domain validators |
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, and rights decision | `specs/schemas/release-manifest-v1.schema.json` and TypeScript validator |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
 

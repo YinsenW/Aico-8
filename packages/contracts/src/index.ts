@@ -51,6 +51,12 @@ export {
   type SourceVisualTokenKind,
 } from "./hd-presentation-audit.js";
 export {
+  HD_REVIEW_CHECK_NAMES,
+  HD_REVIEW_PACKET_SCHEMA_VERSION,
+  validateHdReviewPacket,
+  type HdReviewPacketValidationResult,
+} from "./hd-review-packet.js";
+export {
   RELEASE_MANIFEST_SCHEMA_VERSION,
   RELEASE_VALIDATION_SCHEMA_VERSION,
   TARGET_PROFILE_SCHEMA_VERSION,

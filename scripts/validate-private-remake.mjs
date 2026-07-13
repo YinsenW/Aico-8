@@ -13,12 +13,15 @@ assert.ok(workspaceValue, "AICO8_PRIVATE_WORKSPACE must point to the authorized 
 const workspace = path.resolve(workspaceValue);
 const browserEvidencePath = path.join(workspace, "evidence/browser-validation.json");
 const releaseTechnicalPath = path.join(workspace, "evidence/release-technical.json");
+const identityReviewPacketPath = path.join(workspace, "evidence/identity-review-packet.json");
+const identityReviewDocumentPath = path.join(workspace, "evidence/identity-review-packet.html");
 const canonicalReplayPath = path.join(workspace, "validation/canonical-replay-v1.json");
 const canonicalAuditPath = path.join(workspace, "validation/canonical-run-audit.json");
 const inputProjectionPath = path.join(workspace, "validation/input-surface-projection.json");
 const identityMapPath = path.join(workspace, "validation/hd-identity-map.json");
 const hdAuditPath = path.join(workspace, "validation/hd-presentation-audit.json");
-for (const file of [browserEvidencePath, releaseTechnicalPath, canonicalReplayPath, canonicalAuditPath, identityMapPath, hdAuditPath,
+for (const file of [browserEvidencePath, releaseTechnicalPath, identityReviewPacketPath, identityReviewDocumentPath,
+  canonicalReplayPath, canonicalAuditPath, identityMapPath, hdAuditPath,
   path.join(workspace, "source.rom"), path.join(workspace, "code.p8.lua"),
   path.join(workspace, "web-overlay/dust-bunny-hd.ts")]) {
   assert.ok(fs.statSync(file, { throwIfNoEntry: false })?.isFile(), `Missing private trial input: ${file}`);
@@ -81,6 +84,16 @@ try {
     "--replay", canonicalReplayPath,
     "--out", inputProjectionPath,
   ]);
+  runNode([
+    path.join(root, "scripts/build-private-hd-review-packet.mjs"),
+    "--workspace", workspace,
+    "--write", "false",
+  ]);
+  run(process.execPath, [
+    "--experimental-strip-types",
+    path.join(root, "scripts/verify-private-hd-review-packet.ts"),
+    "--workspace", workspace,
+  ]);
   run("pnpm", ["--filter", "@aico8/web", "test"]);
   run("make", ["-C", "runtime/core", "wasm-test"]);
   runNode(buildArguments(outputA));
@@ -109,6 +122,7 @@ try {
   const hdAudit = JSON.parse(fs.readFileSync(hdAuditPath, "utf8"));
   const browser = JSON.parse(fs.readFileSync(browserEvidencePath, "utf8"));
   const releaseTechnical = JSON.parse(fs.readFileSync(releaseTechnicalPath, "utf8"));
+  const identityReviewPacket = JSON.parse(fs.readFileSync(identityReviewPacketPath, "utf8"));
   assert.equal(replay.schemaVersion, "aico8.replay.v1");
   assert.equal(replay.result.completed, true);
   assert.equal(replay.canonicality.testHooks, false);
@@ -201,6 +215,11 @@ try {
   assert.equal(browser.identityReview.scenePairsComplete, true);
   assert.equal(browser.identityReview.temporalComparisonsComplete, true);
   assert.equal(browser.identityReview.accepted, false);
+  assert.equal(identityReviewPacket.status, "pending-human-side-by-side-review");
+  assert.equal(identityReviewPacket.reviewer, "pending-human-side-by-side-review");
+  assert.equal(identityReviewPacket.elements.length, identityMap.elements.length);
+  assert.equal(identityReviewPacket.sceneComparisons.length, browser.sceneComparisons.length);
+  assert.equal(identityReviewPacket.temporalComparisons.length, browser.temporalComparisons.length);
   const screenshotsById = new Map();
   for (const screenshot of browser.screenshots) {
     assert.ok(!screenshotsById.has(screenshot.id), `${screenshot.id}: duplicate screenshot ID`);
@@ -382,6 +401,11 @@ try {
       state_mismatches: hdAudit.invariance.mismatchUpdateIds.length,
       browser_checks: browser.checks,
       identity_human_review_accepted: false,
+      identity_review_packet_status: identityReviewPacket.status,
+      identity_review_elements: identityReviewPacket.elements.length,
+      identity_review_static_pairs: identityReviewPacket.sceneComparisons.length,
+      identity_review_temporal_sequences: identityReviewPacket.temporalComparisons.length,
+      identity_review_screenshots: identityReviewPacket.screenshots.length,
     },
     package: {
       target: release.target,
@@ -410,6 +434,8 @@ try {
       canonical_run_audit_sha256: sha256(canonicalAuditPath),
       hd_presentation_audit_sha256: sha256(hdAuditPath),
       browser_validation_sha256: sha256(browserEvidencePath),
+      hd_review_packet_sha256: sha256(identityReviewPacketPath),
+      hd_review_document_sha256: sha256(identityReviewDocumentPath),
       input_surface_projection_sha256: sha256(inputProjectionPath),
     },
   };
