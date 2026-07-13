@@ -7,7 +7,8 @@ agents. Treat documents and executable evidence as part of the product.
 
 1. Read `governance/project.json` for `current_focus`, requirement status, exits,
    open items, test selectors, and document ownership.
-2. Read only the relevant sections of `docs/PRODUCT.md`,
+2. Read the current focus's work package in `ROADMAP.md`, then only the relevant
+   sections of `docs/PRODUCT.md`,
    `docs/ARCHITECTURE.md`, and `docs/CONTRACTS.md`.
 3. Follow `docs/DEVELOPMENT.md` for implementation, recovery, testing, and handoff.
 4. Read research or captured evidence only when an owner document or exit links
@@ -42,6 +43,10 @@ agents. Treat documents and executable evidence as part of the product.
   defines the required Rust+C native/Wasm/ESP32 spike before any kernel migration.
 - HD presentation may not mutate compatibility state, collision, RNG, timing,
   persistence, or original draw/update cadence.
+- Web/PWA is the release-critical path through the first complete remake. Do not
+  start mobile, desktop, or ESP32 work unless it closes a shared Web dependency.
+- Games are internal modules but ship first as statically bound standalone
+  products; fixed collections come after multi-game proof and a Player is deferred.
 - The final Skill is created only after repeated end-to-end release exercises.
 
 ## Required checks

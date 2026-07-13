@@ -5,8 +5,9 @@
 Aico 8 turns legally supplied PICO-8 cartridges into modern, high-fidelity
 1024x1024 remakes while preserving original logic, timing, input feel, memory,
 persistence, music, and sound effects. The first complete trial target is a
-private, browser-playable Dust Bunny remake used only for research and testing;
-no formal release occurs without permission.
+private, standalone browser-playable Dust Bunny remake used only for research
+and testing; no formal release occurs without permission. Later builds may bind
+several independently validated remakes into one fixed collection.
 
 Current status, exits, evidence, selectors, and unfinished work are owned by
 `governance/project.json`, not this PRD.
@@ -24,6 +25,10 @@ Current status, exits, evidence, selectors, and unfinished work are owned by
    undocumented prompt memory.
 8. Readable modern typography is a presentation enhancement; original P8SCII
    metrics, control effects, and custom glyph behavior remain compatibility truth.
+9. Runtime and games are internally modular, while public delivery starts with
+   statically bound standalone artifacts rather than a general cartridge player.
+10. A multi-cart request fans out into isolated workspaces and acceptance records;
+    one game's success may never hide another game's failure.
 
 ## Requirements
 
@@ -70,10 +75,53 @@ Contracts: `API-TEXT-001`, `DATA-TEXT-RUN-001`, `DATA-TYPOGRAPHY-001`,
 
 Provide a responsive TypeScript/PixiJS Web/PWA host that loads the same kernel as
 WebAssembly, runs a fixed-step loop, restores saves, exposes compatibility
-diagnostics, and produces a reproducible deployable build.
+diagnostics, and produces a reproducible standalone single-game build. A portable
+single HTML is a convenience artifact; the installable/offline release is a PWA.
 
 Contracts: `API-WASM-001`, `API-PRESENTATION-001`, `DATA-RELEASE-001`,
+`DATA-TARGET-PROFILE-001`, `JOB-ASSEMBLE-001`, `JOB-PACKAGE-001`.
+
+### REQ-DELIVERY-001 — Internal modules and statically bound products
+
+Represent each validated remake as a versioned internal game module. Build one
+module as a standalone product by default, or bind several validated modules into
+a fixed collection with isolated saves and licenses. Do not publish a general
+external-cart Player or freeze `.aico8` before repeated multi-game evidence.
+
+Contracts: `API-GAME-MODULE-001`, `DATA-GAME-MODULE-001`,
+`DATA-COLLECTION-001`, `DATA-TARGET-PROFILE-001`, `JOB-ASSEMBLE-001`,
 `JOB-PACKAGE-001`.
+
+### REQ-BATCH-001 — Isolated multi-cart conversion
+
+Accept one cart, a list, or a directory through a versioned batch manifest. Each
+cart receives its own workspace, provenance, Job state, validation, retry, and
+failure result before any accepted modules are assembled into a collection.
+
+Contracts: `DATA-BATCH-001`, `DATA-GAME-MODULE-001`, `DATA-COLLECTION-001`,
+`JOB-BATCH-001`, `JOB-ASSEMBLE-001`.
+
+### REQ-PLATFORM-001 — Secondary installed hosts after Web proof
+
+After the standalone Web/PWA game passes, package the same validated module and
+presentation for Android APK/AAB first, then desktop installers and iOS. Installed
+hosts may add lifecycle, storage, controller, signing, and store adapters but may
+not fork gameplay or delay the first Web release.
+
+Contracts: `API-HOST-001`, `API-GAME-MODULE-001`,
+`DATA-TARGET-PROFILE-001`, `DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`,
+`JOB-VALIDATE-001`, `JOB-PACKAGE-001`.
+
+### REQ-EMBEDDED-001 — Constrained ESP32-P4 profile after Web
+
+Run the same compatibility truth and internal module contract in an ESP32-P4
+host with explicit firmware, RAM, flash, frame, audio, input, storage, and board
+budgets. Embedded presentation may use derived assets and physical resolution;
+it may not require a browser or block the first Web game.
+
+Contracts: `API-CORE-001`, `API-HOST-001`, `API-GAME-MODULE-001`,
+`DATA-GAME-MODULE-001`, `DATA-TARGET-PROFILE-001`, `DATA-VALIDATION-001`,
+`JOB-ASSEMBLE-001`, `JOB-VALIDATE-001`, `JOB-PACKAGE-001`.
 
 ### REQ-INPUT-001 — Modern input without feel drift
 
@@ -91,13 +139,15 @@ and test packaging while preserving documented original quirks. This is a
 private research/test artifact, not a formal release authorization.
 
 Contracts: `DATA-HD-MAP-001`, `DATA-ASSET-PACK-001`, `DATA-REPLAY-001`,
-`JOB-INTEGRATE-001`, `JOB-VALIDATE-001`, `JOB-PACKAGE-001`.
+`DATA-GAME-MODULE-001`, `DATA-TARGET-PROFILE-001`, `JOB-INTEGRATE-001`,
+`JOB-VALIDATE-001`, `JOB-ASSEMBLE-001`, `JOB-PACKAGE-001`.
 
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 
 Generate Web/PWA release artifacts, notices, provenance, validation report,
-checksums, and release metadata. A build may be technically ready while public
-publication remains blocked by missing permission.
+checksums, and release metadata. Fixed collections are allowed only after every
+included module passes independently. A build may be technically ready while
+public publication remains blocked by missing permission.
 
 Contracts: `DATA-VALIDATION-001`, `DATA-RELEASE-001`, `JOB-PACKAGE-001`,
 `JOB-RELEASE-001`.
@@ -143,4 +193,6 @@ and must not be described as a formally released remake.
 - Mechanical Lua-to-TypeScript translation as the compatibility path.
 - Changing puzzles, collision, timing, RNG, or persistence to fit new art.
 - Requiring mobile stores or ESP32 hardware before the first Web/PWA build.
+- Publishing a dynamic Player or stable `.aico8` format before at least three
+  materially different games prove the internal module boundary.
 - Creating the final Skill before the workflow is stable and repeatedly verified.

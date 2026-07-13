@@ -28,7 +28,11 @@ const forbiddenPaths = [
   /dust_bunny_(memory|vm)_test\.cpp$/i,
 ]
 
-const objects = git(['rev-list', '--objects', '--all'])
+const originRefs = git(['for-each-ref', '--format=%(refname)', 'refs/remotes/origin/'])
+  .split(/\r?\n/)
+  .filter((ref) => ref && ref !== 'refs/remotes/origin/HEAD')
+const publicRefs = ['HEAD', ...originRefs]
+const objects = git(['rev-list', '--objects', ...publicRefs])
   .split(/\r?\n/)
   .filter(Boolean)
 const historicalPaths = objects
@@ -40,7 +44,14 @@ for (const file of historicalPaths) {
     `forbidden path remains in reachable history: ${file}`)
 }
 
-const patchHistory = git(['log', '--all', '--format=', '-p', '--no-ext-diff', '--no-textconv'])
+const patchHistory = git([
+  'log',
+  '--format=',
+  '-p',
+  '--no-ext-diff',
+  '--no-textconv',
+  ...publicRefs,
+])
 const secretPatterns = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
   /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,

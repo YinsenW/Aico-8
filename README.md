@@ -2,7 +2,9 @@
 
 Aico 8 is an end-to-end system for turning legally supplied PICO-8 cartridges
 into modern, high-fidelity 1024×1024 game remakes while preserving original game
-logic, timing, input feel, memory behavior, music, and sound effects.
+logic, timing, input feel, memory behavior, music, and sound effects. It ships one
+statically bound standalone Web game first, then may assemble several independently
+validated internal game modules into a fixed collection.
 
 This is larger than a single AI Skill. Aico 8 is the toolchain and runtime; a
 future Skill will be a thin intelligent entry point that invokes its tested
@@ -43,11 +45,13 @@ exactly 8×, filling the same 1024×1024 surface with no fractional source pixel
 ```mermaid
 flowchart LR
     A["Authorized cart"] --> B["Ingest & lossless workspace"]
-    B --> C["TypeScript analysis & pipeline"]
+    B --> C["Isolated TypeScript Jobs"]
     C --> D["Compatibility kernel / Wasm"]
     D --> E["Semantic command stream"]
     E --> F["TypeScript + PixiJS 1024 presentation"]
-    F --> G["Web / Mobile / Desktop / ESP32-P4"]
+    F --> K["Validated internal game module"]
+    K --> G["Standalone Web/PWA first"]
+    K --> L["Fixed collection after multi-game proof"]
     H["Official-runtime goldens"] --> I["Differential validation"]
     D --> I
     F --> I
@@ -71,6 +75,10 @@ flowchart LR
 | `tests/` | Official semantic probes, secondary runtime captures, and deterministic replay definitions. |
 | `research/` | Evidence, technical decisions, compatibility gaps, and representative-cart findings. |
 | `skills/` | Future thin orchestration layer; deliberately not created as the runtime itself. |
+
+Internal game modules are versioned build inputs, not a public cartridge format.
+The `.aico8`/general Player decision is deferred until at least three materially
+different games prove compatibility, migration, security, and product demand.
 
 ## Status and evidence
 

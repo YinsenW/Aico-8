@@ -58,6 +58,8 @@
     "governance_policy": "docs/GOVERNANCE.md",
     "system_architecture": "docs/ARCHITECTURE.md",
     "language_boundary": "docs/decisions/0001-language-boundary.md",
+    "delivery_topology": "docs/decisions/0003-static-delivery-first.md",
+    "execution_plan": "ROADMAP.md",
     "api_job_data_relationships": "docs/CONTRACTS.md",
     "development_process": "docs/DEVELOPMENT.md",
     "display_field_values": "specs/display-profiles.json",
@@ -74,6 +76,10 @@
     { "id": "TERM-JOB", "term": "Job", "definition": "Versioned non-interactive pipeline operation with declared inputs and outputs." },
     { "id": "TERM-RIGHTS", "term": "rights gate", "definition": "Independent permission and attribution decision required for publication." },
     { "id": "TERM-SKILL", "term": "Skill", "definition": "Late thin orchestration layer over proven Jobs and contracts." },
+    { "id": "TERM-GAME-MODULE", "term": "internal game module", "definition": "Versioned private build input for one validated remake; not a promised public cartridge format." },
+    { "id": "TERM-FIXED-COLLECTION", "term": "fixed collection", "definition": "Standalone product that statically binds several independently validated game modules and isolated saves." },
+    { "id": "TERM-BATCH-MANIFEST", "term": "batch manifest", "definition": "Immutable declaration that fans multiple authorized carts into isolated Job graphs and acceptance records." },
+    { "id": "TERM-WORK-PACKAGE", "term": "work package", "definition": "Stable roadmap unit that defines dependency-bounded tasks and acceptance Exit links without owning status." },
     { "id": "TERM-TEXT-RUN", "term": "semantic text run", "definition": "Ordered presentation record that preserves original P8SCII bytes, compatibility metrics, state, side-effect boundaries, and fallback classification." },
     { "id": "TERM-TYPOGRAPHY-MANIFEST", "term": "typography manifest", "definition": "Versioned mapping from semantic text roles to bundled font assets, layout, coverage, licensing, and fallback policy." }
   ],
@@ -87,10 +93,12 @@
       { "id": "API-WASM-001", "owner": "docs/CONTRACTS.md" },
       { "id": "API-PRESENTATION-001", "owner": "packages/contracts/src/index.ts" },
       { "id": "API-HOST-001", "owner": "docs/CONTRACTS.md" },
-      { "id": "API-CLI-001", "owner": "docs/CONTRACTS.md" }
+      { "id": "API-CLI-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "API-GAME-MODULE-001", "owner": "docs/CONTRACTS.md" }
     ],
     "jobs": [
       { "id": "JOB-INGEST-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-BATCH-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-ANALYZE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-CAPTURE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-MODEL-001", "owner": "docs/CONTRACTS.md" },
@@ -98,6 +106,7 @@
       { "id": "JOB-TYPOGRAPHY-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-INTEGRATE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-VALIDATE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-ASSEMBLE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-PACKAGE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "JOB-RELEASE-001", "owner": "docs/CONTRACTS.md" }
     ],
@@ -111,6 +120,10 @@
       { "id": "DATA-ASSET-PACK-001", "owner": "docs/CONTRACTS.md" },
       { "id": "DATA-TEXT-RUN-001", "owner": "specs/typography.md" },
       { "id": "DATA-TYPOGRAPHY-001", "owner": "specs/typography.md" },
+      { "id": "DATA-BATCH-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-GAME-MODULE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-COLLECTION-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-TARGET-PROFILE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "DATA-VALIDATION-001", "owner": "docs/CONTRACTS.md" },
       { "id": "DATA-RELEASE-001", "owner": "docs/CONTRACTS.md" },
       { "id": "DATA-GOVERNANCE-001", "owner": "governance/schema.json" }
@@ -153,9 +166,41 @@
       "id": "REQ-WEB-001",
       "source": "docs/PRODUCT.md",
       "status": "in_progress",
-      "contract_ids": ["API-WASM-001", "API-PRESENTATION-001", "DATA-RELEASE-001", "JOB-PACKAGE-001"],
+      "contract_ids": ["API-WASM-001", "API-PRESENTATION-001", "DATA-RELEASE-001", "DATA-TARGET-PROFILE-001", "JOB-ASSEMBLE-001", "JOB-PACKAGE-001"],
       "exit_ids": ["EXIT-WEB-BOOT", "EXIT-WEB-PWA"],
       "open_item_ids": ["OPEN-WEB-WASM", "OPEN-WEB-PWA"]
+    },
+    {
+      "id": "REQ-DELIVERY-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["API-GAME-MODULE-001", "DATA-GAME-MODULE-001", "DATA-COLLECTION-001", "DATA-TARGET-PROFILE-001", "JOB-ASSEMBLE-001", "JOB-PACKAGE-001"],
+      "exit_ids": ["EXIT-DELIVERY-MODULE", "EXIT-DELIVERY-SINGLE", "EXIT-DELIVERY-COLLECTION"],
+      "open_item_ids": ["OPEN-DELIVERY-MODULE", "OPEN-DELIVERY-SINGLE", "OPEN-DELIVERY-COLLECTION"]
+    },
+    {
+      "id": "REQ-BATCH-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["DATA-BATCH-001", "DATA-GAME-MODULE-001", "DATA-COLLECTION-001", "JOB-BATCH-001", "JOB-ASSEMBLE-001"],
+      "exit_ids": ["EXIT-BATCH-ISOLATION", "EXIT-BATCH-PARTIAL"],
+      "open_item_ids": ["OPEN-BATCH-SCHEMA", "OPEN-BATCH-PARTIAL"]
+    },
+    {
+      "id": "REQ-PLATFORM-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["API-HOST-001", "API-GAME-MODULE-001", "DATA-TARGET-PROFILE-001", "DATA-VALIDATION-001", "JOB-ASSEMBLE-001", "JOB-VALIDATE-001", "JOB-PACKAGE-001"],
+      "exit_ids": ["EXIT-PLATFORM-ANDROID", "EXIT-PLATFORM-DESKTOP", "EXIT-PLATFORM-IOS"],
+      "open_item_ids": ["OPEN-PLATFORM-ANDROID", "OPEN-PLATFORM-DESKTOP", "OPEN-PLATFORM-IOS"]
+    },
+    {
+      "id": "REQ-EMBEDDED-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["API-CORE-001", "API-HOST-001", "API-GAME-MODULE-001", "DATA-GAME-MODULE-001", "DATA-TARGET-PROFILE-001", "DATA-VALIDATION-001", "JOB-ASSEMBLE-001", "JOB-VALIDATE-001", "JOB-PACKAGE-001"],
+      "exit_ids": ["EXIT-EMBEDDED-RUNTIME", "EXIT-EMBEDDED-FIRMWARE"],
+      "open_item_ids": ["OPEN-EMBEDDED-RUNTIME", "OPEN-EMBEDDED-FIRMWARE"]
     },
     {
       "id": "REQ-INPUT-001",
@@ -169,7 +214,7 @@
       "id": "REQ-REMAKE-001",
       "source": "docs/PRODUCT.md",
       "status": "in_progress",
-      "contract_ids": ["DATA-HD-MAP-001", "DATA-ASSET-PACK-001", "DATA-REPLAY-001", "JOB-INTEGRATE-001", "JOB-VALIDATE-001", "JOB-PACKAGE-001"],
+      "contract_ids": ["DATA-HD-MAP-001", "DATA-ASSET-PACK-001", "DATA-REPLAY-001", "DATA-GAME-MODULE-001", "DATA-TARGET-PROFILE-001", "JOB-INTEGRATE-001", "JOB-VALIDATE-001", "JOB-ASSEMBLE-001", "JOB-PACKAGE-001"],
       "exit_ids": ["EXIT-REMAKE-CONTENT", "EXIT-REMAKE-PRESENTATION", "EXIT-REMAKE-INPUT", "EXIT-REMAKE-PACKAGE"],
       "open_item_ids": ["OPEN-REMAKE-RUNTIME", "OPEN-REMAKE-ASSETS", "OPEN-REMAKE-TOUCH", "OPEN-REMAKE-PACKAGE"]
     },
@@ -201,7 +246,7 @@
       "id": "REQ-SKILL-001",
       "source": "docs/PRODUCT.md",
       "status": "planned",
-      "contract_ids": ["JOB-INGEST-001", "JOB-ANALYZE-001", "JOB-CAPTURE-001", "JOB-MODEL-001", "JOB-ASSET-001", "JOB-INTEGRATE-001", "JOB-VALIDATE-001", "JOB-PACKAGE-001", "JOB-RELEASE-001", "DATA-GOVERNANCE-001"],
+      "contract_ids": ["JOB-INGEST-001", "JOB-BATCH-001", "JOB-ANALYZE-001", "JOB-CAPTURE-001", "JOB-MODEL-001", "JOB-ASSET-001", "JOB-TYPOGRAPHY-001", "JOB-INTEGRATE-001", "JOB-VALIDATE-001", "JOB-ASSEMBLE-001", "JOB-PACKAGE-001", "JOB-RELEASE-001", "DATA-GOVERNANCE-001"],
       "exit_ids": ["EXIT-SKILL-RELEASES", "EXIT-SKILL-PACKAGE"],
       "open_item_ids": ["OPEN-SKILL-DEFER"]
     }
@@ -223,6 +268,16 @@
     { "id": "EXIT-TYPE-A11Y", "requirement_id": "REQ-TYPOGRAPHY-001", "statement": "Typography passes size, contrast, language coverage, delivery-profile layout, and assistive-text review without changing compatibility state.", "status": "planned", "implementation": [], "evidence": ["specs/typography.md"], "test_selectors": [] },
     { "id": "EXIT-WEB-BOOT", "requirement_id": "REQ-WEB-001", "statement": "Browser loads the Wasm kernel and runs a representative cart with keyboard input.", "status": "planned", "implementation": ["apps/web/src/main.ts"], "evidence": [], "test_selectors": ["TEST-WEB-PUBLIC"] },
     { "id": "EXIT-WEB-PWA", "requirement_id": "REQ-WEB-001", "statement": "Responsive PWA build restores saves and exposes compatibility diagnostics.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-DELIVERY-MODULE", "requirement_id": "REQ-DELIVERY-001", "statement": "Versioned internal game-module and Web target schemas round-trip public synthetic fixtures and assemble without a public cartridge contract.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-DELIVERY-SINGLE", "requirement_id": "REQ-DELIVERY-001", "statement": "One validated internal game module builds as a standalone Web/PWA product with no external Player or cartridge dependency.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-DELIVERY-COLLECTION", "requirement_id": "REQ-DELIVERY-001", "statement": "At least three independently validated modules assemble into one fixed collection with runtime reset, isolated saves, complete licenses, and bounded startup/memory.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-BATCH-ISOLATION", "requirement_id": "REQ-BATCH-001", "statement": "A versioned batch manifest creates immutable per-cart identities, isolated workspaces, Job state, evidence, retries, and results.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-BATCH-PARTIAL", "requirement_id": "REQ-BATCH-001", "statement": "A failed cart neither blocks eligible siblings nor enters assembly, and the batch report cannot collapse partial success into completion.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-PLATFORM-ANDROID", "requirement_id": "REQ-PLATFORM-001", "statement": "The validated standalone Web game produces signed Android APK/AAB artifacts that pass lifecycle, audio, storage, controller, touch, orientation, resume, and clean-build tests.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-PLATFORM-DESKTOP", "requirement_id": "REQ-PLATFORM-001", "statement": "Windows, macOS, and Linux packages preserve Web behavior and pass platform WebView, controller, filesystem, signing/notarization, update, and clean-build tests.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-PLATFORM-IOS", "requirement_id": "REQ-PLATFORM-001", "statement": "The validated standalone game passes iOS lifecycle, audio, storage, controller, touch, privacy/content metadata, signing, and review-package tests without dynamic cart loading.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-EMBEDDED-RUNTIME", "requirement_id": "REQ-EMBEDDED-001", "statement": "A named ESP32-P4 board runs the same compatibility truth and game-module contract within recorded flash, internal RAM, PSRAM, frame, boot, audio, input, storage, and power budgets.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-EMBEDDED-FIRMWARE", "requirement_id": "REQ-EMBEDDED-001", "statement": "A reproducible signed/hashed firmware or OTA artifact completes a representative replay on hardware without a JavaScript VM or alternate gameplay implementation.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
     { "id": "EXIT-INPUT-CORE", "requirement_id": "REQ-INPUT-001", "statement": "Core 30/60 Hz button state and repeat behavior pass current conformance tests.", "status": "in_progress", "implementation": ["runtime/core/src/core.cpp"], "evidence": ["runtime/core/tests/core_tests.cpp", "tests/conformance/input_traces/btnp_30.json", "tests/conformance/input_traces/btnp_60.json"], "test_selectors": ["TEST-CORE-PUBLIC"] },
     { "id": "EXIT-INPUT-HOSTS", "requirement_id": "REQ-INPUT-001", "statement": "Keyboard, controller, and touch map to identical logical input traces.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
     { "id": "EXIT-REMAKE-CONTENT", "requirement_id": "REQ-REMAKE-001", "statement": "Title, all levels, ending, persistence, restart, and original quirks are playable in the private research trial.", "status": "in_progress", "implementation": ["runtime/core/src/vm_z8lua.cpp"], "evidence": [], "test_selectors": [] },
@@ -255,6 +310,16 @@
     { "id": "OPEN-TYPE-A11Y", "requirement_id": "REQ-TYPOGRAPHY-001", "exit_id": "EXIT-TYPE-A11Y", "next_action": "Add contrast, minimum-size, CJK/localization coverage, responsive layout, and assistive-text validation." },
     { "id": "OPEN-WEB-WASM", "requirement_id": "REQ-WEB-001", "exit_id": "EXIT-WEB-BOOT", "next_action": "Load the Emscripten module and drive fixed updates plus indexed frames from TypeScript." },
     { "id": "OPEN-WEB-PWA", "requirement_id": "REQ-WEB-001", "exit_id": "EXIT-WEB-PWA", "next_action": "Implement service worker, persistence lifecycle, diagnostics, and clean release build." },
+    { "id": "OPEN-DELIVERY-MODULE", "requirement_id": "REQ-DELIVERY-001", "exit_id": "EXIT-DELIVERY-MODULE", "next_action": "Define internal game-module and Web target JSON Schemas, public synthetic fixtures, and round-trip assembly tests." },
+    { "id": "OPEN-DELIVERY-SINGLE", "requirement_id": "REQ-DELIVERY-001", "exit_id": "EXIT-DELIVERY-SINGLE", "next_action": "Assemble the first validated private module into reproducible standalone single-HTML and PWA products." },
+    { "id": "OPEN-DELIVERY-COLLECTION", "requirement_id": "REQ-DELIVERY-001", "exit_id": "EXIT-DELIVERY-COLLECTION", "next_action": "Defer collection implementation until three independently validated games exist; then prove launcher, reset, save, license, and budget isolation." },
+    { "id": "OPEN-BATCH-SCHEMA", "requirement_id": "REQ-BATCH-001", "exit_id": "EXIT-BATCH-ISOLATION", "next_action": "Define batch and collection JSON Schemas plus deterministic per-cart workspace identity and status output." },
+    { "id": "OPEN-BATCH-PARTIAL", "requirement_id": "REQ-BATCH-001", "exit_id": "EXIT-BATCH-PARTIAL", "next_action": "Add mixed success/failure fixtures proving that only validated modules reach assembly." },
+    { "id": "OPEN-PLATFORM-ANDROID", "requirement_id": "REQ-PLATFORM-001", "exit_id": "EXIT-PLATFORM-ANDROID", "next_action": "After the Web package passes, add the Android target profile and signed APK/AAB lifecycle matrix." },
+    { "id": "OPEN-PLATFORM-DESKTOP", "requirement_id": "REQ-PLATFORM-001", "exit_id": "EXIT-PLATFORM-DESKTOP", "next_action": "After Android evidence, add Windows/macOS/Linux packaging, signing, WebView, controller, filesystem, and update selectors." },
+    { "id": "OPEN-PLATFORM-IOS", "requirement_id": "REQ-PLATFORM-001", "exit_id": "EXIT-PLATFORM-IOS", "next_action": "After Android/desktop evidence, add the iOS target profile, policy metadata, signing, and review-package selectors." },
+    { "id": "OPEN-EMBEDDED-RUNTIME", "requirement_id": "REQ-EMBEDDED-001", "exit_id": "EXIT-EMBEDDED-RUNTIME", "next_action": "After Web proof, name the ESP32-P4 board and publish measured memory, frame, boot, audio, input, storage, and power budgets." },
+    { "id": "OPEN-EMBEDDED-FIRMWARE", "requirement_id": "REQ-EMBEDDED-001", "exit_id": "EXIT-EMBEDDED-FIRMWARE", "next_action": "Build and replay a reproducible hardware firmware/OTA artifact using the selected native kernel and derived assets." },
     { "id": "OPEN-INPUT-HOSTS", "requirement_id": "REQ-INPUT-001", "exit_id": "EXIT-INPUT-HOSTS", "next_action": "Implement keyboard/controller/touch adapters and compare logical traces." },
     { "id": "OPEN-REMAKE-RUNTIME", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-CONTENT", "next_action": "Complete the private Dust Bunny graphics/VM bindings and full-game replay coverage without publishing cart-specific evidence." },
     { "id": "OPEN-REMAKE-ASSETS", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-PRESENTATION", "next_action": "Model semantic roles and produce accepted complete HD asset/animation/effect set." },
@@ -271,7 +336,7 @@
     { "id": "TEST-WEB-PUBLIC", "command": "pnpm verify:web", "availability": "public", "ci_job": "web-product", "covers": ["EXIT-HD-DISPLAY", "EXIT-WEB-BOOT"] }
   ],
   "current_focus": {
-    "objective": "Evaluate the Rust+C native, browser-Wasm, and ESP32-P4 proof gate before expanding the compatibility kernel.",
+    "objective": "Close only the native/Wasm VM identity needed to boot the first private cart in the Web host; defer secondary-platform work that does not unblock Web.",
     "requirement_id": "REQ-COMPAT-001",
     "exit_ids": ["EXIT-COMPAT-WASM"],
     "resume_after_requirement_id": "REQ-WEB-001"

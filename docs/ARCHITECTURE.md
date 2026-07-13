@@ -10,10 +10,27 @@ The product is TypeScript-first. C++ is restricted to a small deterministic
 kernel compiled both natively and to WebAssembly. The reasoning and proof gates
 are recorded in `docs/decisions/0001-language-boundary.md`.
 
+Delivery is internally modular and externally standalone. ADR 0003 owns the
+decision to ship a statically bound single game first, add fixed collections
+after multi-game proof, and defer a public external-cart Player and `.aico8`.
+
 The future Skill is intentionally outside the trust boundary of simulation. It
 may select carts, run analysis, propose mappings, generate assets, and launch
 tests, but only versioned tools and deterministic runtime code decide whether a
 remake is compatible.
+
+## Delivery topology
+
+- An internal game module contains one remake's compatible payload, HD mapping,
+  assets, typography/audio manifests, save namespace, provenance, and evidence.
+- A single-game build statically binds one validated module to the shared runtime.
+- A fixed collection binds several validated modules plus a launcher; switching
+  games resets runtime state and saves remain isolated by module and schema version.
+- Internal modules are build inputs, not a promised public cartridge format.
+- Multi-cart requests create an immutable batch manifest and isolated per-game
+  Job graphs. Assembly consumes only modules whose required exits pass.
+- Web/PWA is the release-critical host. Mobile, desktop, and ESP32 preserve the
+  contracts but cannot delay the first complete Web remake.
 
 ## Layers
 
@@ -81,7 +98,16 @@ and effectful controls use reference raster fallback unless an author-approved
 mapping preserves meaning. The complete policy is owned by
 `specs/typography.md`.
 
-### 6. 1024×1024 reference presentation
+### 6. Audio preservation
+
+- The kernel remains the reference four-channel synth and handles dynamic pitch,
+  speed, waveform, pattern, and memory changes.
+- Static music/SFX may be pre-rendered, preloaded, and substituted only after
+  waveform, onset, loop, and duration validation against the reference path.
+- Web assets prefer compact delivery codecs while validation retains lossless
+  evidence. Embedded profiles may select synth or compressed samples by budget.
+
+### 7. 1024×1024 reference presentation
 
 - Native 1024×1024 output, using 64×64 pixels per logical 8×8 tile.
 - TypeScript/PixiJS implementation; WebGL baseline and optional WebGPU.
@@ -94,20 +120,24 @@ mapping preserves meaning. The complete policy is owned by
 The detailed mapping is defined in `specs/display-1024.md` and
 `specs/display-profiles.json`.
 
-### 7. Packaging and platform hosts
+### 8. Assembly, packaging, and platform hosts
 
-- Web/PWA: Emscripten WebAssembly kernel plus TypeScript presentation and product shell.
-- iOS/Android: Capacitor shell using the same WASM/core and responsive profiles.
-- Desktop: web shell initially, with a native host only when platform needs justify it.
-- ESP32-P4: ESP-IDF C++ host, native core, fixed-memory asset packs, LCD/audio/input adapters.
+- Assembly statically binds one game module or a fixed collection to a target profile.
+- Web/PWA first: Emscripten WebAssembly kernel, TypeScript presentation, portable
+  single-HTML convenience build, and installable/offline PWA release.
+- iOS/Android later: Capacitor shell using the same Web build and responsive profiles.
+- Desktop later: PWA first, then a Tauri/web shell when native packaging is justified.
+- ESP32-P4 later: ESP-IDF host, native core, fixed-memory assets, and board adapters.
 
-### 8. Validation and release
+### 9. Validation and release
 
 - State diffs for every logical update in representative replays.
 - Raster checkpoint diffs and semantic-command diffs.
 - Audio status and rendered waveform comparisons.
 - HD-on/HD-off invariance checks for simulation state.
 - Fresh-clone builds for every supported platform profile.
+- Per-module save isolation, runtime reset, license completeness, and failure
+  containment before any fixed collection passes.
 - Permission, attribution, notices, privacy, accessibility, and store-policy gates.
 
 ## Stable contracts
@@ -121,7 +151,7 @@ contracts rather than shared implementation details:
 - semantic draw/audio command schema;
 - semantic text-run and typography-manifest schemas;
 - HD mapping manifest and asset pack;
-- display and platform profiles;
+- batch, internal game-module, fixed-collection, display, and target profiles;
 - validation report and release manifest.
 
 These contracts make it possible to improve the AI orchestration without
