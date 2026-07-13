@@ -62,7 +62,12 @@ level/ending milestones, and broken replay lineage.
 point at the authorized ignored workspace. It rebuilds twice, regenerates the
 private content and complete keyboard/controller/touch input-projection evidence,
 regenerates the current review packet, and checks the retained browser-review
-record. Only after the human repeats the packet's exact acceptance statement may
+record. The record must measure every layout class in the packaged target profile
+through an active browser and bind its no-overflow, clipping, game/control bounds,
+font, safe-area, screenshot, and visual-runtime results into release validation.
+Any visual-runtime change invalidates and requires recapture of all retained
+identity and layout screenshots; hashes may never be relabeled across builds.
+Only after the human repeats the packet's exact acceptance statement may
 an Agent invoke `scripts/accept-private-hd-review.ts`; that command archives the
 exact pending packet/document and writes one immutable decision. Subsequent
 qualification must reproduce the reviewed draft and atomically regenerate the
@@ -111,6 +116,11 @@ Official-runtime selectors remain pending until licensed captures are available.
   replay-semantics identities before recapturing. Provenance-only replay revision
   churn may preserve both; visual artifacts, cart, input, milestones, checkpoints,
   or result changes must invalidate the affected evidence.
+- Browser-layout mismatch: reproduce the target-profile viewport in the active
+  packaged build, inspect document scroll dimensions, game/control bounds, text,
+  fonts, and safe-area behavior, then fix the shared shell or contract and rerun
+  every layout class. Do not exempt one device or reuse a screenshot from a prior
+  visual-runtime identity.
 - Public-attestation drift after its own commit indicates a self-referential full
   replay/package hash. Keep full artifact hashes in the private release manifest;
   attest publicly with the recomputed visual-runtime and replay-semantics identities.

@@ -83,6 +83,13 @@ assert.equal(targetProfile.measurementEnvironment.class, "local-http-active-brow
 assert.ok(targetProfile.measurementEnvironment.warmupFrames >= 0);
 assert.ok(targetProfile.measurementEnvironment.sampleFrames >= 120);
 assert.ok(targetProfile.measurementEnvironment.droppedFrameThresholdMilliseconds > 0);
+assert.deepEqual(targetProfile.layoutProfiles.map((profile) => profile.class),
+  ["phone-portrait", "android-handheld-landscape", "wide-web"]);
+for (const profile of targetProfile.layoutProfiles) {
+  assert.ok(profile.viewport.width > 0 && profile.viewport.height > 0, `${profile.id}: valid viewport`);
+  assert.ok(profile.minGameFrameCssPixels > 0, `${profile.id}: game-frame minimum`);
+  assert.ok(profile.minTouchTargetCssPixels >= 44, `${profile.id}: touch-target minimum`);
+}
 
 const release = readJson("release-manifest.json");
 assert.equal(release.schema_version, 1);
@@ -165,6 +172,14 @@ const serviceWorker = fs.readFileSync(path.join(output, "service-worker.js"), "u
 const warning = fs.readFileSync(path.join(output, "PRIVATE-RESEARCH-ONLY.txt"), "utf8");
 assert.match(html, /manifest\.webmanifest/);
 assert.match(html, /id="app"/);
+assert.match(html, /viewport-fit=cover/, "Web host must opt into notched-screen safe-area layout");
+const packagedCss = actualFiles.filter((file) => file.endsWith(".css"))
+  .map((file) => fs.readFileSync(path.join(output, file), "utf8"))
+  .join("\n");
+for (const edge of ["top", "right", "bottom", "left"]) {
+  assert.match(packagedCss, new RegExp(`safe-area-inset-${edge}`),
+    `Web host must consume the ${edge} safe-area inset`);
+}
 assert.match(serviceWorker, /private\/game\.json/);
 assert.match(serviceWorker, /aico8-kernel\.wasm/);
 assert.match(serviceWorker, /asset-manifest\.json/);

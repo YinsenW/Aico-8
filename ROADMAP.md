@@ -55,7 +55,7 @@ focus, Exits, evidence, selectors, and open work. Never infer completion here.
 
 - `WP-M5-1`: add offline/installable PWA behavior, portable single-HTML convenience output, save lifecycle, touch-safe areas, diagnostics, accessibility, and measured performance budgets.
 - `WP-M5-2`: assemble/package one validated game module reproducibly from a clean public checkout plus authorized private input; generate hashes, notices, provenance, validation, and technical release metadata.
-- `WP-M5-3`: run full-game browser automation and manual visual/audio/input review on representative phone/handheld viewports plus a generic wide Web viewport; keep publication permission as an independent gate.
+- `WP-M5-3`: run full-game browser automation and manual visual/audio/input review on every layout class owned by the Web target profile; bind active-browser overflow, clipping, game/control bounds, fonts, safe areas, screenshots, and the visual-runtime identity while keeping publication permission independent.
 - Acceptance: `EXIT-WEB-PWA`, `EXIT-DELIVERY-SINGLE`, and `EXIT-REMAKE-PACKAGE` pass for the private artifact; formal `EXIT-RELEASE-TECHNICAL` and `EXIT-RELEASE-RIGHTS` remain independent.
 
 ## M6 — Ten-game canonical qualification and collection

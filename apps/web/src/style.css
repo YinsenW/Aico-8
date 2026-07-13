@@ -69,7 +69,11 @@ button:focus-visible {
 #app {
   display: grid;
   place-items: center;
-  padding: clamp(14px, 2.5vw, 32px);
+  padding:
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-top, 0px))
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-right, 0px))
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-bottom, 0px))
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-left, 0px));
 }
 
 .player-shell {
@@ -133,7 +137,11 @@ h1 {
 
 .game-frame {
   position: relative;
-  width: min(100%, calc(100dvh - 190px), 1024px);
+  width: min(
+    100%,
+    calc(100dvh - 210px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
+    1024px
+  );
   min-width: 280px;
   justify-self: center;
   aspect-ratio: 1;
@@ -302,7 +310,11 @@ h1 {
 @media (max-width: 640px) {
   #app {
     align-items: start;
-    padding: 12px;
+    padding:
+      max(12px, env(safe-area-inset-top, 0px))
+      max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
   }
 
   .player-shell {

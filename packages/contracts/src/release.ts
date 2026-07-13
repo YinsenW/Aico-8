@@ -19,6 +19,13 @@ export interface WebTargetProfileV1 {
     readonly sampleFrames: number;
     readonly droppedFrameThresholdMilliseconds: number;
   };
+  readonly layoutProfiles: readonly {
+    readonly id: string;
+    readonly class: "phone-portrait" | "android-handheld-landscape" | "wide-web";
+    readonly viewport: { readonly width: number; readonly height: number };
+    readonly minGameFrameCssPixels: number;
+    readonly minTouchTargetCssPixels: number;
+  }[];
   readonly budgets: {
     readonly artifactCountMax: number;
     readonly unpackedBytesMax: number;
@@ -95,7 +102,7 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
   const errors: string[] = [];
   const root = record(value, "$", errors);
   if (!root) return { ok: false, errors };
-  exactKeys(root, ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "budgets"], [], "$", errors);
+  exactKeys(root, ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "layoutProfiles", "budgets"], [], "$", errors);
   if (root.schemaVersion !== TARGET_PROFILE_SCHEMA_VERSION) errors.push(`$.schemaVersion must equal ${TARGET_PROFILE_SCHEMA_VERSION}`);
   stringValue(root.id, "$.id", errors, idPattern);
   if (root.target !== "web-pwa") errors.push("$.target must equal web-pwa");
@@ -113,6 +120,43 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     integer(environment.warmupFrames, "$.measurementEnvironment.warmupFrames", errors, 0);
     integer(environment.sampleFrames, "$.measurementEnvironment.sampleFrames", errors, 1);
     finite(environment.droppedFrameThresholdMilliseconds, "$.measurementEnvironment.droppedFrameThresholdMilliseconds", errors, Number.EPSILON);
+  }
+  const requiredLayoutClasses = ["phone-portrait", "android-handheld-landscape", "wide-web"] as const;
+  if (!Array.isArray(root.layoutProfiles)) {
+    errors.push("$.layoutProfiles must be an array");
+  } else {
+    const ids = new Set<string>();
+    const classes = new Set<string>();
+    root.layoutProfiles.forEach((value, index) => {
+      const itemPath = `$.layoutProfiles[${index}]`;
+      const item = record(value, itemPath, errors);
+      if (!item) return;
+      exactKeys(item, ["id", "class", "viewport", "minGameFrameCssPixels", "minTouchTargetCssPixels"], [], itemPath, errors);
+      if (stringValue(item.id, `${itemPath}.id`, errors, idPattern)) {
+        if (ids.has(item.id)) errors.push(`${itemPath}.id duplicates ${item.id}`);
+        ids.add(item.id);
+      }
+      if (!requiredLayoutClasses.includes(item.class as typeof requiredLayoutClasses[number])) {
+        errors.push(`${itemPath}.class is unsupported`);
+      } else {
+        if (classes.has(item.class as string)) errors.push(`${itemPath}.class duplicates ${item.class}`);
+        classes.add(item.class as string);
+      }
+      const viewport = record(item.viewport, `${itemPath}.viewport`, errors);
+      if (viewport) {
+        exactKeys(viewport, ["width", "height"], [], `${itemPath}.viewport`, errors);
+        integer(viewport.width, `${itemPath}.viewport.width`, errors, 1);
+        integer(viewport.height, `${itemPath}.viewport.height`, errors, 1);
+      }
+      integer(item.minGameFrameCssPixels, `${itemPath}.minGameFrameCssPixels`, errors, 1);
+      integer(item.minTouchTargetCssPixels, `${itemPath}.minTouchTargetCssPixels`, errors, 1);
+    });
+    for (const requiredClass of requiredLayoutClasses) {
+      if (!classes.has(requiredClass)) errors.push(`$.layoutProfiles must include ${requiredClass}`);
+    }
+    if (root.layoutProfiles.length !== requiredLayoutClasses.length) {
+      errors.push(`$.layoutProfiles must contain exactly ${requiredLayoutClasses.length} required profiles`);
+    }
   }
   const budgets = record(root.budgets, "$.budgets", errors);
   if (budgets) {
@@ -224,7 +268,7 @@ export function validateReleaseValidation(value: unknown, profileValue: unknown)
   const profile = profileValue as WebTargetProfileV1;
   const root = record(value, "$", errors);
   if (!root) return { ok: false, errors };
-  exactKeys(root, ["schemaVersion", "subject", "targetProfile", "environment", "package", "runtime", "checks", "status"], [], "$", errors);
+  exactKeys(root, ["schemaVersion", "subject", "targetProfile", "environment", "package", "runtime", "layouts", "checks", "status"], [], "$", errors);
   if (root.schemaVersion !== RELEASE_VALIDATION_SCHEMA_VERSION) errors.push(`$.schemaVersion must equal ${RELEASE_VALIDATION_SCHEMA_VERSION}`);
   const subject = record(root.subject, "$.subject", errors);
   if (subject) {
@@ -280,8 +324,70 @@ export function validateReleaseValidation(value: unknown, profileValue: unknown)
       if ((runtime.droppedFrameRatio as number) > profile.budgets.droppedFrameRatioMax) errors.push("$.runtime.droppedFrameRatio exceeds target budget");
     }
   }
+  if (!Array.isArray(root.layouts)) {
+    errors.push("$.layouts must be an array");
+  } else {
+    if (root.layouts.length !== profile.layoutProfiles.length) {
+      errors.push("$.layouts must match every target layout profile exactly once");
+    }
+    root.layouts.forEach((value, index) => {
+      const itemPath = `$.layouts[${index}]`;
+      const layout = record(value, itemPath, errors);
+      const expected = profile.layoutProfiles[index];
+      if (!layout) return;
+      exactKeys(layout, ["id", "class", "viewport", "document", "gameFrame", "minimumTouchTarget", "checks", "screenshotSha256"], [], itemPath, errors);
+      if (!expected) {
+        errors.push(`${itemPath} has no target profile`);
+        return;
+      }
+      if (layout.id !== expected.id) errors.push(`${itemPath}.id does not match target profile`);
+      if (layout.class !== expected.class) errors.push(`${itemPath}.class does not match target profile`);
+      const viewport = record(layout.viewport, `${itemPath}.viewport`, errors);
+      if (viewport) {
+        exactKeys(viewport, ["width", "height"], [], `${itemPath}.viewport`, errors);
+        if (viewport.width !== expected.viewport.width || viewport.height !== expected.viewport.height) {
+          errors.push(`${itemPath}.viewport does not match target profile`);
+        }
+      }
+      const documentSize = record(layout.document, `${itemPath}.document`, errors);
+      if (documentSize) {
+        exactKeys(documentSize, ["scrollWidth", "scrollHeight"], [], `${itemPath}.document`, errors);
+        if (integer(documentSize.scrollWidth, `${itemPath}.document.scrollWidth`, errors, 1)
+          && (documentSize.scrollWidth as number) > expected.viewport.width) errors.push(`${itemPath} has horizontal overflow`);
+        if (integer(documentSize.scrollHeight, `${itemPath}.document.scrollHeight`, errors, 1)
+          && (documentSize.scrollHeight as number) > expected.viewport.height) errors.push(`${itemPath} has vertical overflow`);
+      }
+      const gameFrame = record(layout.gameFrame, `${itemPath}.gameFrame`, errors);
+      if (gameFrame) {
+        exactKeys(gameFrame, ["width", "height"], [], `${itemPath}.gameFrame`, errors);
+        if (finite(gameFrame.width, `${itemPath}.gameFrame.width`, errors, 1)
+          && (gameFrame.width as number) < expected.minGameFrameCssPixels) errors.push(`${itemPath}.gameFrame.width is below target minimum`);
+        if (finite(gameFrame.height, `${itemPath}.gameFrame.height`, errors, 1)
+          && (gameFrame.height as number) < expected.minGameFrameCssPixels) errors.push(`${itemPath}.gameFrame.height is below target minimum`);
+      }
+      const touchTarget = record(layout.minimumTouchTarget, `${itemPath}.minimumTouchTarget`, errors);
+      if (touchTarget) {
+        exactKeys(touchTarget, ["width", "height"], [], `${itemPath}.minimumTouchTarget`, errors);
+        if (finite(touchTarget.width, `${itemPath}.minimumTouchTarget.width`, errors, 1)
+          && (touchTarget.width as number) < expected.minTouchTargetCssPixels) errors.push(`${itemPath}.minimumTouchTarget.width is below target minimum`);
+        if (finite(touchTarget.height, `${itemPath}.minimumTouchTarget.height`, errors, 1)
+          && (touchTarget.height as number) < expected.minTouchTargetCssPixels) errors.push(`${itemPath}.minimumTouchTarget.height is below target minimum`);
+      }
+      const layoutChecks = record(layout.checks, `${itemPath}.checks`, errors);
+      const layoutCheckNames = ["horizontalOverflowAbsent", "verticalOverflowAbsent", "textClippingAbsent", "controlsInsideGameFrame", "fontsLoaded", "safeAreaContract"];
+      if (layoutChecks) {
+        exactKeys(layoutChecks, layoutCheckNames, [], `${itemPath}.checks`, errors);
+        for (const name of layoutCheckNames) {
+          if (booleanValue(layoutChecks[name], `${itemPath}.checks.${name}`, errors) && layoutChecks[name] !== true) {
+            errors.push(`${itemPath}.checks.${name} must pass`);
+          }
+        }
+      }
+      stringValue(layout.screenshotSha256, `${itemPath}.screenshotSha256`, errors, hashPattern);
+    });
+  }
   const checks = record(root.checks, "$.checks", errors);
-  const checkNames = ["manifest", "checksums", "notices", "accessibility", "packageBudgets", "runtimeBudgets"];
+  const checkNames = ["manifest", "checksums", "notices", "accessibility", "packageBudgets", "runtimeBudgets", "layoutProfiles"];
   if (checks) {
     exactKeys(checks, checkNames, [], "$.checks", errors);
     for (const name of checkNames) booleanValue(checks[name], `$.checks.${name}`, errors);

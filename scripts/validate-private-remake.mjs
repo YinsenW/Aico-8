@@ -204,6 +204,23 @@ try {
   assert.ok(browser.mobile.directionButtonCss.width >= 44 && browser.mobile.directionButtonCss.height >= 44);
   assert.ok(browser.mobile.actionButtonCss.width >= 44 && browser.mobile.actionButtonCss.height >= 44);
   assert.equal(browser.mobile.bundledFontsLoaded, true);
+  assert.equal(browser.layoutQualification.source, "real-packaged-build-active-browser");
+  assert.deepEqual(browser.layoutQualification.profiles.map(({ class: layoutClass }) => layoutClass),
+    ["phone-portrait", "android-handheld-landscape", "wide-web"]);
+  for (const layout of browser.layoutQualification.profiles) {
+    assert.ok(layout.document.scrollWidth <= layout.viewport.width, `${layout.id}: no horizontal overflow`);
+    assert.ok(layout.document.scrollHeight <= layout.viewport.height, `${layout.id}: no vertical overflow`);
+    assert.ok(Object.values(layout.checks).every((value) => value === true), `${layout.id}: every layout check passes`);
+    const screenshotPath = path.resolve(workspace, layout.screenshot.path);
+    assert.ok(screenshotPath.startsWith(`${workspace}${path.sep}`), `${layout.id}: layout screenshot escapes workspace`);
+    assert.equal(sha256(screenshotPath), layout.screenshot.sha256, `${layout.id}: layout screenshot hash`);
+    assert.deepEqual(jpegDimensions(screenshotPath), {
+      width: layout.screenshot.width,
+      height: layout.screenshot.height,
+    }, `${layout.id}: layout screenshot dimensions`);
+    assert.equal(layout.screenshot.visualRuntimeSha256, browser.build.visualRuntimeSha256,
+      `${layout.id}: layout screenshot visual-runtime identity`);
+  }
   assert.equal(browser.presentationDiagnostics.unmappedVisualTokens, 0);
   assert.equal(browser.presentationDiagnostics.mixedIndexedFragments, 0);
   assert.equal(browser.presentationDiagnostics.diagnosticReferenceSwitches, 0);
@@ -413,6 +430,7 @@ try {
       identity_review_static_pairs: identityReviewPacket.sceneComparisons.length,
       identity_review_temporal_sequences: identityReviewPacket.temporalComparisons.length,
       identity_review_screenshots: identityReviewPacket.screenshots.length,
+      qualified_layout_profiles: browser.layoutQualification.profiles.length,
     },
     package: {
       target: release.target,

@@ -210,13 +210,15 @@ The detailed mapping is defined in `specs/display-1024.md` and
   after every required level, ending, and progression boundary passes. At least
   ten materially different games must cover the declared risk matrix before the
   Jobs or final Skill are treated as stable.
-- Fresh-clone builds for every supported platform profile.
-- Web release validation binds the target-profile hash, complete artifact
-  manifest, visual-runtime identity, real-browser environment, package size,
-  startup time, and settled frame samples in one fail-closed report. Android and
-  Linux profiles must extend this lineage rather than redefine Web gameplay.
-- Per-module save isolation, runtime reset, license completeness, and failure
-  containment before any fixed collection passes.
+- Fresh-clone builds are required for every supported platform profile; Web release validation binds the target-profile hash, complete artifact manifest,
+  visual-runtime identity, real-browser environment, package size, startup time,
+  settled frame samples, and an active-browser measurement/screenshot for every
+  target-profile layout class in one fail-closed report.
+  Layout qualification rejects viewport overflow, clipped text, controls outside
+  the game frame, unloaded bundled fonts, undersized touch targets, or a missing
+  safe-area contract. Android and Linux profiles must extend this lineage rather
+  than redefine Web gameplay.
+- Per-module save isolation, runtime reset, license completeness, and failure containment before any fixed collection passes.
 - Permission, attribution, notices, privacy, accessibility, and store-policy gates.
 
 ## Stable contracts

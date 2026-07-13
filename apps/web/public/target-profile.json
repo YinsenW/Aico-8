@@ -10,6 +10,29 @@
     "sampleFrames": 180,
     "droppedFrameThresholdMilliseconds": 25
   },
+  "layoutProfiles": [
+    {
+      "id": "phone-portrait-390x844",
+      "class": "phone-portrait",
+      "viewport": { "width": 390, "height": 844 },
+      "minGameFrameCssPixels": 360,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "android-handheld-landscape-1280x720",
+      "class": "android-handheld-landscape",
+      "viewport": { "width": 1280, "height": 720 },
+      "minGameFrameCssPixels": 500,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "wide-web-1440x900",
+      "class": "wide-web",
+      "viewport": { "width": 1440, "height": 900 },
+      "minGameFrameCssPixels": 680,
+      "minTouchTargetCssPixels": 44
+    }
+  ],
   "budgets": {
     "artifactCountMax": 60,
     "unpackedBytesMax": 3000000,

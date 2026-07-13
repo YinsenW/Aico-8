@@ -39,8 +39,8 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-BATCH-001 | Authorized cart inputs, desired products/targets, policy, immutable IDs, and per-game Job states | Batch schema |
 | DATA-GAME-MODULE-001 | One remake's compatible payload, mappings, assets, saves, provenance, validation references, and runtime constraints | Internal game-module schema |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
-| DATA-TARGET-PROFILE-001 | Browser Web/PWA, Android WebView, Linux handheld Web, and future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
-| DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, immutable human decision lineage, and measured release budgets | `specs/schemas/hd-review-packet-v1.schema.json`, `specs/schemas/hd-review-decision-v1.schema.json`, `specs/schemas/release-validation-v1.schema.json`, and domain validators |
+| DATA-TARGET-PROFILE-001 | Browser Web/PWA representative layout classes and minimum game/control dimensions, plus Android WebView, Linux handheld Web, future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
+| DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, immutable human decision lineage, measured release budgets, and active-browser layout measurements/screenshots for every target profile | `specs/schemas/hd-review-packet-v1.schema.json`, `specs/schemas/hd-review-decision-v1.schema.json`, `specs/schemas/release-validation-v1.schema.json`, and domain validators |
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, and rights decision | `specs/schemas/release-manifest-v1.schema.json` and TypeScript validator |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
 
@@ -84,6 +84,10 @@ only its linked exits determine acceptance.
 - AI-generated media is an authoring candidate only. Accepted builds use reviewed,
   frozen assets and deterministic mappings; no model call or model-specific
   behavior exists in runtime execution or sole-source acceptance.
+- Web layout acceptance is fail-closed over every DATA-TARGET-PROFILE-001 layout
+  class. Each matching DATA-VALIDATION-001 record binds the exact visual runtime,
+  viewport/document dimensions, game and minimum-control bounds, overflow,
+  clipping, font and safe-area checks, plus a screenshot hash.
 - A human HD decision binds the exact pending packet, document, identity draft,
   browser record, replay semantics, visual runtime, elements, checks, and required
   statement. Acceptance promotes every review field together; a later selector

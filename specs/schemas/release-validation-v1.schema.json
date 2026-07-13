@@ -4,7 +4,7 @@
   "title": "Aico 8 technical release validation v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "subject", "targetProfile", "environment", "package", "runtime", "checks", "status"],
+  "required": ["schemaVersion", "subject", "targetProfile", "environment", "package", "runtime", "layouts", "checks", "status"],
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
@@ -71,17 +71,74 @@
         "droppedFrameRatio": { "type": "number", "minimum": 0, "maximum": 1 }
       }
     },
+    "layouts": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "class", "viewport", "document", "gameFrame", "minimumTouchTarget", "checks", "screenshotSha256"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "class": { "enum": ["phone-portrait", "android-handheld-landscape", "wide-web"] },
+          "viewport": { "$ref": "#/$defs/viewport" },
+          "document": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scrollWidth", "scrollHeight"],
+            "properties": {
+              "scrollWidth": { "type": "integer", "minimum": 1 },
+              "scrollHeight": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "gameFrame": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height"],
+            "properties": {
+              "width": { "type": "number", "minimum": 1 },
+              "height": { "type": "number", "minimum": 1 }
+            }
+          },
+          "minimumTouchTarget": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height"],
+            "properties": {
+              "width": { "type": "number", "minimum": 1 },
+              "height": { "type": "number", "minimum": 1 }
+            }
+          },
+          "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["horizontalOverflowAbsent", "verticalOverflowAbsent", "textClippingAbsent", "controlsInsideGameFrame", "fontsLoaded", "safeAreaContract"],
+            "properties": {
+              "horizontalOverflowAbsent": { "type": "boolean" },
+              "verticalOverflowAbsent": { "type": "boolean" },
+              "textClippingAbsent": { "type": "boolean" },
+              "controlsInsideGameFrame": { "type": "boolean" },
+              "fontsLoaded": { "type": "boolean" },
+              "safeAreaContract": { "type": "boolean" }
+            }
+          },
+          "screenshotSha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
     "checks": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["manifest", "checksums", "notices", "accessibility", "packageBudgets", "runtimeBudgets"],
+      "required": ["manifest", "checksums", "notices", "accessibility", "packageBudgets", "runtimeBudgets", "layoutProfiles"],
       "properties": {
         "manifest": { "type": "boolean" },
         "checksums": { "type": "boolean" },
         "notices": { "type": "boolean" },
         "accessibility": { "type": "boolean" },
         "packageBudgets": { "type": "boolean" },
-        "runtimeBudgets": { "type": "boolean" }
+        "runtimeBudgets": { "type": "boolean" },
+        "layoutProfiles": { "type": "boolean" }
       }
     },
     "status": { "enum": ["passed", "failed"] }

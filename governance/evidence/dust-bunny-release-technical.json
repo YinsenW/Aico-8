@@ -3,11 +3,11 @@
   "subject": {
     "gameId": "dust-bunny-private-research",
     "target": "web-pwa",
-    "visualRuntimeSha256": "7a0aba25dbb528a95c8107692d9849a9cd8723399d5cb6878b403bcf686af451"
+    "visualRuntimeSha256": "7c02e628d6c576f4c97b0d4caeefbb80b4066e79e590a146864eb1e155e119ac"
   },
   "targetProfile": {
     "id": "web-pwa-private-research-v1",
-    "sha256": "11fd3cd302aa4c9ad72917718ef622b10cd44fe2d54d6085519cfeab3a52ebf4"
+    "sha256": "000cb558c5883fc4e3fafef93059e4bf488af4e2b91f96d5ca36e655726b24ec"
   },
   "environment": {
     "class": "local-http-active-browser",
@@ -19,23 +19,113 @@
   },
   "package": {
     "artifactCount": 39,
-    "unpackedBytes": 1759167,
+    "unpackedBytes": 1761348,
     "largestArtifactBytes": 632022
   },
   "runtime": {
-    "startupMilliseconds": 345.6,
+    "startupMilliseconds": 329.2,
     "sampleFrames": 180,
-    "p95FrameMilliseconds": 16.8,
-    "maxFrameMilliseconds": 18.4,
+    "p95FrameMilliseconds": 18.6,
+    "maxFrameMilliseconds": 18.8,
     "droppedFrameRatio": 0
   },
+  "layouts": [
+    {
+      "id": "phone-portrait-390x844",
+      "class": "phone-portrait",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "document": {
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "gameFrame": {
+        "width": 366,
+        "height": 366
+      },
+      "minimumTouchTarget": {
+        "width": 44,
+        "height": 44
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "603cd6537ebf691e18ab14cf09d38c06733ec9dc49b8a1b011097a21fcc1b71d"
+    },
+    {
+      "id": "android-handheld-landscape-1280x720",
+      "class": "android-handheld-landscape",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "document": {
+        "scrollWidth": 1280,
+        "scrollHeight": 720
+      },
+      "gameFrame": {
+        "width": 510,
+        "height": 510
+      },
+      "minimumTouchTarget": {
+        "width": 50,
+        "height": 50
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "8d408dd5ca6c0a58361efa18bf805206f34c67bf8345faf0f3c207c400ded02b"
+    },
+    {
+      "id": "wide-web-1440x900",
+      "class": "wide-web",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "document": {
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      "gameFrame": {
+        "width": 690,
+        "height": 690
+      },
+      "minimumTouchTarget": {
+        "width": 50,
+        "height": 50
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "7afba6698ba77ca2fca60c06abe9b86077836a1f4938cb4335c205c6d489b2ff"
+    }
+  ],
   "checks": {
     "manifest": true,
     "checksums": true,
     "notices": true,
     "accessibility": true,
     "packageBudgets": true,
-    "runtimeBudgets": true
+    "runtimeBudgets": true,
+    "layoutProfiles": true
   },
   "status": "passed"
 }

@@ -58,32 +58,34 @@
       "pwaPackageVerified": true,
       "temporalIdentityEvidenceComplete": true,
       "exactUpdateCaptureBoundariesEnforced": true,
-      "captureReadinessEnforced": true
+      "captureReadinessEnforced": true,
+      "representativeViewportMatrixComplete": true
     },
     "identity_human_review_accepted": false,
     "identity_review_packet_status": "pending-human-side-by-side-review",
     "identity_review_elements": 20,
     "identity_review_static_pairs": 5,
     "identity_review_temporal_sequences": 6,
-    "identity_review_screenshots": 44
+    "identity_review_screenshots": 44,
+    "qualified_layout_profiles": 3
   },
   "package": {
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 39,
-    "visual_runtime_sha256": "7a0aba25dbb528a95c8107692d9849a9cd8723399d5cb6878b403bcf686af451",
+    "visual_runtime_sha256": "7c02e628d6c576f4c97b0d4caeefbb80b4066e79e590a146864eb1e155e119ac",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },
   "release_technical": {
     "target_profile_id": "web-pwa-private-research-v1",
-    "target_profile_sha256": "11fd3cd302aa4c9ad72917718ef622b10cd44fe2d54d6085519cfeab3a52ebf4",
-    "unpacked_bytes": 1759167,
+    "target_profile_sha256": "000cb558c5883fc4e3fafef93059e4bf488af4e2b91f96d5ca36e655726b24ec",
+    "unpacked_bytes": 1761348,
     "largest_artifact_bytes": 632022,
-    "startup_milliseconds": 345.6,
+    "startup_milliseconds": 329.2,
     "sample_frames": 180,
-    "p95_frame_milliseconds": 16.8,
-    "max_frame_milliseconds": 18.4,
+    "p95_frame_milliseconds": 18.6,
+    "max_frame_milliseconds": 18.8,
     "dropped_frame_ratio": 0,
     "status": "passed"
   },
@@ -92,10 +94,10 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "1f2d2c23fe352878c7525c8a098178a515eb2be2fcfcb86913632a8fe0240cfd",
-    "browser_validation_sha256": "53f04028fddfedffe22e1f18ac2a7d5d667ec6b2b96a8d3a110ab32994ff9988",
-    "hd_review_packet_sha256": "dfa5b07cec1d5d8eeb38bb94cc4916397bbbc65e634fef984a8d89c660567ee9",
-    "hd_review_document_sha256": "2332c929d3691c6c20b471ca4c5dea6fd73df098d301904a4e4690ed45ae7418",
+    "hd_presentation_audit_sha256": "5f74554f3637fbaf30a84f60a56e3ade5583a772c0f972cfa887658980194832",
+    "browser_validation_sha256": "00d8d4df935328abc377a9bb3bba6354671116d55b604d36bdbf48dc0a002c5b",
+    "hd_review_packet_sha256": "deb23e304dbf5f67e4cfe9ff314e1af977d8b3a8ef0d14134bdb9b01a615cec8",
+    "hd_review_document_sha256": "4fb8f5f9d6a0e64950a29afd61cc33142b0a4d2150bb6dd4d17a50b89f78057e",
     "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }
