@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { playReplayToMilestone } from "./replay-player.js";
+import {
+  advancePresentationTime,
+  parseValidationInteger,
+  playReplayToMilestone,
+  playReplayToUpdate,
+} from "./replay-player.js";
 
 const hash = "a".repeat(64);
 const replay = {
@@ -62,6 +67,49 @@ describe("browser validation replay", () => {
       expectedCartSha256: hash,
     });
     expect(masks).toEqual([16, 0]);
+  });
+
+  it("captures an exact logical-update boundary without a synthetic milestone", () => {
+    const masks: number[] = [];
+    const result = playReplayToUpdate(replay, 3, (mask) => masks.push(mask), {
+      expectedCartSha256: hash,
+      requireCleanInitialState: true,
+    });
+    expect(masks).toEqual([16, 0, 2]);
+    expect(result).toEqual({
+      replayId: "synthetic-browser-replay",
+      targetUpdate: 3,
+      updatesExecuted: 3,
+      totalUpdates: 4,
+    });
+  });
+
+  it("supports the initial boundary and rejects invalid update targets", () => {
+    const masks: number[] = [];
+    expect(playReplayToUpdate(replay, 0, (mask) => masks.push(mask), {
+      expectedCartSha256: hash,
+    }).updatesExecuted).toBe(0);
+    expect(masks).toEqual([]);
+    for (const update of [-1, 1.5, 5, Number.NaN]) {
+      expect(() => playReplayToUpdate(replay, update, () => undefined, {
+        expectedCartSha256: hash,
+      })).toThrow(/target update/);
+    }
+  });
+
+  it("parses canonical capture parameters and advances time in bounded slices", () => {
+    expect(parseValidationInteger(null, "sample", 100)).toBeUndefined();
+    expect(parseValidationInteger("0", "sample", 100)).toBe(0);
+    expect(parseValidationInteger("100", "sample", 100)).toBe(100);
+    for (const value of ["", "01", "-1", "1.5", "101", "9007199254740992"]) {
+      expect(() => parseValidationInteger(value, "sample", 100)).toThrow(/sample/);
+    }
+    const deltas: number[] = [];
+    advancePresentationTime(125, (delta) => deltas.push(delta));
+    expect(deltas).toEqual([50, 50, 25]);
+    advancePresentationTime(0, () => {
+      throw new Error("zero time must not animate");
+    });
   });
 
   it("rejects the wrong cart, a non-clean seed, and an unknown milestone", () => {

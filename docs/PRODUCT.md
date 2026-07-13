@@ -232,10 +232,10 @@ tests live only in the private research archive. Trial completion requires
 one continuous or provenance-linked canonical replay that completes all 30
 levels, ending, and restart without cart/state mutation; native/Wasm identity for
 exercised semantics; complete content flows; coherent read-only HD presentation
-with zero mixed indexed fragments or reference switches; modern bundled text; keyboard/controller/touch operation; and
-a reproducible private Web/PWA test package. The broader official-runtime matrix
-remains independently owned by `EXIT-COMPAT-OFFICIAL`; neither result is a formal
-remake release authorization.
+with zero mixed indexed fragments or reference switches; same-build static and exact-update temporal
+source/HD review; modern bundled text; keyboard/controller/touch operation; and a reproducible private
+Web/PWA test package. The broader matrix remains owned by `EXIT-COMPAT-OFFICIAL`;
+neither result is a formal remake release authorization.
 
 ## Non-goals for the first release
 

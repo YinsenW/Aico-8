@@ -28,7 +28,7 @@
   },
   "private_artifact_sha256": {
     "canonical_replay_semantics_v1": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
-    "canonical_run_audit": "631a17f9bbba6a9a8624dd626501c5724dce5a3499962d65b2790fbe8e5610f6",
+    "canonical_run_audit": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
     "solver_differential": "8bf533b9e77d06a4e91fe27d5db9786ac3255e01db9a5f64a0ba5fb303e7e727",
     "solver_invariants": "d8266636778909c9a86da1415b15ce0b977367b33d297faeea9d906cf918d26b"
   },

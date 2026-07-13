@@ -131,7 +131,7 @@ try {
   assert.deepEqual(hdAudit.invariance.mismatchUpdateIds, []);
   const sourceText = fs.readFileSync(path.join(workspace, "code.p8.lua"), "utf8");
   assert.equal(/\b(?:sfx|music)\s*\(/.test(sourceText), false, "Dust Bunny source audio profile changed");
-  assert.equal(browser.schemaVersion, 4);
+  assert.equal(browser.schemaVersion, 5);
   assert.equal(browser.build.target, release.target);
   assert.equal(browser.build.outputProfile, release.output_profile);
   assert.equal(browser.build.artifactCount, release.artifacts.length);
@@ -187,6 +187,7 @@ try {
   assert.equal(browser.identityReview.status, "pending-human-side-by-side-review");
   assert.equal(browser.identityReview.reviewer, "pending-human-side-by-side-review");
   assert.equal(browser.identityReview.scenePairsComplete, true);
+  assert.equal(browser.identityReview.temporalComparisonsComplete, true);
   assert.equal(browser.identityReview.accepted, false);
   const screenshotsById = new Map();
   for (const screenshot of browser.screenshots) {
@@ -216,6 +217,102 @@ try {
     assert.equal(source.stateBoundary, target.stateBoundary, `${comparison.id}: atomic state boundary`);
     assert.equal(comparison.sameRuntimeState, true, `${comparison.id}: same-runtime-state declaration`);
   }
+  assert.equal(browser.screenshots.length, 46, "retained static, mobile, and temporal screenshot count");
+  assert.deepEqual(browser.temporalComparisons.map(({ id }) => id), [
+    "title-motion",
+    "intro-copy-timing",
+    "bunny-dust-lifecycle",
+    "collect-outline-lifecycle",
+    "win-wave-sparkle-lifecycle",
+    "ending-disclosure-traversal",
+  ]);
+  const expectedTemporalUpdates = new Map([
+    ["title-motion", [9206, 9206, 9206]],
+    ["intro-copy-timing", [116, 136, 156]],
+    ["bunny-dust-lifecycle", [3, 5, 7, 9]],
+    ["collect-outline-lifecycle", [166, 168, 170]],
+    ["win-wave-sparkle-lifecycle", [25, 34, 38, 40]],
+    ["ending-disclosure-traversal", [9064, 9084, 9144, 9204]],
+  ]);
+  const expectedTemporalMilliseconds = new Map([
+    ["title-motion", [0, 350, 700]],
+    ["intro-copy-timing", [0, 0, 0]],
+    ["bunny-dust-lifecycle", [0, 0, 0, 0]],
+    ["collect-outline-lifecycle", [0, 0, 0]],
+    ["win-wave-sparkle-lifecycle", [0, 0, 0, 0]],
+    ["ending-disclosure-traversal", [0, 0, 0, 0]],
+  ]);
+  const temporalElementIds = new Set();
+  const identityElementIds = new Set(identityMap.elements.map(({ id }) => id));
+  for (const comparison of browser.temporalComparisons) {
+    assert.deepEqual(comparison.frames.map(({ update }) => update), expectedTemporalUpdates.get(comparison.id),
+      `${comparison.id}: exact logical-update sequence`);
+    assert.deepEqual(comparison.frames.map(({ presentationMilliseconds }) => presentationMilliseconds),
+      expectedTemporalMilliseconds.get(comparison.id), `${comparison.id}: deterministic presentation-time sequence`);
+    assert.equal(new Set(comparison.elementIds).size, comparison.elementIds.length,
+      `${comparison.id}: element IDs are unique`);
+    for (const elementId of comparison.elementIds) {
+      assert.ok(identityElementIds.has(elementId), `${comparison.id}: unknown identity element ${elementId}`);
+      temporalElementIds.add(elementId);
+    }
+    for (const frame of comparison.frames) {
+      assert.ok(Number.isInteger(frame.update) && frame.update >= 0 && frame.update <= replay.trace.totalUpdates,
+        `${comparison.id}: update boundary`);
+      assert.ok(Number.isInteger(frame.presentationMilliseconds) && frame.presentationMilliseconds >= 0,
+        `${comparison.id}: presentation milliseconds`);
+      assert.equal(frame.sameRuntimeState, true, `${comparison.id}: source/HD atomic state declaration`);
+      const source = screenshotsById.get(frame.sourceScreenshotId);
+      const target = screenshotsById.get(frame.targetScreenshotId);
+      assert.ok(source && target, `${comparison.id}: temporal source and target screenshots exist`);
+      assert.equal(source.presentationMode, "reference", `${comparison.id}: temporal source mode`);
+      assert.equal(target.presentationMode, "hd", `${comparison.id}: temporal target mode`);
+      assert.equal(source.sceneId, comparison.sceneId, `${comparison.id}: temporal source scene`);
+      assert.equal(target.sceneId, comparison.sceneId, `${comparison.id}: temporal target scene`);
+      assert.equal(source.stateBoundary, target.stateBoundary, `${comparison.id}: temporal atomic state boundary`);
+      assert.equal(source.stateBoundary,
+        `canonical-replay:update:${frame.update}:presentation-ms:${frame.presentationMilliseconds}`,
+        `${comparison.id}: exact replay and presentation boundary`);
+    }
+  }
+  assert.deepEqual([...temporalElementIds].sort(), [
+    "character.dust-bunny",
+    "effect.collect",
+    "effect.dust",
+    "effect.sparkle",
+    "environment.dirt",
+    "environment.title-art",
+    "environment.wall",
+    "scene.ending",
+    "scene.gameplay",
+    "scene.intro",
+    "scene.title",
+    "scene.win",
+    "text.ending",
+    "text.intro-level",
+    "text.title",
+    "ui.title-action",
+  ]);
+  const tokenBounds = canonicalAudit.rawVisualInventory.sourceTokenBounds;
+  assert.equal(tokenBounds["sprite:28"].firstUpdate, 3, "dust animation first source frame");
+  assert.equal(tokenBounds["sprite:29"].firstUpdate, 5, "dust animation second source frame");
+  assert.equal(tokenBounds["sprite:30"].firstUpdate, 7, "dust animation third source frame");
+  assert.equal(tokenBounds["sprite:31"].firstUpdate, 9, "dust animation fourth source frame");
+  assert.equal(tokenBounds["gameplay:command:opcode-4"].firstUpdate, 166,
+    "collect outline first source frame");
+  assert.equal(tokenBounds["sprite:24"].firstUpdate, 34, "sparkle first source frame");
+  assert.equal(tokenBounds["sprite:26"].firstUpdate, 38, "sparkle third source frame");
+  assert.equal(tokenBounds["sprite:27"].firstUpdate, 40, "sparkle fourth source frame");
+  assert.equal(tokenBounds["text:ending"].firstUpdate, 9084, "ending copy first source frame");
+  assert.equal(browser.captureProtocol.exactOrdinaryReplayUpdates, true);
+  assert.equal(browser.captureProtocol.cleanPersistenceOverride, true);
+  assert.equal(browser.captureProtocol.externalPersistenceWrites, false);
+  assert.equal(browser.captureProtocol.sourceHdAtomicToggle, true);
+  assert.equal(browser.captureProtocol.boundaryObservedBeforeSettle, true);
+  assert.equal(browser.captureProtocol.loadingOverlayTransitionMilliseconds, 240);
+  assert.ok(browser.captureProtocol.postBoundarySettleMilliseconds
+    > browser.captureProtocol.loadingOverlayTransitionMilliseconds,
+  "capture settle interval must exceed the complete loading-overlay transition");
+  assert.equal(browser.captureProtocol.loadingOverlayExcluded, true);
   for (const element of identityMap.elements) {
     for (const sceneId of element.review.sourceSceneIds) {
       assert.equal(screenshotsById.get(sceneId)?.presentationMode, "reference",

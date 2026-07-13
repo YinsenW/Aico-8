@@ -136,9 +136,10 @@ The complete policy is owned by
   touch input, localization, and diagnostic overlays.
 - A versioned visual grammar fixes palette relationships, materials, silhouette,
   line/shape language, depth, motion curves, effect intensity, and UI hierarchy.
-- Acceptance combines semantic coverage, deterministic scene goldens, source/HD
-  side-by-side identity-anchor review, thumbnail/silhouette recognition, and
-  full-replay legibility; a model judgment alone cannot pass fidelity or aesthetics.
+- Acceptance combines semantic coverage, deterministic scene goldens, static
+  source/HD identity anchors, exact-update temporal source/HD sequences,
+  thumbnail/silhouette recognition, and full-replay legibility; a model judgment
+  alone cannot pass fidelity, motion, timing, completeness, or aesthetics.
 - Reference framebuffer available as an explicit diagnostic comparison. An
   unforeseen mapping fault may switch the whole scene atomically to reference
   mode, never individual elements; any such event fails release acceptance.
@@ -172,9 +173,12 @@ The detailed mapping is defined in `specs/display-1024.md` and
   level skips, or synthetic completion; wall-clock acceleration may not skip an
   update. Instrumented reachability remains a diagnostic evidence grade.
 - The research-only Web validation player may accelerate an accepted replay to
-  a declared milestone for source/HD scene capture only after cart and initial-
-  persistence hashes match. It is visibly labeled, executes all intervening
-  logical inputs, and does not replace the independent completion audit.
+  a declared milestone or exact logical update for source/HD capture only after
+  cart and clean initial-persistence hashes match. It is visibly labeled,
+  executes every intervening logical input, isolates external persistence writes,
+  and may advance deterministic presentation-only time without advancing
+  compatibility state. Source/HD pairs bind the same update and presentation-
+  time boundary and do not replace the independent completion audit.
 - Browser evidence binds two fail-closed identities: the visual-runtime identity
   covers every packaged artifact except the replay payload, while the replay-
   semantics identity covers cart, runtime kind, canonicality, input, milestones,

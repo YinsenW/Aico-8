@@ -3,10 +3,15 @@ import { Application, Graphics, Text } from "pixi.js";
 import { assertReplay, REFERENCE_PROFILE, type ReplayV1 } from "@aico8/contracts";
 
 import { InputController } from "./runtime/input.js";
-import { Aico8Kernel, decodeStoredPersistence, loadGameManifest } from "./runtime/kernel.js";
+import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
-import { playReplayToMilestone } from "./runtime/replay-player.js";
+import {
+  advancePresentationTime,
+  parseValidationInteger,
+  playReplayToMilestone,
+  playReplayToUpdate,
+} from "./runtime/replay-player.js";
 
 import "./style.css";
 
@@ -127,22 +132,17 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 async function loadValidationReplay(
   manifestUrl: URL,
   relative: string,
-  persistenceKey: string,
 ): Promise<ReplayV1> {
   const response = await fetch(new URL(relative, manifestUrl));
   if (!response.ok) throw new Error(`Unable to load validation replay (${response.status})`);
   const replay: unknown = await response.json();
   assertReplay(replay);
-  let stored: string | null;
-  try {
-    stored = localStorage.getItem(persistenceKey);
-  } catch {
-    throw new Error("Validation replay requires readable local persistence");
+  if (replay.trace.initialState.kind !== "clean") {
+    throw new Error("Browser validation playback requires a clean replay initial state");
   }
-  const normalized = new Uint8Array(256);
-  normalized.set(decodeStoredPersistence(stored).slice(0, normalized.length));
-  if (await sha256Hex(normalized) !== replay.trace.initialState.persistenceSha256) {
-    throw new Error("Validation replay initial persistence does not match this browser profile");
+  const cleanPersistence = new Uint8Array(256);
+  if (await sha256Hex(cleanPersistence) !== replay.trace.initialState.persistenceSha256) {
+    throw new Error("Validation replay clean-persistence lineage does not match the host contract");
   }
   return replay;
 }
@@ -173,21 +173,47 @@ try {
   loadingTitle.textContent = `Opening ${manifest.title}`;
   loadingDetail.textContent = "Restoring game logic and saved progress…";
 
-  const requestedReplayMilestone = new URL(window.location.href).searchParams.get("validation-replay");
+  const validationParameters = new URL(window.location.href).searchParams;
+  const requestedReplayMilestone = validationParameters.get("validation-replay");
+  const requestedReplayUpdate = parseValidationInteger(
+    validationParameters.get("validation-update"),
+    "validation-update",
+    10_000_000,
+  );
+  const requestedPresentationMilliseconds = parseValidationInteger(
+    validationParameters.get("validation-presentation-ms"),
+    "validation-presentation-ms",
+    60_000,
+  ) ?? 0;
+  if (requestedReplayMilestone && requestedReplayUpdate !== undefined) {
+    throw new Error("Choose either validation-replay or validation-update, not both");
+  }
+  if (requestedPresentationMilliseconds > 0
+    && !requestedReplayMilestone && requestedReplayUpdate === undefined) {
+    throw new Error("validation-presentation-ms requires a validation replay boundary");
+  }
   let validationReplay: ReplayV1 | undefined;
-  if (requestedReplayMilestone) {
+  if (requestedReplayMilestone || requestedReplayUpdate !== undefined) {
     if (!manifest.researchOnly || !manifest.validationReplay || !manifest.cartSha256) {
       throw new Error("This package does not expose research validation playback");
     }
-    loadingDetail.textContent = `Executing ordinary replay input through ${requestedReplayMilestone}…`;
+    loadingDetail.textContent = requestedReplayMilestone
+      ? `Executing ordinary replay input through ${requestedReplayMilestone}…`
+      : `Executing ordinary replay input through update ${requestedReplayUpdate}…`;
     validationReplay = await loadValidationReplay(
       manifestUrl,
       manifest.validationReplay,
-      manifest.persistenceKey,
     );
   }
 
-  const loadedRuntime = await Aico8Kernel.create(import.meta.env.BASE_URL, manifestUrl, manifest);
+  const loadedRuntime = await Aico8Kernel.create(
+    import.meta.env.BASE_URL,
+    manifestUrl,
+    manifest,
+    validationReplay
+      ? { initialPersistence: new Uint8Array(256), persistenceWrites: false }
+      : undefined,
+  );
   runtime = loadedRuntime;
   const referenceRenderer = new ReferenceRenderer(app);
   let hdRenderer: PresentationRenderer | undefined;
@@ -225,20 +251,36 @@ try {
   };
 
   let validationPlaybackStatus: string | undefined;
-  if (requestedReplayMilestone && validationReplay && manifest.cartSha256) {
-    const playback = playReplayToMilestone(
-      validationReplay,
-      requestedReplayMilestone,
-      (buttonMask) => loadedRuntime.tickLogicalUpdate(buttonMask),
-      { expectedCartSha256: manifest.cartSha256, requireCleanInitialState: true },
-    );
+  if ((requestedReplayMilestone || requestedReplayUpdate !== undefined)
+    && validationReplay && manifest.cartSha256) {
+    const options = { expectedCartSha256: manifest.cartSha256, requireCleanInitialState: true };
+    const playback = requestedReplayMilestone
+      ? playReplayToMilestone(
+          validationReplay,
+          requestedReplayMilestone,
+          (buttonMask) => loadedRuntime.tickLogicalUpdate(buttonMask),
+          options,
+        )
+      : playReplayToUpdate(
+          validationReplay,
+          requestedReplayUpdate!,
+          (buttonMask) => loadedRuntime.tickLogicalUpdate(buttonMask),
+          options,
+        );
+    advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
     renderCurrentFrame();
     paused = true;
     pauseButton.textContent = "Resume";
     frame.dataset.validationReplayId = playback.replayId;
-    frame.dataset.validationReplayMilestone = playback.milestoneId;
+    if ("milestoneId" in playback) frame.dataset.validationReplayMilestone = playback.milestoneId;
+    else frame.dataset.validationReplayUpdate = String(playback.targetUpdate);
     frame.dataset.validationReplayUpdates = String(playback.updatesExecuted);
-    validationPlaybackStatus = `Validation replay · ${playback.milestoneId} · ${playback.updatesExecuted.toLocaleString("en-US")} logical updates`;
+    frame.dataset.validationPresentationMilliseconds = String(requestedPresentationMilliseconds);
+    const boundary = "milestoneId" in playback ? playback.milestoneId : `update ${playback.targetUpdate}`;
+    validationPlaybackStatus = `Validation replay · ${boundary} · ${playback.updatesExecuted.toLocaleString("en-US")} logical updates`
+      + (requestedPresentationMilliseconds > 0
+        ? ` · ${requestedPresentationMilliseconds.toLocaleString("en-US")} ms presentation sample`
+        : "");
   }
   let accumulator = 0;
   const stepMilliseconds = 1000 / 60;

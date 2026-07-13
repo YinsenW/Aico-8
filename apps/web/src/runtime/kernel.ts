@@ -21,6 +21,13 @@ export interface DrawCommand {
   readonly payload: Uint8Array;
 }
 
+export interface KernelHostOptions {
+  /** Overrides host storage for deterministic replay/capture sessions. */
+  readonly initialPersistence?: Uint8Array;
+  /** Defaults to true; validation playback disables external save writes. */
+  readonly persistenceWrites?: boolean;
+}
+
 interface EmscriptenKernel {
   HEAPU8: Uint8Array;
   UTF8ToString(pointer: number): string;
@@ -90,30 +97,42 @@ export class Aico8Kernel {
   readonly #runtime: number;
   readonly #saveScratch: number;
   readonly #valueScratch: number;
+  readonly #persistenceWrites: boolean;
   #lastSaved = "";
 
-  private constructor(module: EmscriptenKernel, runtime: number, manifest: GameManifest) {
+  private constructor(
+    module: EmscriptenKernel,
+    runtime: number,
+    manifest: GameManifest,
+    options: KernelHostOptions,
+  ) {
     this.#module = module;
     this.#runtime = runtime;
     this.#saveScratch = module._malloc(PERSISTENT_BYTES);
     this.#valueScratch = module._malloc(4);
+    this.#persistenceWrites = options.persistenceWrites ?? true;
     this.manifest = manifest;
   }
 
-  static async create(baseUrl: string, manifestUrl: URL, manifest: GameManifest): Promise<Aico8Kernel> {
+  static async create(
+    baseUrl: string,
+    manifestUrl: URL,
+    manifest: GameManifest,
+    options: KernelHostOptions = {},
+  ): Promise<Aico8Kernel> {
     const kernelUrl = new URL(`${baseUrl}kernel/aico8-kernel.js`, window.location.origin);
     const imported = await import(/* @vite-ignore */ kernelUrl.href) as KernelModule;
     const module = await imported.default();
     const runtime = module._aico8_create();
     if (!runtime) throw new Error("Unable to allocate the Aico 8 runtime");
 
-    const instance = new Aico8Kernel(module, runtime, manifest);
+    const instance = new Aico8Kernel(module, runtime, manifest, options);
     try {
       const [rom, source] = await Promise.all([
         fetchBytes(resolveAsset(manifestUrl, manifest.rom)),
         fetchBytes(resolveAsset(manifestUrl, manifest.source)),
       ]);
-      instance.#load(rom, source);
+      instance.#load(rom, source, options.initialPersistence);
       return instance;
     } catch (error) {
       instance.destroy();
@@ -132,7 +151,7 @@ export class Aico8Kernel {
     }
   }
 
-  #load(rom: Uint8Array, source: Uint8Array): void {
+  #load(rom: Uint8Array, source: Uint8Array, initialPersistence?: Uint8Array): void {
     this.#withHeapBytes(rom, (romPointer) => {
       this.#withHeapBytes(source, (sourcePointer) => {
         if (!this.#module._aico8_load_cart(this.#runtime, romPointer, rom.length, sourcePointer, source.length)) {
@@ -141,11 +160,13 @@ export class Aico8Kernel {
       });
     });
 
-    let stored: Uint8Array<ArrayBufferLike> = new Uint8Array();
-    try {
-      stored = decodeStoredPersistence(localStorage.getItem(this.manifest.persistenceKey));
-    } catch {
-      // Storage is optional in private browsing and locked-down WebViews.
+    let stored: Uint8Array<ArrayBufferLike> = initialPersistence?.slice() ?? new Uint8Array();
+    if (!initialPersistence) {
+      try {
+        stored = decodeStoredPersistence(localStorage.getItem(this.manifest.persistenceKey));
+      } catch {
+        // Storage is optional in private browsing and locked-down WebViews.
+      }
     }
     this.#lastSaved = encodeStoredBytes(stored);
     this.#withHeapBytes(stored, (pointer) => {
@@ -250,6 +271,7 @@ export class Aico8Kernel {
   }
 
   #persistIfChanged(): void {
+    if (!this.#persistenceWrites) return;
     if (this.#module._aico8_copy_persistent(this.#runtime, this.#saveScratch, PERSISTENT_BYTES) !== PERSISTENT_BYTES) {
       return;
     }

@@ -140,5 +140,5 @@ When governance is healthy, continue the active requirement in the manifest.
 For the qualification program the order is Replay v1 contract, Dust Bunny's 30
 canonical level paths, build hardening, corpus risk inventory, then games 2–10
 one at a time through unchanged-cart replay, HD invariance, Web/PWA packaging,
-manual review, and the independent rights gate. Secondary platform work cannot
+static plus exact-update temporal manual review, and the independent rights gate. Secondary platform work cannot
 enter this path unless it removes a shared blocker.

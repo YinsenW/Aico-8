@@ -40,7 +40,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-GAME-MODULE-001 | One remake's compatible payload, mappings, assets, saves, provenance, validation references, and runtime constraints | Internal game-module schema |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
 | DATA-TARGET-PROFILE-001 | Browser Web/PWA, Android WebView, Linux handheld Web, and future embedded capabilities, budgets, packaging mode, and signing policy | Target-profile schema |
-| DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links | Validation schema |
+| DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, and same-build static/temporal source-HD review boundaries | Validation schema |
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, rights decision | Release schema |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
 
@@ -60,7 +60,7 @@ contract exit.
 | JOB-ASSET-001 | HD map and accepted art direction | DATA-ASSET-PACK-001 | Generate/import and review modern assets |
 | JOB-TYPOGRAPHY-001 | Workspace, text inventory, accepted type direction | DATA-TEXT-RUN-001, DATA-TYPOGRAPHY-001, font assets | Classify P8SCII, subset/build fonts, and prove coherent complete coverage |
 | JOB-INTEGRATE-001 | Workspace, HD map, asset pack | DATA-GAME-MODULE-001 draft | Bind HD presentation without state mutation |
-| JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants |
+| JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants plus static and temporal presentation evidence |
 | JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-TARGET-PROFILE-001 | Statically bound target build | Assemble one standalone game or a fixed collection |
 | JOB-PACKAGE-001 | Validated target build and release profile | DATA-RELEASE-001 plus artifacts | Produce reproducible platform packages |
 | JOB-RELEASE-001 | Artifacts, validation, rights evidence | Publication record | Enforce permission and publish approved builds |
