@@ -17,6 +17,7 @@ function bunnyMap(): Record<string, unknown> {
       kind: "character",
       semanticRole: "round, friendly player character",
       evidence: [{ id: "player-source", kind: "source-animation", sourceRef: "sprite:player/all-frames", sha256: hash }],
+      copy: { origin: "none", sourceCopy: [], targetCopy: [], evidenceIds: [] },
       anchors: {
         silhouetteTraits: ["compact round face", "two upright ears"],
         requiredParts: [
@@ -108,6 +109,30 @@ describe("HD identity map v1", () => {
     const errors = validateHdIdentityMap(map).errors;
     expect(errors).toContain("$.elements[0].render.runtimeModelCalls must be false");
     expect(errors).toContain("$.elements[0].allowedModernization contains forbidden dimension face-shape");
+  });
+
+  it("rejects invented copy without explicit product authorization", () => {
+    const map = bunnyMap() as any;
+    map.elements[0].kind = "text";
+    map.elements[0].copy = {
+      origin: "source-authored",
+      sourceCopy: ["begin"],
+      targetCopy: ["brand new slogan"],
+      evidenceIds: ["player-source"],
+    };
+    expect(validateHdIdentityMap(map).errors).toContain(
+      "$.elements[0].copy source-authored target copy must preserve the normalized source copy",
+    );
+
+    map.elements[0].copy = {
+      origin: "supplemental-authorized",
+      sourceCopy: [],
+      targetCopy: ["brand new slogan"],
+      evidenceIds: ["player-source"],
+    };
+    expect(validateHdIdentityMap(map).errors).toContain(
+      "$.elements[0].copy supplemental copy requires product-authorization evidence",
+    );
   });
 
   it("rejects incomplete or mixed-style accepted coverage", () => {

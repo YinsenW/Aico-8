@@ -125,6 +125,7 @@ try {
   assert.equal(browser.presentationDiagnostics.mixedIndexedFragments, 0);
   assert.equal(browser.presentationDiagnostics.diagnosticReferenceSwitches, 0);
   assert.equal(browser.presentationDiagnostics.referenceAndHdAreAtomicModes, true);
+  assert.equal(browser.checks.copyProvenanceEnforced, true);
   for (const screenshot of browser.screenshots) {
     const screenshotPath = path.resolve(workspace, screenshot.path);
     assert.ok(screenshotPath.startsWith(`${workspace}${path.sep}`), `${screenshot.id}: screenshot escapes workspace`);

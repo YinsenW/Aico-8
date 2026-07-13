@@ -23,6 +23,9 @@ or converting arbitrary pixel glyphs into guessed vector shapes.
 5. Release fonts are bundled, fixed-version, hashed, licensed assets; an OS font
    stack is not a deterministic production fallback.
 6. Generated or inferred glyph shapes cannot silently replace cart-authored icons.
+7. Every rendered string declares `source-authored`, `state-derived-accessibility`,
+   or `supplemental-authorized` provenance. Supplemental copy requires hashed
+   product-authorization evidence; polish alone cannot authorize new wording.
 
 ## Two-track model
 

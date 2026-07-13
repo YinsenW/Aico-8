@@ -113,6 +113,9 @@ large CJK/localization coverage uses bundled WOFF2 canvas text with deterministi
 layout constraints. Inline P8SCII glyphs, cart-defined fonts, ambiguous symbols,
 and effectful controls require an author-approved modern mapping that preserves
 meaning; otherwise the scene is diagnostic-only and the game cannot pass HD.
+Every rendered copy string additionally declares source-authored, state-derived
+accessibility, or supplemental-authorized provenance; visual polish alone cannot
+authorize new marketing, narrative, instruction, or celebration copy.
 The complete policy is owned by
 `specs/typography.md`.
 

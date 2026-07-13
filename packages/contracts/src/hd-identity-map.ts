@@ -10,10 +10,11 @@ export const ALLOWED_MODERNIZATION_DIMENSIONS = [
 
 export type ModernizationDimension = (typeof ALLOWED_MODERNIZATION_DIMENSIONS)[number];
 export type VisualElementKind = "character" | "environment" | "ui" | "effect" | "text";
+export type CopyOrigin = "none" | "source-authored" | "state-derived-accessibility" | "supplemental-authorized";
 
 export interface IdentityEvidence {
   id: string;
-  kind: "source-frame" | "source-sprite" | "source-tile" | "source-command" | "source-animation";
+  kind: "source-frame" | "source-sprite" | "source-tile" | "source-command" | "source-animation" | "product-authorization";
   sourceRef: string;
   sha256: string;
 }
@@ -51,6 +52,13 @@ export interface FrozenRenderRecipe {
   runtimeModelCalls: false;
 }
 
+export interface CopyProvenance {
+  origin: CopyOrigin;
+  sourceCopy: string[];
+  targetCopy: string[];
+  evidenceIds: string[];
+}
+
 export interface IdentityReview {
   reviewer: string;
   sourceSceneIds: string[];
@@ -70,6 +78,7 @@ export interface HdIdentityElement {
   kind: VisualElementKind;
   semanticRole: string;
   evidence: IdentityEvidence[];
+  copy: CopyProvenance;
   anchors: IdentityAnchors;
   allowedModernization: ModernizationDimension[];
   render: FrozenRenderRecipe;
@@ -102,6 +111,7 @@ type JsonRecord = Record<string, unknown>;
 const idPattern = /^[a-z0-9][a-z0-9._-]{1,127}$/;
 const hashPattern = /^[a-f0-9]{64}$/;
 const elementKinds = new Set<VisualElementKind>(["character", "environment", "ui", "effect", "text"]);
+const copyOrigins = new Set<CopyOrigin>(["none", "source-authored", "state-derived-accessibility", "supplemental-authorized"]);
 const modernizationDimensions = new Set<string>(ALLOWED_MODERNIZATION_DIMENSIONS);
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -164,12 +174,54 @@ function validateEvidence(value: unknown, path: string, errors: string[]): strin
   }
   checkKeys(value, ["id", "kind", "sourceRef", "sha256"], ["id", "kind", "sourceRef", "sha256"], path, errors);
   const id = checkId(value.id, `${path}.id`, errors) ? value.id : undefined;
-  if (!["source-frame", "source-sprite", "source-tile", "source-command", "source-animation"].includes(value.kind as string)) {
+  if (!["source-frame", "source-sprite", "source-tile", "source-command", "source-animation", "product-authorization"].includes(value.kind as string)) {
     errors.push(`${path}.kind is not a supported evidence kind`);
   }
   checkString(value.sourceRef, `${path}.sourceRef`, errors);
   checkHash(value.sha256, `${path}.sha256`, errors);
   return id;
+}
+
+function validateCopy(
+  value: unknown,
+  evidenceKinds: Map<string, string>,
+  path: string,
+  errors: string[],
+): void {
+  if (!isRecord(value)) {
+    errors.push(`${path} must be an object`);
+    return;
+  }
+  const keys = ["origin", "sourceCopy", "targetCopy", "evidenceIds"] as const;
+  checkKeys(value, keys, keys, path, errors);
+  const origin = copyOrigins.has(value.origin as CopyOrigin) ? value.origin as CopyOrigin : undefined;
+  if (!origin) errors.push(`${path}.origin is not supported`);
+  const sourceCopy = checkUniqueStrings(value.sourceCopy, `${path}.sourceCopy`, errors, 0);
+  const targetCopy = checkUniqueStrings(value.targetCopy, `${path}.targetCopy`, errors, 0);
+  const evidenceIds = checkUniqueStrings(value.evidenceIds, `${path}.evidenceIds`, errors, 0);
+  for (const id of evidenceIds) if (!evidenceKinds.has(id)) errors.push(`${path}.evidenceIds references unknown evidence ${id}`);
+  if (!origin) return;
+  if (origin === "none") {
+    if (sourceCopy.length > 0 || targetCopy.length > 0 || evidenceIds.length > 0) {
+      errors.push(`${path} with origin none cannot declare copy or evidence`);
+    }
+    return;
+  }
+  if (targetCopy.length === 0) errors.push(`${path}.targetCopy must identify every rendered copy string`);
+  if (evidenceIds.length === 0) errors.push(`${path}.evidenceIds must trace rendered copy to durable evidence`);
+  if (origin === "source-authored") {
+    const normalize = (text: string): string => text.trim().toLocaleLowerCase("en-US").replace(/\s+/g, " ");
+    if (sourceCopy.length === 0 || sourceCopy.length !== targetCopy.length
+      || sourceCopy.some((text, index) => normalize(text) !== normalize(targetCopy[index] ?? ""))) {
+      errors.push(`${path} source-authored target copy must preserve the normalized source copy`);
+    }
+  } else if (sourceCopy.length > 0) {
+    errors.push(`${path}.sourceCopy must be empty unless origin is source-authored`);
+  }
+  if (origin === "supplemental-authorized"
+    && !evidenceIds.some((id) => evidenceKinds.get(id) === "product-authorization")) {
+    errors.push(`${path} supplemental copy requires product-authorization evidence`);
+  }
 }
 
 function validateAnchors(
@@ -307,7 +359,7 @@ export function validateHdIdentityMap(value: unknown): HdIdentityMapValidationRe
         errors.push(`${elementPath} must be an object`);
         continue;
       }
-      const elementKeys = ["id", "kind", "semanticRole", "evidence", "anchors", "allowedModernization", "render", "review"] as const;
+      const elementKeys = ["id", "kind", "semanticRole", "evidence", "copy", "anchors", "allowedModernization", "render", "review"] as const;
       checkKeys(rawElement, elementKeys, elementKeys, elementPath, errors);
       if (checkId(rawElement.id, `${elementPath}.id`, errors)) {
         if (elementIds.has(rawElement.id)) errors.push(`${elementPath}.id must be globally unique`);
@@ -318,6 +370,7 @@ export function validateHdIdentityMap(value: unknown): HdIdentityMapValidationRe
       checkString(rawElement.semanticRole, `${elementPath}.semanticRole`, errors);
 
       const evidenceIds = new Set<string>();
+      const evidenceKinds = new Map<string, string>();
       if (!Array.isArray(rawElement.evidence) || rawElement.evidence.length === 0) {
         errors.push(`${elementPath}.evidence must contain source evidence`);
       } else {
@@ -326,9 +379,11 @@ export function validateHdIdentityMap(value: unknown): HdIdentityMapValidationRe
           if (evidenceId) {
             if (evidenceIds.has(evidenceId)) errors.push(`${elementPath}.evidence[${evidenceIndex}].id must be unique`);
             evidenceIds.add(evidenceId);
+            if (isRecord(rawEvidence) && typeof rawEvidence.kind === "string") evidenceKinds.set(evidenceId, rawEvidence.kind);
           }
         }
       }
+      validateCopy(rawElement.copy, evidenceKinds, `${elementPath}.copy`, errors);
 
       let targetRegionIds = new Set<string>();
       if (!isRecord(rawElement.render)) {

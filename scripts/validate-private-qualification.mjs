@@ -85,8 +85,11 @@ assert.equal(identityMap.schemaVersion, "aico8.hd-identity-map.v1");
 assert.equal(identityMap.status, "draft", "identity acceptance requires explicit human side-by-side review");
 assert.equal(identityMap.gameId, replay.gameId);
 assert.equal(identityMap.canonicalReplayId, replay.replayId);
-assert.equal(identityMap.elements.length, 21);
+assert.equal(identityMap.elements.length, 20);
 assert.deepEqual(identityMap.coverage.reachableElementIds, identityMap.coverage.mappedElementIds);
+assert.ok(identityMap.elements.every((element) => element.copy && typeof element.copy.origin === "string"));
+assert.equal(identityMap.elements.filter((element) => element.copy.origin !== "none").length, 5);
+assert.equal(identityMap.elements.filter((element) => element.copy.origin === "supplemental-authorized").length, 0);
 assert.ok(identityMap.elements.every((element) => element.review.reviewer === "pending-human-side-by-side-review"));
 assert.ok(identityMap.elements.every((element) => [
   "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
@@ -101,7 +104,7 @@ assert.equal(hdAudit.observationRuns.length, 3);
 assert.equal(hdAudit.observationRuns[0].id, "canonical-complete");
 assert.equal(hdAudit.observationRuns[0].endUpdateExclusive, canonicalAudit.logicalUpdates);
 assert.deepEqual(hdAudit.observedSceneIds, ["scene.ending", "scene.gameplay", "scene.intro", "scene.title", "scene.win"]);
-assert.equal(hdAudit.sourceTokens.length, 179);
+assert.equal(hdAudit.sourceTokens.length, 178);
 assert.deepEqual(hdAudit.coverage.reachableElementIds, hdAudit.coverage.mappedElementIds);
 assert.deepEqual(hdAudit.coverage.unmappedSourceTokenIds, []);
 assert.equal(hdAudit.coverage.mixedIndexedFragments, 0);
@@ -163,6 +166,8 @@ const hdAttestation = {
   rights_scope: "Research and test evidence only; no formal game release is authorized by this record.",
   observations: {
     identity_elements: identityMap.elements.length,
+    copy_provenance_elements: identityMap.elements.filter((element) => element.copy.origin !== "none").length,
+    supplemental_copy_elements: identityMap.elements.filter((element) => element.copy.origin === "supplemental-authorized").length,
     source_tokens: hdAudit.sourceTokens.length,
     scenes: hdAudit.observedSceneIds.length,
     canonical_logical_updates: canonicalAudit.logicalUpdates,

@@ -17,7 +17,7 @@
     "post_completion_stored_level": 0,
     "restart_completed": true,
     "observed_visual_scenes": 5,
-    "observed_source_tokens": 178
+    "observed_source_tokens": 177
   },
   "canonicality": {
     "cart_mutation": "none",
@@ -27,8 +27,8 @@
     "test_hooks": false
   },
   "private_artifact_sha256": {
-    "canonical_replay_v1": "01c46405e2ba7ed2237ec7ed176a287a12882cd3d713c399b4a3733dd62dab06",
-    "canonical_run_audit": "c9017c0735df9f46146007e7661b5b4bf46b84fc322465b876a96142181a3a6a",
+    "canonical_replay_v1": "b7df3350548212208aafa422db6512e5b8db5c26fc3045b43bb25bc556661452",
+    "canonical_run_audit": "631a17f9bbba6a9a8624dd626501c5724dce5a3499962d65b2790fbe8e5610f6",
     "solver_differential": "8bf533b9e77d06a4e91fe27d5db9786ac3255e01db9a5f64a0ba5fb303e7e727",
     "solver_invariants": "d8266636778909c9a86da1415b15ce0b977367b33d297faeea9d906cf918d26b"
   },

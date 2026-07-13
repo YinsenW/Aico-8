@@ -31,7 +31,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-INPUT-TRACE-001 | Contiguous logical-update button-mask spans, initial persistence lineage, and no-skip policy | `specs/schemas/input-trace-v1.schema.json` |
 | DATA-REPLAY-001 | Cart/runtime identity, canonicality declaration, input trace, milestones, and ordered checkpoints | `specs/schemas/replay-v1.schema.json` and TypeScript validator |
 | DATA-CHECKPOINT-001 | RAM/raster/audio/semantic hashes at named updates | Validation schema |
-| DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
+| DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, copy provenance/authorization, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
 | DATA-HD-AUDIT-001 | Contextual raw visual tokens, observation runs, identity-map lineage, zero-unmapped/mixed/reference coverage, per-update HD-off/on state comparison, and rejected mutations | `specs/schemas/hd-presentation-audit-v1.schema.json` and TypeScript validator |
 | DATA-ASSET-PACK-001 | Frozen hashed atlases, fonts, effects, audio, visual grammar, metadata, and licenses | Asset-pack schema |
 | DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Text-run schema |

@@ -60,7 +60,9 @@ visual grammar. Modernization may add material, light, detail, and animation
 quality but cannot redesign those identity anchors. Runtime output must use frozen, hashed assets and deterministic render
 rules rather than model generation. Accepted HD play may not mix indexed source
 fragments with modern elements; the exact reference renderer is a separate
-diagnostic mode. Enabling HD must not change compatibility snapshots.
+diagnostic mode. Enabling HD must not change compatibility snapshots. Rendered
+copy must be source-authored, state-derived for accessibility, or backed by a
+durable product authorization; unapproved slogans and celebration text fail HD.
 
 “Preserve” is identity preservation, not literal pixel enlargement. Traits are
 declared per source element, never as universal aesthetic rules: for example, a
