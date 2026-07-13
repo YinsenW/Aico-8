@@ -1,3 +1,5 @@
+import type { InputTraceV1 } from "@aico8/contracts";
+
 const keyButtons = new Map<string, number>([
   ["ArrowLeft", 0], ["KeyA", 0],
   ["ArrowRight", 1], ["KeyD", 1],
@@ -7,6 +9,12 @@ const keyButtons = new Map<string, number>([
   ["KeyX", 5], ["KeyV", 5], ["KeyM", 5], ["Enter", 5],
 ]);
 
+export const CANONICAL_KEY_CODES = [
+  "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "KeyZ", "KeyX",
+] as const;
+
+export type HostInputSurface = "keyboard" | "controller" | "touch";
+
 export interface GamepadLike {
   readonly axes: readonly number[];
   readonly buttons: readonly { readonly pressed: boolean }[];
@@ -14,6 +22,12 @@ export interface GamepadLike {
 
 export function keyboardButton(code: string): number | undefined {
   return keyButtons.get(code);
+}
+
+export function touchButton(value: string | number | undefined): number | undefined {
+  if (typeof value === "string" && !/^[0-5]$/.test(value)) return undefined;
+  const button = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(button) && button >= 0 && button <= 5 ? button : undefined;
 }
 
 export function gamepadMask(gamepad: GamepadLike | null | undefined): number {
@@ -54,8 +68,87 @@ export class LogicalInputLatch {
   }
 
   commitLogicalUpdate(): void {
-    this.#pendingMask &= this.#heldMask;
+    // Pending records a press that has not reached a logical sample yet. Once a
+    // sample is committed, heldMask alone carries a continuing press; retaining
+    // pending here would keep a released key/touch active for one extra update.
+    this.#pendingMask = 0;
   }
+}
+
+function applyLatchTransition(
+  latch: LogicalInputLatch,
+  previousMask: number,
+  desiredMask: number,
+  resolveButton: (button: number) => number | undefined,
+): number {
+  for (let button = 0; button < 6; button += 1) {
+    const bit = 1 << button;
+    if ((previousMask & bit) !== 0 && (desiredMask & bit) === 0) {
+      const resolved = resolveButton(button);
+      if (resolved !== undefined) latch.release(resolved);
+    }
+  }
+  for (let button = 0; button < 6; button += 1) {
+    const bit = 1 << button;
+    if ((previousMask & bit) === 0 && (desiredMask & bit) !== 0) {
+      const resolved = resolveButton(button);
+      if (resolved !== undefined) latch.press(resolved);
+    }
+  }
+  const sampled = latch.mask();
+  latch.commitLogicalUpdate();
+  return sampled;
+}
+
+function gamepadForLogicalMask(mask: number): GamepadLike {
+  const buttonForLogical = [14, 15, 12, 13, 0, 1];
+  return {
+    axes: [0, 0],
+    buttons: Array.from({ length: 16 }, (_, index) => ({
+      pressed: buttonForLogical.some((gamepadButton, logicalButton) =>
+        gamepadButton === index && (mask & (1 << logicalButton)) !== 0),
+    })),
+  };
+}
+
+/**
+ * Projects one validated PICO-8 input trace through the same mappings and latch
+ * semantics used by each browser input surface. One output byte is emitted for
+ * every original logical update; no wall-clock acceleration may omit a sample.
+ */
+export function projectInputTrace(trace: InputTraceV1, surface: HostInputSurface): Uint8Array {
+  const projected = new Uint8Array(trace.totalUpdates);
+  const latch = surface === "controller" ? undefined : new LogicalInputLatch();
+  let previousMask = 0;
+  let update = 0;
+  for (const span of trace.spans) {
+    if (span.players.length !== 1) {
+      throw new TypeError("Browser host input projection currently supports one PICO-8 player");
+    }
+    if (span.startUpdate !== update || span.endUpdateExclusive > trace.totalUpdates) {
+      throw new TypeError(`Input trace lost contiguous coverage at logical update ${update}`);
+    }
+    const desiredMask = span.players[0];
+    for (; update < span.endUpdateExclusive; update += 1) {
+      if (surface === "controller") {
+        projected[update] = gamepadMask(gamepadForLogicalMask(desiredMask));
+      } else if (surface === "keyboard") {
+        projected[update] = applyLatchTransition(
+          latch!,
+          previousMask,
+          desiredMask,
+          (button) => keyboardButton(CANONICAL_KEY_CODES[button]!),
+        );
+      } else {
+        projected[update] = applyLatchTransition(latch!, previousMask, desiredMask, touchButton);
+      }
+      previousMask = desiredMask;
+    }
+  }
+  if (update !== trace.totalUpdates) {
+    throw new TypeError(`Input trace ended at ${update}; expected ${trace.totalUpdates} logical updates`);
+  }
+  return projected;
 }
 
 export class InputController {
@@ -80,7 +173,8 @@ export class InputController {
 
   bindTouchControls(root: HTMLElement): void {
     for (const control of root.querySelectorAll<HTMLElement>("[data-p8-button]")) {
-      const button = Number(control.dataset.p8Button);
+      const button = touchButton(control.dataset.p8Button);
+      if (button === undefined) continue;
       control.addEventListener("pointerdown", (event) => {
         control.setPointerCapture(event.pointerId);
         this.#touch.press(button);

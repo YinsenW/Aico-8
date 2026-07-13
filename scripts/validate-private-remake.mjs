@@ -14,6 +14,7 @@ const workspace = path.resolve(workspaceValue);
 const browserEvidencePath = path.join(workspace, "evidence/browser-validation.json");
 const canonicalReplayPath = path.join(workspace, "validation/canonical-replay-v1.json");
 const canonicalAuditPath = path.join(workspace, "validation/canonical-run-audit.json");
+const inputProjectionPath = path.join(workspace, "validation/input-surface-projection.json");
 const identityMapPath = path.join(workspace, "validation/hd-identity-map.json");
 const hdAuditPath = path.join(workspace, "validation/hd-presentation-audit.json");
 for (const file of [browserEvidencePath, canonicalReplayPath, canonicalAuditPath, identityMapPath, hdAuditPath,
@@ -73,6 +74,12 @@ function jpegDimensions(file) {
 
 try {
   runNode([path.join(root, "scripts/validate-private-qualification.mjs")]);
+  run(process.execPath, [
+    "--experimental-strip-types",
+    path.join(root, "scripts/verify-input-projection.ts"),
+    "--replay", canonicalReplayPath,
+    "--out", inputProjectionPath,
+  ]);
   run("pnpm", ["--filter", "@aico8/web", "test"]);
   run("make", ["-C", "runtime/core", "wasm-test"]);
   runNode(buildArguments(outputA));
@@ -86,6 +93,7 @@ try {
   const release = JSON.parse(manifestA);
   const replay = JSON.parse(fs.readFileSync(canonicalReplayPath, "utf8"));
   const canonicalAudit = JSON.parse(fs.readFileSync(canonicalAuditPath, "utf8"));
+  const inputProjection = JSON.parse(fs.readFileSync(inputProjectionPath, "utf8"));
   const identityMap = JSON.parse(fs.readFileSync(identityMapPath, "utf8"));
   const hdAudit = JSON.parse(fs.readFileSync(hdAuditPath, "utf8"));
   const browser = JSON.parse(fs.readFileSync(browserEvidencePath, "utf8"));
@@ -97,6 +105,22 @@ try {
   assert.equal(canonicalAudit.ending.reached, true);
   assert.equal(canonicalAudit.ending.restartCompleted, true);
   assert.equal(canonicalAudit.persistenceBoundaries.at(-1).storedLevel, 0);
+  assert.equal(inputProjection.schemaVersion, "aico8.input-surface-projection.v1");
+  assert.equal(inputProjection.replayId, replay.replayId);
+  assert.equal(inputProjection.replaySemanticsSha256, validationReplaySemanticsSha256(replay));
+  assert.equal(inputProjection.cartSha256, replay.cartSha256);
+  assert.equal(inputProjection.totalUpdates, replay.trace.totalUpdates);
+  assert.equal(inputProjection.updateHz, replay.trace.updateHz);
+  assert.equal(inputProjection.bindings.sampling, "one-mask-per-original-logical-update");
+  assert.equal(inputProjection.bindings.quickTapLatch, "pending-until-consumed-by-logical-update");
+  assert.deepEqual(inputProjection.bindings.touchButtonIds, [0, 1, 2, 3, 4, 5]);
+  for (const surface of ["keyboard", "controller", "touch"]) {
+    const result = inputProjection.surfaces[surface];
+    assert.equal(result.updates, replay.trace.totalUpdates, `${surface}: complete update count`);
+    assert.equal(result.updateHz, replay.trace.updateHz, `${surface}: sampling rate`);
+    assert.equal(result.maskSha256, inputProjection.canonicalTraceSha256, `${surface}: canonical masks`);
+    assert.equal(result.mismatches, 0, `${surface}: no logical input mismatch`);
+  }
   assert.equal(identityMap.status, "draft", "human side-by-side identity review remains an independent gate");
   assert.ok(identityMap.elements.every((element) => element.review.reviewer === "pending-human-side-by-side-review"));
   assert.equal(hdAudit.status, "draft");
@@ -155,6 +179,9 @@ try {
   assert.equal(browser.presentationDiagnostics.diagnosticReferenceSwitches, 0);
   assert.equal(browser.presentationDiagnostics.referenceAndHdAreAtomicModes, true);
   assert.equal(browser.checks.copyProvenanceEnforced, true);
+  assert.equal(browser.checks.completeHostInputTraceIdentical, true);
+  assert.equal(browser.checks.releaseLagRegressionRejected, true);
+  assert.match(browser.systemicRegressionCoverage.completeHostInputProjection, /9,206-update canonical trace/);
   assert.deepEqual(browser.presentationDiagnostics.observedScenes,
     ["scene.title", "scene.intro", "scene.gameplay", "scene.win", "scene.ending"]);
   assert.equal(browser.identityReview.status, "pending-human-side-by-side-review");
@@ -227,6 +254,16 @@ try {
       progress_reset: canonicalAudit.persistenceBoundaries.at(-1).storedLevel === 0,
       audio_profile: "original-silent-cart",
     },
+    input: {
+      canonical_trace_sha256: inputProjection.canonicalTraceSha256,
+      logical_updates: inputProjection.totalUpdates,
+      update_hz: inputProjection.updateHz,
+      keyboard_mismatches: inputProjection.surfaces.keyboard.mismatches,
+      controller_mismatches: inputProjection.surfaces.controller.mismatches,
+      touch_mismatches: inputProjection.surfaces.touch.mismatches,
+      real_touch_level_one_completed: browser.checks.realTouchLevelOneCompletion,
+      quick_tap_latch: inputProjection.bindings.quickTapLatch,
+    },
     presentation: {
       automated_audit_status: hdAudit.status,
       total_observed_updates: hdAudit.totalLogicalUpdates,
@@ -252,6 +289,7 @@ try {
       canonical_run_audit_sha256: sha256(canonicalAuditPath),
       hd_presentation_audit_sha256: sha256(hdAuditPath),
       browser_validation_sha256: sha256(browserEvidencePath),
+      input_surface_projection_sha256: sha256(inputProjectionPath),
     },
   };
   const attestationPath = path.join(root, "governance/evidence/first-private-web-remake.json");
@@ -262,7 +300,7 @@ try {
     assert.equal(fs.readFileSync(attestationPath, "utf8"), serialized,
       "Public attestation is stale; rerun once with AICO8_WRITE_ATTESTATION=1 and review the diff");
   }
-  process.stdout.write("Private remake selector: PASS (canonical content, automated HD audit, real touch browser evidence, PWA, two-build identity; human identity review pending)\n");
+  process.stdout.write("Private remake selector: PASS (canonical content, full keyboard/controller/touch trace, automated HD audit, real touch browser evidence, PWA, two-build identity; human identity review pending)\n");
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }

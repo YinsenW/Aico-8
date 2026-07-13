@@ -60,7 +60,8 @@ reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
 level/ending milestones, and broken replay lineage.
 `pnpm verify:private-remake` additionally requires `AICO8_PRIVATE_WORKSPACE` to
 point at the authorized ignored workspace. It rebuilds twice, regenerates the
-private content evidence, and checks the retained browser-review record; set
+private content and complete keyboard/controller/touch input-projection evidence,
+and checks the retained browser-review record; set
 `AICO8_WRITE_ATTESTATION=1` only when intentionally refreshing the reviewed
 sanitized public attestation.
 Official-runtime selectors remain pending until licensed captures are available.
@@ -96,6 +97,9 @@ Official-runtime selectors remain pending until licensed captures are available.
   semantic correction; previously generated candidates are stale until rechecked.
 - Native/Wasm mismatch: confirm identical source, toolchain identity, exported ABI,
   and byte buffers before changing gameplay code.
+- Host-input mismatch: project the complete canonical trace through the shared
+  keyboard/touch latch and controller sampler. Fix mapping or latch semantics,
+  then require zero per-update mask mismatches; do not patch a recorded path.
 - HD mismatch: run HD off/on against the same replay; any state divergence is a
   product defect even if the visual result looks correct.
 - Browser-evidence lineage mismatch: compare the recomputed visual-runtime and

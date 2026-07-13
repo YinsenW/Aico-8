@@ -97,6 +97,11 @@ only its linked exits determine acceptance.
   unchanged cart/state semantics, no test hooks or synthetic completion, and
   milestone/checkpoint lineage. Faster wall time is allowed only when every
   original logical update still executes.
+- Keyboard, standard controller, and touch qualification consumes the same
+  DATA-INPUT-TRACE-001 through production mapping/latch functions. Each surface
+  must emit the canonical six-bit player-one mask at the declared update rate for
+  every logical update; a length, timing, mask, visible-control, or quick-tap
+  mismatch fails JOB-VALIDATE-001.
 - Research Web packages may opt into explicit replay-backed scene capture. The
   host must validate Replay v1, cart hash, initial persistence hash, and named
   milestone, execute every ordinary input update, expose playback lineage in the

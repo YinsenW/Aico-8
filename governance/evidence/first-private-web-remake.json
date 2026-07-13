@@ -20,6 +20,16 @@
     "progress_reset": true,
     "audio_profile": "original-silent-cart"
   },
+  "input": {
+    "canonical_trace_sha256": "887744268a2bf9faf89a6848c744e14e34cf158e648314d2a32f2b13a343e390",
+    "logical_updates": 9206,
+    "update_hz": 30,
+    "keyboard_mismatches": 0,
+    "controller_mismatches": 0,
+    "touch_mismatches": 0,
+    "real_touch_level_one_completed": true,
+    "quick_tap_latch": "pending-until-consumed-by-logical-update"
+  },
   "presentation": {
     "automated_audit_status": "draft",
     "total_observed_updates": 9224,
@@ -43,6 +53,8 @@
       "allFiveSceneComparisonsComplete": true,
       "identityReviewRemainsIndependent": true,
       "visualRuntimeLineageStableUnderReplayProvenanceRefresh": true,
+      "completeHostInputTraceIdentical": true,
+      "releaseLagRegressionRejected": true,
       "pwaPackageVerified": true
     },
     "identity_human_review_accepted": false
@@ -51,7 +63,7 @@
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 37,
-    "visual_runtime_sha256": "699faea79c0647abc44083be9fd7482a0cddeae980a3f31c0451658bffeedad9",
+    "visual_runtime_sha256": "8de89f44acd59f4b07b5b4dd681c41e06799fcd256927f47b47c9dd435ae4379",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },
@@ -61,6 +73,7 @@
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "631a17f9bbba6a9a8624dd626501c5724dce5a3499962d65b2790fbe8e5610f6",
     "hd_presentation_audit_sha256": "e1216c13acc1d203551c27ae09d96154289dcb45d9fe6dddec273ec34d1879f3",
-    "browser_validation_sha256": "7fa51a3ba2bb1c67da7bccc2f7c8c7ca333bdc2bec4677d7c2a4c28097f0716e"
+    "browser_validation_sha256": "58e4ec0c61e15cb6bf7fb857aff87e4915cb37a749edb9270c9bf912acdf6f6c",
+    "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }
 }

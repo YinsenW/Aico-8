@@ -182,6 +182,11 @@ The detailed mapping is defined in `specs/display-1024.md` and
   provenance-only replay regeneration does not invalidate unchanged pixels, and
   any visual, cart, input, or completion drift still fails qualification.
 - State diffs for every logical update in representative canonical replays.
+- Host-input qualification projects the complete canonical one-player trace
+  through production keyboard mappings and latch behavior, standard gamepad
+  sampling, and visible touch-button mappings. Every surface must emit one
+  identical six-bit mask at the original update rate for every logical update;
+  a real browser touch path independently proves the visible controls are wired.
 - Search-only shadow models are untrusted accelerators. Their transition order
   and state must be differentially checked against the unchanged cart for every
   candidate step before capture; mismatch handling fixes the semantic class and
