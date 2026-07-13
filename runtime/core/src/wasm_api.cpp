@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <array>
 #include <new>
+#include <string>
+#include <vector>
 
 namespace {
 
@@ -18,9 +20,42 @@ struct aico8_runtime {
     p8_core *core = nullptr;
     p8_vm *vm = nullptr;
     std::array<uint8_t, P8_SCREEN_PIXELS> framebuffer{};
+    std::vector<uint8_t> rom;
+    std::string source;
     bool loaded = false;
     bool started = false;
 };
+
+namespace {
+
+bool restart_cart(aico8_runtime *runtime)
+{
+    std::array<uint8_t, kPersistentSize> persistent{};
+    for (size_t index = 0; index < persistent.size(); ++index) {
+        persistent[index] = p8_core_peek(
+            runtime->core, static_cast<uint16_t>(kPersistentBase + index));
+    }
+
+    p8_vm_destroy(runtime->vm);
+    runtime->vm = nullptr;
+    if (!p8_core_load_rom(runtime->core, runtime->rom.data(), runtime->rom.size())) {
+        runtime->started = false;
+        return false;
+    }
+    for (size_t index = 0; index < persistent.size(); ++index) {
+        p8_core_poke(runtime->core, static_cast<uint16_t>(kPersistentBase + index),
+                     persistent[index]);
+    }
+
+    runtime->vm = p8_vm_create(runtime->core);
+    runtime->loaded = runtime->vm
+        && p8_vm_load_source(runtime->vm, runtime->source.data(), runtime->source.size(),
+                             "@aico8-cart");
+    runtime->started = runtime->loaded && p8_vm_call(runtime->vm, "_init");
+    return runtime->started;
+}
+
+} // namespace
 
 extern "C" {
 
@@ -58,6 +93,8 @@ int aico8_load_cart(aico8_runtime *runtime, const uint8_t *rom, size_t rom_size,
     runtime->vm = p8_vm_create(runtime->core);
     runtime->loaded = runtime->vm
         && p8_vm_load_source(runtime->vm, source, source_size, "@aico8-cart");
+    runtime->rom.assign(rom, rom + rom_size);
+    runtime->source.assign(source, source_size);
     runtime->started = false;
     return runtime->loaded ? 1 : 0;
 }
@@ -90,7 +127,13 @@ int aico8_tick60(aico8_runtime *runtime, uint8_t player_zero_buttons)
     }
     p8_core_set_buttons(runtime->core, 0, player_zero_buttons);
     const int updated = p8_core_host_tick60(runtime->core, 1);
-    return p8_vm_last_error(runtime->vm)[0] == '\0' ? updated : -1;
+    if (p8_vm_last_error(runtime->vm)[0] != '\0') {
+        return -1;
+    }
+    if (p8_vm_restart_requested(runtime->vm) && !restart_cart(runtime)) {
+        return -1;
+    }
+    return updated;
 }
 
 const uint8_t *aico8_framebuffer(aico8_runtime *runtime)
@@ -126,6 +169,38 @@ const uint8_t *aico8_draw_payload(const aico8_runtime *runtime)
 size_t aico8_draw_payload_size(const aico8_runtime *runtime)
 {
     return runtime ? p8_core_draw_payload_size(runtime->core) : 0;
+}
+
+size_t aico8_copy_map_region(const aico8_runtime *runtime, int cell_x, int cell_y,
+                             int width, int height, uint8_t *destination,
+                             size_t capacity)
+{
+    if (!runtime || !destination || width <= 0 || height <= 0) {
+        return 0;
+    }
+    const size_t required = static_cast<size_t>(width) * static_cast<size_t>(height);
+    if (capacity < required) {
+        return 0;
+    }
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            destination[static_cast<size_t>(y) * static_cast<size_t>(width)
+                        + static_cast<size_t>(x)]
+                = p8_core_mget(runtime->core, cell_x + x, cell_y + y);
+        }
+    }
+    return required;
+}
+
+int aico8_get_global_raw(aico8_runtime *runtime, const char *name,
+                         int32_t *raw_16_16)
+{
+    return runtime && runtime->vm ? p8_vm_get_global_raw(runtime->vm, name, raw_16_16) : 0;
+}
+
+int aico8_get_global_boolean(aico8_runtime *runtime, const char *name, int *value)
+{
+    return runtime && runtime->vm ? p8_vm_get_global_boolean(runtime->vm, name, value) : 0;
 }
 
 size_t aico8_copy_persistent(const aico8_runtime *runtime, uint8_t *destination,

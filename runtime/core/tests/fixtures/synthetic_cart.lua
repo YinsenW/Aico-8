@@ -1,10 +1,12 @@
 function _init()
  cartdata("aico8_synthetic")
  x=dget(0)
+ ready=true
 end
 
 function _update()
  if btnp(1) then x=7 dset(0,x) end
+ if btnp(4) then run() end
 end
 
 function _draw()

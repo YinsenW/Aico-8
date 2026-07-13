@@ -8,6 +8,7 @@
     "wasm:build": "make -C ../../runtime/core wasm",
     "wasm:test": "make -C ../../runtime/core wasm-test",
     "check": "tsc -p tsconfig.json",
+    "test": "vitest run",
     "build": "pnpm wasm:build && vite build"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "vite": "8.1.4"
+    "vite": "8.1.4",
+    "vitest": "4.1.10"
   }
 }

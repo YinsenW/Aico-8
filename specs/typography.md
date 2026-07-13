@@ -113,9 +113,15 @@ Latin spans without effectful controls are candidates for `safe-modern` after
 capture comparison. Decorative marks, one-off glyphs, custom-font output, or
 ambiguous bytes remain reference-only until explicitly reviewed.
 
-The first art-direction review chooses the actual font families. Until licensed
-font files, hashes, coverage, and layout evidence are committed, the web system
-font stack is a prototype and no typography exit is complete.
+The first art-direction review selects Atkinson Hyperlegible Regular and Bold at
+upstream commit `1cb311624b2ddf88e9e37873999d165a8cd28b46` for the Latin game UI
+and product shell. The WOFF2 SHA-256 values are
+`2df4ba17804bc7a36f123127966075d8427bff2df58d0d76820c1130bb1a4150`
+(Regular) and
+`da8fce41a04f8498fbf79076f92d304b12e70c76f71b143c5dcfb6536c93c075`
+(Bold); both are bundled under SIL OFL 1.1. This closes font selection and
+OS-font independence for the first Latin inventory, but not the broader
+P8SCII, layout-golden, localization, or accessibility exits.
 
 ## Acceptance
 

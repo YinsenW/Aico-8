@@ -39,7 +39,7 @@ $(WASM_OUTPUT): Makefile src/core.cpp src/raster.cpp src/vm_z8lua.cpp src/wasm_a
 		src/core.cpp src/raster.cpp src/vm_z8lua.cpp src/wasm_api.cpp $(Z8_WASM_SOURCES) \
 		-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createAico8Kernel \
 		-sALLOW_MEMORY_GROWTH=1 -sENVIRONMENT=web,node -sFILESYSTEM=0 \
-		-sEXPORTED_FUNCTIONS='["_malloc","_free","_aico8_create","_aico8_destroy","_aico8_load_cart","_aico8_load_persistent","_aico8_start","_aico8_tick60","_aico8_framebuffer","_aico8_framebuffer_size","_aico8_draw_commands","_aico8_draw_command_count","_aico8_draw_payload","_aico8_draw_payload_size","_aico8_copy_persistent","_aico8_last_error"]' \
+		-sEXPORTED_FUNCTIONS='["_malloc","_free","_aico8_create","_aico8_destroy","_aico8_load_cart","_aico8_load_persistent","_aico8_start","_aico8_tick60","_aico8_framebuffer","_aico8_framebuffer_size","_aico8_draw_commands","_aico8_draw_command_count","_aico8_draw_payload","_aico8_draw_payload_size","_aico8_copy_map_region","_aico8_get_global_raw","_aico8_get_global_boolean","_aico8_copy_persistent","_aico8_last_error"]' \
 		-sEXPORTED_RUNTIME_METHODS='["UTF8ToString","HEAPU8"]' -o $@
 
 $(BUILD_DIR):

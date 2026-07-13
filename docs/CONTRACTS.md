@@ -13,8 +13,8 @@ evidence, selectors, and open work live only in `governance/project.json`.
 | API-VM-001 | `runtime/core/include/p8/vm.h` | P8 Lua load, boot, update, draw, error, and inspection | Hosts and replay harnesses |
 | API-SEMANTIC-001 | `p8_draw_command` in `core.h` | Ordered original draw intent plus payloads/state revision | HD adapter and diagnostics |
 | API-TEXT-001 | Planned versioned core/TypeScript boundary | Raw P8SCII execution result plus ordered semantic text runs and fallback regions | HD text adapter, diagnostics, validation |
-| API-WASM-001 | Planned versioned C exports and flat buffers | Same kernel behavior across the JS/Wasm boundary | Web/PWA and mobile hosts |
-| API-PRESENTATION-001 | `packages/contracts/` | Display profiles, frame/command consumption, HD mapping | PixiJS host and validation UI |
+| API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, semantic, map, global-inspection, persistence, and restart exports | Web/PWA and mobile hosts |
+| API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, and fallback | PixiJS host and validation UI |
 | API-HOST-001 | Planned host contract | Logical input, persistence, lifecycle, clock, audio, services | Web, mobile, desktop, ESP-IDF |
 | API-CLI-001 | Planned TypeScript CLI | Non-interactive execution of every pipeline Job | Agents, CI, maintainers |
 | API-GAME-MODULE-001 | Planned versioned TypeScript boundary | Bind one compatible game, HD presentation, saves, evidence, and provenance without exposing a public cart format | Assembly, Web host, validation, later platform hosts |
@@ -74,6 +74,8 @@ only its linked exits determine acceptance.
 - The kernel is the only owner of fixed-point, memory, scheduler, raster, input
   repeat, persistence, and reference audio semantics.
 - The semantic/HD path is presentation-only and always retains an indexed fallback.
+- Cart-specific presentation adapters are injected from ignored private workspaces;
+  the Apache source tree owns only the interface, loader, fallback, and validators.
 - Original P8SCII execution and `print()` metrics stay in the kernel; modern
   typography consumes results and cannot alter compatibility state.
 - Game modules are internal versioned build inputs. A single or fixed collection

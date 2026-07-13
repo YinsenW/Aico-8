@@ -6,6 +6,22 @@
   font-synthesis: none;
 }
 
+@font-face {
+  font-family: "Aico Sans";
+  src: url("/fonts/AtkinsonHyperlegible-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aico Sans";
+  src: url("/fonts/AtkinsonHyperlegible-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -36,6 +52,18 @@ button {
 button:focus-visible {
   outline: 3px solid #ff77a8;
   outline-offset: 3px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 #app {
@@ -287,7 +315,8 @@ h1 {
 
   .credit,
   .control-hint,
-  #pause-button {
+  #pause-button,
+  #display-button {
     display: none;
   }
 
@@ -302,6 +331,7 @@ h1 {
   }
 
   .touch-controls {
+    opacity: 1 !important;
     transform: scale(0.82);
     transform-origin: bottom center;
     width: 122%;

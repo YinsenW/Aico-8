@@ -5,9 +5,11 @@ export interface GameManifest {
   readonly author: string;
   readonly rom: string;
   readonly source: string;
-  readonly presentation: "reference" | "dust-bunny-hd";
+  readonly presentation: string;
   readonly persistenceKey: string;
   readonly researchOnly?: boolean;
+  readonly sourceLicense?: string;
+  readonly sourceUrl?: string;
 }
 
 export interface DrawCommand {
@@ -34,6 +36,9 @@ interface EmscriptenKernel {
   _aico8_draw_command_count(runtime: number): number;
   _aico8_draw_payload(runtime: number): number;
   _aico8_draw_payload_size(runtime: number): number;
+  _aico8_copy_map_region(runtime: number, cellX: number, cellY: number, width: number, height: number, destination: number, capacity: number): number;
+  _aico8_get_global_raw(runtime: number, name: number, output: number): number;
+  _aico8_get_global_boolean(runtime: number, name: number, output: number): number;
   _aico8_copy_persistent(runtime: number, destination: number, capacity: number): number;
   _aico8_last_error(runtime: number): number;
 }
@@ -70,7 +75,8 @@ export async function loadGameManifest(url: URL): Promise<GameManifest> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Unable to load game manifest (${response.status})`);
   const manifest = await response.json() as GameManifest;
-  if (manifest.formatVersion !== 1 || !manifest.id || !manifest.rom || !manifest.source) {
+  if (manifest.formatVersion !== 1 || !manifest.id || !manifest.rom || !manifest.source
+    || !/^[a-z0-9][a-z0-9-]*$/.test(manifest.presentation)) {
     throw new Error("The game manifest is not an Aico 8 format-1 module");
   }
   return manifest;
@@ -81,12 +87,14 @@ export class Aico8Kernel {
   readonly #module: EmscriptenKernel;
   readonly #runtime: number;
   readonly #saveScratch: number;
+  readonly #valueScratch: number;
   #lastSaved = "";
 
   private constructor(module: EmscriptenKernel, runtime: number, manifest: GameManifest) {
     this.#module = module;
     this.#runtime = runtime;
     this.#saveScratch = module._malloc(PERSISTENT_BYTES);
+    this.#valueScratch = module._malloc(4);
     this.manifest = manifest;
   }
 
@@ -184,13 +192,52 @@ export class Aico8Kernel {
     return result;
   }
 
+  mapRegion(cellX: number, cellY: number, width: number, height: number): Uint8Array {
+    const size = width * height;
+    const pointer = this.#module._malloc(Math.max(size, 1));
+    if (!pointer) throw new Error("Unable to allocate the map snapshot");
+    try {
+      const copied = this.#module._aico8_copy_map_region(
+        this.#runtime, cellX, cellY, width, height, pointer, size,
+      );
+      if (copied !== size) throw new Error("Unable to copy the logical map region");
+      return this.#module.HEAPU8.slice(pointer, pointer + size);
+    } finally {
+      this.#module._free(pointer);
+    }
+  }
+
+  globalNumber(name: string): number | undefined {
+    return this.#withGlobalName(name, (pointer) => {
+      if (!this.#module._aico8_get_global_raw(this.#runtime, pointer, this.#valueScratch)) return undefined;
+      return new DataView(this.#module.HEAPU8.buffer).getInt32(this.#valueScratch, true) / 65536;
+    });
+  }
+
+  globalBoolean(name: string): boolean | undefined {
+    return this.#withGlobalName(name, (pointer) => {
+      if (!this.#module._aico8_get_global_boolean(this.#runtime, pointer, this.#valueScratch)) return undefined;
+      return new DataView(this.#module.HEAPU8.buffer).getInt32(this.#valueScratch, true) !== 0;
+    });
+  }
+
   lastError(): string {
     return this.#module.UTF8ToString(this.#module._aico8_last_error(this.#runtime));
   }
 
   destroy(): void {
+    this.#module._free(this.#valueScratch);
     this.#module._free(this.#saveScratch);
     this.#module._aico8_destroy(this.#runtime);
+  }
+
+  #withGlobalName<T>(name: string, callback: (pointer: number) => T): T {
+    const encoded = new TextEncoder().encode(`${name}\0`);
+    let result!: T;
+    this.#withHeapBytes(encoded, (pointer) => {
+      result = callback(pointer);
+    });
+    return result;
   }
 
   #persistIfChanged(): void {

@@ -45,10 +45,16 @@ pnpm verify:public
 make -C runtime/core test
 make -C runtime/core wasm-test
 pnpm verify:web
+pnpm verify:private-remake
 ```
 
 Private-archive selectors strengthen local evidence but never masquerade as
 public CI or enter the clean public repository history.
+`pnpm verify:private-remake` additionally requires `AICO8_PRIVATE_WORKSPACE` to
+point at the authorized ignored workspace. It rebuilds twice, regenerates the
+private content evidence, and checks the retained browser-review record; set
+`AICO8_WRITE_ATTESTATION=1` only when intentionally refreshing the reviewed
+sanitized public attestation.
 Official-runtime selectors remain pending until licensed captures are available.
 
 ## Recovery after interruption or failure

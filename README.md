@@ -115,12 +115,12 @@ See [the architecture](docs/ARCHITECTURE.md),
 Aico 8 does not grant rights to a cartridge or its assets. Ingested carts,
 extracted workspaces, official-runtime captures, and generated remakes are
 private by default. Publication is a separate release gate requiring verified
-permission, attribution, and compatible dependency notices.
+license terms or permission, attribution, and compatible dependency notices.
 
 Aico 8 project source is licensed under [Apache-2.0](LICENSE). Third-party files
 retain their own notices under `runtime/third_party/`. This license does not
 grant rights to PICO-8, any cartridge, or a generated remake.
 
-Dust Bunny is a private compatibility research and testing target only. No cart
-content or formal remake release is distributed without the rights holder's
-permission.
+The Dust Bunny cart page declares CC BY-NC-SA 4.0. Its cartridge, private HD
+adapter, evidence, and test package remain outside this Apache-2.0 repository,
+and the current owner decision is not to make a formal game release.

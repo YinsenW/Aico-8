@@ -14,6 +14,7 @@ const PICO8_COLORS = [
 const PRINT_OPCODE = 14;
 
 export class ReferenceRenderer {
+  readonly #root = new Container();
   readonly #canvas = document.createElement("canvas");
   readonly #context: CanvasRenderingContext2D;
   readonly #image: ImageData;
@@ -33,7 +34,12 @@ export class ReferenceRenderer {
     const sprite = new Sprite(this.#texture);
     sprite.width = REFERENCE_PROFILE.outputWidth;
     sprite.height = REFERENCE_PROFILE.outputHeight;
-    app.stage.addChild(sprite, this.#textLayer);
+    this.#root.addChild(sprite, this.#textLayer);
+    app.stage.addChild(this.#root);
+  }
+
+  setVisible(visible: boolean): void {
+    this.#root.visible = visible;
   }
 
   render(framebuffer: Uint8Array, commands: readonly DrawCommand[]): void {
