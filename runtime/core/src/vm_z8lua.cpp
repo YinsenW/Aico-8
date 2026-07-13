@@ -1,4 +1,5 @@
 #include "p8/vm.h"
+#include "p8/raster.h"
 
 #include "lauxlib.h"
 #include "lua.h"
@@ -263,12 +264,36 @@ int api_cls(lua_State *state)
     command.flags = static_cast<uint16_t>(lua_gettop(state));
     command.args[0] = raw_number(state, 1, 0);
     p8_core_emit_draw(vm->core, &command);
+    p8_gfx_cls(vm->core, static_cast<uint8_t>(integer(state, 1, 0)));
     return 0;
 }
 
-int api_pset(lua_State *state) { p8_vm::from(state)->emit(P8_DRAW_PSET, state, 3); return 0; }
-int api_rect(lua_State *state) { p8_vm::from(state)->emit(P8_DRAW_RECT, state, 5); return 0; }
-int api_rectfill(lua_State *state) { p8_vm::from(state)->emit(P8_DRAW_RECTFILL, state, 5); return 0; }
+int api_pset(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit(P8_DRAW_PSET, state, 3);
+    p8_gfx_pset(vm->core, integer(state, 1), integer(state, 2),
+                static_cast<uint8_t>(integer(state, 3, 6)));
+    return 0;
+}
+
+int api_rect(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit(P8_DRAW_RECT, state, 5);
+    p8_gfx_rect(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                integer(state, 4), static_cast<uint8_t>(integer(state, 5, 6)));
+    return 0;
+}
+
+int api_rectfill(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit(P8_DRAW_RECTFILL, state, 5);
+    p8_gfx_rectfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                    integer(state, 4), static_cast<uint8_t>(integer(state, 5, 6)));
+    return 0;
+}
 
 int api_spr(lua_State *state)
 {
@@ -284,6 +309,9 @@ int api_spr(lua_State *state)
     command.args[5] = lua_toboolean(state, 6) ? 0x10000 : 0;
     command.args[6] = lua_toboolean(state, 7) ? 0x10000 : 0;
     p8_core_emit_draw(vm->core, &command);
+    p8_gfx_spr(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+               integer(state, 4, 1), integer(state, 5, 1), lua_toboolean(state, 6),
+               lua_toboolean(state, 7));
     return 0;
 }
 
@@ -302,6 +330,9 @@ int api_map(lua_State *state)
         command.args[5] = static_cast<int32_t>((8192 / width) << 16);
     }
     p8_core_emit_draw(vm->core, &command);
+    p8_gfx_map(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+               integer(state, 4), command.args[4] >> 16, command.args[5] >> 16,
+               static_cast<uint8_t>(integer(state, 7)));
     return 0;
 }
 
@@ -315,6 +346,12 @@ int api_pal(lua_State *state)
     command.args[1] = raw_number(state, 2);
     command.args[2] = raw_number(state, 3);
     p8_core_emit_draw(vm->core, &command);
+    if (lua_gettop(state) == 0) {
+        p8_gfx_pal_reset(vm->core);
+    } else if (lua_gettop(state) >= 2 && integer(state, 3, 0) == 0) {
+        p8_gfx_pal(vm->core, static_cast<uint8_t>(integer(state, 1)),
+                   static_cast<uint8_t>(integer(state, 2)));
+    }
     return 0;
 }
 

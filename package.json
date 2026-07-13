@@ -11,7 +11,7 @@
     "build": "pnpm --recursive --if-present build",
     "check": "pnpm --recursive --if-present check",
     "test": "pnpm --recursive --if-present test",
-    "verify": "pnpm verify:governance && pnpm verify:public && make -C runtime/core test && pnpm verify:web",
+    "verify": "pnpm verify:governance && pnpm verify:public && make -C runtime/core test && make -C runtime/core wasm-test && pnpm verify:web",
     "verify:governance": "node scripts/verify-governance.mjs",
     "verify:public": "node scripts/verify-public-repository.mjs",
     "verify:web": "pnpm check && pnpm test && pnpm build"

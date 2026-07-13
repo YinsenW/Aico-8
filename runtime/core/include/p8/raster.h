@@ -41,6 +41,10 @@ void p8_gfx_rectfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t colo
 void p8_gfx_circ(p8_core *core, int center_x, int center_y, int radius, uint8_t color);
 void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
                      uint8_t color);
+void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
+                int flip_x, int flip_y);
+void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_y,
+                int cell_width, int cell_height, uint8_t layer);
 
 /* Expands packed screen RAM to one 0..15 palette index per pixel. */
 size_t p8_gfx_copy_framebuffer_indexed(const p8_core *core, uint8_t *destination,

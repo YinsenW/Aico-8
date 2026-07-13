@@ -14,6 +14,7 @@ constexpr uint16_t kClipHeight = 0x5f23;
 constexpr uint16_t kCameraX = 0x5f28;
 constexpr uint16_t kCameraY = 0x5f2a;
 constexpr uint16_t kGfxBase = 0x0000;
+constexpr uint16_t kSpriteFlagsBase = 0x3000;
 constexpr uint16_t kScreenBase = 0x6000;
 constexpr uint8_t kColorMask = 0x0f;
 constexpr uint8_t kTransparentBit = 0x10;
@@ -406,6 +407,50 @@ void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
 {
     raster_circle(core, center_x, center_y, radius, mapped_color(core, color),
                   circle_spans);
+}
+
+void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
+                int flip_x, int flip_y)
+{
+    if (!core || width <= 0 || height <= 0) {
+        return;
+    }
+    const int sprite_index = sprite & 0xff;
+    const int source_x = (sprite_index & 0x0f) * 8;
+    const int source_y = ((sprite_index >> 4) & 0x0f) * 8;
+    const int pixel_width = std::min(width, 16) * 8;
+    const int pixel_height = std::min(height, 16) * 8;
+    for (int destination_y = 0; destination_y < pixel_height; ++destination_y) {
+        const int sample_y = flip_y ? pixel_height - destination_y - 1 : destination_y;
+        for (int destination_x = 0; destination_x < pixel_width; ++destination_x) {
+            const int sample_x = flip_x ? pixel_width - destination_x - 1 : destination_x;
+            const uint8_t color = p8_gfx_sget(core, source_x + sample_x, source_y + sample_y);
+            if (!p8_gfx_is_transparent(core, color)) {
+                draw_mapped_pixel(core, static_cast<int64_t>(x) + destination_x,
+                                  static_cast<int64_t>(y) + destination_y,
+                                  mapped_color(core, color));
+            }
+        }
+    }
+}
+
+void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_y,
+                int cell_width, int cell_height, uint8_t layer)
+{
+    if (!core || cell_width <= 0 || cell_height <= 0) {
+        return;
+    }
+    for (int y = 0; y < cell_height; ++y) {
+        for (int x = 0; x < cell_width; ++x) {
+            const uint8_t sprite = p8_core_mget(core, cell_x + x, cell_y + y);
+            const uint8_t flags = p8_core_peek(core,
+                static_cast<uint16_t>(kSpriteFlagsBase + sprite));
+            if (layer == 0 || (flags & layer) != 0) {
+                p8_gfx_spr(core, sprite, screen_x + x * 8, screen_y + y * 8,
+                           1, 1, 0, 0);
+            }
+        }
+    }
 }
 
 size_t p8_gfx_copy_framebuffer_indexed(const p8_core *core, uint8_t *destination,

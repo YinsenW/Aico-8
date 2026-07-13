@@ -306,6 +306,43 @@ void test_raster_sprite_alias_and_primitives()
     p8_core_destroy(core);
 }
 
+void test_raster_sprite_map_palette_and_flip()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_sset(core, 8, 0, 1);
+    p8_gfx_sset(core, 15, 0, 2);
+    p8_gfx_sset(core, 8, 7, 3);
+    p8_gfx_sset(core, 15, 7, 0);
+    p8_gfx_pal(core, 1, 9);
+
+    p8_gfx_spr(core, 1, 10, 20, 1, 1, 0, 0);
+    assert(p8_gfx_pget(core, 10, 20) == 9);
+    assert(p8_gfx_pget(core, 17, 20) == 2);
+    assert(p8_gfx_pget(core, 10, 27) == 3);
+    assert(p8_gfx_pget(core, 17, 27) == 0); // transparent source colour
+
+    p8_gfx_cls(core, 0);
+    p8_gfx_spr(core, 1, 30, 40, 1, 1, 1, 1);
+    assert(p8_gfx_pget(core, 30, 40) == 0);
+    assert(p8_gfx_pget(core, 37, 40) == 3);
+    assert(p8_gfx_pget(core, 30, 47) == 2);
+    assert(p8_gfx_pget(core, 37, 47) == 9);
+
+    p8_gfx_cls(core, 0);
+    p8_core_mset(core, 2, 3, 1);
+    p8_gfx_map(core, 2, 3, 50, 60, 1, 1, 0);
+    assert(p8_gfx_pget(core, 50, 60) == 9);
+    assert(p8_gfx_pget(core, 57, 60) == 2);
+
+    p8_gfx_cls(core, 0);
+    p8_core_poke(core, 0x3001, 1u << 2);
+    p8_gfx_map(core, 2, 3, 70, 80, 1, 1, 1u << 1);
+    assert(p8_gfx_pget(core, 70, 80) == 0);
+    p8_gfx_map(core, 2, 3, 70, 80, 1, 1, 1u << 2);
+    assert(p8_gfx_pget(core, 70, 80) == 9);
+    p8_core_destroy(core);
+}
+
 } // namespace
 
 int main()
@@ -319,6 +356,7 @@ int main()
     test_draw_stream();
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
+    test_raster_sprite_map_palette_and_flip();
     std::puts("p8 core tests: ok");
     return 0;
 }
