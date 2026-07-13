@@ -142,7 +142,8 @@ const screenshot = (id) => {
 };
 const figure = (id, caption) => {
   const value = screenshot(id);
-  return `<figure><img src="${escapeHtml(imagePath(value))}" alt="${escapeHtml(`${value.presentationMode} ${value.sceneId} at ${value.stateBoundary}`)}"><figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+  const image = escapeHtml(imagePath(value));
+  return `<figure><a class="zoom" href="${image}" target="_blank" rel="noopener"><img src="${image}" alt="${escapeHtml(`${value.presentationMode} ${value.sceneId} at ${value.stateBoundary}`)}"></a><figcaption>${escapeHtml(caption)} · open full size</figcaption></figure>`;
 };
 const staticSections = browser.sceneComparisons.map((comparison) => `
     <section class="comparison" id="static-${escapeHtml(comparison.id)}">
@@ -161,14 +162,22 @@ const temporalSections = browser.temporalComparisons.map((comparison) => `
       <div class="timeline hd-row"><strong>HD</strong>${comparison.frames.map((frame) =>
         figure(frame.targetScreenshotId, `u${frame.update} · ${frame.presentationMilliseconds} ms`)).join("")}</div>
     </section>`).join("");
-const elementSections = elements.map((element) => `
+const elementSections = elements.map((element) => {
+  assert.equal(element.sourceScreenshotIds.length, element.targetScreenshotIds.length,
+    `${element.id}: source/HD review anchors must pair one-for-one`);
+  const anchors = element.sourceScreenshotIds.map((sourceId, index) => `
+        <section class="anchor-pair">
+          <h4>Review anchor ${index + 1} · ${escapeHtml(screenshot(sourceId).stateBoundary)}</h4>
+          <div class="pair compact">
+            ${figure(sourceId, "SOURCE REVIEW ANCHOR")}
+            ${figure(element.targetScreenshotIds[index], "HD REVIEW ANCHOR")}
+          </div>
+        </section>`).join("");
+  return `
     <article class="element" id="element-${escapeHtml(element.id)}">
       <div class="element-heading"><div><span class="kind">${escapeHtml(element.kind)}</span><h3>${escapeHtml(element.id)}</h3></div><span class="review-state">${status === "accepted" ? "ACCEPTED" : "PENDING HUMAN REVIEW"}</span></div>
       <p>${escapeHtml(element.semanticRole)}</p>
-      <div class="pair compact">
-        ${figure(element.sourceScreenshotIds[0], "SOURCE REVIEW ANCHOR")}
-        ${figure(element.targetScreenshotIds[0], "HD REVIEW ANCHOR")}
-      </div>
+      <div class="anchor-list">${anchors}</div>
       <div class="criteria">
         <div><h4>Silhouette</h4>${list(element.criteria.silhouetteTraits)}</div>
         <div><h4>Required parts</h4>${list(element.criteria.requiredParts)}</div>
@@ -179,7 +188,10 @@ const elementSections = elements.map((element) => `
         <div><h4>Gameplay cues</h4>${list(element.criteria.gameplayCues)}</div>
         <div class="forbidden"><h4>Reject if</h4>${list(element.criteria.forbiddenTransformations)}</div>
       </div>
-    </article>`).join("");
+    </article>`;
+}).join("");
+const elementIndex = elements.map((element) =>
+  `<a href="#element-${escapeHtml(element.id)}">${escapeHtml(element.id)}</a>`).join("");
 
 const html = `<!doctype html>
 <html lang="en">
@@ -189,7 +201,7 @@ const html = `<!doctype html>
   <meta name="aico8-visual-runtime-sha256" content="${packetWithoutDocument.visualRuntimeSha256}">
   <title>Dust Bunny · hash-bound HD identity review</title>
   <style>
-    :root{color-scheme:dark;font:15px/1.45 Inter,system-ui,sans-serif;background:#080a12;color:#fff6ef}*{box-sizing:border-box}body{margin:0;padding:32px;background:radial-gradient(circle at top,#221326 0,#080a12 42rem)}main{max-width:1500px;margin:auto}h1{font-size:clamp(32px,6vw,72px);line-height:.95;margin:20px 0 16px}h2{margin:56px 0 18px;color:#ff92b7;font-size:30px}h3{margin:0 0 12px}.meta,.notice,.comparison,.element{border:1px solid #4c3045;background:#11141f;border-radius:22px}.meta,.notice{padding:18px 22px;margin:16px 0}.notice{border-color:#956438;background:#271c18}.hash{font:12px ui-monospace,monospace;color:#c9bdcb;overflow-wrap:anywhere}.comparison,.element{padding:22px;margin:18px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}.pair.compact{max-width:1100px}.timeline{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;align-items:start;margin:12px 0}.timeline strong{writing-mode:vertical-rl;padding:8px;color:#ff92b7}figure{margin:0;min-width:0}img{display:block;width:100%;border-radius:12px;border:1px solid #3b3341;background:#05060a}figcaption{font:11px ui-monospace,monospace;color:#bdb2c3;margin-top:5px}.element-heading{display:flex;justify-content:space-between;gap:16px}.kind,.review-state{font:11px ui-monospace,monospace;letter-spacing:.08em;color:#ff92b7}.criteria{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}.criteria>div{padding:14px;border-radius:14px;background:#191b27}.criteria h4{margin:0 0 8px}.criteria ul{margin:0;padding-left:18px}.none{color:#8e8794;font-style:italic}.forbidden{border:1px solid #8d394a;background:#291820!important}.phrase{padding:18px;border-radius:14px;background:#0a0c13;font-size:17px}nav a{color:#ff92b7;margin-right:12px}@media(max-width:800px){body{padding:14px}.pair,.criteria{grid-template-columns:1fr}.timeline{grid-auto-flow:row;grid-template-columns:1fr 1fr}.timeline strong{grid-column:1/-1;writing-mode:horizontal-tb}.element-heading{display:block}}
+    :root{color-scheme:dark;font:15px/1.45 Inter,system-ui,sans-serif;background:#080a12;color:#fff6ef}*{box-sizing:border-box}body{margin:0;padding:32px;background:radial-gradient(circle at top,#221326 0,#080a12 42rem)}main{max-width:1500px;margin:auto}h1{font-size:clamp(32px,6vw,72px);line-height:.95;margin:20px 0 16px}h2{margin:56px 0 18px;color:#ff92b7;font-size:30px}h3{margin:0 0 12px}.meta,.notice,.comparison,.element{border:1px solid #4c3045;background:#11141f;border-radius:22px}.meta,.notice{padding:18px 22px;margin:16px 0}.notice{border-color:#956438;background:#271c18}.hash{font:12px ui-monospace,monospace;color:#c9bdcb;overflow-wrap:anywhere}.comparison,.element{padding:22px;margin:18px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}.pair.compact{max-width:1100px}.anchor-pair{margin:18px 0}.anchor-pair h4{color:#ffb0c9}.timeline{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;align-items:start;margin:12px 0}.timeline strong{writing-mode:vertical-rl;padding:8px;color:#ff92b7}figure{margin:0;min-width:0}.zoom{display:block;cursor:zoom-in}img{display:block;width:100%;border-radius:12px;border:1px solid #3b3341;background:#05060a}figcaption{font:11px ui-monospace,monospace;color:#bdb2c3;margin-top:5px}.element-heading{display:flex;justify-content:space-between;gap:16px}.kind,.review-state{font:11px ui-monospace,monospace;letter-spacing:.08em;color:#ff92b7}.element-index{display:flex;flex-wrap:wrap;gap:8px}.element-index a,nav a{color:#ff92b7}.element-index a{border:1px solid #4c3045;border-radius:999px;padding:6px 10px;text-decoration:none}.criteria{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}.criteria>div{padding:14px;border-radius:14px;background:#191b27}.criteria h4{margin:0 0 8px}.criteria ul{margin:0;padding-left:18px}.none{color:#8e8794;font-style:italic}.forbidden{border:1px solid #8d394a;background:#291820!important}.phrase{padding:18px;border-radius:14px;background:#0a0c13;font-size:17px}nav{display:flex;flex-wrap:wrap;gap:12px}@media(max-width:800px){body{padding:14px}.pair,.criteria{grid-template-columns:1fr}.timeline{grid-auto-flow:row;grid-template-columns:1fr 1fr}.timeline strong{grid-column:1/-1;writing-mode:horizontal-tb}.element-heading{display:block}}
   </style>
 </head>
 <body><main>
@@ -197,10 +209,10 @@ const html = `<!doctype html>
   <h1>Dust Bunny<br>HD identity review</h1>
   <div class="meta"><strong>Status: ${escapeHtml(status)}</strong><p class="hash">Visual runtime ${packetWithoutDocument.visualRuntimeSha256}<br>Replay semantics ${packetWithoutDocument.replaySemanticsSha256}<br>Identity map ${packetWithoutDocument.identityMapSha256}<br>Browser evidence ${packetWithoutDocument.browserEvidenceSha256}${reviewDecision ? `<br>Review decision ${reviewDecision.sha256}` : ""}</p></div>
   <div class="notice"><strong>This page is the judgment gate, not an automated approval.</strong> Each source/HD pair is bound to the same unchanged-cart replay state. Review the 20 source-relative element contracts; do not apply universal traits to unrelated games.</div>
-  <nav><a href="#static">Static scenes</a><a href="#temporal">Animation and effects</a><a href="#elements">20 element contracts</a><a href="#decision">Decision</a></nav>
-  <h2 id="static">Five same-state scene pairs</h2>${staticSections}
-  <h2 id="temporal">Six exact-boundary temporal sequences</h2>${temporalSections}
-  <h2 id="elements">Twenty source-relative element contracts</h2>${elementSections}
+  <nav><a href="#static">${browser.sceneComparisons.length} static pairs</a><a href="#temporal">${browser.temporalComparisons.length} animation/effect sequences</a><a href="#elements">${elements.length} element contracts</a><a href="#decision">Decision</a></nav>
+  <h2 id="static">${browser.sceneComparisons.length} same-state scene pairs</h2>${staticSections}
+  <h2 id="temporal">${browser.temporalComparisons.length} exact-boundary temporal sequences</h2>${temporalSections}
+  <h2 id="elements">${elements.length} source-relative element contracts</h2><nav class="element-index">${elementIndex}</nav>${elementSections}
   <h2 id="decision">Human decision</h2>
   <div class="notice"><p>Accept only if every element preserves its own declared identity, required parts, proportions, expression where applicable, color hierarchy, motion, gameplay cues, and the shared visual grammar.</p><p>Reply with this exact sentence only after completing the review:</p><p class="phrase">${escapeHtml(acceptancePhrase)}</p></div>
   <script>

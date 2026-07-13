@@ -175,6 +175,16 @@ try {
   assert.equal(browser.interaction.resultStatus, "Level 1 complete. Spotless.");
   assert.equal(browser.interaction.testHooks, false);
   assert.equal(browser.interaction.stateWrites, false);
+  assert.equal(browser.persistenceInteraction.initialStatus, "Begin Dust Bunny.");
+  assert.equal(browser.persistenceInteraction.inputSurface, "visible touch-control buttons");
+  assert.equal(browser.persistenceInteraction.levelOnePath, "O,RRRRULLDDRR");
+  assert.equal(browser.persistenceInteraction.levelOneWinStatus, "Level 1 complete. Spotless.");
+  assert.equal(browser.persistenceInteraction.postProgressionStatus, "Level 2. 23 dust remaining.");
+  assert.equal(browser.persistenceInteraction.reloadedStatus, "Resume Dust Bunny.");
+  assert.equal(browser.persistenceInteraction.persistedLevel, 2);
+  assert.equal(browser.persistenceInteraction.testHooks, false);
+  assert.equal(browser.persistenceInteraction.stateMutation, "source-authored-persistence-only");
+  assert.equal(browser.persistenceInteraction.externalPersistenceWrites, true);
   const gameCompleteMilestone = replay.milestones.find(({ id }) => id === "game-complete");
   assert.ok(gameCompleteMilestone, "Canonical replay must declare game-complete");
   assert.match(browser.validationReplay.capturedArtifactSha256, /^[a-f0-9]{64}$/);
@@ -228,6 +238,7 @@ try {
   assert.equal(browser.checks.copyProvenanceEnforced, true);
   assert.equal(browser.checks.completeHostInputTraceIdentical, true);
   assert.equal(browser.checks.releaseLagRegressionRejected, true);
+  assert.equal(browser.checks.requiredPartReviewAnchorsComplete, true);
   assert.match(browser.systemicRegressionCoverage.completeHostInputProjection, /9,206-update canonical trace/);
   assert.deepEqual(browser.presentationDiagnostics.observedScenes,
     ["scene.title", "scene.intro", "scene.gameplay", "scene.win", "scene.ending"]);
@@ -260,7 +271,6 @@ try {
     assert.ok(typeof screenshot.stateBoundary === "string" && screenshot.stateBoundary.length > 0,
       `${screenshot.id}: state boundary`);
   }
-  assert.deepEqual(browser.sceneComparisons.map(({ id }) => id), ["title", "intro", "gameplay", "win", "ending"]);
   for (const comparison of browser.sceneComparisons) {
     const source = screenshotsById.get(comparison.sourceScreenshotId);
     const target = screenshotsById.get(comparison.targetScreenshotId);
@@ -272,7 +282,20 @@ try {
     assert.equal(source.stateBoundary, target.stateBoundary, `${comparison.id}: atomic state boundary`);
     assert.equal(comparison.sameRuntimeState, true, `${comparison.id}: same-runtime-state declaration`);
   }
-  assert.equal(browser.screenshots.length, 46, "retained static, mobile, and temporal screenshot count");
+  assert.equal(browser.screenshots.length, 58, "retained static, mobile, variant, and temporal screenshot count");
+  assert.deepEqual(browser.sceneComparisons.map(({ id }) => id), [
+    "title",
+    "title-resume-level-02",
+    "intro",
+    "intro-level-25",
+    "gameplay",
+    "character-white-segment",
+    "character-pink-segment",
+    "character-split-segment",
+    "character-pink-head",
+    "win",
+    "ending",
+  ]);
   assert.deepEqual(browser.temporalComparisons.map(({ id }) => id), [
     "title-motion",
     "intro-copy-timing",
@@ -414,6 +437,7 @@ try {
       controller_mismatches: inputProjection.surfaces.controller.mismatches,
       touch_mismatches: inputProjection.surfaces.touch.mismatches,
       real_touch_level_one_completed: browser.checks.realTouchLevelOneCompletion,
+      real_touch_resume_persistence_captured: browser.persistenceInteraction.reloadedStatus === "Resume Dust Bunny.",
       quick_tap_latch: inputProjection.bindings.quickTapLatch,
     },
     presentation: {

@@ -28,6 +28,7 @@
     "controller_mismatches": 0,
     "touch_mismatches": 0,
     "real_touch_level_one_completed": true,
+    "real_touch_resume_persistence_captured": true,
     "quick_tap_latch": "pending-until-consumed-by-logical-update"
   },
   "presentation": {
@@ -59,14 +60,15 @@
       "temporalIdentityEvidenceComplete": true,
       "exactUpdateCaptureBoundariesEnforced": true,
       "captureReadinessEnforced": true,
-      "representativeViewportMatrixComplete": true
+      "representativeViewportMatrixComplete": true,
+      "requiredPartReviewAnchorsComplete": true
     },
     "identity_human_review_accepted": false,
     "identity_review_packet_status": "pending-human-side-by-side-review",
     "identity_review_elements": 20,
-    "identity_review_static_pairs": 5,
+    "identity_review_static_pairs": 11,
     "identity_review_temporal_sequences": 6,
-    "identity_review_screenshots": 44,
+    "identity_review_screenshots": 56,
     "qualified_layout_profiles": 3
   },
   "package": {
@@ -94,10 +96,10 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "5f74554f3637fbaf30a84f60a56e3ade5583a772c0f972cfa887658980194832",
-    "browser_validation_sha256": "00d8d4df935328abc377a9bb3bba6354671116d55b604d36bdbf48dc0a002c5b",
-    "hd_review_packet_sha256": "deb23e304dbf5f67e4cfe9ff314e1af977d8b3a8ef0d14134bdb9b01a615cec8",
-    "hd_review_document_sha256": "4fb8f5f9d6a0e64950a29afd61cc33142b0a4d2150bb6dd4d17a50b89f78057e",
+    "hd_presentation_audit_sha256": "b22ea01c73476c5616effe6deaedf57c0c9fbc1d914e5c18ef02d1444a7a74c1",
+    "browser_validation_sha256": "ae128fb47708c419cebb2f2b19a8a705481d8647e78897de2acd0b75075870ee",
+    "hd_review_packet_sha256": "7d4ebd04bbd2487acfecf66568467a8e7e458830b3d8964fda9249bbd2626200",
+    "hd_review_document_sha256": "86a9454e47bded845b7d4689765ce6ff970d9530be7068e084c7f1dd58d25f4a",
     "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }

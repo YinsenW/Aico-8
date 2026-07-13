@@ -92,6 +92,9 @@ only its linked exits determine acceptance.
   browser record, replay semantics, visual runtime, elements, checks, and required
   statement. Acceptance promotes every review field together; a later selector
   must reproduce the reviewed draft before it can regenerate accepted evidence.
+- Every element's source/HD review anchors are ordered one-to-one and every pair
+  must bind the same scene and state; the review document renders every declared
+  anchor, including variant parts and reachable persisted UI states.
 - Cart-specific presentation adapters are injected from ignored private workspaces;
   the Apache source tree owns only the interface, loader, diagnostic reference
   renderer, and validators.

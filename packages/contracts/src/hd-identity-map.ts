@@ -331,8 +331,11 @@ function validateReview(value: unknown, path: string, accepted: boolean, errors:
   const keys = ["reviewer", "sourceSceneIds", "targetSceneIds", ...passKeys] as const;
   checkKeys(value, keys, keys, path, errors);
   checkString(value.reviewer, `${path}.reviewer`, errors);
-  checkUniqueStrings(value.sourceSceneIds, `${path}.sourceSceneIds`, errors);
-  checkUniqueStrings(value.targetSceneIds, `${path}.targetSceneIds`, errors);
+  const sourceSceneIds = checkUniqueStrings(value.sourceSceneIds, `${path}.sourceSceneIds`, errors);
+  const targetSceneIds = checkUniqueStrings(value.targetSceneIds, `${path}.targetSceneIds`, errors);
+  if (sourceSceneIds.length !== targetSceneIds.length) {
+    errors.push(`${path} must declare one ordered target review anchor for every source review anchor`);
+  }
   for (const key of passKeys) checkPassed(value[key], `${path}.${key}`, accepted, errors);
 }
 

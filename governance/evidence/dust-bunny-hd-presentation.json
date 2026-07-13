@@ -25,8 +25,8 @@
     "acceptance_may_not_be_inferred_from_code_or_automated_audit": true
   },
   "private_artifact_sha256": {
-    "hd_identity_map": "be189824fc3af76e4ecbf9b5ac0019c8233d0e068a44c50fbde3f1a7552d49b5",
-    "hd_presentation_audit": "5f74554f3637fbaf30a84f60a56e3ade5583a772c0f972cfa887658980194832"
+    "hd_identity_map": "593abca1fdb8779ca3523473b2254e9963888dfbf4f7f9309f341d6c9d131380",
+    "hd_presentation_audit": "b22ea01c73476c5616effe6deaedf57c0c9fbc1d914e5c18ef02d1444a7a74c1"
   },
   "selector": "TEST-QUALIFICATION-PRIVATE"
 }

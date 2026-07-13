@@ -153,4 +153,12 @@ describe("HD identity map v1", () => {
       "$.elements[0].review.silhouettePassed must pass before the map can be accepted",
     );
   });
+
+  it("rejects review anchors that cannot be paired one-for-one", () => {
+    const map = bunnyMap() as any;
+    map.elements[0].review.sourceSceneIds.push("source-level-02");
+    expect(validateHdIdentityMap(map).errors).toContain(
+      "$.elements[0].review must declare one ordered target review anchor for every source review anchor",
+    );
+  });
 });

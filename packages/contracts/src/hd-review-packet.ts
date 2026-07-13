@@ -245,6 +245,9 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
       stringValue(element.semanticRole, `${path}.semanticRole`, errors);
       const sources = stringList(element.sourceScreenshotIds, `${path}.sourceScreenshotIds`, errors, 1, true);
       const targets = stringList(element.targetScreenshotIds, `${path}.targetScreenshotIds`, errors, 1, true);
+      if (sources.length !== targets.length) {
+        errors.push(`${path} must declare one ordered target review anchor for every source review anchor`);
+      }
       const sourceScreenshots = sources.map((sourceId, sourceIndex) =>
         requireScreenshot(screenshots, sourceId, "reference", `${path}.sourceScreenshotIds[${sourceIndex}]`, errors)).filter(Boolean) as Screenshot[];
       const targetScreenshots = targets.map((targetId, targetIndex) =>
@@ -258,6 +261,13 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
       }
       if (JSON.stringify(sourceScenes) !== JSON.stringify(targetScenes)) {
         errors.push(`${path} source and target review anchors must cover the same scenes`);
+      }
+      for (let pairIndex = 0; pairIndex < Math.min(sourceScreenshots.length, targetScreenshots.length); pairIndex += 1) {
+        const source = sourceScreenshots[pairIndex]!;
+        const target = targetScreenshots[pairIndex]!;
+        if (source.stateBoundary !== target.stateBoundary || source.sceneId !== target.sceneId) {
+          errors.push(`${path} review anchor pair ${pairIndex} must bind the same state boundary and scene`);
+        }
       }
       const criteria = record(element.criteria, `${path}.criteria`, errors);
       if (criteria) {

@@ -163,4 +163,17 @@ describe("HD identity review packet", () => {
     expect(result.valid).toBe(false);
     expect(result.errors.join("\n")).toMatch(/non-empty string|safe relative path/);
   });
+
+  it("rejects reordered multi-anchor evidence even when boundary sets match", () => {
+    const mutated: any = structuredClone(packet);
+    mutated.screenshots.push(
+      { ...mutated.screenshots[0], id: "source-gameplay-later", stateBoundary: "canonical-replay:update:4:presentation-ms:0" },
+      { ...mutated.screenshots[1], id: "hd-gameplay-later", stateBoundary: "canonical-replay:update:4:presentation-ms:0" },
+    );
+    mutated.elements[0].sourceScreenshotIds = ["source-gameplay", "source-gameplay-later"];
+    mutated.elements[0].targetScreenshotIds = ["hd-gameplay-later", "hd-gameplay"];
+    const result = validateHdReviewPacket(mutated);
+    expect(result.valid).toBe(false);
+    expect(result.errors.join("\n")).toMatch(/review anchor pair 0.*same state boundary and scene/);
+  });
 });
