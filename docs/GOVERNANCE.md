@@ -12,6 +12,7 @@ remaining work recoverable without relying on conversation history.
 | System boundaries | `docs/ARCHITECTURE.md` | Accepted ADRs |
 | API, Job, and data relationships | `docs/CONTRACTS.md` | Headers, TypeScript types, schemas |
 | Development/recovery procedure | `docs/DEVELOPMENT.md` | Component READMEs |
+| Dependency order and work-package decomposition | `ROADMAP.md` | Status and Exit truth remain in the governance manifest |
 | Display field values | `specs/display-profiles.json` | `specs/display-1024.md` rationale |
 | Compatibility observations | Linked maintained references | Research captures and probes |
 
@@ -47,6 +48,8 @@ Source-repository visibility never satisfies a remake's independent rights gate.
 ## Stable IDs and cross-document changes
 
 - Product requirements use `REQ-*`; exits use `EXIT-*`; open work uses `OPEN-*`.
+- Roadmap work packages use `WP-M<stage>-<number>` and link requirements plus
+  acceptance exits; they never own status or completion claims.
 - Public boundaries use `API-*`; pipeline stages use `JOB-*`; durable payloads
   use `DATA-*`; executable selectors use `TEST-*`.
 - Requirement wording lives only in the PRD. Status and relationship edges live
@@ -74,6 +77,11 @@ An implementation commit is evidence of work, not evidence of acceptance.
 Research results and third-party runtime captures cannot close an exit that
 requires official-runtime or platform evidence.
 
+Batch work never shares acceptance state: each game keeps independent provenance,
+exits, evidence, selectors, failures, and remaining work. A collection build is
+not evidence that every included game passed; assembly must link each game's
+validation record and refuse incomplete modules.
+
 ## Change and review loop
 
 1. Select one requirement and one or more exits from `current_focus`.
@@ -86,9 +94,9 @@ requires official-runtime or platform evidence.
 
 ## Five-dimensional quality gate
 
-`scripts/verify-governance.mjs` evaluates ten objective checks in each dimension.
-The score is `passed / total × 10`; therefore all ten checks currently need to
-pass to clear the configured 9.5 threshold.
+`scripts/verify-governance.mjs` evaluates at least ten objective checks in each
+dimension. The score is `passed / total × 10`; because one failed check can drop
+a dimension below 9.5, the current policy expects every reported check to pass.
 
 | Dimension | What is measured |
 | --- | --- |

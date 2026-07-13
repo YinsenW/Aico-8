@@ -75,6 +75,13 @@ const coreDocuments = [
   'docs/CONTRACTS.md',
   'docs/DEVELOPMENT.md',
 ]
+const roadmap = text('ROADMAP.md')
+const workPackageIds = [...roadmap.matchAll(/\bWP-M\d+-\d+\b/g)].map((match) => match[0])
+const roadmapExitIds = [...roadmap.matchAll(/\bEXIT-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g)].map((match) => match[0])
+const roadmapStages = Array.from({ length: 10 }, (_, stage) => {
+  const section = roadmap.match(new RegExp(`## M${stage} [^\\n]*([\\s\\S]*?)(?=\\n## M\\d|$)`))?.[1] ?? ''
+  return { stage, section }
+})
 
 // Navigation and resource lifecycle: ten independently reported checks.
 record('navigation_lifecycle', 'bounded default navigation', project.navigation.length <= 7)
@@ -88,6 +95,8 @@ record('navigation_lifecycle', 'research lifecycle class declared', lifecycleCla
 record('navigation_lifecycle', 'generated evidence lifecycle declared', lifecycleClasses.has('executable_generated_evidence'))
 record('navigation_lifecycle', 'current focus requirement exists', requirements.has(project.current_focus.requirement_id))
 record('navigation_lifecycle', 'current focus exits exist', project.current_focus.exit_ids.every((id) => exits.has(id)))
+record('navigation_lifecycle', 'execution plan has an explicit owner',
+  project.concept_owners.execution_plan === 'ROADMAP.md' && exists('ROADMAP.md'))
 
 // Cross-document contract consistency.
 record('cross_document_consistency', 'requirement IDs are unique and valid',
@@ -110,6 +119,10 @@ record('cross_document_consistency', 'glossary IDs and terms are unique',
   unique(project.glossary.map((item) => item.id)) && unique(project.glossary.map((item) => item.term.toLowerCase())))
 record('cross_document_consistency', 'canonical glossary terms occur in owner documents',
   project.glossary.every((item) => glossaryCorpus.includes(item.term.toLowerCase())))
+record('cross_document_consistency', 'roadmap work-package IDs are unique and valid',
+  workPackageIds.length >= 20 && unique(workPackageIds) && workPackageIds.every((id) => /^WP-M\d+-\d+$/.test(id)))
+record('cross_document_consistency', 'roadmap names every product requirement',
+  project.requirements.every((item) => roadmap.includes(item.id)))
 const profiles = JSON.parse(text('specs/display-profiles.json')).profiles
 const hd = profiles['hd-1024-square']
 record('cross_document_consistency', 'display data matches architecture invariant',
@@ -142,6 +155,8 @@ record('traceability_acceptance', 'statuses and graph nodes are non-orphaned',
   project.requirements.every((item) => statuses.has(item.status)) &&
   project.exits.every((item) => statuses.has(item.status)) &&
   project.test_catalog.every((item) => item.covers.every((id) => exits.has(id))))
+record('traceability_acceptance', 'roadmap acceptance Exit references resolve',
+  roadmapExitIds.length > 0 && roadmapExitIds.every((id) => exits.has(id)))
 
 // Support for a new agent that has no conversation history.
 const agentEntry = text('AGENTS.md')
@@ -151,6 +166,7 @@ const repositorySources = sourceFiles()
 record('development_support', 'entry links governance status and owner documents',
   ['governance/project.json', 'docs/PRODUCT.md', 'docs/ARCHITECTURE.md', 'docs/CONTRACTS.md', 'docs/DEVELOPMENT.md']
     .every((needle) => agentEntry.includes(needle)))
+record('development_support', 'entry routes agents through the execution plan', agentEntry.includes('ROADMAP.md'))
 record('development_support', 'bootstrap procedure is explicit', /Bootstrap/i.test(development))
 record('development_support', 'recovery procedure is explicit', /Recovery after interruption/i.test(development))
 record('development_support', 'diagnosis procedure is explicit', /Diagnosis/i.test(development))
@@ -171,6 +187,9 @@ record('development_support', 'Python stays in research and test boundaries',
 record('development_support', 'C++ stays inside the compatibility kernel',
   repositorySources.filter((item) => /\.(cc|cpp|cxx)$/.test(item))
     .every((item) => item.startsWith('runtime/core/')))
+record('development_support', 'every roadmap stage has bounded work and acceptance',
+  roadmapStages.every(({ stage, section }) =>
+    (section.match(new RegExp(`WP-M${stage}-\\d+`, 'g')) ?? []).length >= 2 && section.includes('Acceptance:')))
 
 // Documentation leanness and maintainability.
 record('lean_maintainability', 'default entry set stays at seven or fewer', project.navigation.length <= 7)

@@ -5,10 +5,15 @@
 1. Inspect `git status --short --branch` and existing stacked PRs before editing.
 2. Run `pnpm verify:governance` and read `current_focus` in
    `governance/project.json`.
-3. Select one requirement and its exit/open-item set. Do not invent a parallel
-   status list in a plan, README, PR body, or research note.
+3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item
+   set. Do not invent a parallel status list in a plan, README, PR body, or
+   research note.
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
+
+Through the first complete remake, select only Web/PWA work or a compatibility,
+contract, asset, typography, input, or packaging dependency that directly blocks
+Web. Mobile, desktop, collections, ESP32, and the final Skill remain later work.
 
 ## Implementation loop
 
@@ -83,10 +88,15 @@ Before publishing or handing off:
 6. After CI, update a pending governance/CI exit only when the recorded run covers
    the selector and exact revision.
 
+For a batch, repeat this closure per game. Record partial success without
+promoting failed or unverified modules into assembly.
+
 ## Safe continuation order
 
 When governance is healthy, continue the active requirement in the manifest.
-For the first remake the intended dependency order is compatibility graphics and
-VM bindings, native/Wasm identity, browser input/playability, semantic HD mapping,
-assets/animation/effects, touch/accessibility/performance, then release packaging
-and the independent rights gate.
+For the first remake the order is VM plus required graphics/audio semantics,
+native/Wasm identity, private-cart Web boot, keyboard playability, semantic HD
+mapping, typography, complete assets/animation/effects, controller/touch,
+accessibility/performance, reproducible Web/PWA packaging, then the independent
+rights gate. Secondary platform work cannot enter this path unless it removes a
+shared blocker.
