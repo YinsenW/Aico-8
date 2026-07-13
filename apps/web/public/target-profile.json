@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "aico8.target-profile.v1",
+  "id": "web-pwa-private-research-v1",
+  "target": "web-pwa",
+  "outputProfile": "hd-1024-square",
+  "measurementEnvironment": {
+    "class": "local-http-active-browser",
+    "viewport": { "width": 1280, "height": 720 },
+    "warmupFrames": 30,
+    "sampleFrames": 180,
+    "droppedFrameThresholdMilliseconds": 25
+  },
+  "budgets": {
+    "artifactCountMax": 60,
+    "unpackedBytesMax": 3000000,
+    "largestArtifactBytesMax": 750000,
+    "startupMillisecondsMax": 4000,
+    "p95FrameMillisecondsMax": 25,
+    "droppedFrameRatioMax": 0.02
+  }
+}

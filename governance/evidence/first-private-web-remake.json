@@ -65,10 +65,22 @@
   "package": {
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
-    "artifact_count": 37,
-    "visual_runtime_sha256": "9f84242f5f565ee79865e9fee2ae56ccfacc2c44b2b893799a87d0b66e52de97",
+    "artifact_count": 39,
+    "visual_runtime_sha256": "7a0aba25dbb528a95c8107692d9849a9cd8723399d5cb6878b403bcf686af451",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
+  },
+  "release_technical": {
+    "target_profile_id": "web-pwa-private-research-v1",
+    "target_profile_sha256": "11fd3cd302aa4c9ad72917718ef622b10cd44fe2d54d6085519cfeab3a52ebf4",
+    "unpacked_bytes": 1759167,
+    "largest_artifact_bytes": 632022,
+    "startup_milliseconds": 345.6,
+    "sample_frames": 180,
+    "p95_frame_milliseconds": 16.8,
+    "max_frame_milliseconds": 18.4,
+    "dropped_frame_ratio": 0,
+    "status": "passed"
   },
   "private_evidence": {
     "lifecycle": "ignored authorized workspace",
@@ -76,7 +88,7 @@
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
     "hd_presentation_audit_sha256": "1f2d2c23fe352878c7525c8a098178a515eb2be2fcfcb86913632a8fe0240cfd",
-    "browser_validation_sha256": "5d89f8ddffc25592117c2573cdc03cef7d357040992ed446676d6ab0dd47d368",
+    "browser_validation_sha256": "53f04028fddfedffe22e1f18ac2a7d5d667ec6b2b96a8d3a110ab32994ff9988",
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }
 }

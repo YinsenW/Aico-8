@@ -12,12 +12,13 @@ const workspaceValue = process.env.AICO8_PRIVATE_WORKSPACE;
 assert.ok(workspaceValue, "AICO8_PRIVATE_WORKSPACE must point to the authorized ignored workspace");
 const workspace = path.resolve(workspaceValue);
 const browserEvidencePath = path.join(workspace, "evidence/browser-validation.json");
+const releaseTechnicalPath = path.join(workspace, "evidence/release-technical.json");
 const canonicalReplayPath = path.join(workspace, "validation/canonical-replay-v1.json");
 const canonicalAuditPath = path.join(workspace, "validation/canonical-run-audit.json");
 const inputProjectionPath = path.join(workspace, "validation/input-surface-projection.json");
 const identityMapPath = path.join(workspace, "validation/hd-identity-map.json");
 const hdAuditPath = path.join(workspace, "validation/hd-presentation-audit.json");
-for (const file of [browserEvidencePath, canonicalReplayPath, canonicalAuditPath, identityMapPath, hdAuditPath,
+for (const file of [browserEvidencePath, releaseTechnicalPath, canonicalReplayPath, canonicalAuditPath, identityMapPath, hdAuditPath,
   path.join(workspace, "source.rom"), path.join(workspace, "code.p8.lua"),
   path.join(workspace, "web-overlay/dust-bunny-hd.ts")]) {
   assert.ok(fs.statSync(file, { throwIfNoEntry: false })?.isFile(), `Missing private trial input: ${file}`);
@@ -89,6 +90,16 @@ try {
   const manifestA = fs.readFileSync(path.join(outputA, "release-manifest.json"));
   const manifestB = fs.readFileSync(path.join(outputB, "release-manifest.json"));
   assert.deepEqual(manifestA, manifestB, "Two clean private builds must have byte-identical release manifests");
+  const technicalArguments = [
+    "--experimental-strip-types",
+    path.join(root, "scripts/verify-release-technical.ts"),
+    "--package", outputA,
+    "--evidence", releaseTechnicalPath,
+    "--browser-evidence", browserEvidencePath,
+    "--attestation", path.join(root, "governance/evidence/dust-bunny-release-technical.json"),
+    "--write", process.env.AICO8_WRITE_ATTESTATION === "1" ? "true" : "false",
+  ];
+  runNode(technicalArguments);
 
   const release = JSON.parse(manifestA);
   const replay = JSON.parse(fs.readFileSync(canonicalReplayPath, "utf8"));
@@ -97,6 +108,7 @@ try {
   const identityMap = JSON.parse(fs.readFileSync(identityMapPath, "utf8"));
   const hdAudit = JSON.parse(fs.readFileSync(hdAuditPath, "utf8"));
   const browser = JSON.parse(fs.readFileSync(browserEvidencePath, "utf8"));
+  const releaseTechnical = JSON.parse(fs.readFileSync(releaseTechnicalPath, "utf8"));
   assert.equal(replay.schemaVersion, "aico8.replay.v1");
   assert.equal(replay.result.completed, true);
   assert.equal(replay.canonicality.testHooks, false);
@@ -134,7 +146,7 @@ try {
   assert.equal(browser.schemaVersion, 5);
   assert.equal(browser.build.target, release.target);
   assert.equal(browser.build.outputProfile, release.output_profile);
-  assert.equal(browser.build.artifactCount, release.artifacts.length);
+  assert.equal(browser.build.artifactCount, release.measurements.artifact_count);
   assert.match(browser.build.captureReleaseManifestSha256, /^[a-f0-9]{64}$/);
   assert.equal(browser.build.visualRuntimeIdentitySchema, release.identities.visual_runtime_schema);
   assert.equal(browser.build.visualRuntimeSha256, release.identities.visual_runtime_sha256,
@@ -374,10 +386,22 @@ try {
     package: {
       target: release.target,
       output_profile: release.output_profile,
-      artifact_count: release.artifacts.length,
+      artifact_count: release.measurements.artifact_count,
       visual_runtime_sha256: release.identities.visual_runtime_sha256,
       validation_replay_semantics_sha256: release.identities.validation_replay_semantics_sha256,
       two_builds_byte_identical: true,
+    },
+    release_technical: {
+      target_profile_id: releaseTechnical.targetProfile.id,
+      target_profile_sha256: releaseTechnical.targetProfile.sha256,
+      unpacked_bytes: releaseTechnical.package.unpackedBytes,
+      largest_artifact_bytes: releaseTechnical.package.largestArtifactBytes,
+      startup_milliseconds: releaseTechnical.runtime.startupMilliseconds,
+      sample_frames: releaseTechnical.runtime.sampleFrames,
+      p95_frame_milliseconds: releaseTechnical.runtime.p95FrameMilliseconds,
+      max_frame_milliseconds: releaseTechnical.runtime.maxFrameMilliseconds,
+      dropped_frame_ratio: releaseTechnical.runtime.droppedFrameRatio,
+      status: releaseTechnical.status,
     },
     private_evidence: {
       lifecycle: "ignored authorized workspace",

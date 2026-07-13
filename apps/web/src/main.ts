@@ -1,9 +1,16 @@
 import { Application, Graphics, Text } from "pixi.js";
 
-import { assertReplay, REFERENCE_PROFILE, type ReplayV1 } from "@aico8/contracts";
+import {
+  assertReplay,
+  REFERENCE_PROFILE,
+  validateTargetProfile,
+  type ReplayV1,
+  type WebTargetProfileV1,
+} from "@aico8/contracts";
 
 import { InputController } from "./runtime/input.js";
 import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
+import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
 import {
@@ -77,6 +84,8 @@ if (!surface || !frame || !loadingCard || !loadingTitle || !loadingDetail || !ti
   || !status || !announcer || !pauseButton || !displayButton || !fullscreenButton || !touchControls) {
   throw new Error("Aico 8 player controls are incomplete");
 }
+const performanceFrame = frame;
+const performanceLoadingCard = loadingCard;
 
 const app = new Application();
 await app.init({
@@ -147,6 +156,52 @@ async function loadValidationReplay(
   return replay;
 }
 
+async function loadTargetProfile(url: URL): Promise<WebTargetProfileV1> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Unable to load Web target profile (${response.status})`);
+  const profile: unknown = await response.json();
+  const validation = validateTargetProfile(profile);
+  if (!validation.ok) throw new Error(`Invalid Web target profile: ${validation.errors.join("; ")}`);
+  return profile as WebTargetProfileV1;
+}
+
+function roundedMeasurement(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+function measureReleasePerformance(profile: WebTargetProfileV1): void {
+  if (performanceFrame.dataset.releasePerformanceStatus) return;
+  let settled = false;
+  const begin = (): void => {
+    if (settled) return;
+    settled = true;
+    performanceFrame.dataset.releasePerformanceStatus = "sampling";
+    const startupMilliseconds = roundedMeasurement(performance.now());
+    performanceFrame.dataset.releaseStartupMilliseconds = String(startupMilliseconds);
+    const environment = profile.measurementEnvironment;
+    void sampleFrameIntervals(environment.sampleFrames, environment.warmupFrames)
+      .then((intervals) => {
+        const summary = summarizeFrameIntervals(intervals, environment.droppedFrameThresholdMilliseconds);
+        performanceFrame.dataset.releaseFrameSampleCount = String(summary.sampleFrames);
+        performanceFrame.dataset.releaseP95FrameMilliseconds = String(summary.p95FrameMilliseconds);
+        performanceFrame.dataset.releaseMaxFrameMilliseconds = String(summary.maxFrameMilliseconds);
+        performanceFrame.dataset.releaseDroppedFrameRatio = String(summary.droppedFrameRatio);
+        performanceFrame.dataset.releaseRuntimeBudgetPassed = String(
+          startupMilliseconds <= profile.budgets.startupMillisecondsMax
+          && summary.p95FrameMilliseconds <= profile.budgets.p95FrameMillisecondsMax
+          && summary.droppedFrameRatio <= profile.budgets.droppedFrameRatioMax,
+        );
+        performanceFrame.dataset.releasePerformanceStatus = "complete";
+      })
+      .catch((error: unknown) => {
+        performanceFrame.dataset.releasePerformanceStatus = "failed";
+        performanceFrame.dataset.releasePerformanceError = error instanceof Error ? error.message : String(error);
+      });
+  };
+  performanceLoadingCard.addEventListener("transitionend", begin, { once: true });
+  window.setTimeout(begin, 300);
+}
+
 const input = new InputController();
 input.bindTouchControls(touchControls);
 let paused = false;
@@ -165,7 +220,12 @@ fullscreenButton.addEventListener("click", async () => {
 
 try {
   const manifestUrl = new URL(`${import.meta.env.BASE_URL}private/game.json`, window.location.origin);
-  const manifest = await loadGameManifest(manifestUrl);
+  const targetProfileUrl = new URL(`${import.meta.env.BASE_URL}target-profile.json`, window.location.origin);
+  const [manifest, targetProfile] = await Promise.all([
+    loadGameManifest(manifestUrl),
+    loadTargetProfile(targetProfileUrl),
+  ]);
+  frame.dataset.targetProfileId = targetProfile.id;
   title.textContent = manifest.title;
   credit.textContent = `Original by ${manifest.author}`
     + `${manifest.sourceLicense ? ` · ${manifest.sourceLicense}` : ""}`
@@ -303,6 +363,7 @@ try {
   pauseButton.disabled = false;
   status.textContent = validationPlaybackStatus
     ?? (manifest.researchOnly ? "Playing · research build" : "Playing");
+  measureReleasePerformance(targetProfile);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("game manifest (404)")) {

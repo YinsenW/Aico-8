@@ -1,8 +1,9 @@
 const CACHE_PREFIX = "aico8-web-";
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const CORE_ASSETS = [
   "./",
   "./asset-manifest.json",
+  "./target-profile.json",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -72,6 +73,7 @@ self.addEventListener("fetch", (event) => {
     const cache = await caches.open(CACHE_NAME);
     const mutablePath = event.request.mode === "navigate"
       || url.pathname.endsWith("/asset-manifest.json")
+      || url.pathname.endsWith("/target-profile.json")
       || url.pathname.includes("/kernel/")
       || url.pathname.includes("/private/")
       || url.pathname.includes("/fonts/");

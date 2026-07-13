@@ -50,3 +50,13 @@ export {
   type SourceVisualTokenDefinition,
   type SourceVisualTokenKind,
 } from "./hd-presentation-audit.js";
+export {
+  RELEASE_MANIFEST_SCHEMA_VERSION,
+  RELEASE_VALIDATION_SCHEMA_VERSION,
+  TARGET_PROFILE_SCHEMA_VERSION,
+  validateReleaseManifest,
+  validateReleaseValidation,
+  validateTargetProfile,
+  type ContractValidationResult,
+  type WebTargetProfileV1,
+} from "./release.js";

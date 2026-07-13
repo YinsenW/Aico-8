@@ -147,6 +147,14 @@ const artifacts = files.map((relative) => ({
   sha256: sha256(path.join(output, relative)),
   bytes: fs.statSync(path.join(output, relative)).size,
 }));
+const targetProfilePath = path.join(output, "target-profile.json");
+const targetProfile = JSON.parse(fs.readFileSync(targetProfilePath, "utf8"));
+if (targetProfile.schemaVersion !== "aico8.target-profile.v1"
+  || targetProfile.target !== "web-pwa"
+  || targetProfile.outputProfile !== "hd-1024-square") {
+  throw new Error("The packaged Web target profile is incompatible with this release build");
+}
+const artifactBytes = artifacts.map(({ bytes }) => bytes);
 const validationReplayArtifactPath = validationReplaySource
   ? `private/${id}/validation-replay.json`
   : undefined;
@@ -159,6 +167,7 @@ const releaseManifest = {
   target: "web-pwa",
   presentation,
   output_profile: "hd-1024-square",
+  target_profile: { id: targetProfile.id, sha256: sha256(targetProfilePath) },
   rights: { profile: "private-research-and-testing-only", sourceLicense, sourceUrl },
   audio: "original-silent-cart",
   identities: {
@@ -169,6 +178,12 @@ const releaseManifest = {
       validation_replay_semantics_schema: "aico8.validation-replay-semantics.v1",
       validation_replay_semantics_sha256: validationReplaySemanticsSha256(validationReplay),
     } : {}),
+  },
+  measurements: {
+    artifact_count: artifacts.length + 1,
+    unpacked_bytes: artifactBytes.reduce((sum, bytes) => sum + bytes, 0),
+    largest_artifact_bytes: Math.max(...artifactBytes),
+    release_manifest_bytes: 1,
   },
   inputs: [
     { path: "source.rom", sha256: sha256(romSource), bytes: fs.statSync(romSource).size },
@@ -181,5 +196,20 @@ const releaseManifest = {
   ],
   artifacts,
 };
-fs.writeFileSync(path.join(output, "release-manifest.json"), `${JSON.stringify(releaseManifest, null, 2)}\n`);
+const artifactTotalBytes = artifactBytes.reduce((sum, bytes) => sum + bytes, 0);
+let releaseManifestBytes = 1;
+let serializedReleaseManifest = "";
+for (let attempt = 0; attempt < 10; attempt += 1) {
+  releaseManifest.measurements.release_manifest_bytes = releaseManifestBytes;
+  releaseManifest.measurements.unpacked_bytes = artifactTotalBytes + releaseManifestBytes;
+  releaseManifest.measurements.largest_artifact_bytes = Math.max(releaseManifestBytes, ...artifactBytes);
+  serializedReleaseManifest = `${JSON.stringify(releaseManifest, null, 2)}\n`;
+  const measuredBytes = Buffer.byteLength(serializedReleaseManifest);
+  if (measuredBytes === releaseManifestBytes) break;
+  releaseManifestBytes = measuredBytes;
+}
+if (Buffer.byteLength(serializedReleaseManifest) !== releaseManifestBytes) {
+  throw new Error("Release manifest byte measurement did not converge");
+}
+fs.writeFileSync(path.join(output, "release-manifest.json"), serializedReleaseManifest);
 process.stdout.write(`Private Web/PWA package: ${output}\n`);

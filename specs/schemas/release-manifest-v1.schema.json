@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/release-manifest-v1.schema.json",
+  "title": "Aico 8 release manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "game", "target", "presentation", "output_profile", "target_profile", "rights", "audio", "identities", "measurements", "inputs", "artifacts"],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "sizedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "properties": {
+    "schema_version": { "const": 1 },
+    "game": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "author"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1 },
+        "author": { "type": "string", "minLength": 1 }
+      }
+    },
+    "target": { "const": "web-pwa" },
+    "presentation": { "$ref": "#/$defs/id" },
+    "output_profile": { "$ref": "#/$defs/id" },
+    "target_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "sourceLicense", "sourceUrl"],
+      "properties": {
+        "profile": { "$ref": "#/$defs/id" },
+        "sourceLicense": { "type": "string", "minLength": 1 },
+        "sourceUrl": { "type": "string", "minLength": 1 }
+      }
+    },
+    "audio": { "$ref": "#/$defs/id" },
+    "identities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visual_runtime_schema", "visual_runtime_sha256"],
+      "dependentRequired": {
+        "validation_replay_sha256": ["validation_replay_semantics_schema", "validation_replay_semantics_sha256"],
+        "validation_replay_semantics_schema": ["validation_replay_sha256", "validation_replay_semantics_sha256"],
+        "validation_replay_semantics_sha256": ["validation_replay_sha256", "validation_replay_semantics_schema"]
+      },
+      "properties": {
+        "visual_runtime_schema": { "const": "aico8.visual-runtime-identity.v1" },
+        "visual_runtime_sha256": { "$ref": "#/$defs/sha256" },
+        "validation_replay_sha256": { "$ref": "#/$defs/sha256" },
+        "validation_replay_semantics_schema": { "const": "aico8.validation-replay-semantics.v1" },
+        "validation_replay_semantics_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_count", "unpacked_bytes", "largest_artifact_bytes", "release_manifest_bytes"],
+      "properties": {
+        "artifact_count": { "type": "integer", "minimum": 1 },
+        "unpacked_bytes": { "type": "integer", "minimum": 0 },
+        "largest_artifact_bytes": { "type": "integer", "minimum": 0 },
+        "release_manifest_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "inputs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sizedFile" } },
+    "artifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sizedFile" } }
+  }
+}

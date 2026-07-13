@@ -203,6 +203,10 @@ The detailed mapping is defined in `specs/display-1024.md` and
   ten materially different games must cover the declared risk matrix before the
   Jobs or final Skill are treated as stable.
 - Fresh-clone builds for every supported platform profile.
+- Web release validation binds the target-profile hash, complete artifact
+  manifest, visual-runtime identity, real-browser environment, package size,
+  startup time, and settled frame samples in one fail-closed report. Android and
+  Linux profiles must extend this lineage rather than redefine Web gameplay.
 - Per-module save isolation, runtime reset, license completeness, and failure
   containment before any fixed collection passes.
 - Permission, attribution, notices, privacy, accessibility, and store-policy gates.
@@ -219,7 +223,7 @@ contracts rather than shared implementation details:
 - semantic text-run and typography-manifest schemas;
 - HD mapping manifest and asset pack;
 - batch, internal game-module, fixed-collection, display, and target profiles;
-- validation report and release manifest.
+- target profile, technical validation report, and release manifest.
 
 These contracts make it possible to improve the AI orchestration without
 silently changing game behavior.

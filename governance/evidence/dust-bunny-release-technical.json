@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "aico8.release-validation.v1",
+  "subject": {
+    "gameId": "dust-bunny-private-research",
+    "target": "web-pwa",
+    "visualRuntimeSha256": "7a0aba25dbb528a95c8107692d9849a9cd8723399d5cb6878b403bcf686af451"
+  },
+  "targetProfile": {
+    "id": "web-pwa-private-research-v1",
+    "sha256": "11fd3cd302aa4c9ad72917718ef622b10cd44fe2d54d6085519cfeab3a52ebf4"
+  },
+  "environment": {
+    "class": "local-http-active-browser",
+    "userAgentFamily": "Chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "package": {
+    "artifactCount": 39,
+    "unpackedBytes": 1759167,
+    "largestArtifactBytes": 632022
+  },
+  "runtime": {
+    "startupMilliseconds": 345.6,
+    "sampleFrames": 180,
+    "p95FrameMilliseconds": 16.8,
+    "maxFrameMilliseconds": 18.4,
+    "droppedFrameRatio": 0
+  },
+  "checks": {
+    "manifest": true,
+    "checksums": true,
+    "notices": true,
+    "accessibility": true,
+    "packageBudgets": true,
+    "runtimeBudgets": true
+  },
+  "status": "passed"
+}

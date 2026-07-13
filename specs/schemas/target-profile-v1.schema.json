@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/target-profile-v1.schema.json",
+  "title": "Aico 8 Web target profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "budgets"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.target-profile.v1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "target": { "const": "web-pwa" },
+    "outputProfile": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "measurementEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "viewport", "warmupFrames", "sampleFrames", "droppedFrameThresholdMilliseconds"],
+      "properties": {
+        "class": { "const": "local-http-active-browser" },
+        "viewport": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "warmupFrames": { "type": "integer", "minimum": 0 },
+        "sampleFrames": { "type": "integer", "minimum": 1 },
+        "droppedFrameThresholdMilliseconds": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactCountMax", "unpackedBytesMax", "largestArtifactBytesMax", "startupMillisecondsMax", "p95FrameMillisecondsMax", "droppedFrameRatioMax"],
+      "properties": {
+        "artifactCountMax": { "type": "integer", "minimum": 1 },
+        "unpackedBytesMax": { "type": "integer", "minimum": 1 },
+        "largestArtifactBytesMax": { "type": "integer", "minimum": 1 },
+        "startupMillisecondsMax": { "type": "integer", "minimum": 1 },
+        "p95FrameMillisecondsMax": { "type": "number", "exclusiveMinimum": 0 },
+        "droppedFrameRatioMax": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

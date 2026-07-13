@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/release-validation-v1.schema.json",
+  "title": "Aico 8 technical release validation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "subject", "targetProfile", "environment", "package", "runtime", "checks", "status"],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": "aico8.release-validation.v1" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gameId", "target", "visualRuntimeSha256"],
+      "properties": {
+        "gameId": { "$ref": "#/$defs/id" },
+        "target": { "const": "web-pwa" },
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "targetProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "userAgentFamily", "viewport"],
+      "properties": {
+        "class": { "const": "local-http-active-browser" },
+        "userAgentFamily": { "type": "string", "minLength": 1 },
+        "viewport": { "$ref": "#/$defs/viewport" }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactCount", "unpackedBytes", "largestArtifactBytes"],
+      "properties": {
+        "artifactCount": { "type": "integer", "minimum": 0 },
+        "unpackedBytes": { "type": "integer", "minimum": 0 },
+        "largestArtifactBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startupMilliseconds", "sampleFrames", "p95FrameMilliseconds", "maxFrameMilliseconds", "droppedFrameRatio"],
+      "properties": {
+        "startupMilliseconds": { "type": "number", "minimum": 0 },
+        "sampleFrames": { "type": "integer", "minimum": 1 },
+        "p95FrameMilliseconds": { "type": "number", "minimum": 0 },
+        "maxFrameMilliseconds": { "type": "number", "minimum": 0 },
+        "droppedFrameRatio": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "checksums", "notices", "accessibility", "packageBudgets", "runtimeBudgets"],
+      "properties": {
+        "manifest": { "type": "boolean" },
+        "checksums": { "type": "boolean" },
+        "notices": { "type": "boolean" },
+        "accessibility": { "type": "boolean" },
+        "packageBudgets": { "type": "boolean" },
+        "runtimeBudgets": { "type": "boolean" }
+      }
+    },
+    "status": { "enum": ["passed", "failed"] }
+  }
+}

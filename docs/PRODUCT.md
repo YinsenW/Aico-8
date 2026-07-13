@@ -189,10 +189,10 @@ Contracts: `DATA-INPUT-TRACE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`,
 
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 
-Generate Web/PWA release artifacts, notices, provenance, validation report,
-checksums, and release metadata. Fixed collections are allowed only after every
-included module passes independently. A build may be technically ready while
-public publication remains blocked by missing permission.
+Generate Web/PWA artifacts, notices, provenance, checksums, and release metadata.
+Each target profile declares measurable package, startup, and frame budgets; a
+same-build report must pass them in its named environment. Collections include
+only independently passing modules; technical readiness never grants publication or bypasses the independent permission and attribution rights gate.
 
 Contracts: `DATA-VALIDATION-001`, `DATA-RELEASE-001`, `JOB-PACKAGE-001`,
 `JOB-RELEASE-001`.

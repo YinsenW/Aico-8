@@ -37,7 +37,7 @@ const requiredFiles = [
   "kernel/aico8-kernel.js", "kernel/aico8-kernel.wasm",
   "fonts/AtkinsonHyperlegible-Regular.woff2", "fonts/AtkinsonHyperlegible-Bold.woff2",
   "fonts/OFL-Atkinson-Hyperlegible.txt", "private/game.json", "PRIVATE-RESEARCH-ONLY.txt",
-  "release-manifest.json",
+  "target-profile.json", "release-manifest.json",
 ];
 for (const relative of requiredFiles) {
   assert.ok(fs.statSync(path.join(output, relative), { throwIfNoEntry: false })?.isFile(), `Missing ${relative}`);
@@ -75,6 +75,15 @@ for (const relative of [game.rom, game.source, game.validationReplay].filter(Boo
   assert.ok(fs.statSync(path.join(output, "private", relative), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
 }
 
+const targetProfile = readJson("target-profile.json");
+assert.equal(targetProfile.schemaVersion, "aico8.target-profile.v1");
+assert.equal(targetProfile.target, "web-pwa");
+assert.equal(targetProfile.outputProfile, "hd-1024-square");
+assert.equal(targetProfile.measurementEnvironment.class, "local-http-active-browser");
+assert.ok(targetProfile.measurementEnvironment.warmupFrames >= 0);
+assert.ok(targetProfile.measurementEnvironment.sampleFrames >= 120);
+assert.ok(targetProfile.measurementEnvironment.droppedFrameThresholdMilliseconds > 0);
+
 const release = readJson("release-manifest.json");
 assert.equal(release.schema_version, 1);
 assert.equal(release.target, "web-pwa");
@@ -82,6 +91,8 @@ assert.equal(release.game.id, game.id);
 assert.equal(release.presentation, game.presentation);
 assert.equal(release.rights.sourceLicense, game.sourceLicense);
 assert.equal(release.rights.sourceUrl, game.sourceUrl);
+assert.equal(release.target_profile.id, targetProfile.id);
+assert.equal(release.target_profile.sha256, sha256(path.join(output, "target-profile.json")));
 
 const actualFiles = listFiles(output)
   .filter((relative) => relative !== "release-manifest.json")
@@ -94,6 +105,19 @@ for (const artifact of release.artifacts) {
   assert.equal(fs.statSync(file).size, artifact.bytes, `${artifact.path} byte count`);
   assert.equal(sha256(file), artifact.sha256, `${artifact.path} sha256`);
 }
+const releaseManifestBytes = fs.statSync(path.join(output, "release-manifest.json")).size;
+const unpackedBytes = release.artifacts.reduce((sum, artifact) => sum + artifact.bytes, releaseManifestBytes);
+const largestArtifactBytes = Math.max(releaseManifestBytes, ...release.artifacts.map(({ bytes }) => bytes));
+assert.equal(release.measurements.artifact_count, release.artifacts.length + 1);
+assert.equal(release.measurements.release_manifest_bytes, releaseManifestBytes);
+assert.equal(release.measurements.unpacked_bytes, unpackedBytes);
+assert.equal(release.measurements.largest_artifact_bytes, largestArtifactBytes);
+assert.ok(release.measurements.artifact_count <= targetProfile.budgets.artifactCountMax,
+  "Release artifact count exceeds target budget");
+assert.ok(release.measurements.unpacked_bytes <= targetProfile.budgets.unpackedBytesMax,
+  "Release unpacked bytes exceed target budget");
+assert.ok(release.measurements.largest_artifact_bytes <= targetProfile.budgets.largestArtifactBytesMax,
+  "Release largest artifact exceeds target budget");
 const validationReplayArtifactPath = game.validationReplay ? `private/${game.validationReplay}` : undefined;
 assert.equal(release.identities.visual_runtime_schema, "aico8.visual-runtime-identity.v1");
 assert.equal(
@@ -144,6 +168,8 @@ assert.match(html, /id="app"/);
 assert.match(serviceWorker, /private\/game\.json/);
 assert.match(serviceWorker, /aico8-kernel\.wasm/);
 assert.match(serviceWorker, /asset-manifest\.json/);
+assert.match(serviceWorker, /target-profile\.json/,
+  "PWA must retain the release target profile for offline validation");
 assert.match(serviceWorker, /event\.request\.mode === "navigate"/,
   "PWA navigation must refresh mutable builds before falling back offline");
 assert.match(serviceWorker, /url\.pathname\.includes\("\/kernel\/"\)/,
@@ -156,4 +182,4 @@ for (const relative of actualFiles.filter((file) => /\.(?:html|js|css|json|txt|w
     `${relative} exposes a local absolute path`);
 }
 
-process.stdout.write(`Web/PWA package verified: ${release.game.title} (${actualFiles.length} artifacts, ${game.presentation})\n`);
+process.stdout.write(`Web/PWA package verified: ${release.game.title} (${release.measurements.artifact_count} package files, ${actualFiles.length} checksummed artifacts, ${game.presentation})\n`);
