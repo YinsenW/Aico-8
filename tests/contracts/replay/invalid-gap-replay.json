@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "aico8.replay.v1",
+  "replayId": "synthetic.gapped.v1",
+  "gameId": "synthetic-fixture",
+  "cartSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "runtime": { "id": "aico8-wasm", "revision": "fixture-revision" },
+  "canonicality": {
+    "mode": "canonical-real-input",
+    "cartMutation": "none",
+    "compatibilityStateMutation": "none",
+    "inputSource": "pico8-buttons-only",
+    "logicalUpdatePolicy": "execute-all",
+    "testHooks": false,
+    "wallClockAcceleration": true
+  },
+  "trace": {
+    "schemaVersion": "aico8.input-trace.v1",
+    "updateHz": 30,
+    "totalUpdates": 8,
+    "initialState": {
+      "kind": "clean",
+      "persistenceSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "spans": [
+      { "startUpdate": 0, "endUpdateExclusive": 2, "players": [0] },
+      { "startUpdate": 3, "endUpdateExclusive": 8, "players": [0] }
+    ]
+  },
+  "requiredMilestoneIds": ["game-complete"],
+  "milestones": [{ "id": "game-complete", "kind": "game-complete", "atUpdate": 8 }],
+  "checkpoints": [{
+    "id": "complete",
+    "atUpdate": 8,
+    "hashes": { "stateSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" }
+  }],
+  "result": {
+    "completed": true,
+    "finalMilestoneId": "game-complete",
+    "finalStateSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "producer": { "name": "aico8-test", "version": "1", "sourceRevision": "fixture-revision" }
+}

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "subject": "first-private-web-remake",
   "game": "Dust Bunny",
   "distribution": "private-research-and-testing-only",
@@ -11,40 +11,48 @@
     "formal_release": false
   },
   "content": {
-    "unchanged_level_one_replay": true,
-    "real_level_maps_loaded": 30,
-    "win_transitions": 30,
+    "canonical_real_input": true,
+    "unchanged_cart": true,
+    "levels_completed": 30,
+    "logical_updates": 9206,
     "ending": true,
     "ending_restart": true,
     "progress_reset": true,
     "audio_profile": "original-silent-cart"
   },
-  "presentation_and_hosts": {
-    "desktopHdTitle": true,
-    "desktopOriginalFallback": true,
-    "introGameplayWinEndingHdStates": true,
-    "allThirtyLevelPresentationTraversal": true,
-    "touchLevelOneCompletion": true,
-    "keyboardResumeAndGameplay": true,
-    "controllerStandardMappingContract": true,
-    "saveRestoredAfterReload": true,
-    "pauseAndResume": true,
-    "mobile390x844Layout": true,
-    "pwaServiceWorkerInstalled": true,
-    "dynamicPresentationPrecached": true,
-    "offlineReloadAndPlay": true,
-    "endingRestart": true
+  "presentation": {
+    "automated_audit_status": "draft",
+    "total_observed_updates": 9224,
+    "source_tokens": 179,
+    "unmapped_source_tokens": 0,
+    "mixed_indexed_fragments": 0,
+    "state_mismatches": 0,
+    "browser_checks": {
+      "packagedBuildLoaded": true,
+      "realTouchLevelOneCompletion": true,
+      "mobileLayoutFitsViewport": true,
+      "touchTargetsMeetFloor": true,
+      "bundledFontsLoaded": true,
+      "hdDiagnosticsClean": true,
+      "sourceHdModeSwitchAtomic": true,
+      "authenticWinStateCaptured": true,
+      "pwaPackageVerified": true
+    },
+    "identity_human_review_accepted": false
   },
   "package": {
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 36,
-    "release_manifest_sha256": "778511d997ae0a164d2e180f5032c4bfe3c07662daccba08eac998d9c3654fc3",
+    "release_manifest_sha256": "b7abf88395fdf1c1e5d704ccf4450b7b3675fd9f75f1af8ac2a359e5629eb0ca",
     "two_builds_byte_identical": true
   },
   "private_evidence": {
     "lifecycle": "ignored authorized workspace",
     "retained": true,
-    "public_cart_or_derived_payload": false
+    "public_cart_or_derived_payload": false,
+    "canonical_run_audit_sha256": "c9017c0735df9f46146007e7661b5b4bf46b84fc322465b876a96142181a3a6a",
+    "hd_presentation_audit_sha256": "980ff47aac9b63e23f112ba2a5bc561f018c331552c23ff4ac4c424ae4f0d389",
+    "browser_validation_sha256": "e8be8386477c1284babdf44ca0d17e7ace03d98bc0977b38795c379d74992a68"
   }
 }

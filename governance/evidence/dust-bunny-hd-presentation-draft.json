@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "subject": "Dust Bunny HD presentation draft qualification",
+  "status": "draft-pending-human-side-by-side-review",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "observations": {
+    "identity_elements": 21,
+    "source_tokens": 179,
+    "scenes": 5,
+    "canonical_logical_updates": 9206,
+    "total_logical_updates_with_named_probes": 9224,
+    "named_reachable_state_probes": 2,
+    "unmapped_source_tokens": 0,
+    "mixed_indexed_fragments": 0,
+    "diagnostic_reference_switches": 0,
+    "state_mismatches": 0,
+    "coverage_mutation_rejected": true
+  },
+  "review": {
+    "identity_map_accepted": false,
+    "reviewer": "pending-human-side-by-side-review",
+    "acceptance_may_not_be_inferred_from_code_or_automated_audit": true
+  },
+  "private_artifact_sha256": {
+    "hd_identity_map": "f2626b043bf80658030eee8f3f4c79f48032f764c79d348d90b93a09966f787e",
+    "hd_presentation_audit": "980ff47aac9b63e23f112ba2a5bc561f018c331552c23ff4ac4c424ae4f0d389"
+  },
+  "selector": "TEST-QUALIFICATION-PRIVATE"
+}

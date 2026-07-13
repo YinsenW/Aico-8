@@ -78,6 +78,25 @@ An implementation commit is evidence of work, not evidence of acceptance.
 Research results and third-party runtime captures cannot close an exit that
 requires official-runtime or platform evidence.
 
+Evidence grades are ordered and never silently promoted:
+
+- `inventory`: static discovery; proves only that content or an API exists.
+- `instrumented_reachability`: hooks or controlled state reach a scene; useful
+  for coverage diagnosis, never for gameplay completion.
+- `model_candidate`: a solver, translator, or AI-authored trace that has not yet
+  passed transition-by-transition unchanged-cart differential validation; never
+  gameplay completion evidence.
+- `canonical_replay`: unchanged cart, ordinary button masks, every logical
+  update, and provenance-linked persistence complete the declared path.
+- `official_differential`: a canonical replay also matches licensed official
+  runtime checkpoints for the semantics named by the exit.
+- `manual_review`: a recorded human review of presentation, feel, accessibility,
+  or audio; supplements but cannot replace required executable evidence.
+
+An all-level or all-game claim requires canonical replay evidence for every
+required level, ending, and progression boundary. A test hook, state edit, level
+skip, synthetic win flag, or omitted logical update disqualifies that claim.
+
 Batch work never shares acceptance state: each game keeps independent provenance,
 exits, evidence, selectors, failures, and remaining work. A collection build is
 not evidence that every included game passed; assembly must link each game's

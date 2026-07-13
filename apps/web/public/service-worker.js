@@ -70,6 +70,23 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+    const mutablePath = event.request.mode === "navigate"
+      || url.pathname.endsWith("/asset-manifest.json")
+      || url.pathname.includes("/kernel/")
+      || url.pathname.includes("/private/")
+      || url.pathname.includes("/fonts/");
+    if (mutablePath) {
+      try {
+        const response = await fetch(event.request, { cache: "no-store" });
+        if (response.ok) await cache.put(event.request, response.clone());
+        return response;
+      } catch (error) {
+        const fallback = await cache.match(event.request)
+          ?? (event.request.mode === "navigate" ? await cache.match("./") : undefined);
+        if (fallback) return fallback;
+        throw error;
+      }
+    }
     const cached = await cache.match(event.request);
     if (cached) return cached;
     try {

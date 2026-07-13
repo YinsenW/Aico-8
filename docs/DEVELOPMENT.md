@@ -11,21 +11,23 @@
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
 
-Through the first complete remake, select only Web/PWA work or a compatibility,
-contract, asset, typography, input, or packaging dependency that directly blocks
-Web. Mobile, desktop, collections, ESP32, and the final Skill remain later work.
+Through the first complete remake, select only browser Web/PWA work or a
+compatibility, contract, asset, typography, input, or packaging dependency that
+directly blocks Web. Android packaging, Linux handheld profiles, collections,
+ESP32, and the final Skill remain later work.
 
 ## Implementation loop
 
 1. Write or adjust the smallest failing test/checkpoint that represents the exit.
 2. Change code behind the owning API or data contract.
-3. Preserve compatibility fallbacks and avoid unrelated cleanup.
+3. Preserve the separate compatibility reference path; never introduce mixed
+   indexed fragments into accepted HD presentation.
 4. Run the narrow selector, then every selector attached to the affected exit.
 5. Record exact implementation/evidence paths and remaining work in the manifest.
 6. Run governance verification and inspect the diff for ownership or terminology drift.
 
-Production Web, mobile, CLI, pipeline, presentation, and asset-tool changes use
-TypeScript. Python remains limited to research/migration tools and test harnesses;
+Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and
+asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses;
 do not add a new Python production service. C++ remains confined to the current
 compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
 
@@ -42,6 +44,9 @@ The exact catalog and availability are machine-owned by
 node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
+pnpm verify:hd-identity
+pnpm verify:hd-presentation
+pnpm verify:replay
 make -C runtime/core test
 make -C runtime/core wasm-test
 pnpm verify:web
@@ -50,6 +55,9 @@ pnpm verify:private-remake
 
 Private-archive selectors strengthen local evidence but never masquerade as
 public CI or enter the clean public repository history.
+`pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
+reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
+level/ending milestones, and broken replay lineage.
 `pnpm verify:private-remake` additionally requires `AICO8_PRIVATE_WORKSPACE` to
 point at the authorized ignored workspace. It rebuilds twice, regenerates the
 private content evidence, and checks the retained browser-review record; set
@@ -73,10 +81,27 @@ Official-runtime selectors remain pending until licensed captures are available.
 
 - Compatibility mismatch: isolate update number, input trace, RAM/state snapshot,
   raster/audio checkpoint, then compare against licensed official evidence.
+- Completion mismatch: first replay the unchanged cart using only recorded
+  button masks. Keep hook-driven reachability separately labeled and never use it
+  to close a level, ending, game, or qualification exit.
+- Solver-model mismatch: stop treating generated paths as evidence; isolate the
+  first divergent input and transition phase, then record one root-cause class,
+  one source-derived invariant, a minimal regression fixture, and a deliberately
+  faulty mutation that the selector must reject. Apply the correction to shared
+  transition semantics, never to a level number, coordinate, or saved path.
+- Before accepting a solver change, differentially compare wall rejection,
+  type-gated pre-move deposition, movement, recursive collection, all-segment
+  post-move cleanup, type-4 conversion, remaining count, and win transition
+  against the unchanged cart. Replay complete candidate prefixes again after any
+  semantic correction; previously generated candidates are stale until rechecked.
 - Native/Wasm mismatch: confirm identical source, toolchain identity, exported ABI,
   and byte buffers before changing gameplay code.
 - HD mismatch: run HD off/on against the same replay; any state divergence is a
   product defect even if the visual result looks correct.
+- HD omission: capture the raw scene-contextual token before render dispatch,
+  fix the shared classification/render rule, then add a deleted-mapping mutation
+  that must fail. Do not patch one level, coordinate, or tile occurrence, and do
+  not let renderer fallthrough masquerade as intentional empty space.
 - Documentation mismatch: locate the concept owner, remove duplicate claims, and
   update references/manifest edges rather than patching every copy.
 - Rights uncertainty: keep build/test private and leave release/publication exit open.
@@ -101,9 +126,8 @@ promoting failed or unverified modules into assembly.
 ## Safe continuation order
 
 When governance is healthy, continue the active requirement in the manifest.
-For the first remake the order is VM plus required graphics/audio semantics,
-native/Wasm identity, private-cart Web boot, keyboard playability, semantic HD
-mapping, typography, complete assets/animation/effects, controller/touch,
-accessibility/performance, reproducible Web/PWA packaging, then the independent
-rights gate. Secondary platform work cannot enter this path unless it removes a
-shared blocker.
+For the qualification program the order is Replay v1 contract, Dust Bunny's 30
+canonical level paths, build hardening, corpus risk inventory, then games 2–10
+one at a time through unchanged-cart replay, HD invariance, Web/PWA packaging,
+manual review, and the independent rights gate. Secondary platform work cannot
+enter this path unless it removes a shared blocker.

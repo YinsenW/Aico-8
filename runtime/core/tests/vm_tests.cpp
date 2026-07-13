@@ -95,6 +95,7 @@ std::vector<uint8_t> test_synthetic_cart_updates_raster_and_semantic_stream()
     assert(p8_vm_draw(vm));
     assert(p8_gfx_pget(core, 0, 0) == 9);
     assert(p8_gfx_pget(core, 1, 0) == 2);
+    assert(p8_gfx_pget(core, 8, 1) == 0); // zero map cell skips visible sprite 0
     assert(p8_gfx_pget(core, 16, 0) == 9);
     assert(p8_gfx_pget(core, 24, 0) == 7);
     assert(p8_gfx_pget(core, 26, 0) == 6);

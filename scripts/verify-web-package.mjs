@@ -107,6 +107,10 @@ assert.match(html, /id="app"/);
 assert.match(serviceWorker, /private\/game\.json/);
 assert.match(serviceWorker, /aico8-kernel\.wasm/);
 assert.match(serviceWorker, /asset-manifest\.json/);
+assert.match(serviceWorker, /event\.request\.mode === "navigate"/,
+  "PWA navigation must refresh mutable builds before falling back offline");
+assert.match(serviceWorker, /url\.pathname\.includes\("\/kernel\/"\)/,
+  "Unhashed kernel artifacts must refresh before using their offline fallback");
 assert.ok(warning.includes(game.author) && warning.includes(game.sourceLicense) && warning.includes(game.sourceUrl));
 
 for (const relative of actualFiles.filter((file) => /\.(?:html|js|css|json|txt|webmanifest)$/.test(file))) {

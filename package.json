@@ -15,7 +15,11 @@
     "verify": "pnpm verify:governance && pnpm verify:public && make -C runtime/core test && make -C runtime/core wasm-test && pnpm verify:web",
     "verify:governance": "node scripts/verify-governance.mjs",
     "verify:public": "node scripts/verify-public-repository.mjs",
+    "verify:hd-identity": "pnpm --filter @aico8/contracts exec vitest run src/hd-identity-map.test.ts",
+    "verify:hd-presentation": "pnpm --filter @aico8/contracts exec vitest run src/hd-presentation-audit.test.ts",
+    "verify:replay": "pnpm --filter @aico8/contracts exec vitest run src/replay.test.ts",
     "verify:private-remake": "node scripts/validate-private-remake.mjs",
+    "verify:qualification-private": "make -C runtime/core wasm && node scripts/validate-private-qualification.mjs",
     "verify:web-package": "node scripts/verify-web-package.mjs",
     "verify:web": "pnpm check && pnpm test && pnpm build"
   }

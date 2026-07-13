@@ -12,7 +12,7 @@ end
 function _draw()
  cls()
  pal(1,9)
- map(0,0,0,0,1,1)
+ map(0,0,0,0,2,1)
  spr(1,16,0)
  pset(24,0,7)
  rect(26,0,28,2,6)

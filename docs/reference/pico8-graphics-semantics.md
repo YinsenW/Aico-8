@@ -10,7 +10,8 @@ PICO-8 defines a fixed 128x128, 16-colour display and a 128x128 sprite sheet.
 Aico 8 therefore keeps one packed, indexed compatibility image as the
 authoritative result of cart drawing. The 1024x1024 renderer is a separate
 presentation layer. It can replace recognized objects with HD art, but it does
-not change logical coordinates or the fallback image.
+not change logical coordinates or the authoritative reference image. Accepted HD
+frames require complete modern coverage rather than mixed indexed fragments.
 
 ## Draw-state rules captured from the manual
 
@@ -37,6 +38,8 @@ not change logical coordinates or the fallback image.
   the low nibble.
 - `0x5f54` remaps GFX and `0x5f55` remaps the screen below memory/graphics APIs.
 - The second half of the sprite sheet and lower half of the 128x64 map share memory.
+- `map()` treats cell value `0` as empty and skips it even when sprite `0` has
+  visible pixels; layer filtering applies only to non-zero cells.
 
 ## Implemented interpretation
 

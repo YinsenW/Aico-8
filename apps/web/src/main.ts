@@ -155,12 +155,14 @@ try {
   let showHd = Boolean(hdRenderer);
   referenceRenderer.setVisible(!showHd);
   hdRenderer?.setVisible(showHd);
+  frame.dataset.presentationMode = showHd ? "hd" : "reference";
   displayButton.disabled = !hdRenderer;
   displayButton.textContent = showHd ? "Original view" : "HD view";
   displayButton.addEventListener("click", () => {
     showHd = !showHd;
     referenceRenderer.setVisible(!showHd);
     hdRenderer?.setVisible(showHd);
+    frame.dataset.presentationMode = showHd ? "hd" : "reference";
     displayButton.textContent = showHd ? "Original view" : "HD view";
   });
   let accumulator = 0;
@@ -175,6 +177,13 @@ try {
         const commands = runtime.drawCommands();
         referenceRenderer.render(runtime.framebuffer(), commands);
         hdRenderer?.update(runtime, commands);
+        const diagnostics = hdRenderer?.diagnostics?.();
+        if (diagnostics) {
+          frame.dataset.presentationScene = diagnostics.sceneId;
+          frame.dataset.unmappedVisualTokens = String(diagnostics.unmappedSourceTokenIds.length);
+          frame.dataset.mixedIndexedFragments = String(diagnostics.mixedIndexedFragments);
+          frame.dataset.diagnosticReferenceSwitches = String(diagnostics.diagnosticReferenceSwitches);
+        }
         const description = hdRenderer?.accessibleDescription?.();
         if (description && announcer.textContent !== description) announcer.textContent = description;
       }

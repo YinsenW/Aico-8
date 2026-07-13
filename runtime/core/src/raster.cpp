@@ -443,6 +443,11 @@ void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_
     for (int y = 0; y < cell_height; ++y) {
         for (int x = 0; x < cell_width; ++x) {
             const uint8_t sprite = p8_core_mget(core, cell_x + x, cell_y + y);
+            // PICO-8 map cell 0 is empty even when sprite 0 contains visible
+            // pixels. This is a map-level sentinel, not palette transparency.
+            if (sprite == 0) {
+                continue;
+            }
             const uint8_t flags = p8_core_peek(core,
                 static_cast<uint16_t>(kSpriteFlagsBase + sprite));
             if (layer == 0 || (flags & layer) != 0) {

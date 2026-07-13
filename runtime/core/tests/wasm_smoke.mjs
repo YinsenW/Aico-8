@@ -52,6 +52,7 @@ try {
   assert.equal(framebufferSize, 128 * 128);
   assert.equal(kernel.HEAPU8[framebuffer], 9);
   assert.equal(kernel.HEAPU8[framebuffer + 1], 2);
+  assert.equal(kernel.HEAPU8[framebuffer + 8 + 128], 0, "zero map cell must skip visible sprite 0");
 
   const mapPointer = kernel._malloc(256);
   const valuePointer = kernel._malloc(4);

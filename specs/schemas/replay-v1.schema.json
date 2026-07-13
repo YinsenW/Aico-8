@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/replay-v1.schema.json",
+  "title": "Aico 8 canonical replay v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "replayId", "gameId", "cartSha256", "runtime", "canonicality", "trace", "requiredMilestoneIds", "milestones", "checkpoints", "result", "producer"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.replay.v1" },
+    "replayId": { "$ref": "#/$defs/id" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "cartSha256": { "$ref": "#/$defs/sha256" },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "revision": { "type": "string", "minLength": 1 }
+      }
+    },
+    "canonicality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "cartMutation", "compatibilityStateMutation", "inputSource", "logicalUpdatePolicy", "testHooks", "wallClockAcceleration"],
+      "properties": {
+        "mode": { "const": "canonical-real-input" },
+        "cartMutation": { "const": "none" },
+        "compatibilityStateMutation": { "const": "none" },
+        "inputSource": { "const": "pico8-buttons-only" },
+        "logicalUpdatePolicy": { "const": "execute-all" },
+        "testHooks": { "const": false },
+        "wallClockAcceleration": { "type": "boolean" }
+      }
+    },
+    "trace": { "$ref": "input-trace-v1.schema.json" },
+    "requiredMilestoneIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "milestones": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/milestone" }
+    },
+    "checkpoints": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/checkpoint" }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed", "finalMilestoneId", "finalStateSha256"],
+      "properties": {
+        "completed": { "type": "boolean" },
+        "finalMilestoneId": { "$ref": "#/$defs/id" },
+        "finalStateSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "sourceRevision"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "sourceRevision": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "atUpdate"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["level-complete", "progression-boundary", "ending-reached", "game-complete", "restart-complete"] },
+        "atUpdate": { "type": "integer", "minimum": 1 },
+        "levelOrdinal": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "atUpdate", "hashes"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "atUpdate": { "type": "integer", "minimum": 0 },
+        "hashes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stateSha256"],
+          "properties": {
+            "stateSha256": { "$ref": "#/$defs/sha256" },
+            "rasterSha256": { "$ref": "#/$defs/sha256" },
+            "audioSha256": { "$ref": "#/$defs/sha256" },
+            "semanticSha256": { "$ref": "#/$defs/sha256" },
+            "persistenceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      }
+    }
+  }
+}

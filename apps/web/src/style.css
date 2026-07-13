@@ -332,10 +332,31 @@ h1 {
 
   .touch-controls {
     opacity: 1 !important;
-    transform: scale(0.82);
-    transform-origin: bottom center;
-    width: 122%;
-    margin-left: -11%;
+    width: 100%;
+    padding: 10px;
+    margin: 0;
+    transform: none;
+  }
+
+  .dpad {
+    width: 132px;
+    height: 132px;
+  }
+
+  .touch {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .action-pad {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .action {
+    width: 56px;
+    height: 56px;
   }
 }
 

@@ -18,7 +18,8 @@ or converting arbitrary pixel glyphs into guessed vector shapes.
    frame timing, and `print()` return value are computed before modernization.
 3. Modern font metrics never write back into Lua, RAM, replay state, collision,
    update cadence, or the semantic command order.
-4. Every modernized span retains an exact indexed-raster fallback.
+4. Accepted HD scenes have complete modern text coverage and never composite an
+   indexed glyph or run into the modern frame.
 5. Release fonts are bundled, fixed-version, hashed, licensed assets; an OS font
    stack is not a deterministic production fallback.
 6. Generated or inferred glyph shapes cannot silently replace cart-authored icons.
@@ -41,8 +42,9 @@ third-party font or Unicode conversion table is diagnostic only.
 After compatibility execution, the kernel exposes `DATA-TEXT-RUN-001`. The
 TypeScript adapter may modernize only spans classified `safe-modern`. It selects
 a role from `DATA-TYPOGRAPHY-001`, renders inside the declared anchor/layout box,
-and preserves command ordering. A span classified `reference-only` is composited
-from the compatibility frame. `review-required` remains reference-only in release.
+and preserves command ordering. `reference-only` and `review-required` are
+authoring blockers: they may appear in whole-scene diagnostic reference mode but
+cannot be composited into an accepted HD frame.
 
 ## Semantic text-run contract
 
@@ -56,7 +58,7 @@ The versioned text-run schema must preserve at least:
 - visual attributes and explicit side-effect boundaries;
 - semantic role, localization key when applicable, and source provenance;
 - classification: `safe-modern`, `reference-only`, or `review-required`;
-- reason codes and exact compatibility fallback region.
+- reason codes and exact diagnostic correspondence region.
 
 Effectful controls are never discarded from the compatibility stream. A modern
 run may represent their visual result, but it may not execute or approximate the
@@ -74,7 +76,7 @@ Each entry declares:
 - renderer, size, weight, tracking, line height, alignment, and color tokens;
 - anchor and fit policy, including minimum size and overflow behavior;
 - locale/script coverage and ordered bundled fallbacks;
-- compatibility fallback policy and any author-approved icon mapping.
+- diagnostic reference policy and any author-approved icon mapping.
 
 Font subsetting and atlas generation are reproducible Job outputs. Changing a
 font file, subset, metrics, renderer, or fit policy changes the manifest version
@@ -84,10 +86,10 @@ and invalidates visual/layout evidence.
 
 | Content | Default renderer | Reason |
 | --- | --- | --- |
-| Original/unknown P8SCII | Indexed compatibility raster | Exact glyphs, controls, and timing |
+| Original/unknown P8SCII | Whole-scene diagnostic reference only | Exact inspection without mixed presentation |
 | Curated Latin menu/HUD | Bundled MSDF/SDF bitmap text | Crisp, efficient scaling at 1024 |
 | Large CJK/localized set | Bundled WOFF2 canvas text, cached | Avoid impractical all-glyph atlases |
-| Cart-defined/inline glyph | Reference raster or approved icon asset | Meaning cannot be safely inferred |
+| Cart-defined/inline glyph | Author-approved modern glyph/icon asset | Meaning cannot be safely inferred |
 | Product shell/accessibility | Bundled web font plus semantic DOM/ARIA mirror | Readability and assistive technology |
 
 The renderer choice is per role and script, not one global font technology.
@@ -111,7 +113,7 @@ The initial inventory includes title/menu words such as `begin` and `resume`,
 level labels, completion copy such as `the end`, and any dynamic counters. Plain
 Latin spans without effectful controls are candidates for `safe-modern` after
 capture comparison. Decorative marks, one-off glyphs, custom-font output, or
-ambiguous bytes remain reference-only until explicitly reviewed.
+ambiguous bytes remain authoring blockers until explicitly mapped and reviewed.
 
 The first art-direction review selects Atkinson Hyperlegible Regular and Bold at
 upstream commit `1cb311624b2ddf88e9e37873999d165a8cd28b46` for the Latin game UI
@@ -128,7 +130,8 @@ P8SCII, layout-golden, localization, or accessibility exits.
 - Official P8SCII probes match pixels, cursor state, rightmost X, timing, memory,
   and audio side effects, including custom-font and inline-glyph cases.
 - Native and Wasm text runs are byte-identical for the same replay.
-- Every run has a valid classification and fallback; no unknown glyph disappears.
+- Every reachable run has an accepted modern mapping; HD replays contain zero
+  reference-only/review-required runs and zero scene-atomic reference switches.
 - Bundled fonts reproduce from declared inputs and contain all manifest glyphs.
 - Golden layouts pass at 1024, 720, responsive mobile, and supported locales.
 - HD typography on/off leaves compatibility checkpoints byte-identical.

@@ -29,8 +29,9 @@ remake is compatible.
 - Internal modules are build inputs, not a promised public cartridge format.
 - Multi-cart requests create an immutable batch manifest and isolated per-game
   Job graphs. Assembly consumes only modules whose required exits pass.
-- Web/PWA is the release-critical host. Mobile, desktop, and ESP32 preserve the
-  contracts but cannot delay the first complete Web remake.
+- Browser Web/PWA is the release-critical host. Android and Linux handhelds reuse
+  that TypeScript host and Wasm kernel; ESP32 remains a separate future native
+  host behind the same contracts. None can delay the first complete Web remake.
 
 ## Layers
 
@@ -74,10 +75,26 @@ The same core targets native platforms, WebAssembly, and ESP-IDF.
 Every graphics/audio/host call is recorded with original fixed-point arguments,
 payloads, and the relevant state revision. A game adapter can recognize stable
 roles such as player, wall, collectible, UI label, or particle. Unknown calls,
-dynamic memory, and palette tricks remain visible through the compatibility path.
+dynamic memory, and palette tricks remain inspectable in the separate
+compatibility/reference mode and block HD acceptance until explicitly modeled.
 
 HD replacement is presentation-only: it cannot mutate Lua state, compatibility
 RAM, collision, RNG, cartdata, or update cadence.
+
+Each game owns a declarative identity map from original tile/sprite/text/effect
+evidence to semantic role; invariant silhouette, anatomy/key parts, proportions,
+face/expression, color hierarchy, footprint, motion, and gameplay cues; allowed
+modernization dimensions; replacement asset; animation; layer; and diagnostic
+reference correspondence. A compact shared renderer interprets this data; new
+games do not earn arbitrary simulation branches in the HD layer. Generated art
+is accepted only as an authoring candidate, then reviewed, normalized, hashed,
+and frozen in the asset pack. No model is called at runtime, and changing model
+quality cannot change an accepted build.
+
+Identity traits are evidence-derived per element, not a global style checklist.
+The validator rejects drift from that element's source measurements and required
+parts; it does not prefer round over long faces, ears over no ears, or any other
+particular design vocabulary.
 
 ### 5. Text and typography
 
@@ -94,8 +111,9 @@ Release builds bundle fixed, hashed, licensed fonts instead of depending on OS
 font stacks. Curated Latin/game UI uses MSDF/SDF bitmap atlases where practical;
 large CJK/localization coverage uses bundled WOFF2 canvas text with deterministic
 layout constraints. Inline P8SCII glyphs, cart-defined fonts, ambiguous symbols,
-and effectful controls use reference raster fallback unless an author-approved
-mapping preserves meaning. The complete policy is owned by
+and effectful controls require an author-approved modern mapping that preserves
+meaning; otherwise the scene is diagnostic-only and the game cannot pass HD.
+The complete policy is owned by
 `specs/typography.md`.
 
 ### 6. Audio preservation
@@ -113,7 +131,19 @@ mapping preserves meaning. The complete policy is owned by
 - TypeScript/PixiJS implementation; WebGL baseline and optional WebGPU.
 - Vector/responsive UI, modern animation, particles, lighting, accessibility,
   touch input, localization, and diagnostic overlays.
-- Reference framebuffer available as an overlay and automatic fallback.
+- A versioned visual grammar fixes palette relationships, materials, silhouette,
+  line/shape language, depth, motion curves, effect intensity, and UI hierarchy.
+- Acceptance combines semantic coverage, deterministic scene goldens, source/HD
+  side-by-side identity-anchor review, thumbnail/silhouette recognition, and
+  full-replay legibility; a model judgment alone cannot pass fidelity or aesthetics.
+- Reference framebuffer available as an explicit diagnostic comparison. An
+  unforeseen mapping fault may switch the whole scene atomically to reference
+  mode, never individual elements; any such event fails release acceptance.
+- Completeness observes scene-contextual tile, sprite, text, command, effect,
+  and modern-UI tokens before renderer dispatch. Unknown combinations remain
+  explicit failures. Canonical replay may add named reachable-state probes;
+  HD-off/on runs compare compatibility hashes after every observed update, and
+  deleting an observed mapping must make the audit fail.
 - 720×720 and device-native outputs are delivery profiles derived from the
   canonical 1024 design space; they never alter simulation coordinates.
 
@@ -123,18 +153,33 @@ The detailed mapping is defined in `specs/display-1024.md` and
 ### 8. Assembly, packaging, and platform hosts
 
 - Assembly statically binds one game module or a fixed collection to a target profile.
-- Web/PWA first: Emscripten WebAssembly kernel, TypeScript presentation, portable
-  single-HTML convenience build, and installable/offline PWA release.
-- iOS/Android later: Capacitor shell using the same Web build and responsive profiles.
-- Desktop later: PWA first, then a Tauri/web shell when native packaging is justified.
-- ESP32-P4 later: ESP-IDF host, native core, fixed-memory assets, and board adapters.
+- Browser Web/PWA first: Emscripten WebAssembly kernel, TypeScript presentation,
+  portable single-HTML convenience build, and installable/offline PWA release.
+- Android next: a Capacitor/WebView shell packages the unchanged Web build as
+  APK/AAB and adds only lifecycle, storage, controller, audio-focus, and store adapters.
+- Linux handhelds later: use the same browser/PWA artifact first; add a thin Web
+  shell only for a measured device gap. Windows, macOS, and iOS are not targets.
+- ESP32-P4 is future independent work: ESP-IDF host, native core, fixed-memory
+  derived assets, and board adapters, with no browser or JavaScript requirement.
 
 ### 9. Validation and release
 
-- State diffs for every logical update in representative replays.
+- Canonical replays execute every original logical update on unchanged cart
+  bytes, accept only PICO-8 button masks, and forbid test hooks, state writes,
+  level skips, or synthetic completion; wall-clock acceleration may not skip an
+  update. Instrumented reachability remains a diagnostic evidence grade.
+- State diffs for every logical update in representative canonical replays.
+- Search-only shadow models are untrusted accelerators. Their transition order
+  and state must be differentially checked against the unchanged cart for every
+  candidate step before capture; mismatch handling fixes the semantic class and
+  adds invariant, regression, and mutation evidence rather than a level branch.
 - Raster checkpoint diffs and semantic-command diffs.
 - Audio status and rendered waveform comparisons.
 - HD-on/HD-off invariance checks for simulation state.
+- Qualification keeps per-game replay/evidence isolation and counts a game only
+  after every required level, ending, and progression boundary passes. At least
+  ten materially different games must cover the declared risk matrix before the
+  Jobs or final Skill are treated as stable.
 - Fresh-clone builds for every supported platform profile.
 - Per-module save isolation, runtime reset, license completeness, and failure
   containment before any fixed collection passes.

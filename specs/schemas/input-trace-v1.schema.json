@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/input-trace-v1.schema.json",
+  "title": "Aico 8 canonical logical input trace v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "updateHz", "totalUpdates", "initialState", "spans"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.input-trace.v1" },
+    "updateHz": { "enum": [30, 60] },
+    "totalUpdates": { "type": "integer", "minimum": 1 },
+    "initialState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "persistenceSha256"],
+          "properties": {
+            "kind": { "const": "clean" },
+            "persistenceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "persistenceSha256", "priorReplayId"],
+          "properties": {
+            "kind": { "const": "prior-replay" },
+            "persistenceSha256": { "$ref": "#/$defs/sha256" },
+            "priorReplayId": { "$ref": "#/$defs/id" }
+          }
+        }
+      ]
+    },
+    "spans": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["startUpdate", "endUpdateExclusive", "players"],
+        "properties": {
+          "startUpdate": { "type": "integer", "minimum": 0 },
+          "endUpdateExclusive": { "type": "integer", "minimum": 1 },
+          "players": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 0, "maximum": 63 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

@@ -76,6 +76,10 @@ if (presentation !== "reference") {
   }
   fs.mkdirSync(privateSourceRoot, { recursive: true });
   fs.copyFileSync(overlaySource, path.join(privateSourceRoot, `${presentation}.ts`));
+  const supportSource = path.join(path.dirname(overlaySource), "support");
+  if (fs.statSync(supportSource, { throwIfNoEntry: false })?.isDirectory()) {
+    fs.cpSync(supportSource, path.join(privateSourceRoot, "support"), { recursive: true });
+  }
 }
 
 const moduleRoot = path.join(privateRoot, id);

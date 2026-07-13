@@ -340,6 +340,14 @@ void test_raster_sprite_map_palette_and_flip()
     assert(p8_gfx_pget(core, 70, 80) == 0);
     p8_gfx_map(core, 2, 3, 70, 80, 1, 1, 1u << 2);
     assert(p8_gfx_pget(core, 70, 80) == 9);
+
+    // A zero map cell is an empty sentinel, not an instruction to draw sprite
+    // zero. Keep this independent of sprite-zero pixels and palt state.
+    p8_gfx_cls(core, 6);
+    p8_gfx_sset(core, 0, 0, 7);
+    p8_core_mset(core, 4, 5, 0);
+    p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
+    assert(p8_gfx_pget(core, 90, 100) == 6);
     p8_core_destroy(core);
 }
 

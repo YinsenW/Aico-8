@@ -11,8 +11,8 @@ future Skill will be a thin intelligent entry point that invokes its tested
 commands, evaluates results, and requests human review where artistic or legal
 judgment is required.
 
-Aico 8 is TypeScript-first: the Web/PWA, 1024 presentation, mobile shell,
-product CLI, asset pipeline, and validation UI use TypeScript. The current
+Aico 8 is TypeScript-first: the browser Web/PWA, Android WebView shell, Linux
+handheld Web host, 1024 presentation, product CLI, asset pipeline, and validation UI use TypeScript. The current
 prototype has a narrow C++ compatibility kernel; a gated Rust replacement spike
 must prove native, browser, and ESP32-P4 delivery before the language decision
 changes. See [ADR 0001](docs/decisions/0001-language-boundary.md) and the
@@ -69,7 +69,7 @@ flowchart LR
 | `runtime/core/` | Narrow portable compatibility kernel prototype: memory, scheduler, input, VM, reference raster/audio, and semantic stream. |
 | `runtime/third_party/` | Pinned and audited third-party runtime components. |
 | `apps/web/` | TypeScript/PixiJS 1024×1024 presentation bootstrap and future PWA host. |
-| `apps/mobile/` | Planned Capacitor iOS/Android packaging and lifecycle adapter. |
+| `apps/mobile/` | Planned Capacitor Android packaging and lifecycle adapter over the unchanged Web build. |
 | `platform/esp32/` | Planned ESP-IDF/ESP32-P4 host and renderer. |
 | `specs/` | Machine-readable and human-readable cross-layer contracts. |
 | `tests/` | Official semantic probes, secondary runtime captures, and deterministic replay definitions. |
