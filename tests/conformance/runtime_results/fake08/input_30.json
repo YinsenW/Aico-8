@@ -1,0 +1,55 @@
+{
+  "probe": "input_30",
+  "command": [
+    "/usr/bin/env",
+    "SDL_VIDEODRIVER=dummy",
+    "SDL_AUDIODRIVER=dummy",
+    "FAKE08_HEADLESS_FRAMES=76",
+    "FAKE08_INPUT_HELD=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1",
+    "fake08",
+    "-w",
+    "128",
+    "-h",
+    "128",
+    "tests/conformance/probes/input_30.p8"
+  ],
+  "returncode": 0,
+  "events": [
+    [
+      "btnp",
+      "1:true:true:true:1"
+    ],
+    [
+      "held",
+      "true:1:1"
+    ],
+    [
+      "btnp",
+      "8:true:true:true:1"
+    ],
+    [
+      "released",
+      "false:false:0"
+    ],
+    [
+      "btnp",
+      "26:true:true:true:1"
+    ],
+    [
+      "btnp",
+      "27:true:true:true:1"
+    ],
+    [
+      "btnp",
+      "30:true:true:true:1"
+    ],
+    [
+      "btnp",
+      "33:true:true:true:1"
+    ],
+    [
+      "btnp",
+      "36:true:true:true:1"
+    ]
+  ]
+}

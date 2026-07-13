@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "default_profile": "hd-1024-square",
+  "profiles": {
+    "hd-1024-square": {
+      "logical_width": 128,
+      "logical_height": 128,
+      "logical_tile_size": 8,
+      "output_width": 1024,
+      "output_height": 1024,
+      "logical_scale": 8,
+      "output_tile_size": 64,
+      "sampling": "semantic",
+      "aspect": "square"
+    },
+    "compat-1024-integer": {
+      "logical_width": 128,
+      "logical_height": 128,
+      "output_width": 1024,
+      "output_height": 1024,
+      "framebuffer_width": 1024,
+      "framebuffer_height": 1024,
+      "offset_x": 0,
+      "offset_y": 0,
+      "integer_scale": 8,
+      "sampling": "nearest"
+    },
+    "hd-720-derived": {
+      "source_profile": "hd-1024-square",
+      "logical_width": 128,
+      "logical_height": 128,
+      "logical_tile_size": 8,
+      "output_width": 720,
+      "output_height": 720,
+      "logical_scale": 5.625,
+      "output_tile_size": 45,
+      "sampling": "high-quality-downsample",
+      "aspect": "square"
+    }
+  }
+}

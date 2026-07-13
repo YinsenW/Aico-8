@@ -1,0 +1,16 @@
+{
+  "probe": "raster_state",
+  "source": "PICO-8 v0.2.7 official manual",
+  "events": [
+    ["pset_pget", "8"],
+    ["camera_offset", "9"],
+    ["clip_outside", "0"],
+    ["clip_inside", "11"],
+    ["draw_palette", "12"],
+    ["display_palette_not_in_pget", "8"],
+    ["sprite_transparent", "0"],
+    ["sprite_opaque", "8"],
+    ["map_layer_rejected", "0"],
+    ["map_layer_accepted", "14"]
+  ]
+}

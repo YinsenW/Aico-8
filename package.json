@@ -1,0 +1,19 @@
+{
+  "name": "aico-8",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "pnpm --recursive --if-present build",
+    "check": "pnpm --recursive --if-present check",
+    "test": "pnpm --recursive --if-present test",
+    "verify": "pnpm verify:governance && pnpm verify:public && make -C runtime/core test && pnpm verify:web",
+    "verify:governance": "node scripts/verify-governance.mjs",
+    "verify:public": "node scripts/verify-public-repository.mjs",
+    "verify:web": "pnpm check && pnpm test && pnpm build"
+  }
+}

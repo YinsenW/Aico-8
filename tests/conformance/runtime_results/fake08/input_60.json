@@ -1,0 +1,31 @@
+{
+  "probe": "input_60",
+  "command": [
+    "/usr/bin/env",
+    "SDL_VIDEODRIVER=dummy",
+    "SDL_AUDIODRIVER=dummy",
+    "FAKE08_HEADLESS_FRAMES=50",
+    "FAKE08_INPUT_HELD=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1",
+    "fake08",
+    "-w",
+    "128",
+    "-h",
+    "128",
+    "tests/conformance/probes/input_60.p8"
+  ],
+  "returncode": 0,
+  "events": [
+    [
+      "btnp",
+      "1"
+    ],
+    [
+      "held",
+      "true:1:1"
+    ],
+    [
+      "btnp",
+      "8"
+    ]
+  ]
+}

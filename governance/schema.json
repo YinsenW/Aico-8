@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.local/schemas/governance-v1.json",
+  "title": "Aico 8 governance and traceability contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "quality_gate",
+    "navigation",
+    "resource_classes",
+    "concept_owners",
+    "glossary",
+    "contracts",
+    "requirements",
+    "exits",
+    "open_items",
+    "test_catalog",
+    "current_focus"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "quality_gate": {
+      "type": "object",
+      "required": ["minimum_dimension_score", "dimensions"],
+      "properties": {
+        "minimum_dimension_score": { "type": "number", "minimum": 9.5, "maximum": 10 },
+        "dimensions": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "navigation": {
+      "type": "array",
+      "maxItems": 7,
+      "items": { "$ref": "#/$defs/document" }
+    },
+    "resource_classes": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["class", "locations", "policy"],
+        "properties": {
+          "class": { "type": "string" },
+          "locations": { "type": "array", "items": { "type": "string" } },
+          "policy": { "type": "string" }
+        }
+      }
+    },
+    "concept_owners": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "term", "definition"],
+        "properties": {
+          "id": { "pattern": "^TERM-[A-Z0-9-]+$" },
+          "term": { "type": "string" },
+          "definition": { "type": "string" }
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "required": ["apis", "jobs", "data"],
+      "properties": {
+        "apis": { "type": "array", "items": { "$ref": "#/$defs/contract" } },
+        "jobs": { "type": "array", "items": { "$ref": "#/$defs/contract" } },
+        "data": { "type": "array", "items": { "$ref": "#/$defs/contract" } }
+      }
+    },
+    "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+    "exits": { "type": "array", "items": { "$ref": "#/$defs/exit" } },
+    "open_items": { "type": "array", "items": { "$ref": "#/$defs/openItem" } },
+    "test_catalog": { "type": "array", "items": { "$ref": "#/$defs/test" } },
+    "current_focus": {
+      "type": "object",
+      "required": ["objective", "requirement_id", "exit_ids", "resume_after_requirement_id"],
+      "properties": {
+        "objective": { "type": "string" },
+        "requirement_id": { "pattern": "^REQ-[A-Z0-9-]+$" },
+        "exit_ids": { "type": "array", "items": { "pattern": "^EXIT-[A-Z0-9-]+$" } },
+        "resume_after_requirement_id": { "pattern": "^REQ-[A-Z0-9-]+$" }
+      }
+    }
+  },
+  "$defs": {
+    "status": { "enum": ["planned", "in_progress", "verified", "blocked", "deprecated"] },
+    "document": {
+      "type": "object",
+      "required": ["id", "path", "role", "max_lines"],
+      "properties": {
+        "id": { "pattern": "^DOC-[A-Z0-9-]+$" },
+        "path": { "type": "string" },
+        "role": { "type": "string" },
+        "max_lines": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "required": ["id", "owner"],
+      "properties": {
+        "id": { "pattern": "^(API|JOB|DATA)-[A-Z0-9-]+$" },
+        "owner": { "type": "string" }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["id", "source", "status", "contract_ids", "exit_ids", "open_item_ids"],
+      "properties": {
+        "id": { "pattern": "^REQ-[A-Z0-9-]+$" },
+        "source": { "type": "string" },
+        "status": { "$ref": "#/$defs/status" },
+        "contract_ids": { "type": "array", "items": { "type": "string" } },
+        "exit_ids": { "type": "array", "minItems": 1, "items": { "pattern": "^EXIT-[A-Z0-9-]+$" } },
+        "open_item_ids": { "type": "array", "items": { "pattern": "^OPEN-[A-Z0-9-]+$" } }
+      }
+    },
+    "exit": {
+      "type": "object",
+      "required": ["id", "requirement_id", "statement", "status", "implementation", "evidence", "test_selectors"],
+      "properties": {
+        "id": { "pattern": "^EXIT-[A-Z0-9-]+$" },
+        "requirement_id": { "pattern": "^REQ-[A-Z0-9-]+$" },
+        "statement": { "type": "string" },
+        "status": { "$ref": "#/$defs/status" },
+        "implementation": { "type": "array", "items": { "type": "string" } },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "test_selectors": { "type": "array", "items": { "pattern": "^TEST-[A-Z0-9-]+$" } }
+      }
+    },
+    "openItem": {
+      "type": "object",
+      "required": ["id", "requirement_id", "exit_id", "next_action"],
+      "properties": {
+        "id": { "pattern": "^OPEN-[A-Z0-9-]+$" },
+        "requirement_id": { "pattern": "^REQ-[A-Z0-9-]+$" },
+        "exit_id": { "pattern": "^EXIT-[A-Z0-9-]+$" },
+        "next_action": { "type": "string" }
+      }
+    },
+    "test": {
+      "type": "object",
+      "required": ["id", "command", "availability", "covers"],
+      "properties": {
+        "id": { "pattern": "^TEST-[A-Z0-9-]+$" },
+        "command": { "type": "string" },
+        "availability": { "enum": ["public", "private", "unavailable"] },
+        "ci_job": { "type": ["string", "null"] },
+        "covers": { "type": "array", "items": { "pattern": "^EXIT-[A-Z0-9-]+$" } }
+      }
+    }
+  }
+}

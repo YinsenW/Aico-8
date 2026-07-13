@@ -1,0 +1,16 @@
+{
+  "probe": "numeric_memory",
+  "source": "PICO-8 v0.2.7 official manual",
+  "events": [
+    ["wrap_positive", "0x8000.0000"],
+    ["wrap_negative", "0x7fff.ffff"],
+    ["divide_positive_zero", "0x7fff.ffff"],
+    ["divide_negative_zero", "0x8000.0001"],
+    ["sin_quarter", "0xffff.0000"],
+    ["cos_zero", "0x0001.0000"],
+    ["sgn_zero", "0x0001.0000"],
+    ["integer_divide", "0x0004.0000"],
+    ["peek2_little_endian", "0x1234.0000"],
+    ["gfx_map_shared_alias", "0x0003.0000"]
+  ]
+}

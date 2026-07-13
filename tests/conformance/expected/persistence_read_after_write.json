@@ -1,0 +1,16 @@
+{
+  "probe": "persistence_read_after_write",
+  "source": "PICO-8 v0.2.7 changelog and official manual",
+  "precondition": "persistence_write.p8 completed in the same isolated home directory.",
+  "events": [
+    ["a_loaded", "true"],
+    ["a_value_0", "0x007b.8000"],
+    ["a_value_63", "0xfffd.c000"],
+    ["b_loaded", "true"],
+    ["b_value_0", "0x004d.0000"],
+    ["c_loaded", "true"],
+    ["c_value_0", "0x0003.0000"],
+    ["d_loaded", "true"],
+    ["d_value_0", "0x0004.0000"]
+  ]
+}

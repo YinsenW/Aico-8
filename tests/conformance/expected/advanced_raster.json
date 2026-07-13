@@ -1,0 +1,27 @@
+{
+  "probe": "advanced_raster",
+  "source": "PICO-8 v0.2.7 official manual",
+  "events": [
+    ["fillp_row_0", "8,8,8,8"],
+    ["fillp_row_1", "8,8,8,14"],
+    ["fillp_row_2", "8,8,14,14"],
+    ["fillp_row_3", "8,14,14,14"],
+    ["fillp_transparent_row", "11,3,11,3"],
+    ["secondary_sprite", "8,7"],
+    ["secondary_global", "8,7"],
+    ["draw_then_secondary", "8,7"],
+    ["embedded_pattern_registers", "205,171,0"],
+    ["embedded_pattern_row", "4,14,4,14"],
+    ["inverted_outside", "8"],
+    ["inverted_inside", "1"],
+    ["tline_default", "1,2,3,4,5,6,7,8"],
+    ["tline_mask_offset", "8,9,10,11,12,13,14,15"],
+    ["tline_pixel_precision", "1,2,3,4,5,6,7,8"],
+    ["gfx_to_screen_sget", "9,10"],
+    ["gfx_to_screen_peek", "169"],
+    ["screen_to_gfx_pget", "11,12"],
+    ["upper_ram_gfx", "12,13"],
+    ["upper_ram_map_read", "42,43"],
+    ["upper_ram_map_write", "44"]
+  ]
+}

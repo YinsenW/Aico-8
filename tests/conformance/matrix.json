@@ -1,0 +1,141 @@
+{
+  "normative_source": "https://www.lexaloffle.com/dl/docs/pico-8_manual.html",
+  "manual_version": "0.2.7",
+  "rule": "An implementation is conformant only when official-runtime results and documented expectations agree. Independent emulators are secondary evidence.",
+  "areas": [
+    {
+      "id": "numeric_memory",
+      "status": "executable",
+      "probe": "probes/numeric_memory.p8",
+      "covers": [
+        "16:16 overflow",
+        "divide-by-zero saturation",
+        "turn-based inverted sine",
+        "sgn(0)",
+        "integer division",
+        "little-endian peek2",
+        "gfx/map shared memory"
+      ]
+    },
+    {
+      "id": "scheduler_30",
+      "status": "executable",
+      "probe": "probes/scheduler_30.p8",
+      "covers": ["30 Hz update", "update/draw ordering", "time() progression"]
+    },
+    {
+      "id": "scheduler_60",
+      "status": "executable",
+      "probe": "probes/scheduler_60.p8",
+      "covers": ["60 Hz update", "update/draw ordering", "time() progression"]
+    },
+    {
+      "id": "raster_state",
+      "status": "executable",
+      "probe": "probes/raster_state.p8",
+      "covers": [
+        "pset/pget",
+        "camera",
+        "clip",
+        "draw palette",
+        "display palette isolation",
+        "sprite transparency",
+        "map layer flags"
+      ]
+    },
+    {
+      "id": "advanced_raster",
+      "status": "executable",
+      "probe": "probes/advanced_raster.p8",
+      "expected": "expected/advanced_raster.json",
+      "covers": [
+        "secondary palette",
+        "fillp on primitives",
+        "fillp on sprites",
+        "embedded color control bits",
+        "inverted drawing",
+        "tline precision and wrapping",
+        "video and map remapping"
+      ]
+    },
+    {
+      "id": "p8scii",
+      "status": "partially_executable",
+      "probe": "probes/p8scii.p8",
+      "expected": "expected/p8scii.json",
+      "covers": [
+        "cursor and color controls",
+        "delayed printing",
+        "inline glyphs",
+        "memory writes",
+        "audio commands",
+        "outlines",
+        "custom fonts"
+      ],
+      "deferred": ["frame-delayed printing", "P8SCII audio commands"]
+    },
+    {
+      "id": "input",
+      "status": "capture_ready",
+      "probes": ["probes/input_30.p8", "probes/input_60.p8"],
+      "traces": ["input_traces/btnp_30.json", "input_traces/btnp_60.json"],
+      "golden_status": "Official PICO-8 capture required; independent runtimes are not normative.",
+      "covers": [
+        "btn held state",
+        "btnp edge",
+        "15/4 frame repeat",
+        "60 Hz doubled delays",
+        "custom repeat registers",
+        "multiple updates per draw",
+        "devkit mouse and keyboard"
+      ]
+    },
+    {
+      "id": "audio",
+      "status": "capture_spec_ready",
+      "probe": "probes/audio_status.p8",
+      "capture_manifest": "audio_capture_manifest.json",
+      "corpus_analyzer": "../../tools/analyze_p8_audio.py",
+      "golden_status": "Official PICO-8 WAV and stat(46..57) captures required; independent runtimes are not normative.",
+      "covers": [
+        "eight base waveforms",
+        "custom SFX instruments",
+        "custom waveform instruments",
+        "all note effects",
+        "filters and raw property bits",
+        "loop and release",
+        "music flow and channel masks",
+        "audio stat history"
+      ]
+    },
+    {
+      "id": "language",
+      "status": "executable",
+      "probe": "probes/language.p8",
+      "expected": "expected/language.json",
+      "covers": [
+        "PICO shorthand syntax",
+        "one-based table helpers",
+        "P8SCII byte strings",
+        "coercion",
+        "metatables",
+        "coroutines"
+      ]
+    },
+    {
+      "id": "persistence_host",
+      "status": "partially_executable",
+      "probes": ["probes/persistence_write.p8", "probes/persistence_read.p8"],
+      "expected": ["expected/persistence_write_clean_home.json", "expected/persistence_read_after_write.json"],
+      "covers": [
+        "cartdata/dget/dset",
+        "cstore/reload",
+        "multi-cart parameters",
+        "pause menu callbacks",
+        "serial and GPIO adaptation",
+        "host lifecycle"
+      ],
+      "deferred": ["cstore/reload external-cart mutation", "multi-cart load parameters", "pause menu callbacks", "serial/GPIO"]
+    }
+  ]
+}

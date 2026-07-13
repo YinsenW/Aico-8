@@ -1,0 +1,19 @@
+{
+  "name": "@aico8/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "check": "tsc -p tsconfig.json",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@aico8/contracts": "workspace:*",
+    "pixi.js": "8.19.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "8.1.4"
+  }
+}

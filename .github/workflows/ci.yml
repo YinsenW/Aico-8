@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  public-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Audit public visibility and reachable history
+        run: node scripts/verify-public-repository.mjs
+
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify agent governance and traceability
+        run: node scripts/verify-governance.mjs
+
+  native-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Python sources
+        run: python3 -m py_compile tools/*.py tests/conformance/*.py
+      - name: Build and test portable core
+        run: make -C runtime/core test
+
+  web-product:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install TypeScript workspace
+        run: pnpm install --frozen-lockfile
+      - name: Check, test, and build Web product
+        run: pnpm verify:web

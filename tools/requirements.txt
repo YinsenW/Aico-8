@@ -1,0 +1,1 @@
+shrinko @ git+https://github.com/thisismypassport/shrinko8.git@5bf57274b35f0533413cd03b12204c8765d14372

@@ -1,0 +1,9 @@
+{
+  "name": "btnp_60",
+  "tick_rate": 60,
+  "update_count": 50,
+  "meaning": "Hold left continuously; default repeat delays must be doubled at 60 Hz.",
+  "spans": [
+    {"from_update": 1, "through_update": 50, "player_0_mask": 1}
+  ]
+}

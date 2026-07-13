@@ -1,0 +1,20 @@
+{
+  "probe": "p8scii",
+  "source": "PICO-8 v0.2.7 official manual Appendix A",
+  "events": [
+    ["inline_glyph_width", "8"],
+    ["inline_glyph_pixels", "7,0"],
+    ["repeat_width", "12"],
+    ["terminate_width", "8"],
+    ["foreground_control", "8"],
+    ["foreground_side_effect", "8"],
+    ["solid_background", "7,4"],
+    ["absolute_cursor_width", "16"],
+    ["absolute_cursor_pixel", "7"],
+    ["raw_memory_write", "97,98,99,100"],
+    ["custom_font_width", "38"],
+    ["custom_font_pixels", "6,0,6"],
+    ["outline_pixels", "8,3"],
+    ["underline_pixel", "3"]
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "z8lua",
+  "repository": "https://github.com/samhocevar/z8lua",
+  "branch": "pico8",
+  "commit": "8575dfbc524003c869c0aa05e109819302c576f9",
+  "status": "vendored-experimental",
+  "reason": "Pinned sources support the compatibility-kernel bootstrap. A tested local tonum patch is applied, while corpus syntax gaps remain release blockers.",
+  "local_patches": [
+    "lpico8lib.c: official tonum flags 0x3 raw 16:16 bits and flags 0x4 fallback"
+  ],
+  "licenses": [
+    "Lua MIT license for upstream Lua-derived files",
+    "WTFPL v2 for Sam Hocevar's PICO-8 fixed-point and library additions"
+  ]
+}

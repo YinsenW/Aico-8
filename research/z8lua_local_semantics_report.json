@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "runtime": "aico8-z8lua+tonum@8575dfbc5240",
+  "runtime_commit": null,
+  "test_count": 26,
+  "pass_count": 26,
+  "known_gap_count": 0,
+  "unexpected_failure_count": 0,
+  "cases": [
+    {
+      "name": "numeric",
+      "script": "tests/vm/z8lua_numeric.lua",
+      "returncode": 0,
+      "test_count": 8,
+      "pass_count": 8,
+      "comparisons": [
+        {
+          "event": "wrap_positive",
+          "expected": "0x8000.0000",
+          "actual": "0x8000.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "wrap_negative",
+          "expected": "0x7fff.ffff",
+          "actual": "0x7fff.ffff",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "divide_positive_zero",
+          "expected": "0x7fff.ffff",
+          "actual": "0x7fff.ffff",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "divide_negative_zero",
+          "expected": "0x8000.0001",
+          "actual": "0x8000.0001",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "sin_quarter",
+          "expected": "0xffff.0000",
+          "actual": "0xffff.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "cos_zero",
+          "expected": "0x0001.0000",
+          "actual": "0x0001.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "sgn_zero",
+          "expected": "0x0001.0000",
+          "actual": "0x0001.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "integer_divide",
+          "expected": "0x0004.0000",
+          "actual": "0x0004.0000",
+          "pass": true,
+          "known_gap": false
+        }
+      ],
+      "unparsed_output": []
+    },
+    {
+      "name": "language",
+      "script": "tests/vm/z8lua_language.lua",
+      "returncode": 0,
+      "test_count": 18,
+      "pass_count": 18,
+      "comparisons": [
+        {
+          "event": "shorthand",
+          "expected": "0x0003.0000",
+          "actual": "0x0003.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "add_return",
+          "expected": "0x0028.0000",
+          "actual": "0x0028.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "add_at_index",
+          "expected": "10,15,20,30,40",
+          "actual": "10,15,20,30,40",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "del_return",
+          "expected": "0x0014.0000",
+          "actual": "0x0014.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "deli_return",
+          "expected": "0x000a.0000",
+          "actual": "0x000a.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "table_after_delete",
+          "expected": "15,30,40",
+          "actual": "15,30,40",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "all_delete_current",
+          "expected": "1234",
+          "actual": "1234",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "string_index",
+          "expected": "b",
+          "actual": "b",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "string_index_ord",
+          "expected": "0x0080.0000",
+          "actual": "0x0080.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "ord_multi",
+          "expected": "120,121,122",
+          "actual": "120,121,122",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "coerce_add",
+          "expected": "0x0005.0000",
+          "actual": "0x0005.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "coerce_concat",
+          "expected": "n=4",
+          "actual": "n=4",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "tonum_hex",
+          "expected": "0x1234.abcd",
+          "actual": "0x1234.abcd",
+          "pass": true,
+          "known_gap": true
+        },
+        {
+          "event": "metatable_add",
+          "expected": "0x0010.0000",
+          "actual": "0x0010.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "coroutine_first",
+          "expected": "true,7,suspended",
+          "actual": "true,7,suspended",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "coroutine_second",
+          "expected": "true,8,dead",
+          "actual": "true,8,dead",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "bit_expression",
+          "expected": "0x0032.0000",
+          "actual": "0x0032.0000",
+          "pass": true,
+          "known_gap": false
+        },
+        {
+          "event": "sub_single",
+          "expected": "b",
+          "actual": "b",
+          "pass": true,
+          "known_gap": false
+        }
+      ],
+      "unparsed_output": []
+    }
+  ]
+}

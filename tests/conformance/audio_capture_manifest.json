@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "normative_oracle": {
+    "runtime": "Licensed official PICO-8",
+    "minimum_version": "0.2.7",
+    "manual": "https://www.lexaloffle.com/dl/docs/pico-8_manual.html",
+    "rule": "Do not bless files captured from FAKE-08 or another independent runtime as goldens."
+  },
+  "fixture": "probes/audio_status.p8",
+  "captures": [
+    {
+      "id": "all_sfx_wav",
+      "method": "Load the fixture in the SFX editor, then run EXPORT P8_AUDIO_SFX%D.WAV, or use the equivalent -export command-line form.",
+      "outputs": "p8_audio_sfx0.wav .. p8_audio_sfx63.wav",
+      "required_active_outputs": [0, 1],
+      "purpose": [
+        "base waveform and note-effect PCM",
+        "loop metadata-independent rendering",
+        "filter rendering"
+      ]
+    },
+    {
+      "id": "runtime_pcm_and_status",
+      "method": "Run probes/audio_status.p8 in the official native runtime. The cart records audio with extcmd(audio_rec/audio_end) and writes status once per _update60 call.",
+      "outputs": ["p8_audio_runtime.wav", "audio_status.csv"],
+      "logical_updates": 150,
+      "purpose": [
+        "music sequencing and fade",
+        "explicit channel playback",
+        "loop release",
+        "live SFX RAM copying",
+        "stat(46..57) tick-history transitions"
+      ]
+    },
+    {
+      "id": "corpus_stress_cart",
+      "cart": "132_Downstream_Dream_🛶.p8",
+      "method": "Internal research capture only unless author permission permits redistribution.",
+      "purpose": [
+        "all 16 waveform selectors",
+        "all eight note effects",
+        "filters",
+        "custom instruments",
+        "music flow flags"
+      ]
+    }
+  ],
+  "artifacts_to_record": [
+    "official PICO-8 build/version",
+    "host operating system and architecture",
+    "WAV container metadata and sample format",
+    "SHA-256 of each unmodified capture",
+    "fixture ROM SHA-256",
+    "capture command or exact interactive procedure"
+  ],
+  "comparison_layers": [
+    "raw SFX/music bytes must match exactly",
+    "stat trace must match per logical update",
+    "PCM length and transition positions must match exactly before resampling",
+    "sample-level comparison is preferred; any tolerance must be justified by measured official-runtime variation"
+  ]
+}

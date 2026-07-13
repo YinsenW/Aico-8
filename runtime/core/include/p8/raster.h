@@ -1,0 +1,53 @@
+#ifndef P8_RASTER_H
+#define P8_RASTER_H
+
+#include "p8/core.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+enum {
+    P8_SCREEN_WIDTH = 128,
+    P8_SCREEN_HEIGHT = 128,
+    P8_SCREEN_PIXELS = P8_SCREEN_WIDTH * P8_SCREEN_HEIGHT,
+};
+
+/* Restores the PICO-8 draw palette, transparency, clip, and camera defaults. */
+void p8_raster_reset(p8_core *core);
+
+/* Screen and sprite-sheet pixel access. Read functions return stored colours. */
+uint8_t p8_gfx_pget(const p8_core *core, int x, int y);
+void p8_gfx_pset(p8_core *core, int x, int y, uint8_t color);
+uint8_t p8_gfx_sget(const p8_core *core, int x, int y);
+void p8_gfx_sset(p8_core *core, int x, int y, uint8_t color);
+
+void p8_gfx_cls(p8_core *core, uint8_t color);
+void p8_gfx_camera(p8_core *core, int x, int y);
+void p8_gfx_camera_reset(p8_core *core);
+void p8_gfx_clip(p8_core *core, int x, int y, int width, int height,
+                 int intersect_previous);
+void p8_gfx_clip_reset(p8_core *core);
+
+void p8_gfx_pal(p8_core *core, uint8_t source, uint8_t target);
+void p8_gfx_pal_reset(p8_core *core);
+void p8_gfx_palt(p8_core *core, uint8_t color, int transparent);
+void p8_gfx_palt_reset(p8_core *core);
+int p8_gfx_is_transparent(const p8_core *core, uint8_t color);
+
+void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_rect(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_rectfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_circ(p8_core *core, int center_x, int center_y, int radius, uint8_t color);
+void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
+                     uint8_t color);
+
+/* Expands packed screen RAM to one 0..15 palette index per pixel. */
+size_t p8_gfx_copy_framebuffer_indexed(const p8_core *core, uint8_t *destination,
+                                       size_t capacity);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

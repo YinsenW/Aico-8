@@ -1,0 +1,18 @@
+{
+  "probe": "persistence_write_clean_home",
+  "source": "PICO-8 v0.2.7 changelog and official manual",
+  "precondition": "All four p8remake_conformance_* cartdata slots are absent.",
+  "events": [
+    ["a_initial_loaded", "false"],
+    ["a_dget_0", "0x007b.8000"],
+    ["a_dget_63", "0xfffd.c000"],
+    ["a_mapped_memory_0", "0x007b.8000"],
+    ["b_initial_loaded", "false"],
+    ["b_zero_initialized", "0x0000.0000"],
+    ["c_initial_loaded", "false"],
+    ["d_initial_loaded", "false"],
+    ["a_reloaded", "true"],
+    ["a_reloaded_0", "0x007b.8000"],
+    ["a_reloaded_63", "0xfffd.c000"]
+  ]
+}

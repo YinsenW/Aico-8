@@ -1,0 +1,11 @@
+{
+  "name": "btnp_30",
+  "tick_rate": 30,
+  "update_count": 38,
+  "meaning": "Hold left for 24 updates, release once, then hold for 13 updates after the cart selects a 3/2 repeat cadence.",
+  "spans": [
+    {"from_update": 1, "through_update": 24, "player_0_mask": 1},
+    {"from_update": 25, "through_update": 25, "player_0_mask": 0},
+    {"from_update": 26, "through_update": 38, "player_0_mask": 1}
+  ]
+}

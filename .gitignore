@@ -1,0 +1,25 @@
+.DS_Store
+Thumbs.db
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+runtime/core/build/
+runtime/third_party/z8lua/*.o
+runtime/third_party/z8lua/*.a
+runtime/third_party/z8lua/z8lua
+runtime/third_party/z8lua/lua
+
+# User-provided and extracted cartridge content is never published by default.
+pico8_carts/
+workspaces/
+private/
+captures/official/
+
+dist/
+coverage/
+node_modules/
+*.log

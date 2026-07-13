@@ -1,0 +1,281 @@
+{
+  "$schema": "./schema.json",
+  "schema_version": 1,
+  "quality_gate": {
+    "minimum_dimension_score": 9.5,
+    "dimensions": [
+      "navigation_lifecycle",
+      "cross_document_consistency",
+      "traceability_acceptance",
+      "development_support",
+      "lean_maintainability"
+    ]
+  },
+  "navigation": [
+    { "id": "DOC-AGENT-ENTRY", "path": "AGENTS.md", "role": "agent entry and safety rules", "max_lines": 160 },
+    { "id": "DOC-GOVERNANCE", "path": "docs/GOVERNANCE.md", "role": "ownership, lifecycle, and score policy", "max_lines": 250 },
+    { "id": "DOC-PRODUCT", "path": "docs/PRODUCT.md", "role": "product intent and requirement wording", "max_lines": 250 },
+    { "id": "DOC-ARCHITECTURE", "path": "docs/ARCHITECTURE.md", "role": "system and language boundaries", "max_lines": 250 },
+    { "id": "DOC-CONTRACTS", "path": "docs/CONTRACTS.md", "role": "API, Job, and data relationships", "max_lines": 250 },
+    { "id": "DOC-DEVELOPMENT", "path": "docs/DEVELOPMENT.md", "role": "implementation, recovery, tests, and handoff", "max_lines": 250 },
+    { "id": "DOC-STATUS", "path": "governance/project.json", "role": "current focus, status, exits, evidence, selectors, and open work", "max_lines": 700 }
+  ],
+  "resource_classes": [
+    {
+      "class": "authoritative_current",
+      "locations": ["AGENTS.md", "README.md", "ROADMAP.md", "docs/", "specs/", "governance/"],
+      "policy": "Update with the owning change; status exists only in governance/project.json."
+    },
+    {
+      "class": "decision_history",
+      "locations": ["docs/decisions/"],
+      "policy": "Accepted ADRs are append-only and are superseded by a new ADR."
+    },
+    {
+      "class": "maintained_reference",
+      "locations": ["docs/reference/"],
+      "policy": "Read only when linked by a contract or exit; primary sources remain authoritative."
+    },
+    {
+      "class": "research_evidence",
+      "locations": ["research/"],
+      "policy": "Preserve observations and supersession notices; never use as current status."
+    },
+    {
+      "class": "executable_generated_evidence",
+      "locations": ["tests/", "research/*.json", "CI logs"],
+      "policy": "Run or regenerate from declared inputs; do not hand-edit generated evidence."
+    },
+    {
+      "class": "private_input",
+      "locations": ["private/", "pico8_carts/", "workspaces/"],
+      "policy": "Local and non-publishable until the rights gate is verified."
+    }
+  ],
+  "concept_owners": {
+    "product_intent": "docs/PRODUCT.md",
+    "current_status": "governance/project.json",
+    "governance_policy": "docs/GOVERNANCE.md",
+    "system_architecture": "docs/ARCHITECTURE.md",
+    "language_boundary": "docs/decisions/0001-language-boundary.md",
+    "api_job_data_relationships": "docs/CONTRACTS.md",
+    "development_process": "docs/DEVELOPMENT.md",
+    "display_field_values": "specs/display-profiles.json",
+    "typography_system": "specs/typography.md",
+    "graphics_semantics_interpretation": "docs/reference/pico8-graphics-semantics.md"
+  },
+  "glossary": [
+    { "id": "TERM-COMPAT-STATE", "term": "compatibility state", "definition": "Authoritative PICO-8 VM, memory, timing, input, persistence, raster, and audio state." },
+    { "id": "TERM-HD-PRESENTATION", "term": "HD presentation", "definition": "Replaceable 1024 visual layer that cannot mutate compatibility state." },
+    { "id": "TERM-REQUIREMENT", "term": "requirement", "definition": "Stable product outcome whose wording is owned by the PRD." },
+    { "id": "TERM-EXIT", "term": "exit", "definition": "Binary acceptance condition attached to exactly one requirement." },
+    { "id": "TERM-EVIDENCE", "term": "evidence", "definition": "Durable artifact supporting an exit; implementation alone is insufficient." },
+    { "id": "TERM-SELECTOR", "term": "test selector", "definition": "Stable command identifier that validates named exits." },
+    { "id": "TERM-JOB", "term": "Job", "definition": "Versioned non-interactive pipeline operation with declared inputs and outputs." },
+    { "id": "TERM-RIGHTS", "term": "rights gate", "definition": "Independent permission and attribution decision required for publication." },
+    { "id": "TERM-SKILL", "term": "Skill", "definition": "Late thin orchestration layer over proven Jobs and contracts." },
+    { "id": "TERM-TEXT-RUN", "term": "semantic text run", "definition": "Ordered presentation record that preserves original P8SCII bytes, compatibility metrics, state, side-effect boundaries, and fallback classification." },
+    { "id": "TERM-TYPOGRAPHY-MANIFEST", "term": "typography manifest", "definition": "Versioned mapping from semantic text roles to bundled font assets, layout, coverage, licensing, and fallback policy." }
+  ],
+  "contracts": {
+    "apis": [
+      { "id": "API-CORE-001", "owner": "runtime/core/include/p8/core.h" },
+      { "id": "API-RASTER-001", "owner": "runtime/core/include/p8/raster.h" },
+      { "id": "API-VM-001", "owner": "runtime/core/include/p8/vm.h" },
+      { "id": "API-SEMANTIC-001", "owner": "runtime/core/include/p8/core.h" },
+      { "id": "API-TEXT-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "API-WASM-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "API-PRESENTATION-001", "owner": "packages/contracts/src/index.ts" },
+      { "id": "API-HOST-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "API-CLI-001", "owner": "docs/CONTRACTS.md" }
+    ],
+    "jobs": [
+      { "id": "JOB-INGEST-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-ANALYZE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-CAPTURE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-MODEL-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-ASSET-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-TYPOGRAPHY-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-INTEGRATE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-VALIDATE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-PACKAGE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "JOB-RELEASE-001", "owner": "docs/CONTRACTS.md" }
+    ],
+    "data": [
+      { "id": "DATA-CART-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-WORKSPACE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-INPUT-TRACE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-REPLAY-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-CHECKPOINT-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-HD-MAP-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-ASSET-PACK-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-TEXT-RUN-001", "owner": "specs/typography.md" },
+      { "id": "DATA-TYPOGRAPHY-001", "owner": "specs/typography.md" },
+      { "id": "DATA-VALIDATION-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-RELEASE-001", "owner": "docs/CONTRACTS.md" },
+      { "id": "DATA-GOVERNANCE-001", "owner": "governance/schema.json" }
+    ]
+  },
+  "requirements": [
+    {
+      "id": "REQ-INGEST-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["JOB-INGEST-001", "DATA-CART-001", "DATA-WORKSPACE-001"],
+      "exit_ids": ["EXIT-INGEST-ROUNDTRIP", "EXIT-INGEST-SCHEMA"],
+      "open_item_ids": ["OPEN-INGEST-SCHEMA"]
+    },
+    {
+      "id": "REQ-COMPAT-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["API-CORE-001", "API-RASTER-001", "API-VM-001", "DATA-REPLAY-001", "DATA-CHECKPOINT-001", "JOB-CAPTURE-001", "JOB-VALIDATE-001"],
+      "exit_ids": ["EXIT-COMPAT-BOOT", "EXIT-COMPAT-RASTER", "EXIT-COMPAT-WASM", "EXIT-COMPAT-OFFICIAL"],
+      "open_item_ids": ["OPEN-COMPAT-RASTER", "OPEN-COMPAT-WASM", "OPEN-COMPAT-OFFICIAL"]
+    },
+    {
+      "id": "REQ-HD-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["API-SEMANTIC-001", "API-PRESENTATION-001", "DATA-HD-MAP-001", "DATA-ASSET-PACK-001", "JOB-MODEL-001", "JOB-ASSET-001", "JOB-INTEGRATE-001"],
+      "exit_ids": ["EXIT-HD-DISPLAY", "EXIT-HD-FALLBACK", "EXIT-HD-INVARIANCE"],
+      "open_item_ids": ["OPEN-HD-MAPPING", "OPEN-HD-INVARIANCE"]
+    },
+    {
+      "id": "REQ-TYPOGRAPHY-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["API-TEXT-001", "DATA-TEXT-RUN-001", "DATA-TYPOGRAPHY-001", "DATA-ASSET-PACK-001", "JOB-TYPOGRAPHY-001", "JOB-VALIDATE-001"],
+      "exit_ids": ["EXIT-TYPE-P8SCII", "EXIT-TYPE-IR", "EXIT-TYPE-HD", "EXIT-TYPE-FALLBACK", "EXIT-TYPE-A11Y"],
+      "open_item_ids": ["OPEN-TYPE-P8SCII", "OPEN-TYPE-IR", "OPEN-TYPE-HD", "OPEN-TYPE-FALLBACK", "OPEN-TYPE-A11Y"]
+    },
+    {
+      "id": "REQ-WEB-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["API-WASM-001", "API-PRESENTATION-001", "DATA-RELEASE-001", "JOB-PACKAGE-001"],
+      "exit_ids": ["EXIT-WEB-BOOT", "EXIT-WEB-PWA"],
+      "open_item_ids": ["OPEN-WEB-WASM", "OPEN-WEB-PWA"]
+    },
+    {
+      "id": "REQ-INPUT-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["API-HOST-001", "DATA-INPUT-TRACE-001", "JOB-VALIDATE-001"],
+      "exit_ids": ["EXIT-INPUT-CORE", "EXIT-INPUT-HOSTS"],
+      "open_item_ids": ["OPEN-INPUT-HOSTS"]
+    },
+    {
+      "id": "REQ-REMAKE-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["DATA-HD-MAP-001", "DATA-ASSET-PACK-001", "DATA-REPLAY-001", "JOB-INTEGRATE-001", "JOB-VALIDATE-001", "JOB-PACKAGE-001"],
+      "exit_ids": ["EXIT-REMAKE-CONTENT", "EXIT-REMAKE-PRESENTATION", "EXIT-REMAKE-INPUT", "EXIT-REMAKE-PACKAGE"],
+      "open_item_ids": ["OPEN-REMAKE-RUNTIME", "OPEN-REMAKE-ASSETS", "OPEN-REMAKE-TOUCH", "OPEN-REMAKE-PACKAGE"]
+    },
+    {
+      "id": "REQ-RELEASE-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["DATA-VALIDATION-001", "DATA-RELEASE-001", "JOB-PACKAGE-001", "JOB-RELEASE-001"],
+      "exit_ids": ["EXIT-RELEASE-TECHNICAL", "EXIT-RELEASE-RIGHTS"],
+      "open_item_ids": ["OPEN-RELEASE-PIPELINE", "OPEN-RELEASE-RIGHTS"]
+    },
+    {
+      "id": "REQ-GOV-001",
+      "source": "docs/PRODUCT.md",
+      "status": "verified",
+      "contract_ids": ["DATA-GOVERNANCE-001"],
+      "exit_ids": ["EXIT-GOV-NAV", "EXIT-GOV-CONSISTENCY", "EXIT-GOV-TRACE", "EXIT-GOV-DEVELOPMENT", "EXIT-GOV-LEAN"],
+      "open_item_ids": []
+    },
+    {
+      "id": "REQ-REPO-001",
+      "source": "docs/PRODUCT.md",
+      "status": "in_progress",
+      "contract_ids": ["DATA-GOVERNANCE-001", "DATA-RELEASE-001"],
+      "exit_ids": ["EXIT-REPO-CONTENT", "EXIT-REPO-PUBLIC"],
+      "open_item_ids": ["OPEN-REPO-CONTENT", "OPEN-REPO-PUBLIC"]
+    },
+    {
+      "id": "REQ-SKILL-001",
+      "source": "docs/PRODUCT.md",
+      "status": "planned",
+      "contract_ids": ["JOB-INGEST-001", "JOB-ANALYZE-001", "JOB-CAPTURE-001", "JOB-MODEL-001", "JOB-ASSET-001", "JOB-INTEGRATE-001", "JOB-VALIDATE-001", "JOB-PACKAGE-001", "JOB-RELEASE-001", "DATA-GOVERNANCE-001"],
+      "exit_ids": ["EXIT-SKILL-RELEASES", "EXIT-SKILL-PACKAGE"],
+      "open_item_ids": ["OPEN-SKILL-DEFER"]
+    }
+  ],
+  "exits": [
+    { "id": "EXIT-INGEST-ROUNDTRIP", "requirement_id": "REQ-INGEST-001", "statement": "Authorized corpus resources round-trip without semantic loss.", "status": "in_progress", "implementation": ["tools/p8_workbench.py", "tools/extract_p8_resources.py", "tools/rebuild_p8_from_resources.py"], "evidence": ["research/cart_codec_validation.md"], "test_selectors": [] },
+    { "id": "EXIT-INGEST-SCHEMA", "requirement_id": "REQ-INGEST-001", "statement": "Workspace and provenance payloads have versioned schemas and public fixtures.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-COMPAT-BOOT", "requirement_id": "REQ-COMPAT-001", "statement": "An unchanged private representative cart boots and completes its first replay in the native core.", "status": "in_progress", "implementation": ["runtime/core/src/core.cpp", "runtime/core/src/vm_z8lua.cpp"], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-COMPAT-RASTER", "requirement_id": "REQ-COMPAT-001", "statement": "Complete indexed raster and draw state match official checkpoints.", "status": "in_progress", "implementation": ["runtime/core/src/raster.cpp"], "evidence": ["docs/reference/pico8-graphics-semantics.md"], "test_selectors": ["TEST-CORE-PUBLIC"] },
+    { "id": "EXIT-COMPAT-WASM", "requirement_id": "REQ-COMPAT-001", "statement": "Native and WebAssembly replay, frame, and command checkpoints are byte-identical.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-COMPAT-OFFICIAL", "requirement_id": "REQ-COMPAT-001", "statement": "Licensed official-runtime state, raster, input, persistence, and audio goldens match.", "status": "planned", "implementation": ["tests/conformance/matrix.json"], "evidence": ["research/official_runtime_semantics.md"], "test_selectors": [] },
+    { "id": "EXIT-HD-DISPLAY", "requirement_id": "REQ-HD-001", "statement": "Canonical 128-to-1024 transform and derived profiles pass contract tests.", "status": "verified", "implementation": ["packages/contracts/src/display-profile.ts", "specs/display-profiles.json"], "evidence": ["packages/contracts/src/display-profile.test.ts", ".github/workflows/ci.yml"], "test_selectors": ["TEST-WEB-PUBLIC"] },
+    { "id": "EXIT-HD-FALLBACK", "requirement_id": "REQ-HD-001", "statement": "Every unsafe or unknown replacement has an indexed compatibility fallback.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-HD-INVARIANCE", "requirement_id": "REQ-HD-001", "statement": "HD enabled and disabled produce identical compatibility state for the complete replay.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-TYPE-P8SCII", "requirement_id": "REQ-TYPOGRAPHY-001", "statement": "Built-in/custom P8SCII pixels, metrics, cursor state, timing, memory, and audio side effects match licensed official checkpoints.", "status": "planned", "implementation": ["runtime/core/src/vm_z8lua.cpp"], "evidence": ["tests/conformance/probes/p8scii.p8", "tests/conformance/expected/p8scii.json", "research/official_runtime_semantics.md"], "test_selectors": [] },
+    { "id": "EXIT-TYPE-IR", "requirement_id": "REQ-TYPOGRAPHY-001", "statement": "Native and Wasm emit identical versioned semantic text runs with raw bytes, original metrics/state, side-effect boundaries, and safety classification.", "status": "planned", "implementation": [], "evidence": ["specs/typography.md"], "test_selectors": [] },
+    { "id": "EXIT-TYPE-HD", "requirement_id": "REQ-TYPOGRAPHY-001", "statement": "Bundled fixed-version MSDF/SDF or WOFF2 assets render deterministic readable text with complete declared glyph coverage and no OS-font dependency.", "status": "planned", "implementation": [], "evidence": ["specs/typography.md"], "test_selectors": [] },
+    { "id": "EXIT-TYPE-FALLBACK", "requirement_id": "REQ-TYPOGRAPHY-001", "statement": "Inline, custom, ambiguous, unknown, and effectful P8SCII always use exact reference fallback or an approved meaning-preserving icon mapping.", "status": "planned", "implementation": [], "evidence": ["specs/typography.md"], "test_selectors": [] },
+    { "id": "EXIT-TYPE-A11Y", "requirement_id": "REQ-TYPOGRAPHY-001", "statement": "Typography passes size, contrast, language coverage, delivery-profile layout, and assistive-text review without changing compatibility state.", "status": "planned", "implementation": [], "evidence": ["specs/typography.md"], "test_selectors": [] },
+    { "id": "EXIT-WEB-BOOT", "requirement_id": "REQ-WEB-001", "statement": "Browser loads the Wasm kernel and runs a representative cart with keyboard input.", "status": "planned", "implementation": ["apps/web/src/main.ts"], "evidence": [], "test_selectors": ["TEST-WEB-PUBLIC"] },
+    { "id": "EXIT-WEB-PWA", "requirement_id": "REQ-WEB-001", "statement": "Responsive PWA build restores saves and exposes compatibility diagnostics.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-INPUT-CORE", "requirement_id": "REQ-INPUT-001", "statement": "Core 30/60 Hz button state and repeat behavior pass current conformance tests.", "status": "in_progress", "implementation": ["runtime/core/src/core.cpp"], "evidence": ["runtime/core/tests/core_tests.cpp", "tests/conformance/input_traces/btnp_30.json", "tests/conformance/input_traces/btnp_60.json"], "test_selectors": ["TEST-CORE-PUBLIC"] },
+    { "id": "EXIT-INPUT-HOSTS", "requirement_id": "REQ-INPUT-001", "statement": "Keyboard, controller, and touch map to identical logical input traces.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-REMAKE-CONTENT", "requirement_id": "REQ-REMAKE-001", "statement": "Title, all levels, ending, persistence, restart, and original quirks are playable in the private research trial.", "status": "in_progress", "implementation": ["runtime/core/src/vm_z8lua.cpp"], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-REMAKE-PRESENTATION", "requirement_id": "REQ-REMAKE-001", "statement": "Complete modern art, UI, animation, and effects cover every content state with fallback.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-REMAKE-INPUT", "requirement_id": "REQ-REMAKE-001", "statement": "Keyboard, controller, and touch complete the game without feel drift.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-REMAKE-PACKAGE", "requirement_id": "REQ-REMAKE-001", "statement": "A validated Web/PWA package is reproducible from a clean checkout plus authorized private input.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-RELEASE-TECHNICAL", "requirement_id": "REQ-RELEASE-001", "statement": "Release manifest, checksums, notices, validation, accessibility, and performance gates pass.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-RELEASE-RIGHTS", "requirement_id": "REQ-RELEASE-001", "statement": "Publication permission and attribution are recorded independently of build readiness.", "status": "planned", "implementation": ["NOTICE.md"], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-GOV-NAV", "requirement_id": "REQ-GOV-001", "statement": "Agents find the correct owner and lifecycle class from one bounded entry path.", "status": "verified", "implementation": ["AGENTS.md", "docs/GOVERNANCE.md", "governance/project.json"], "evidence": ["docs/GOVERNANCE.md"], "test_selectors": ["TEST-GOV-001"] },
+    { "id": "EXIT-GOV-CONSISTENCY", "requirement_id": "REQ-GOV-001", "statement": "PRD, architecture, APIs, Jobs, and data use consistent IDs and owner boundaries.", "status": "verified", "implementation": ["docs/PRODUCT.md", "docs/ARCHITECTURE.md", "docs/CONTRACTS.md", "governance/project.json"], "evidence": ["docs/CONTRACTS.md"], "test_selectors": ["TEST-GOV-001"] },
+    { "id": "EXIT-GOV-TRACE", "requirement_id": "REQ-GOV-001", "statement": "Requirements, exits, implementation, evidence, selectors, and open work form a closed graph.", "status": "verified", "implementation": ["governance/project.json", "governance/schema.json"], "evidence": ["docs/GOVERNANCE.md"], "test_selectors": ["TEST-GOV-001"] },
+    { "id": "EXIT-GOV-DEVELOPMENT", "requirement_id": "REQ-GOV-001", "statement": "A new agent can implement, test, recover, diagnose, and hand off without chat history.", "status": "verified", "implementation": ["AGENTS.md", "docs/DEVELOPMENT.md"], "evidence": ["docs/DEVELOPMENT.md"], "test_selectors": ["TEST-GOV-001"] },
+    { "id": "EXIT-GOV-LEAN", "requirement_id": "REQ-GOV-001", "statement": "Core navigation, owner count, line budgets, and research isolation remain within policy.", "status": "verified", "implementation": ["docs/GOVERNANCE.md", "governance/project.json"], "evidence": ["docs/GOVERNANCE.md"], "test_selectors": ["TEST-GOV-001"] },
+    { "id": "EXIT-REPO-CONTENT", "requirement_id": "REQ-REPO-001", "statement": "The clean public history contains the Apache-2.0 project license and no secrets, private inputs, official captures, or cart-derived evidence.", "status": "in_progress", "implementation": ["LICENSE", "NOTICE.md", ".gitignore", ".gitattributes", "docs/GOVERNANCE.md", "scripts/verify-public-repository.mjs"], "evidence": [], "test_selectors": ["TEST-REPO-PUBLIC"] },
+    { "id": "EXIT-REPO-PUBLIC", "requirement_id": "REQ-REPO-001", "statement": "The same-name GitHub repository is public, its default branch uses the clean history, and public CI passes.", "status": "planned", "implementation": [".github/workflows/ci.yml", "scripts/verify-public-repository.mjs"], "evidence": [], "test_selectors": ["TEST-REPO-PUBLIC"] },
+    { "id": "EXIT-SKILL-RELEASES", "requirement_id": "REQ-SKILL-001", "statement": "Several permission-aware end-to-end remakes pass release gates before Skill design.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-SKILL-PACKAGE", "requirement_id": "REQ-SKILL-001", "statement": "A thin Skill invokes all stable Jobs without embedding runtime or policy logic.", "status": "planned", "implementation": ["skills/README.md"], "evidence": [], "test_selectors": [] }
+  ],
+  "open_items": [
+    { "id": "OPEN-INGEST-SCHEMA", "requirement_id": "REQ-INGEST-001", "exit_id": "EXIT-INGEST-SCHEMA", "next_action": "Define workspace/provenance JSON Schemas and public synthetic round-trip fixtures." },
+    { "id": "OPEN-COMPAT-RASTER", "requirement_id": "REQ-COMPAT-001", "exit_id": "EXIT-COMPAT-RASTER", "next_action": "Implement fillp, sprite, map, text, tline, and official edge probes." },
+    { "id": "OPEN-COMPAT-WASM", "requirement_id": "REQ-COMPAT-001", "exit_id": "EXIT-COMPAT-WASM", "next_action": "Add Emscripten build and native/Wasm checkpoint comparison." },
+    { "id": "OPEN-COMPAT-OFFICIAL", "requirement_id": "REQ-COMPAT-001", "exit_id": "EXIT-COMPAT-OFFICIAL", "next_action": "Capture licensed official-runtime fixtures for every normative probe." },
+    { "id": "OPEN-HD-MAPPING", "requirement_id": "REQ-HD-001", "exit_id": "EXIT-HD-FALLBACK", "next_action": "Define versioned HD mapping/asset schemas and safe fallback rules." },
+    { "id": "OPEN-HD-INVARIANCE", "requirement_id": "REQ-HD-001", "exit_id": "EXIT-HD-INVARIANCE", "next_action": "Run complete replay with HD off/on and compare state checkpoints." },
+    { "id": "OPEN-TYPE-P8SCII", "requirement_id": "REQ-TYPOGRAPHY-001", "exit_id": "EXIT-TYPE-P8SCII", "next_action": "Implement complete P8SCII/custom-font parsing and capture licensed official metrics, pixel, timing, memory, and audio fixtures." },
+    { "id": "OPEN-TYPE-IR", "requirement_id": "REQ-TYPOGRAPHY-001", "exit_id": "EXIT-TYPE-IR", "next_action": "Define versioned text-run schemas and prove native/Wasm byte identity for safe, unknown, and effectful cases." },
+    { "id": "OPEN-TYPE-HD", "requirement_id": "REQ-TYPOGRAPHY-001", "exit_id": "EXIT-TYPE-HD", "next_action": "Choose licensed private-trial font families, record hashes/coverage, and build deterministic MSDF/WOFF2 assets and layout goldens." },
+    { "id": "OPEN-TYPE-FALLBACK", "requirement_id": "REQ-TYPOGRAPHY-001", "exit_id": "EXIT-TYPE-FALLBACK", "next_action": "Implement reference-region compositing and require reviewed mappings for cart-defined glyphs and icons." },
+    { "id": "OPEN-TYPE-A11Y", "requirement_id": "REQ-TYPOGRAPHY-001", "exit_id": "EXIT-TYPE-A11Y", "next_action": "Add contrast, minimum-size, CJK/localization coverage, responsive layout, and assistive-text validation." },
+    { "id": "OPEN-WEB-WASM", "requirement_id": "REQ-WEB-001", "exit_id": "EXIT-WEB-BOOT", "next_action": "Load the Emscripten module and drive fixed updates plus indexed frames from TypeScript." },
+    { "id": "OPEN-WEB-PWA", "requirement_id": "REQ-WEB-001", "exit_id": "EXIT-WEB-PWA", "next_action": "Implement service worker, persistence lifecycle, diagnostics, and clean release build." },
+    { "id": "OPEN-INPUT-HOSTS", "requirement_id": "REQ-INPUT-001", "exit_id": "EXIT-INPUT-HOSTS", "next_action": "Implement keyboard/controller/touch adapters and compare logical traces." },
+    { "id": "OPEN-REMAKE-RUNTIME", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-CONTENT", "next_action": "Complete the private Dust Bunny graphics/VM bindings and full-game replay coverage without publishing cart-specific evidence." },
+    { "id": "OPEN-REMAKE-ASSETS", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-PRESENTATION", "next_action": "Model semantic roles and produce accepted complete HD asset/animation/effect set." },
+    { "id": "OPEN-REMAKE-TOUCH", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-INPUT", "next_action": "Add controller/touch UI and full-game feel validation." },
+    { "id": "OPEN-REMAKE-PACKAGE", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-PACKAGE", "next_action": "Build and validate reproducible Web/PWA package." },
+    { "id": "OPEN-RELEASE-PIPELINE", "requirement_id": "REQ-RELEASE-001", "exit_id": "EXIT-RELEASE-TECHNICAL", "next_action": "Implement release schema, validation gates, checksums, notices, and package automation." },
+    { "id": "OPEN-RELEASE-RIGHTS", "requirement_id": "REQ-RELEASE-001", "exit_id": "EXIT-RELEASE-RIGHTS", "next_action": "Obtain and record explicit publication permission from the cart rights holder." },
+    { "id": "OPEN-REPO-CONTENT", "requirement_id": "REQ-REPO-001", "exit_id": "EXIT-REPO-CONTENT", "next_action": "Create an independent clean root history from the sanitized tree and run a reachable-history content audit." },
+    { "id": "OPEN-REPO-PUBLIC", "requirement_id": "REQ-REPO-001", "exit_id": "EXIT-REPO-PUBLIC", "next_action": "Retain the current repository as a private archive, create the same-name public repository, push clean main, and verify visibility and CI." },
+    { "id": "OPEN-SKILL-DEFER", "requirement_id": "REQ-SKILL-001", "exit_id": "EXIT-SKILL-RELEASES", "next_action": "Defer Skill design until repeated end-to-end remakes and releases are verified." }
+  ],
+  "test_catalog": [
+    { "id": "TEST-GOV-001", "command": "node scripts/verify-governance.mjs", "availability": "public", "ci_job": "governance", "covers": ["EXIT-GOV-NAV", "EXIT-GOV-CONSISTENCY", "EXIT-GOV-TRACE", "EXIT-GOV-DEVELOPMENT", "EXIT-GOV-LEAN"] },
+    { "id": "TEST-REPO-PUBLIC", "command": "pnpm verify:public", "availability": "public", "ci_job": "public-history", "covers": ["EXIT-REPO-CONTENT", "EXIT-REPO-PUBLIC"] },
+    { "id": "TEST-CORE-PUBLIC", "command": "make -C runtime/core test", "availability": "public", "ci_job": "native-core", "covers": ["EXIT-COMPAT-RASTER", "EXIT-INPUT-CORE"] },
+    { "id": "TEST-WEB-PUBLIC", "command": "pnpm verify:web", "availability": "public", "ci_job": "web-product", "covers": ["EXIT-HD-DISPLAY", "EXIT-WEB-BOOT"] }
+  ],
+  "current_focus": {
+    "objective": "Publish a licensed, sanitized Aico 8 source repository while retaining Dust Bunny evidence in a private research archive.",
+    "requirement_id": "REQ-REPO-001",
+    "exit_ids": ["EXIT-REPO-CONTENT", "EXIT-REPO-PUBLIC"],
+    "resume_after_requirement_id": "REQ-COMPAT-001"
+  }
+}
