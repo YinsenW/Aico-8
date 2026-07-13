@@ -51,9 +51,7 @@
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 37,
-    "release_manifest_sha256": "a2f11d1902e1dab2f43f43dedc68374c5bebafe35cce35a5036085a56338a226",
     "visual_runtime_sha256": "699faea79c0647abc44083be9fd7482a0cddeae980a3f31c0451658bffeedad9",
-    "validation_replay_sha256": "52ef2333c3280e2e7b1aeb17185dbfc905a2d292e6d2eb0d6dea150c568e92db",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },

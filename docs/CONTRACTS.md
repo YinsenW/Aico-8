@@ -106,6 +106,10 @@ only its linked exits determine acceptance.
   the replay-semantics identity, which excludes only runtime/producer source-
   revision metadata. Both identities are recomputed by package verification;
   metadata churn may not mask visual or input/state drift.
+- The private release manifest retains complete per-artifact hashes, including
+  replay provenance. Public attestations record the stable visual-runtime and
+  replay-semantics identities instead of a self-referential full replay/package
+  hash whose embedded source revision would change when the attestation is committed.
 - Source-authored modern visuals are gated by source tokens from the same logical
   update. Scene membership or a token retained from an earlier frame cannot
   reveal copy, characters, effects, or cues before the source does.

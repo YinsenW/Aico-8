@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { validationReplaySemanticsSha256 } from "./lib/release-identities.mjs";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceValue = process.env.AICO8_PRIVATE_WORKSPACE;
@@ -114,12 +115,13 @@ assert.deepEqual(hdAudit.invariance.mismatchUpdateIds, []);
 assert.ok(hdAudit.regressions.some((regression) =>
   regression.id === "remove-observed-win-wall-variant" && regression.rejected === true));
 const privateArtifactPaths = {
-  canonical_replay_v1: path.join(workspace, "validation", "canonical-replay-v1.json"),
   canonical_run_audit: path.join(workspace, "validation", "canonical-run-audit.json"),
   solver_differential: path.join(workspace, "validation", "solver-differential.json"),
   solver_invariants: path.join(workspace, "validation", "solver-invariants.json"),
 };
-const privateArtifactSha256 = {};
+const privateArtifactSha256 = {
+  canonical_replay_semantics_v1: validationReplaySemanticsSha256(replay),
+};
 for (const [id, artifactPath] of Object.entries(privateArtifactPaths)) {
   const digest = createHash("sha256").update(fs.readFileSync(artifactPath)).digest("hex");
   privateArtifactSha256[id] = digest;

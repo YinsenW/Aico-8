@@ -102,6 +102,9 @@ Official-runtime selectors remain pending until licensed captures are available.
   replay-semantics identities before recapturing. Provenance-only replay revision
   churn may preserve both; visual artifacts, cart, input, milestones, checkpoints,
   or result changes must invalidate the affected evidence.
+- Public-attestation drift after its own commit indicates a self-referential full
+  replay/package hash. Keep full artifact hashes in the private release manifest;
+  attest publicly with the recomputed visual-runtime and replay-semantics identities.
 - HD omission: capture the raw scene-contextual token before render dispatch,
   fix the shared classification/render rule, then add a deleted-mapping mutation
   that must fail. Do not patch one level, coordinate, or tile occurrence, and do
