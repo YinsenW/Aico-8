@@ -30,6 +30,12 @@ const p8_draw_command *aico8_draw_commands(const aico8_runtime *runtime);
 size_t aico8_draw_command_count(const aico8_runtime *runtime);
 const uint8_t *aico8_draw_payload(const aico8_runtime *runtime);
 size_t aico8_draw_payload_size(const aico8_runtime *runtime);
+size_t aico8_copy_map_region(const aico8_runtime *runtime, int cell_x, int cell_y,
+                             int width, int height, uint8_t *destination,
+                             size_t capacity);
+int aico8_get_global_raw(aico8_runtime *runtime, const char *name,
+                         int32_t *raw_16_16);
+int aico8_get_global_boolean(aico8_runtime *runtime, const char *name, int *value);
 
 size_t aico8_copy_persistent(const aico8_runtime *runtime, uint8_t *destination,
                              size_t capacity);

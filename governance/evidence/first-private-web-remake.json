@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "subject": "first-private-web-remake",
+  "game": "Dust Bunny",
+  "distribution": "private-research-and-testing-only",
+  "public_payload_included": false,
+  "rights": {
+    "source_license": "CC-BY-NC-SA-4.0",
+    "source_url": "https://www.lexaloffle.com/bbs/?pid=dust_bunny",
+    "project_license": "Apache-2.0",
+    "formal_release": false
+  },
+  "content": {
+    "unchanged_level_one_replay": true,
+    "real_level_maps_loaded": 30,
+    "win_transitions": 30,
+    "ending": true,
+    "ending_restart": true,
+    "progress_reset": true,
+    "audio_profile": "original-silent-cart"
+  },
+  "presentation_and_hosts": {
+    "desktopHdTitle": true,
+    "desktopOriginalFallback": true,
+    "introGameplayWinEndingHdStates": true,
+    "allThirtyLevelPresentationTraversal": true,
+    "touchLevelOneCompletion": true,
+    "keyboardResumeAndGameplay": true,
+    "controllerStandardMappingContract": true,
+    "saveRestoredAfterReload": true,
+    "pauseAndResume": true,
+    "mobile390x844Layout": true,
+    "pwaServiceWorkerInstalled": true,
+    "dynamicPresentationPrecached": true,
+    "offlineReloadAndPlay": true,
+    "endingRestart": true
+  },
+  "package": {
+    "target": "web-pwa",
+    "output_profile": "hd-1024-square",
+    "artifact_count": 36,
+    "release_manifest_sha256": "778511d997ae0a164d2e180f5032c4bfe3c07662daccba08eac998d9c3654fc3",
+    "two_builds_byte_identical": true
+  },
+  "private_evidence": {
+    "lifecycle": "ignored authorized workspace",
+    "retained": true,
+    "public_cart_or_derived_payload": false
+  }
+}

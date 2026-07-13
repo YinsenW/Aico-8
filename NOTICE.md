@@ -15,5 +15,6 @@ third-party components and cartridge content remain under their own terms.
 
 Dust Bunny is used only as a private compatibility research and testing target.
 Its cartridge, recoverable assets, detailed captures, and generated remake are
-not part of this public source distribution. No formal remake release is made
-without permission from the rights holder.
+not part of this public source distribution. Its source page declares CC
+BY-NC-SA 4.0; the current private trial records attribution and source URL, and
+no formal remake release is made under the present project decision.

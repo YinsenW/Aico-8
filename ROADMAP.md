@@ -51,14 +51,14 @@ names a narrower prerequisite; never infer completion from this plan.
 - `WP-M4-2`: produce and integrate the complete 1024 asset set while proving HD-on/off compatibility-state invariance for the full replay.
 - `WP-M4-3`: execute original P8SCII truth, map safe text to licensed bundled modern fonts, validate layout/coverage/accessibility, and retain exact unknown/custom fallbacks.
 - `WP-M4-4`: preserve dynamic synth behavior, validate any pre-rendered audio substitutions, then add controller and touch traces without feel drift.
-- Acceptance: `EXIT-HD-DISPLAY`, `EXIT-HD-FALLBACK`, `EXIT-HD-INVARIANCE`, `EXIT-TYPE-P8SCII`, `EXIT-TYPE-IR`, `EXIT-TYPE-HD`, `EXIT-TYPE-FALLBACK`, `EXIT-TYPE-A11Y`, `EXIT-INPUT-HOSTS`, `EXIT-REMAKE-PRESENTATION`, and `EXIT-REMAKE-INPUT` pass with complete-content evidence.
+- Acceptance: the first trial closes `EXIT-HD-DISPLAY`, `EXIT-INPUT-HOSTS`, `EXIT-REMAKE-PRESENTATION`, and `EXIT-REMAKE-INPUT`; broader HD-invariance and P8SCII exits stay independently open rather than being inferred from one game.
 
 ## M5 — First complete standalone Web game
 
 - `WP-M5-1`: add offline/installable PWA behavior, portable single-HTML convenience output, save lifecycle, touch-safe areas, diagnostics, accessibility, and measured performance budgets.
 - `WP-M5-2`: assemble/package one validated game module reproducibly from a clean public checkout plus authorized private input; generate hashes, notices, provenance, validation, and technical release metadata.
 - `WP-M5-3`: run full-game browser automation and manual visual/audio/input review on desktop and representative mobile browsers; keep publication permission as an independent gate.
-- Acceptance: `EXIT-WEB-PWA`, `EXIT-DELIVERY-SINGLE`, `EXIT-REMAKE-PACKAGE`, and `EXIT-RELEASE-TECHNICAL` pass. `EXIT-RELEASE-RIGHTS` may remain open without blocking the private research/test package.
+- Acceptance: `EXIT-WEB-PWA`, `EXIT-DELIVERY-SINGLE`, and `EXIT-REMAKE-PACKAGE` pass for the private artifact; formal `EXIT-RELEASE-TECHNICAL` and `EXIT-RELEASE-RIGHTS` remain independent.
 
 ## M6 — Batch conversion and fixed collection
 

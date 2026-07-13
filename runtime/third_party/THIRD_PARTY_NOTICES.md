@@ -21,3 +21,14 @@ characters. This is covered by the official-manual expectation probe.
 
 No license from this runtime grants permission to redistribute any cartridge,
 art, music, or other game content.
+
+## Atkinson Hyperlegible
+
+- Repository: <https://github.com/googlefonts/atkinson-hyperlegible>
+- Upstream commit: `1cb311624b2ddf88e9e37873999d165a8cd28b46`
+- Assets: regular and bold WOFF2 Web fonts
+- License: SIL Open Font License 1.1
+
+The unmodified font files and full OFL text are distributed under
+`apps/web/public/fonts/`. Aico 8 uses the family name `Aico Sans` only as a CSS
+alias; the font remains Atkinson Hyperlegible under its own name and license.

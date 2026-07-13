@@ -183,10 +183,11 @@ Contracts: all `JOB-*` pipeline contracts and `DATA-GOVERNANCE-001`.
 
 The detailed behavioral reference, input replay, captures, and cart-specific
 tests live only in the private research archive. Trial completion requires
-unchanged-cart boot, official state/raster checkpoints, HD-on/off invariance,
-complete content flows, keyboard/controller/touch operation, and a reproducible
-private Web/PWA test package. It does not satisfy the separate rights decision
-and must not be described as a formally released remake.
+unchanged-cart replay, native/Wasm identity for exercised semantics, complete
+content flows, read-only HD presentation with indexed fallback, modern bundled
+text, keyboard/controller/touch operation, and a reproducible private Web/PWA
+test package. The broader official-runtime matrix remains independently owned by
+`EXIT-COMPAT-OFFICIAL`; neither result is a formal remake release authorization.
 
 ## Non-goals for the first release
 

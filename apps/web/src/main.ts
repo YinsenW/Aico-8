@@ -4,6 +4,7 @@ import { REFERENCE_PROFILE } from "@aico8/contracts";
 
 import { InputController } from "./runtime/input.js";
 import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
+import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
 
 import "./style.css";
@@ -20,6 +21,7 @@ mount.innerHTML = `
         <p id="game-credit" class="credit">Compatibility-first HD remake</p>
       </div>
       <div class="header-actions">
+        <button id="display-button" type="button" disabled>HD view</button>
         <button id="pause-button" type="button" disabled>Pause</button>
         <button id="fullscreen-button" type="button">Full screen</button>
       </div>
@@ -48,6 +50,7 @@ mount.innerHTML = `
       <span id="player-status">Starting…</span>
       <span class="control-hint">Arrows / WASD · Z / X · controller · touch</span>
     </footer>
+    <p id="game-announcer" class="visually-hidden" role="status" aria-live="polite"></p>
   </section>
 `;
 
@@ -59,11 +62,13 @@ const loadingDetail = document.querySelector<HTMLElement>("#loading-detail");
 const title = document.querySelector<HTMLElement>("#game-title");
 const credit = document.querySelector<HTMLElement>("#game-credit");
 const status = document.querySelector<HTMLElement>("#player-status");
+const announcer = document.querySelector<HTMLElement>("#game-announcer");
 const pauseButton = document.querySelector<HTMLButtonElement>("#pause-button");
+const displayButton = document.querySelector<HTMLButtonElement>("#display-button");
 const fullscreenButton = document.querySelector<HTMLButtonElement>("#fullscreen-button");
 const touchControls = document.querySelector<HTMLElement>("#touch-controls");
 if (!surface || !frame || !loadingCard || !loadingTitle || !loadingDetail || !title || !credit
-  || !status || !pauseButton || !fullscreenButton || !touchControls) {
+  || !status || !announcer || !pauseButton || !displayButton || !fullscreenButton || !touchControls) {
   throw new Error("Aico 8 player controls are incomplete");
 }
 
@@ -77,6 +82,7 @@ await app.init({
   resolution: 1,
   background: "#090b12",
 });
+await document.fonts.load("700 48px Aico Sans");
 app.canvas.setAttribute("aria-label", "Aico 8 game surface, 1024 by 1024 pixels");
 surface.append(app.canvas);
 
@@ -116,6 +122,7 @@ const input = new InputController();
 input.bindTouchControls(touchControls);
 let paused = false;
 let runtime: Aico8Kernel | undefined;
+const privatePresentations = import.meta.glob<PrivatePresentationModule>("./private/*.ts");
 
 pauseButton.addEventListener("click", () => {
   paused = !paused;
@@ -131,12 +138,31 @@ try {
   const manifestUrl = new URL(`${import.meta.env.BASE_URL}private/game.json`, window.location.origin);
   const manifest = await loadGameManifest(manifestUrl);
   title.textContent = manifest.title;
-  credit.textContent = `Original by ${manifest.author} · Aico 8 private research and testing build`;
+  credit.textContent = `Original by ${manifest.author}`
+    + `${manifest.sourceLicense ? ` · ${manifest.sourceLicense}` : ""}`
+    + " · Aico 8 private research and testing build";
   loadingTitle.textContent = `Opening ${manifest.title}`;
   loadingDetail.textContent = "Restoring game logic and saved progress…";
 
   runtime = await Aico8Kernel.create(import.meta.env.BASE_URL, manifestUrl, manifest);
-  const renderer = new ReferenceRenderer(app);
+  const referenceRenderer = new ReferenceRenderer(app);
+  let hdRenderer: PresentationRenderer | undefined;
+  if (manifest.presentation !== "reference") {
+    const loadPresentation = privatePresentations[`./private/${manifest.presentation}.ts`];
+    if (!loadPresentation) throw new Error(`Private presentation adapter is unavailable: ${manifest.presentation}`);
+    hdRenderer = (await loadPresentation()).createPresentation(app);
+  }
+  let showHd = Boolean(hdRenderer);
+  referenceRenderer.setVisible(!showHd);
+  hdRenderer?.setVisible(showHd);
+  displayButton.disabled = !hdRenderer;
+  displayButton.textContent = showHd ? "Original view" : "HD view";
+  displayButton.addEventListener("click", () => {
+    showHd = !showHd;
+    referenceRenderer.setVisible(!showHd);
+    hdRenderer?.setVisible(showHd);
+    displayButton.textContent = showHd ? "Original view" : "HD view";
+  });
   let accumulator = 0;
   const stepMilliseconds = 1000 / 60;
   app.ticker.add((ticker) => {
@@ -146,9 +172,14 @@ try {
       accumulator -= stepMilliseconds;
       if (runtime.tick60(input.mask())) {
         input.commitLogicalUpdate();
-        renderer.render(runtime.framebuffer(), runtime.drawCommands());
+        const commands = runtime.drawCommands();
+        referenceRenderer.render(runtime.framebuffer(), commands);
+        hdRenderer?.update(runtime, commands);
+        const description = hdRenderer?.accessibleDescription?.();
+        if (description && announcer.textContent !== description) announcer.textContent = description;
       }
     }
+    hdRenderer?.animate(ticker.deltaMS);
   });
   document.addEventListener("visibilitychange", () => {
     accumulator = 0;
@@ -172,4 +203,16 @@ try {
   }
 }
 
-window.addEventListener("pagehide", () => runtime?.destroy(), { once: true });
+window.addEventListener("pagehide", () => {
+  runtime?.destroy();
+}, { once: true });
+
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  const registerServiceWorker = (): void => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}service-worker.js`, {
+      scope: import.meta.env.BASE_URL,
+    });
+  };
+  if (document.readyState === "complete") registerServiceWorker();
+  else window.addEventListener("load", registerServiceWorker, { once: true });
+}

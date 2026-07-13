@@ -29,7 +29,7 @@ owner instead of redefining the owned claim.
 | Research evidence | `research/` | Preserve observations; add supersession notice rather than silently rewrite conclusions | Read on demand, never as current status |
 | Executable evidence | `tests/` | Versioned fixtures and selectors | Run or inspect when linked by an exit |
 | Generated evidence | Named result/capture directories and CI logs | Regenerate; do not treat as hand-authored policy | Diagnose and substantiate only |
-| Private inputs | `private/`, `pico8_carts/`, `workspaces/` | Local and ignored | Never publish without rights clearance |
+| Private inputs | `private/`, `pico8_carts/`, `workspaces/` | Local and ignored | Keep outside Apache history; package only under an approved rights profile |
 
 ## Public repository gate
 
@@ -39,11 +39,12 @@ only the current tree: no secret, private cart/workspace, official capture, or
 unlicensed cart-derived fixture may remain. The owner must also select the
 project source license; third-party notices are not a substitute.
 
-The current private history contains Dust Bunny behavioral replay/research
-artifacts whose cart declares no license. The recommended safe transition is a
-clean public source history plus a separately retained private research archive.
-Rewriting or replacing repository history requires explicit owner approval.
-Source-repository visibility never satisfies a remake's independent rights gate.
+The Dust Bunny source page declares CC BY-NC-SA 4.0. Its cart, derived HD adapter,
+and detailed evidence therefore remain in the ignored private workspace instead
+of the Apache-2.0 source history. The owner has selected private research/testing
+only; any future publication must record CC attribution, non-commercial and
+share-alike compliance, or separate permission. Source-repository visibility
+never satisfies that independent rights gate.
 
 ## Stable IDs and cross-document changes
 

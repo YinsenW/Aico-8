@@ -53,6 +53,24 @@ try {
   assert.equal(kernel.HEAPU8[framebuffer], 9);
   assert.equal(kernel.HEAPU8[framebuffer + 1], 2);
 
+  const mapPointer = kernel._malloc(256);
+  const valuePointer = kernel._malloc(4);
+  const xNamePointer = copyToHeap(new TextEncoder().encode("x\0"));
+  const readyNamePointer = copyToHeap(new TextEncoder().encode("ready\0"));
+  try {
+    assert.equal(kernel._aico8_copy_map_region(runtime, 0, 0, 16, 16, mapPointer, 256), 256);
+    assert.equal(kernel.HEAPU8[mapPointer], 1);
+    assert.equal(kernel._aico8_get_global_raw(runtime, xNamePointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 7 << 16);
+    assert.equal(kernel._aico8_get_global_boolean(runtime, readyNamePointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 1);
+  } finally {
+    kernel._free(readyNamePointer);
+    kernel._free(xNamePointer);
+    kernel._free(valuePointer);
+    kernel._free(mapPointer);
+  }
+
   const commandCount = kernel._aico8_draw_command_count(runtime);
   const commands = kernel._aico8_draw_commands(runtime);
   const payload = kernel._aico8_draw_payload(runtime);
@@ -82,6 +100,21 @@ try {
     checkpoint.push(...kernel.HEAPU8.slice(payload, payload + payloadSize));
     checkpoint.push(...kernel.HEAPU8.slice(savedPointer, savedPointer + 256));
     wasmCheckpoint = Buffer.from(checkpoint).toString("hex");
+
+    assert.equal(kernel._aico8_tick60(runtime, 0), 0);
+    assert.equal(kernel._aico8_tick60(runtime, 0), 1);
+    assert.equal(kernel._aico8_tick60(runtime, 1 << 4), 0);
+    assert.equal(kernel._aico8_tick60(runtime, 1 << 4), 1);
+    const restartNamePointer = copyToHeap(new TextEncoder().encode("x\0"));
+    const restartValuePointer = kernel._malloc(4);
+    try {
+      assert.equal(kernel._aico8_get_global_raw(runtime, restartNamePointer, restartValuePointer), 1);
+      assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(restartValuePointer, true), 7 << 16,
+        "run() must restart the cart while preserving cartdata");
+    } finally {
+      kernel._free(restartValuePointer);
+      kernel._free(restartNamePointer);
+    }
   } finally {
     kernel._free(savedPointer);
   }

@@ -9,11 +9,14 @@
   },
   "scripts": {
     "build": "pnpm --recursive --if-present build",
+    "build:private-web": "node scripts/build-private-web.mjs",
     "check": "pnpm --recursive --if-present check",
     "test": "pnpm --recursive --if-present test",
     "verify": "pnpm verify:governance && pnpm verify:public && make -C runtime/core test && make -C runtime/core wasm-test && pnpm verify:web",
     "verify:governance": "node scripts/verify-governance.mjs",
     "verify:public": "node scripts/verify-public-repository.mjs",
+    "verify:private-remake": "node scripts/validate-private-remake.mjs",
+    "verify:web-package": "node scripts/verify-web-package.mjs",
     "verify:web": "pnpm check && pnpm test && pnpm build"
   }
 }
