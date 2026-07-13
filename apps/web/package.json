@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "wasm:build": "make -C ../../runtime/core wasm",
+    "wasm:test": "make -C ../../runtime/core wasm-test",
     "check": "tsc -p tsconfig.json",
-    "build": "vite build"
+    "build": "pnpm wasm:build && vite build"
   },
   "dependencies": {
     "@aico8/contracts": "workspace:*",

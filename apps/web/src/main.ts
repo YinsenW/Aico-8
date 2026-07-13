@@ -2,11 +2,69 @@ import { Application, Graphics, Text } from "pixi.js";
 
 import { REFERENCE_PROFILE } from "@aico8/contracts";
 
+import { InputController } from "./runtime/input.js";
+import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
+import { ReferenceRenderer } from "./runtime/reference-renderer.js";
+
 import "./style.css";
 
 const mount = document.querySelector<HTMLElement>("#app");
-if (!mount) {
-  throw new Error("Aico 8 mount element is missing");
+if (!mount) throw new Error("Aico 8 mount element is missing");
+
+mount.innerHTML = `
+  <section class="player-shell" aria-live="polite">
+    <header class="player-header">
+      <div>
+        <p class="eyebrow">AICO 8 · PRIVATE RESEARCH BUILD</p>
+        <h1 id="game-title">Preparing game…</h1>
+        <p id="game-credit" class="credit">Compatibility-first HD remake</p>
+      </div>
+      <div class="header-actions">
+        <button id="pause-button" type="button" disabled>Pause</button>
+        <button id="fullscreen-button" type="button">Full screen</button>
+      </div>
+    </header>
+    <div class="game-frame" id="game-frame">
+      <div id="game-surface" class="game-surface"></div>
+      <div id="loading-card" class="loading-card">
+        <span class="loading-dot" aria-hidden="true"></span>
+        <strong id="loading-title">Loading the shared game kernel</strong>
+        <span id="loading-detail">The first launch can take a moment.</span>
+      </div>
+      <div class="touch-controls" id="touch-controls" aria-label="Touch game controls">
+        <div class="dpad">
+          <button class="touch up" data-p8-button="2" aria-label="Up">↑</button>
+          <button class="touch left" data-p8-button="0" aria-label="Left">←</button>
+          <button class="touch right" data-p8-button="1" aria-label="Right">→</button>
+          <button class="touch down" data-p8-button="3" aria-label="Down">↓</button>
+        </div>
+        <div class="action-pad">
+          <button class="touch action secondary" data-p8-button="5" aria-label="Secondary action">X</button>
+          <button class="touch action primary" data-p8-button="4" aria-label="Primary action">O</button>
+        </div>
+      </div>
+    </div>
+    <footer class="player-footer">
+      <span id="player-status">Starting…</span>
+      <span class="control-hint">Arrows / WASD · Z / X · controller · touch</span>
+    </footer>
+  </section>
+`;
+
+const surface = document.querySelector<HTMLElement>("#game-surface");
+const frame = document.querySelector<HTMLElement>("#game-frame");
+const loadingCard = document.querySelector<HTMLElement>("#loading-card");
+const loadingTitle = document.querySelector<HTMLElement>("#loading-title");
+const loadingDetail = document.querySelector<HTMLElement>("#loading-detail");
+const title = document.querySelector<HTMLElement>("#game-title");
+const credit = document.querySelector<HTMLElement>("#game-credit");
+const status = document.querySelector<HTMLElement>("#player-status");
+const pauseButton = document.querySelector<HTMLButtonElement>("#pause-button");
+const fullscreenButton = document.querySelector<HTMLButtonElement>("#fullscreen-button");
+const touchControls = document.querySelector<HTMLElement>("#touch-controls");
+if (!surface || !frame || !loadingCard || !loadingTitle || !loadingDetail || !title || !credit
+  || !status || !pauseButton || !fullscreenButton || !touchControls) {
+  throw new Error("Aico 8 player controls are incomplete");
 }
 
 const app = new Application();
@@ -17,67 +75,101 @@ await app.init({
   antialias: true,
   autoDensity: false,
   resolution: 1,
-  background: "#080b12",
+  background: "#090b12",
 });
+app.canvas.setAttribute("aria-label", "Aico 8 game surface, 1024 by 1024 pixels");
+surface.append(app.canvas);
 
-app.canvas.setAttribute("aria-label", "Aico 8 1024 by 1024 rendering surface");
-mount.append(app.canvas);
-
-const surface = new Graphics()
-  .roundRect(48, 48, 928, 928, 36)
-  .fill({ color: 0x101725 })
-  .stroke({ color: 0x26354f, width: 2 });
-app.stage.addChild(surface);
-
-const grid = new Graphics();
-for (let coordinate = 0; coordinate <= REFERENCE_PROFILE.outputWidth; coordinate += REFERENCE_PROFILE.outputTileSize) {
-  const weight = coordinate % (REFERENCE_PROFILE.outputTileSize * 4) === 0 ? 2 : 1;
-  const alpha = weight === 2 ? 0.22 : 0.1;
-  grid.moveTo(coordinate, 0).lineTo(coordinate, REFERENCE_PROFILE.outputHeight);
-  grid.moveTo(0, coordinate).lineTo(REFERENCE_PROFILE.outputWidth, coordinate);
-  grid.stroke({ color: 0x73a6ff, width: weight, alpha });
+function showEmptyPlayer(): void {
+  const background = new Graphics()
+    .rect(0, 0, 1024, 1024)
+    .fill({ color: 0x090b12 });
+  const halo = new Graphics()
+    .circle(512, 430, 250)
+    .fill({ color: 0xff77a8, alpha: 0.08 });
+  const mark = new Text({
+    text: "AICO 8",
+    style: {
+      fill: 0xfff1e8,
+      fontFamily: "Aico Sans, ui-rounded, system-ui, sans-serif",
+      fontSize: 108,
+      fontWeight: "800",
+      letterSpacing: 12,
+    },
+    anchor: 0.5,
+  });
+  mark.position.set(512, 430);
+  const message = new Text({
+    text: "No private research game is bundled in this public build.",
+    style: {
+      fill: 0xc2c3c7,
+      fontFamily: "Aico Sans, system-ui, sans-serif",
+      fontSize: 30,
+    },
+    anchor: 0.5,
+  });
+  message.position.set(512, 560);
+  app.stage.addChild(background, halo, mark, message);
 }
-app.stage.addChild(grid);
 
-const title = new Text({
-  text: "AICO 8",
-  style: {
-    fill: 0xf2f6ff,
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-    fontSize: 68,
-    fontWeight: "700",
-    letterSpacing: 8,
-  },
-});
-title.position.set(104, 112);
-app.stage.addChild(title);
+const input = new InputController();
+input.bindTouchControls(touchControls);
+let paused = false;
+let runtime: Aico8Kernel | undefined;
 
-const subtitle = new Text({
-  text: "TYPESCRIPT PRESENTATION  /  PORTABLE KERNEL",
-  style: {
-    fill: 0x73a6ff,
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-    fontSize: 22,
-    letterSpacing: 2,
-  },
+pauseButton.addEventListener("click", () => {
+  paused = !paused;
+  pauseButton.textContent = paused ? "Resume" : "Pause";
+  status.textContent = paused ? "Paused" : "Playing";
 });
-subtitle.position.set(108, 202);
-app.stage.addChild(subtitle);
+fullscreenButton.addEventListener("click", async () => {
+  if (document.fullscreenElement) await document.exitFullscreen();
+  else await frame.requestFullscreen();
+});
 
-const contract = new Text({
-  text: [
-    "REFERENCE SURFACE     1024 × 1024",
-    "LOGICAL SIMULATION    128 × 128",
-    "INTEGER SCALE         8×",
-    "SEMANTIC TILE         64 × 64",
-    "KERNEL ARTIFACT       NATIVE + WASM",
-  ].join("\n"),
-  style: {
-    fill: 0xc6d2e8,
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-    fontSize: 27,
-    lineHeight: 50,
-  },
-});
-contract.position.set(108, 602);
-app.stage.addChild(contract);
+try {
+  const manifestUrl = new URL(`${import.meta.env.BASE_URL}private/game.json`, window.location.origin);
+  const manifest = await loadGameManifest(manifestUrl);
+  title.textContent = manifest.title;
+  credit.textContent = `Original by ${manifest.author} · Aico 8 private research and testing build`;
+  loadingTitle.textContent = `Opening ${manifest.title}`;
+  loadingDetail.textContent = "Restoring game logic and saved progress…";
+
+  runtime = await Aico8Kernel.create(import.meta.env.BASE_URL, manifestUrl, manifest);
+  const renderer = new ReferenceRenderer(app);
+  let accumulator = 0;
+  const stepMilliseconds = 1000 / 60;
+  app.ticker.add((ticker) => {
+    if (paused || !runtime) return;
+    accumulator = Math.min(accumulator + ticker.deltaMS, 250);
+    while (accumulator >= stepMilliseconds) {
+      accumulator -= stepMilliseconds;
+      if (runtime.tick60(input.mask())) {
+        input.commitLogicalUpdate();
+        renderer.render(runtime.framebuffer(), runtime.drawCommands());
+      }
+    }
+  });
+  document.addEventListener("visibilitychange", () => {
+    accumulator = 0;
+  });
+  loadingCard.classList.add("hidden");
+  pauseButton.disabled = false;
+  status.textContent = manifest.researchOnly ? "Playing · research build" : "Playing";
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("game manifest (404)")) {
+    showEmptyPlayer();
+    title.textContent = "Aico 8 Player";
+    credit.textContent = "The public runtime is ready for a rights-cleared game module.";
+    loadingCard.classList.add("hidden");
+    status.textContent = "Player ready · no game bundled";
+  } else {
+    loadingTitle.textContent = "The game could not start";
+    loadingDetail.textContent = message;
+    loadingCard.classList.add("error");
+    status.textContent = "Start failed";
+  }
+}
+
+window.addEventListener("pagehide", () => runtime?.destroy(), { once: true });

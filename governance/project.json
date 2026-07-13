@@ -144,7 +144,7 @@
       "status": "in_progress",
       "contract_ids": ["API-CORE-001", "API-RASTER-001", "API-VM-001", "DATA-REPLAY-001", "DATA-CHECKPOINT-001", "JOB-CAPTURE-001", "JOB-VALIDATE-001"],
       "exit_ids": ["EXIT-COMPAT-BOOT", "EXIT-COMPAT-RASTER", "EXIT-COMPAT-WASM", "EXIT-COMPAT-OFFICIAL"],
-      "open_item_ids": ["OPEN-COMPAT-RASTER", "OPEN-COMPAT-WASM", "OPEN-COMPAT-OFFICIAL"]
+      "open_item_ids": ["OPEN-COMPAT-RASTER", "OPEN-COMPAT-OFFICIAL"]
     },
     {
       "id": "REQ-HD-001",
@@ -256,7 +256,7 @@
     { "id": "EXIT-INGEST-SCHEMA", "requirement_id": "REQ-INGEST-001", "statement": "Workspace and provenance payloads have versioned schemas and public fixtures.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
     { "id": "EXIT-COMPAT-BOOT", "requirement_id": "REQ-COMPAT-001", "statement": "An unchanged private representative cart boots and completes its first replay in the native core.", "status": "in_progress", "implementation": ["runtime/core/src/core.cpp", "runtime/core/src/vm_z8lua.cpp"], "evidence": [], "test_selectors": [] },
     { "id": "EXIT-COMPAT-RASTER", "requirement_id": "REQ-COMPAT-001", "statement": "Complete indexed raster and draw state match official checkpoints.", "status": "in_progress", "implementation": ["runtime/core/src/raster.cpp"], "evidence": ["docs/reference/pico8-graphics-semantics.md"], "test_selectors": ["TEST-CORE-PUBLIC"] },
-    { "id": "EXIT-COMPAT-WASM", "requirement_id": "REQ-COMPAT-001", "statement": "Native and WebAssembly replay, frame, and command checkpoints are byte-identical.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
+    { "id": "EXIT-COMPAT-WASM", "requirement_id": "REQ-COMPAT-001", "statement": "Native and WebAssembly replay, frame, and command checkpoints are byte-identical.", "status": "verified", "implementation": ["runtime/core/src/wasm_api.cpp", "runtime/core/Makefile"], "evidence": ["runtime/core/tests/fixtures/synthetic_cart.lua", "runtime/core/tests/wasm_smoke.mjs"], "test_selectors": ["TEST-WASM-IDENTITY"] },
     { "id": "EXIT-COMPAT-OFFICIAL", "requirement_id": "REQ-COMPAT-001", "statement": "Licensed official-runtime state, raster, input, persistence, and audio goldens match.", "status": "planned", "implementation": ["tests/conformance/matrix.json"], "evidence": ["research/official_runtime_semantics.md"], "test_selectors": [] },
     { "id": "EXIT-HD-DISPLAY", "requirement_id": "REQ-HD-001", "statement": "Canonical 128-to-1024 transform and derived profiles pass contract tests.", "status": "verified", "implementation": ["packages/contracts/src/display-profile.ts", "specs/display-profiles.json"], "evidence": ["packages/contracts/src/display-profile.test.ts", ".github/workflows/ci.yml"], "test_selectors": ["TEST-WEB-PUBLIC"] },
     { "id": "EXIT-HD-FALLBACK", "requirement_id": "REQ-HD-001", "statement": "Every unsafe or unknown replacement has an indexed compatibility fallback.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
@@ -299,7 +299,6 @@
   "open_items": [
     { "id": "OPEN-INGEST-SCHEMA", "requirement_id": "REQ-INGEST-001", "exit_id": "EXIT-INGEST-SCHEMA", "next_action": "Define workspace/provenance JSON Schemas and public synthetic round-trip fixtures." },
     { "id": "OPEN-COMPAT-RASTER", "requirement_id": "REQ-COMPAT-001", "exit_id": "EXIT-COMPAT-RASTER", "next_action": "Implement fillp, sprite, map, text, tline, and official edge probes." },
-    { "id": "OPEN-COMPAT-WASM", "requirement_id": "REQ-COMPAT-001", "exit_id": "EXIT-COMPAT-WASM", "next_action": "Add Emscripten build and native/Wasm checkpoint comparison." },
     { "id": "OPEN-COMPAT-OFFICIAL", "requirement_id": "REQ-COMPAT-001", "exit_id": "EXIT-COMPAT-OFFICIAL", "next_action": "Capture licensed official-runtime fixtures for every normative probe." },
     { "id": "OPEN-HD-MAPPING", "requirement_id": "REQ-HD-001", "exit_id": "EXIT-HD-FALLBACK", "next_action": "Define versioned HD mapping/asset schemas and safe fallback rules." },
     { "id": "OPEN-HD-INVARIANCE", "requirement_id": "REQ-HD-001", "exit_id": "EXIT-HD-INVARIANCE", "next_action": "Run complete replay with HD off/on and compare state checkpoints." },
@@ -333,12 +332,13 @@
     { "id": "TEST-GOV-001", "command": "node scripts/verify-governance.mjs", "availability": "public", "ci_job": "governance", "covers": ["EXIT-GOV-NAV", "EXIT-GOV-CONSISTENCY", "EXIT-GOV-TRACE", "EXIT-GOV-DEVELOPMENT", "EXIT-GOV-LEAN"] },
     { "id": "TEST-REPO-PUBLIC", "command": "pnpm verify:public", "availability": "public", "ci_job": "public-history", "covers": ["EXIT-REPO-CONTENT", "EXIT-REPO-PUBLIC"] },
     { "id": "TEST-CORE-PUBLIC", "command": "make -C runtime/core test", "availability": "public", "ci_job": "native-core", "covers": ["EXIT-COMPAT-RASTER", "EXIT-INPUT-CORE"] },
+    { "id": "TEST-WASM-IDENTITY", "command": "make -C runtime/core wasm-test", "availability": "public", "ci_job": "web-product", "covers": ["EXIT-COMPAT-WASM"] },
     { "id": "TEST-WEB-PUBLIC", "command": "pnpm verify:web", "availability": "public", "ci_job": "web-product", "covers": ["EXIT-HD-DISPLAY", "EXIT-WEB-BOOT"] }
   ],
   "current_focus": {
-    "objective": "Close only the native/Wasm VM identity needed to boot the first private cart in the Web host; defer secondary-platform work that does not unblock Web.",
-    "requirement_id": "REQ-COMPAT-001",
-    "exit_ids": ["EXIT-COMPAT-WASM"],
-    "resume_after_requirement_id": "REQ-WEB-001"
+    "objective": "Close the public Web boot path and then use the same host for the private Dust Bunny HD presentation; secondary platforms remain non-blocking.",
+    "requirement_id": "REQ-WEB-001",
+    "exit_ids": ["EXIT-WEB-BOOT"],
+    "resume_after_requirement_id": "REQ-REMAKE-001"
   }
 }

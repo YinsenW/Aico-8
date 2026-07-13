@@ -43,6 +43,7 @@ node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
 make -C runtime/core test
+make -C runtime/core wasm-test
 pnpm verify:web
 ```
 

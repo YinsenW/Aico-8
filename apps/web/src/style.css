@@ -1,7 +1,9 @@
 :root {
   color-scheme: dark;
-  background: #05070b;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #06070b;
+  color: #fff8f4;
+  font-family: "Aico Sans", Inter, ui-rounded, system-ui, sans-serif;
+  font-synthesis: none;
 }
 
 * {
@@ -12,30 +14,305 @@ html,
 body,
 #app {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
 body {
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow-x: hidden;
   background:
-    radial-gradient(circle at 50% 35%, rgb(29 44 71 / 55%), transparent 45%),
-    #05070b;
+    radial-gradient(circle at 50% 15%, rgb(255 119 168 / 16%), transparent 34rem),
+    radial-gradient(circle at 15% 75%, rgb(41 173 255 / 8%), transparent 30rem),
+    #06070b;
+}
+
+button {
+  border: 1px solid rgb(255 255 255 / 13%);
+  color: inherit;
+  font: inherit;
+}
+
+button:focus-visible {
+  outline: 3px solid #ff77a8;
+  outline-offset: 3px;
 }
 
 #app {
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: clamp(14px, 2.5vw, 32px);
 }
 
-canvas {
-  display: block;
-  width: min(calc(100vw - 40px), calc(100vh - 40px));
-  height: min(calc(100vw - 40px), calc(100vh - 40px));
-  max-width: 1024px;
-  max-height: 1024px;
+.player-shell {
+  width: min(100%, 1120px);
+  display: grid;
+  gap: 16px;
+}
+
+.player-header,
+.player-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-inline: 4px;
+}
+
+.eyebrow {
+  margin: 0 0 5px;
+  color: #ff77a8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 40px);
+  font-weight: 820;
+  letter-spacing: -0.035em;
+}
+
+.credit {
+  margin: 5px 0 0;
+  color: #a7a8b4;
+  font-size: 13px;
+}
+
+.header-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+.header-actions button {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 7%);
+  cursor: pointer;
+}
+
+.header-actions button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 12%);
+}
+
+.header-actions button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.game-frame {
+  position: relative;
+  width: min(100%, calc(100dvh - 190px), 1024px);
+  min-width: 280px;
+  justify-self: center;
   aspect-ratio: 1;
-  border-radius: 24px;
-  box-shadow: 0 32px 100px rgb(0 0 0 / 55%);
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: clamp(18px, 3vw, 32px);
+  background: #090b12;
+  box-shadow:
+    0 32px 100px rgb(0 0 0 / 55%),
+    inset 0 1px rgb(255 255 255 / 8%);
+  isolation: isolate;
+}
+
+.game-surface,
+.game-surface canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.game-surface canvas {
+  touch-action: none;
+}
+
+.loading-card {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 9px;
+  padding: 40px;
+  text-align: center;
+  background:
+    radial-gradient(circle at center, rgb(255 119 168 / 12%), transparent 40%),
+    rgb(9 11 18 / 96%);
+  transition: opacity 240ms ease, visibility 240ms ease;
+  z-index: 3;
+}
+
+.loading-card.hidden {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.loading-card.error strong {
+  color: #ff77a8;
+}
+
+.loading-card span:last-child {
+  max-width: 36ch;
+  color: #a7a8b4;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.loading-dot {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 8px;
+  border: 3px solid rgb(255 255 255 / 16%);
+  border-top-color: #ff77a8;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+.error .loading-dot {
+  display: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.touch-controls {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding: clamp(14px, 3vw, 28px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dpad {
+  width: 150px;
+  height: 150px;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+}
+
+.touch {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: rgb(10 12 20 / 64%);
+  box-shadow: inset 0 1px rgb(255 255 255 / 15%), 0 8px 22px rgb(0 0 0 / 22%);
+  backdrop-filter: blur(9px);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch:active {
+  transform: scale(0.92);
+  background: rgb(255 119 168 / 55%);
+}
+
+.up { grid-column: 2; grid-row: 1; }
+.left { grid-column: 1; grid-row: 2; }
+.right { grid-column: 3; grid-row: 2; }
+.down { grid-column: 2; grid-row: 3; }
+
+.action-pad {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  transform: rotate(-12deg);
+}
+
+.action {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.action.primary {
+  background: rgb(255 119 168 / 30%);
+}
+
+.action.secondary {
+  margin-top: 42px;
+}
+
+.player-footer {
+  min-height: 22px;
+  color: #b9bac5;
+  font-size: 12px;
+}
+
+.control-hint {
+  color: #777986;
+  text-align: right;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .touch-controls {
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  .game-frame:hover .touch-controls,
+  .touch-controls:focus-within {
+    opacity: 0.72;
+  }
+}
+
+@media (max-width: 640px) {
+  #app {
+    align-items: start;
+    padding: 12px;
+  }
+
+  .player-shell {
+    gap: 10px;
+  }
+
+  .player-header {
+    align-items: end;
+  }
+
+  .credit,
+  .control-hint,
+  #pause-button {
+    display: none;
+  }
+
+  .header-actions button {
+    min-height: 36px;
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+
+  .game-frame {
+    width: 100%;
+  }
+
+  .touch-controls {
+    transform: scale(0.82);
+    transform-origin: bottom center;
+    width: 122%;
+    margin-left: -11%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
 }
