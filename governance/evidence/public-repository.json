@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "repository": "YinsenW/Aico-8",
+  "visibility": "public",
+  "default_branch": "main",
+  "license": "Apache-2.0",
+  "initial_public_commit": "a15036516ea9d330e398f07a98077d75049538c5",
+  "baseline_ci_run": {
+    "id": 29232960291,
+    "url": "https://github.com/YinsenW/Aico-8/actions/runs/29232960291",
+    "conclusion": "success",
+    "jobs": ["public-history", "governance", "native-core", "web-product"]
+  },
+  "private_archive": {
+    "repository": "YinsenW/Aico-8-private-archive",
+    "visibility": "private",
+    "retained": true
+  },
+  "verified_at": "2026-07-13T15:45:00+08:00"
+}

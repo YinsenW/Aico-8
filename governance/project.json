@@ -43,7 +43,7 @@
     },
     {
       "class": "executable_generated_evidence",
-      "locations": ["tests/", "research/*.json", "CI logs"],
+      "locations": ["tests/", "research/*.json", "governance/evidence/", "CI logs"],
       "policy": "Run or regenerate from declared inputs; do not hand-edit generated evidence."
     },
     {
@@ -192,10 +192,10 @@
     {
       "id": "REQ-REPO-001",
       "source": "docs/PRODUCT.md",
-      "status": "in_progress",
+      "status": "verified",
       "contract_ids": ["DATA-GOVERNANCE-001", "DATA-RELEASE-001"],
       "exit_ids": ["EXIT-REPO-CONTENT", "EXIT-REPO-PUBLIC"],
-      "open_item_ids": ["OPEN-REPO-CONTENT", "OPEN-REPO-PUBLIC"]
+      "open_item_ids": []
     },
     {
       "id": "REQ-SKILL-001",
@@ -236,8 +236,8 @@
     { "id": "EXIT-GOV-TRACE", "requirement_id": "REQ-GOV-001", "statement": "Requirements, exits, implementation, evidence, selectors, and open work form a closed graph.", "status": "verified", "implementation": ["governance/project.json", "governance/schema.json"], "evidence": ["docs/GOVERNANCE.md"], "test_selectors": ["TEST-GOV-001"] },
     { "id": "EXIT-GOV-DEVELOPMENT", "requirement_id": "REQ-GOV-001", "statement": "A new agent can implement, test, recover, diagnose, and hand off without chat history.", "status": "verified", "implementation": ["AGENTS.md", "docs/DEVELOPMENT.md"], "evidence": ["docs/DEVELOPMENT.md"], "test_selectors": ["TEST-GOV-001"] },
     { "id": "EXIT-GOV-LEAN", "requirement_id": "REQ-GOV-001", "statement": "Core navigation, owner count, line budgets, and research isolation remain within policy.", "status": "verified", "implementation": ["docs/GOVERNANCE.md", "governance/project.json"], "evidence": ["docs/GOVERNANCE.md"], "test_selectors": ["TEST-GOV-001"] },
-    { "id": "EXIT-REPO-CONTENT", "requirement_id": "REQ-REPO-001", "statement": "The clean public history contains the Apache-2.0 project license and no secrets, private inputs, official captures, or cart-derived evidence.", "status": "in_progress", "implementation": ["LICENSE", "NOTICE.md", ".gitignore", ".gitattributes", "docs/GOVERNANCE.md", "scripts/verify-public-repository.mjs"], "evidence": [], "test_selectors": ["TEST-REPO-PUBLIC"] },
-    { "id": "EXIT-REPO-PUBLIC", "requirement_id": "REQ-REPO-001", "statement": "The same-name GitHub repository is public, its default branch uses the clean history, and public CI passes.", "status": "planned", "implementation": [".github/workflows/ci.yml", "scripts/verify-public-repository.mjs"], "evidence": [], "test_selectors": ["TEST-REPO-PUBLIC"] },
+    { "id": "EXIT-REPO-CONTENT", "requirement_id": "REQ-REPO-001", "statement": "The clean public history contains the Apache-2.0 project license and no secrets, private inputs, official captures, or cart-derived evidence.", "status": "verified", "implementation": ["LICENSE", "NOTICE.md", ".gitignore", ".gitattributes", "docs/GOVERNANCE.md", "scripts/verify-public-repository.mjs"], "evidence": ["governance/evidence/public-repository.json"], "test_selectors": ["TEST-REPO-PUBLIC"] },
+    { "id": "EXIT-REPO-PUBLIC", "requirement_id": "REQ-REPO-001", "statement": "The same-name GitHub repository is public, its default branch uses the clean history, and public CI passes.", "status": "verified", "implementation": [".github/workflows/ci.yml", "scripts/verify-public-repository.mjs"], "evidence": ["governance/evidence/public-repository.json"], "test_selectors": ["TEST-REPO-PUBLIC"] },
     { "id": "EXIT-SKILL-RELEASES", "requirement_id": "REQ-SKILL-001", "statement": "Several permission-aware end-to-end remakes pass release gates before Skill design.", "status": "planned", "implementation": [], "evidence": [], "test_selectors": [] },
     { "id": "EXIT-SKILL-PACKAGE", "requirement_id": "REQ-SKILL-001", "statement": "A thin Skill invokes all stable Jobs without embedding runtime or policy logic.", "status": "planned", "implementation": ["skills/README.md"], "evidence": [], "test_selectors": [] }
   ],
@@ -262,8 +262,6 @@
     { "id": "OPEN-REMAKE-PACKAGE", "requirement_id": "REQ-REMAKE-001", "exit_id": "EXIT-REMAKE-PACKAGE", "next_action": "Build and validate reproducible Web/PWA package." },
     { "id": "OPEN-RELEASE-PIPELINE", "requirement_id": "REQ-RELEASE-001", "exit_id": "EXIT-RELEASE-TECHNICAL", "next_action": "Implement release schema, validation gates, checksums, notices, and package automation." },
     { "id": "OPEN-RELEASE-RIGHTS", "requirement_id": "REQ-RELEASE-001", "exit_id": "EXIT-RELEASE-RIGHTS", "next_action": "Obtain and record explicit publication permission from the cart rights holder." },
-    { "id": "OPEN-REPO-CONTENT", "requirement_id": "REQ-REPO-001", "exit_id": "EXIT-REPO-CONTENT", "next_action": "Create an independent clean root history from the sanitized tree and run a reachable-history content audit." },
-    { "id": "OPEN-REPO-PUBLIC", "requirement_id": "REQ-REPO-001", "exit_id": "EXIT-REPO-PUBLIC", "next_action": "Retain the current repository as a private archive, create the same-name public repository, push clean main, and verify visibility and CI." },
     { "id": "OPEN-SKILL-DEFER", "requirement_id": "REQ-SKILL-001", "exit_id": "EXIT-SKILL-RELEASES", "next_action": "Defer Skill design until repeated end-to-end remakes and releases are verified." }
   ],
   "test_catalog": [
@@ -273,9 +271,9 @@
     { "id": "TEST-WEB-PUBLIC", "command": "pnpm verify:web", "availability": "public", "ci_job": "web-product", "covers": ["EXIT-HD-DISPLAY", "EXIT-WEB-BOOT"] }
   ],
   "current_focus": {
-    "objective": "Publish a licensed, sanitized Aico 8 source repository while retaining Dust Bunny evidence in a private research archive.",
-    "requirement_id": "REQ-REPO-001",
-    "exit_ids": ["EXIT-REPO-CONTENT", "EXIT-REPO-PUBLIC"],
-    "resume_after_requirement_id": "REQ-COMPAT-001"
+    "objective": "Evaluate the Rust+C native, browser-Wasm, and ESP32-P4 proof gate before expanding the compatibility kernel.",
+    "requirement_id": "REQ-COMPAT-001",
+    "exit_ids": ["EXIT-COMPAT-WASM"],
+    "resume_after_requirement_id": "REQ-WEB-001"
   }
 }
