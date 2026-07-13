@@ -27,6 +27,8 @@ const packet = {
   browserEvidenceSha256: hash,
   status: "pending-human-side-by-side-review",
   reviewer: "pending-human-side-by-side-review",
+  acceptanceStatement: "I reviewed every declared source-relative element in this build.",
+  reviewDecision: null,
   elements: [{
     id: "character.test",
     kind: "character",
@@ -98,7 +100,7 @@ describe("HD identity review packet", () => {
   });
 
   it("rejects cross-state or wrong-mode source/HD pairs", () => {
-    const mutated = structuredClone(packet);
+    const mutated: any = structuredClone(packet);
     mutated.screenshots[1]!.stateBoundary = "canonical-replay:update:4:presentation-ms:0";
     mutated.screenshots[1]!.presentationMode = "reference";
     const result = validateHdReviewPacket(mutated);
@@ -107,9 +109,10 @@ describe("HD identity review packet", () => {
   });
 
   it("cannot mark a packet accepted while any element review remains false", () => {
-    const mutated = structuredClone(packet);
+    const mutated: any = structuredClone(packet);
     mutated.status = "accepted";
     mutated.reviewer = "product-owner";
+    mutated.reviewDecision = { path: "evidence/identity-review-decision.json", sha256: hash };
     mutated.elements[0]!.review.reviewer = "product-owner";
     const result = validateHdReviewPacket(mutated);
     expect(result.valid).toBe(false);
@@ -117,6 +120,19 @@ describe("HD identity review packet", () => {
   });
 
   it("accepts the same evidence only after every human review check passes", () => {
+    const mutated: any = structuredClone(packet);
+    mutated.status = "accepted";
+    mutated.reviewer = "product-owner";
+    mutated.reviewDecision = { path: "evidence/identity-review-decision.json", sha256: hash };
+    mutated.elements[0]!.review.reviewer = "product-owner";
+    for (const name of [
+      "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
+      "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
+    ] as const) mutated.elements[0]!.review[name] = true;
+    expect(validateHdReviewPacket(mutated)).toEqual({ valid: true, errors: [] });
+  });
+
+  it("rejects accepted review fields without an immutable review decision", () => {
     const mutated = structuredClone(packet);
     mutated.status = "accepted";
     mutated.reviewer = "product-owner";
@@ -125,7 +141,9 @@ describe("HD identity review packet", () => {
       "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
       "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
     ] as const) mutated.elements[0]!.review[name] = true;
-    expect(validateHdReviewPacket(mutated)).toEqual({ valid: true, errors: [] });
+    const result = validateHdReviewPacket(mutated);
+    expect(result.valid).toBe(false);
+    expect(result.errors.join("\n")).toMatch(/reviewDecision.*required/);
   });
 
   it("rejects unknown element or screenshot references", () => {

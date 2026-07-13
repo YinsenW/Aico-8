@@ -94,8 +94,9 @@
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
     "hd_presentation_audit_sha256": "1f2d2c23fe352878c7525c8a098178a515eb2be2fcfcb86913632a8fe0240cfd",
     "browser_validation_sha256": "53f04028fddfedffe22e1f18ac2a7d5d667ec6b2b96a8d3a110ab32994ff9988",
-    "hd_review_packet_sha256": "e3144e0db5d481428f2d6689916a29ce7067eef0bd6af46a8e0ddfbb093975ed",
+    "hd_review_packet_sha256": "dfa5b07cec1d5d8eeb38bb94cc4916397bbbc65e634fef984a8d89c660567ee9",
     "hd_review_document_sha256": "2332c929d3691c6c20b471ca4c5dea6fd73df098d301904a4e4690ed45ae7418",
+    "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }
 }

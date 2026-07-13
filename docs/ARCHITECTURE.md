@@ -143,6 +143,11 @@ The complete policy is owned by
 - Human review consumes a generated packet that hashes its identity map, browser
   record, visual-runtime identity, every displayed screenshot, and review HTML;
   stale or cross-state review material cannot promote an accepted build.
+- Acceptance is a separate immutable decision over the exact pending packet and
+  required statement. The pipeline archives what the human saw, deterministically
+  rebuilds the reviewed draft, promotes all element checks atomically, and then
+  regenerates the accepted completeness/invariance audit; editing status fields
+  or partially passing elements cannot create an accepted build.
 - Reference framebuffer available as an explicit diagnostic comparison. An
   unforeseen mapping fault may switch the whole scene atomically to reference
   mode, never individual elements; any such event fails release acceptance.

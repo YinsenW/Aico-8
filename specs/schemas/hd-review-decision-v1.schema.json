@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/hd-review-decision-v1.schema.json",
+  "title": "Aico 8 HD human review decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "gameId", "decision", "reviewer", "acceptanceStatement",
+    "reviewedPacket", "elementIds", "checkNames"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.hd-review-decision.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "decision": { "const": "accepted" },
+    "reviewer": {
+      "allOf": [
+        { "$ref": "#/$defs/nonEmptyString" },
+        { "not": { "const": "pending-human-side-by-side-review" } }
+      ]
+    },
+    "acceptanceStatement": { "$ref": "#/$defs/nonEmptyString" },
+    "reviewedPacket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path", "sha256", "documentPath", "documentSha256", "visualRuntimeSha256",
+        "replaySemanticsSha256", "identityMapSha256", "browserEvidenceSha256"
+      ],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "documentPath": { "$ref": "#/$defs/safePath" },
+        "documentSha256": { "$ref": "#/$defs/sha256" },
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" },
+        "replaySemanticsSha256": { "$ref": "#/$defs/sha256" },
+        "identityMapSha256": { "$ref": "#/$defs/sha256" },
+        "browserEvidenceSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "elementIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "checkNames": {
+      "const": [
+        "silhouettePassed", "requiredPartsPassed", "proportionsPassed",
+        "expressionPassed", "colorHierarchyPassed", "motionPassed",
+        "gameplayCuesPassed", "visualGrammarPassed"
+      ]
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonEmptyString": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\/$).+$"
+    }
+  }
+}

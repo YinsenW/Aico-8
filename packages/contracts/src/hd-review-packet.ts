@@ -1,4 +1,5 @@
 export const HD_REVIEW_PACKET_SCHEMA_VERSION = "aico8.hd-review-packet.v1" as const;
+export const PENDING_HD_REVIEWER = "pending-human-side-by-side-review" as const;
 
 export const HD_REVIEW_CHECK_NAMES = [
   "silhouettePassed",
@@ -27,7 +28,6 @@ type Screenshot = {
 
 const hashPattern = /^[a-f0-9]{64}$/;
 const idPattern = /^[a-z0-9][a-z0-9._-]{1,127}$/;
-const pendingReviewer = "pending-human-side-by-side-review";
 const elementKinds = new Set(["character", "environment", "ui", "effect", "text"]);
 
 function record(value: unknown, path: string, errors: string[]): JsonRecord | undefined {
@@ -156,8 +156,9 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
   if (!root) return { valid: false, errors };
   exactKeys(root, [
     "schemaVersion", "gameId", "visualRuntimeSha256", "replaySemanticsSha256",
-    "identityMapSha256", "browserEvidenceSha256", "status", "reviewer", "elements",
-    "sceneComparisons", "temporalComparisons", "screenshots", "document",
+    "identityMapSha256", "browserEvidenceSha256", "status", "reviewer",
+    "acceptanceStatement", "reviewDecision", "elements", "sceneComparisons",
+    "temporalComparisons", "screenshots", "document",
   ], "$", errors);
   if (root.schemaVersion !== HD_REVIEW_PACKET_SCHEMA_VERSION) {
     errors.push(`$.schemaVersion must equal ${HD_REVIEW_PACKET_SCHEMA_VERSION}`);
@@ -173,11 +174,27 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
     errors.push("$.status must be pending-human-side-by-side-review or accepted");
   }
   const reviewer = stringValue(root.reviewer, "$.reviewer", errors) ? root.reviewer as string : undefined;
-  if (status === "pending-human-side-by-side-review" && reviewer !== pendingReviewer) {
-    errors.push(`$.reviewer must equal ${pendingReviewer} while review is pending`);
+  stringValue(root.acceptanceStatement, "$.acceptanceStatement", errors);
+  if (status === "pending-human-side-by-side-review" && reviewer !== PENDING_HD_REVIEWER) {
+    errors.push(`$.reviewer must equal ${PENDING_HD_REVIEWER} while review is pending`);
   }
-  if (status === "accepted" && reviewer === pendingReviewer) {
+  if (status === "accepted" && reviewer === PENDING_HD_REVIEWER) {
     errors.push("$.reviewer must identify the human reviewer when accepted");
+  }
+  if (status === "pending-human-side-by-side-review" && root.reviewDecision !== null) {
+    errors.push("$.reviewDecision must be null while review is pending");
+  }
+  if (status === "accepted") {
+    if (root.reviewDecision === null) {
+      errors.push("$.reviewDecision is required when status is accepted");
+    } else {
+      const decision = record(root.reviewDecision, "$.reviewDecision", errors);
+      if (decision) {
+        exactKeys(decision, ["path", "sha256"], "$.reviewDecision", errors);
+        safeRelativePath(decision.path, "$.reviewDecision.path", errors);
+        hashValue(decision.sha256, "$.reviewDecision.sha256", errors);
+      }
+    }
   }
 
   const screenshots = new Map<string, Screenshot>();

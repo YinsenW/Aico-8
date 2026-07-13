@@ -3,7 +3,11 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import { validateHdReviewPacket } from "../packages/contracts/src/hd-review-packet.ts";
+import {
+  HD_REVIEW_CHECK_NAMES,
+  validateHdReviewPacket,
+} from "../packages/contracts/src/hd-review-packet.ts";
+import { validateHdReviewDecision } from "../packages/contracts/src/hd-review-decision.ts";
 
 const arguments_ = new Map<string, string>();
 for (let index = 2; index < process.argv.length; index += 2) {
@@ -64,6 +68,37 @@ for (const screenshot of packet.screenshots) {
 const documentPath = path.resolve(workspace, packet.document.path);
 assert.ok(documentPath.startsWith(`${workspace}${path.sep}`), "Unsafe review document path");
 assert.equal(sha256(documentPath), packet.document.sha256, "Review document hash");
+
+if (packet.status === "accepted") {
+  assert.ok(packet.reviewDecision, "Accepted review packet must reference its immutable decision");
+  const decisionPath = path.resolve(workspace, packet.reviewDecision.path);
+  assert.ok(decisionPath.startsWith(`${workspace}${path.sep}`), "Unsafe review decision path");
+  assert.equal(sha256(decisionPath), packet.reviewDecision.sha256, "Review decision hash");
+  const decision = readJson(decisionPath);
+  const reviewedPacketPath = path.resolve(workspace, decision.reviewedPacket.path);
+  const reviewedDocumentPath = path.resolve(workspace, decision.reviewedPacket.documentPath);
+  assert.ok(reviewedPacketPath.startsWith(`${workspace}${path.sep}`), "Unsafe archived review packet path");
+  assert.ok(reviewedDocumentPath.startsWith(`${workspace}${path.sep}`), "Unsafe archived review document path");
+  assert.equal(sha256(reviewedPacketPath), decision.reviewedPacket.sha256, "Archived review packet hash");
+  assert.equal(sha256(reviewedDocumentPath), decision.reviewedPacket.documentSha256,
+    "Archived review document hash");
+  const reviewedPacket = readJson(reviewedPacketPath);
+  const decisionValidation = validateHdReviewDecision(decision, reviewedPacket);
+  assert.equal(decisionValidation.valid, true, decisionValidation.errors.join("\n"));
+  assert.equal(decision.reviewer, packet.reviewer);
+  assert.equal(decision.acceptanceStatement, packet.acceptanceStatement);
+  assert.equal(reviewedPacket.gameId, packet.gameId);
+  assert.equal(reviewedPacket.visualRuntimeSha256, packet.visualRuntimeSha256);
+  assert.equal(reviewedPacket.replaySemanticsSha256, packet.replaySemanticsSha256);
+  assert.equal(reviewedPacket.browserEvidenceSha256, packet.browserEvidenceSha256);
+  assert.deepEqual(reviewedPacket.elements.map(({ id }: any) => id), packet.elements.map(({ id }: any) => id));
+  for (const element of packet.elements) {
+    assert.equal(element.review.reviewer, decision.reviewer);
+    for (const name of HD_REVIEW_CHECK_NAMES) assert.equal(element.review[name], true, `${element.id}: ${name}`);
+  }
+} else {
+  assert.equal(packet.reviewDecision, null);
+}
 
 process.stdout.write(
   `HD review packet verified: ${packet.elements.length} elements, ${packet.sceneComparisons.length} static pairs, `

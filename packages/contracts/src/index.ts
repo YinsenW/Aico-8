@@ -53,9 +53,17 @@ export {
 export {
   HD_REVIEW_CHECK_NAMES,
   HD_REVIEW_PACKET_SCHEMA_VERSION,
+  PENDING_HD_REVIEWER,
   validateHdReviewPacket,
   type HdReviewPacketValidationResult,
 } from "./hd-review-packet.js";
+export {
+  HD_REVIEW_DECISION_SCHEMA_VERSION,
+  promoteHdIdentityMapFromReview,
+  validateHdReviewDecision,
+  type HdReviewDecisionV1,
+  type HdReviewDecisionValidationResult,
+} from "./hd-review-decision.js";
 export {
   RELEASE_MANIFEST_SCHEMA_VERSION,
   RELEASE_VALIDATION_SCHEMA_VERSION,

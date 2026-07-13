@@ -46,7 +46,7 @@ focus, Exits, evidence, selectors, and open work. Never infer completion here.
 ## M4 — Complete modern presentation
 
 - `WP-M4-1`: lock every reachable element's silhouette, anatomy, proportions, expression, color, footprint, motion, and gameplay cues; map only allowed modernization through one grammar and forbid mixed fallback.
-- `WP-M4-2`: review, normalize, hash, and freeze the complete 1024 asset set; fail closed over contextual source tokens and prove scene-golden stability plus per-update HD-on/off state invariance for canonical replay and named reachable-state probes.
+- `WP-M4-2`: review, normalize, hash, and freeze the complete 1024 asset set; bind human acceptance to the exact pending evidence and deterministically rebuilt draft, then fail closed over contextual source tokens and prove scene-golden stability plus per-update HD-on/off state invariance for canonical replay and named reachable-state probes.
 - `WP-M4-3`: execute original P8SCII truth, map every reachable run to licensed bundled modern fonts or approved modern icons, and validate layout, completeness, and accessibility.
 - `WP-M4-4`: preserve dynamic synth behavior, validate any pre-rendered audio substitutions, then add controller and touch traces without feel drift.
 - Acceptance: the first trial closes `EXIT-HD-DISPLAY`, `EXIT-HD-IDENTITY`, `EXIT-HD-COMPLETENESS`, `EXIT-INPUT-HOSTS`, `EXIT-REMAKE-PRESENTATION`, and `EXIT-REMAKE-INPUT`; broader HD-invariance and P8SCII exits stay open.

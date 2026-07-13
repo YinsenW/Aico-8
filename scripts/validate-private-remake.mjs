@@ -87,7 +87,7 @@ try {
   runNode([
     path.join(root, "scripts/build-private-hd-review-packet.mjs"),
     "--workspace", workspace,
-    "--write", "false",
+    "--write", "true",
   ]);
   run(process.execPath, [
     "--experimental-strip-types",
@@ -123,6 +123,8 @@ try {
   const browser = JSON.parse(fs.readFileSync(browserEvidencePath, "utf8"));
   const releaseTechnical = JSON.parse(fs.readFileSync(releaseTechnicalPath, "utf8"));
   const identityReviewPacket = JSON.parse(fs.readFileSync(identityReviewPacketPath, "utf8"));
+  const identityAccepted = identityMap.status === "accepted";
+  const identityReviewDecisionPath = path.join(workspace, "evidence/identity-review-decision.json");
   assert.equal(replay.schemaVersion, "aico8.replay.v1");
   assert.equal(replay.result.completed, true);
   assert.equal(replay.canonicality.testHooks, false);
@@ -147,9 +149,11 @@ try {
     assert.equal(result.maskSha256, inputProjection.canonicalTraceSha256, `${surface}: canonical masks`);
     assert.equal(result.mismatches, 0, `${surface}: no logical input mismatch`);
   }
-  assert.equal(identityMap.status, "draft", "human side-by-side identity review remains an independent gate");
-  assert.ok(identityMap.elements.every((element) => element.review.reviewer === "pending-human-side-by-side-review"));
-  assert.equal(hdAudit.status, "draft");
+  assert.ok(["draft", "accepted"].includes(identityMap.status));
+  const identityReviewers = new Set(identityMap.elements.map((element) => element.review.reviewer));
+  assert.equal(identityReviewers.size, 1);
+  assert.equal(identityReviewers.has("pending-human-side-by-side-review"), !identityAccepted);
+  assert.equal(hdAudit.status, identityMap.status);
   assert.equal(hdAudit.totalLogicalUpdates, 9224);
   assert.deepEqual(hdAudit.coverage.unmappedSourceTokenIds, []);
   assert.equal(hdAudit.coverage.mixedIndexedFragments, 0);
@@ -215,8 +219,11 @@ try {
   assert.equal(browser.identityReview.scenePairsComplete, true);
   assert.equal(browser.identityReview.temporalComparisonsComplete, true);
   assert.equal(browser.identityReview.accepted, false);
-  assert.equal(identityReviewPacket.status, "pending-human-side-by-side-review");
-  assert.equal(identityReviewPacket.reviewer, "pending-human-side-by-side-review");
+  assert.equal(identityReviewPacket.status,
+    identityAccepted ? "accepted" : "pending-human-side-by-side-review");
+  assert.equal(identityReviewPacket.reviewer, [...identityReviewers][0]);
+  assert.equal(identityReviewPacket.reviewDecision === null, !identityAccepted);
+  assert.equal(fs.existsSync(identityReviewDecisionPath), identityAccepted);
   assert.equal(identityReviewPacket.elements.length, identityMap.elements.length);
   assert.equal(identityReviewPacket.sceneComparisons.length, browser.sceneComparisons.length);
   assert.equal(identityReviewPacket.temporalComparisons.length, browser.temporalComparisons.length);
@@ -400,7 +407,7 @@ try {
       mixed_indexed_fragments: hdAudit.coverage.mixedIndexedFragments,
       state_mismatches: hdAudit.invariance.mismatchUpdateIds.length,
       browser_checks: browser.checks,
-      identity_human_review_accepted: false,
+      identity_human_review_accepted: identityAccepted,
       identity_review_packet_status: identityReviewPacket.status,
       identity_review_elements: identityReviewPacket.elements.length,
       identity_review_static_pairs: identityReviewPacket.sceneComparisons.length,
@@ -436,6 +443,7 @@ try {
       browser_validation_sha256: sha256(browserEvidencePath),
       hd_review_packet_sha256: sha256(identityReviewPacketPath),
       hd_review_document_sha256: sha256(identityReviewDocumentPath),
+      hd_review_decision_sha256: identityAccepted ? sha256(identityReviewDecisionPath) : null,
       input_surface_projection_sha256: sha256(inputProjectionPath),
     },
   };
@@ -447,7 +455,9 @@ try {
     assert.equal(fs.readFileSync(attestationPath, "utf8"), serialized,
       "Public attestation is stale; rerun once with AICO8_WRITE_ATTESTATION=1 and review the diff");
   }
-  process.stdout.write("Private remake selector: PASS (canonical content, full keyboard/controller/touch trace, automated HD audit, real touch browser evidence, PWA, two-build identity; human identity review pending)\n");
+  process.stdout.write(
+    `Private remake selector: PASS (canonical content, full keyboard/controller/touch trace, automated HD audit, real touch browser evidence, PWA, two-build identity; human identity review ${identityAccepted ? "accepted" : "pending"})\n`,
+  );
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }

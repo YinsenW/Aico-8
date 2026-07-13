@@ -61,7 +61,12 @@ level/ending milestones, and broken replay lineage.
 `pnpm verify:private-remake` additionally requires `AICO8_PRIVATE_WORKSPACE` to
 point at the authorized ignored workspace. It rebuilds twice, regenerates the
 private content and complete keyboard/controller/touch input-projection evidence,
-and checks the retained browser-review record; set
+regenerates the current review packet, and checks the retained browser-review
+record. Only after the human repeats the packet's exact acceptance statement may
+an Agent invoke `scripts/accept-private-hd-review.ts`; that command archives the
+exact pending packet/document and writes one immutable decision. Subsequent
+qualification must reproduce the reviewed draft and atomically regenerate the
+accepted identity map/audit. Set
 `AICO8_WRITE_ATTESTATION=1` only when intentionally refreshing the reviewed
 sanitized public attestation.
 Official-runtime selectors remain pending until licensed captures are available.

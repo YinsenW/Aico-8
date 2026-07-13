@@ -18,6 +18,8 @@ const identityMapPath = path.join(workspace, "validation/hd-identity-map.json");
 const browserEvidencePath = path.join(workspace, "evidence/browser-validation.json");
 const documentPath = path.join(workspace, "evidence/identity-review-packet.html");
 const packetPath = path.join(workspace, "evidence/identity-review-packet.json");
+const decisionRelativePath = "evidence/identity-review-decision.json";
+const decisionPath = path.join(workspace, decisionRelativePath);
 const identityMap = JSON.parse(fs.readFileSync(identityMapPath, "utf8"));
 const browser = JSON.parse(fs.readFileSync(browserEvidencePath, "utf8"));
 
@@ -45,12 +47,18 @@ function imagePath(screenshot) {
 }
 
 assert.equal(identityMap.canonicalReplayId, browser.validationReplay.replayId);
-assert.equal(browser.identityReview.status,
-  identityMap.status === "accepted" ? "accepted" : "pending-human-side-by-side-review");
+assert.equal(browser.identityReview.status, "pending-human-side-by-side-review",
+  "Browser evidence records capture-time review state; the later decision is a separate immutable artifact");
+assert.equal(browser.identityReview.accepted, false);
+assert.equal(browser.identityReview.scenePairsComplete, true);
+assert.equal(browser.identityReview.temporalComparisonsComplete, true);
 const reviewerIds = new Set(identityMap.elements.map(({ review }) => review.reviewer));
 assert.equal(reviewerIds.size, 1, "Every identity element must name the same reviewer");
 const reviewer = [...reviewerIds][0];
 const status = identityMap.status === "accepted" ? "accepted" : "pending-human-side-by-side-review";
+const reviewDecision = status === "accepted"
+  ? { path: decisionRelativePath, sha256: sha256(decisionPath) }
+  : null;
 const screenshotsById = new Map(browser.screenshots.map((screenshot) => [screenshot.id, screenshot]));
 const screenshotIds = new Set();
 for (const element of identityMap.elements) {
@@ -108,6 +116,8 @@ const elements = identityMap.elements.map((element) => ({
   },
 }));
 
+const acceptancePhrase = "我已逐项审查 Dust Bunny 当前构建的 20 个源相对元素，同意所有身份、完整性、动画与视觉语法检查。";
+
 const packetWithoutDocument = {
   schemaVersion: "aico8.hd-review-packet.v1",
   gameId: identityMap.gameId,
@@ -117,6 +127,8 @@ const packetWithoutDocument = {
   browserEvidenceSha256: sha256(browserEvidencePath),
   status,
   reviewer,
+  acceptanceStatement: acceptancePhrase,
+  reviewDecision,
   elements,
   sceneComparisons: browser.sceneComparisons,
   temporalComparisons: browser.temporalComparisons,
@@ -169,7 +181,6 @@ const elementSections = elements.map((element) => `
       </div>
     </article>`).join("");
 
-const acceptancePhrase = "我已逐项审查 Dust Bunny 当前构建的 20 个源相对元素，同意所有身份、完整性、动画与视觉语法检查。";
 const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -184,7 +195,7 @@ const html = `<!doctype html>
 <body><main>
   <p class="kind">AICO 8 · PRIVATE RESEARCH EVIDENCE</p>
   <h1>Dust Bunny<br>HD identity review</h1>
-  <div class="meta"><strong>Status: ${escapeHtml(status)}</strong><p class="hash">Visual runtime ${packetWithoutDocument.visualRuntimeSha256}<br>Replay semantics ${packetWithoutDocument.replaySemanticsSha256}<br>Identity map ${packetWithoutDocument.identityMapSha256}<br>Browser evidence ${packetWithoutDocument.browserEvidenceSha256}</p></div>
+  <div class="meta"><strong>Status: ${escapeHtml(status)}</strong><p class="hash">Visual runtime ${packetWithoutDocument.visualRuntimeSha256}<br>Replay semantics ${packetWithoutDocument.replaySemanticsSha256}<br>Identity map ${packetWithoutDocument.identityMapSha256}<br>Browser evidence ${packetWithoutDocument.browserEvidenceSha256}${reviewDecision ? `<br>Review decision ${reviewDecision.sha256}` : ""}</p></div>
   <div class="notice"><strong>This page is the judgment gate, not an automated approval.</strong> Each source/HD pair is bound to the same unchanged-cart replay state. Review the 20 source-relative element contracts; do not apply universal traits to unrelated games.</div>
   <nav><a href="#static">Static scenes</a><a href="#temporal">Animation and effects</a><a href="#elements">20 element contracts</a><a href="#decision">Decision</a></nav>
   <h2 id="static">Five same-state scene pairs</h2>${staticSections}

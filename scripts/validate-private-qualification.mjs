@@ -63,6 +63,8 @@ const replay = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "ca
 const canonicalAudit = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "canonical-run-audit.json"), "utf8"));
 const identityMap = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "hd-identity-map.json"), "utf8"));
 const hdAudit = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "hd-presentation-audit.json"), "utf8"));
+const identityAccepted = identityMap.status === "accepted";
+const decisionPath = path.join(workspace, "evidence", "identity-review-decision.json");
 assert.equal(replay.schemaVersion, "aico8.replay.v1");
 assert.equal(replay.canonicality?.cartMutation, "none");
 assert.equal(replay.canonicality?.compatibilityStateMutation, "none");
@@ -83,7 +85,7 @@ assert.ok(replay.requiredMilestoneIds.includes("ending-reached"));
 assert.ok(replay.requiredMilestoneIds.includes("game-complete"));
 assert.ok(replay.requiredMilestoneIds.includes("restart-complete"));
 assert.equal(identityMap.schemaVersion, "aico8.hd-identity-map.v1");
-assert.equal(identityMap.status, "draft", "identity acceptance requires explicit human side-by-side review");
+assert.ok(["draft", "accepted"].includes(identityMap.status), "identity map status");
 assert.equal(identityMap.gameId, replay.gameId);
 assert.equal(identityMap.canonicalReplayId, replay.replayId);
 assert.equal(identityMap.elements.length, 20);
@@ -91,13 +93,22 @@ assert.deepEqual(identityMap.coverage.reachableElementIds, identityMap.coverage.
 assert.ok(identityMap.elements.every((element) => element.copy && typeof element.copy.origin === "string"));
 assert.equal(identityMap.elements.filter((element) => element.copy.origin !== "none").length, 5);
 assert.equal(identityMap.elements.filter((element) => element.copy.origin === "supplemental-authorized").length, 0);
-assert.ok(identityMap.elements.every((element) => element.review.reviewer === "pending-human-side-by-side-review"));
-assert.ok(identityMap.elements.every((element) => [
+const identityReviewFields = [
   "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
   "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
-].every((field) => element.review[field] === false)));
+];
+if (identityAccepted) {
+  assert.ok(fs.existsSync(decisionPath), "accepted identity map requires an immutable private review decision");
+  const reviewers = new Set(identityMap.elements.map((element) => element.review.reviewer));
+  assert.equal(reviewers.size, 1, "accepted identity elements must share one reviewer");
+  assert.notEqual([...reviewers][0], "pending-human-side-by-side-review");
+  assert.ok(identityMap.elements.every((element) => identityReviewFields.every((field) => element.review[field] === true)));
+} else {
+  assert.ok(identityMap.elements.every((element) => element.review.reviewer === "pending-human-side-by-side-review"));
+  assert.ok(identityMap.elements.every((element) => identityReviewFields.every((field) => element.review[field] === false)));
+}
 assert.equal(hdAudit.schemaVersion, "aico8.hd-presentation-audit.v1");
-assert.equal(hdAudit.status, "draft");
+assert.equal(hdAudit.status, identityMap.status);
 assert.equal(hdAudit.gameId, replay.gameId);
 assert.equal(hdAudit.canonicalReplayId, replay.replayId);
 assert.equal(hdAudit.totalLogicalUpdates, 9224);
@@ -163,8 +174,8 @@ const hdPrivateArtifactPaths = {
 };
 const hdAttestation = {
   schema_version: 1,
-  subject: "Dust Bunny HD presentation draft qualification",
-  status: "draft-pending-human-side-by-side-review",
+  subject: "Dust Bunny HD presentation qualification",
+  status: identityAccepted ? "accepted-human-side-by-side-review" : "draft-pending-human-side-by-side-review",
   rights_scope: "Research and test evidence only; no formal game release is authorized by this record.",
   observations: {
     identity_elements: identityMap.elements.length,
@@ -182,8 +193,9 @@ const hdAttestation = {
     coverage_mutation_rejected: hdAudit.regressions.every(({ rejected }) => rejected === true),
   },
   review: {
-    identity_map_accepted: false,
-    reviewer: "pending-human-side-by-side-review",
+    identity_map_accepted: identityAccepted,
+    reviewer: identityAccepted ? "private-review-record" : "pending-human-side-by-side-review",
+    review_decision_sha256: identityAccepted ? createHash("sha256").update(fs.readFileSync(decisionPath)).digest("hex") : null,
     acceptance_may_not_be_inferred_from_code_or_automated_audit: true,
   },
   private_artifact_sha256: Object.fromEntries(Object.entries(hdPrivateArtifactPaths).map(([id, artifactPath]) => [
@@ -200,7 +212,7 @@ function verifyOrWritePublicAttestation(relativePath, value) {
     `${relativePath} is stale; rerun once with AICO8_WRITE_ATTESTATION=1 and review the diff`);
 }
 verifyOrWritePublicAttestation("governance/evidence/dust-bunny-canonical-qualification.json", canonicalAttestation);
-verifyOrWritePublicAttestation("governance/evidence/dust-bunny-hd-presentation-draft.json", hdAttestation);
+verifyOrWritePublicAttestation("governance/evidence/dust-bunny-hd-presentation.json", hdAttestation);
 process.stdout.write(
   `private qualification: ${invariantAudit.cases.length} generic invariants, ${audit.candidates.length} levels, `
   + `${audit.totalTransitions} candidate transitions, ${canonicalAudit.logicalUpdates} continuous updates, `

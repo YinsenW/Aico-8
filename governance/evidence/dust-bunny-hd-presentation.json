@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "subject": "Dust Bunny HD presentation draft qualification",
+  "subject": "Dust Bunny HD presentation qualification",
   "status": "draft-pending-human-side-by-side-review",
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "observations": {
@@ -21,6 +21,7 @@
   "review": {
     "identity_map_accepted": false,
     "reviewer": "pending-human-side-by-side-review",
+    "review_decision_sha256": null,
     "acceptance_may_not_be_inferred_from_code_or_automated_audit": true
   },
   "private_artifact_sha256": {
