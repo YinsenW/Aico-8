@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  validationReplaySemanticsSha256,
+  visualRuntimeSha256,
+} from "./lib/release-identities.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -48,6 +52,7 @@ const presentation = argumentsMap.get("presentation") ?? "reference";
 const persistenceKey = argumentsMap.get("persistence-key") ?? `aico8.private.${id}.progress.v1`;
 const sourceLicense = required(argumentsMap, "source-license");
 const sourceUrl = required(argumentsMap, "source-url");
+const validationReplayArgument = argumentsMap.get("validation-replay");
 const privateSourceRoot = path.join(root, "apps/web/src/private");
 const privateRoot = path.join(root, "apps/web/public/private");
 
@@ -66,6 +71,14 @@ const romSource = path.join(workspace, "source.rom");
 const luaSource = path.join(workspace, "code.p8.lua");
 for (const input of [romSource, luaSource]) {
   if (!fs.statSync(input, { throwIfNoEntry: false })?.isFile()) throw new Error(`Missing private input: ${input}`);
+}
+let validationReplaySource;
+if (validationReplayArgument) {
+  validationReplaySource = path.resolve(workspace, validationReplayArgument);
+  if (!validationReplaySource.startsWith(`${workspace}${path.sep}`)
+    || !fs.statSync(validationReplaySource, { throwIfNoEntry: false })?.isFile()) {
+    throw new Error("--validation-replay must name a file inside the private workspace");
+  }
 }
 
 fs.rmSync(privateSourceRoot, { recursive: true, force: true });
@@ -87,6 +100,13 @@ fs.rmSync(privateRoot, { recursive: true, force: true });
 fs.mkdirSync(moduleRoot, { recursive: true });
 fs.copyFileSync(romSource, path.join(moduleRoot, "source.rom"));
 fs.copyFileSync(luaSource, path.join(moduleRoot, "code.p8.lua"));
+if (validationReplaySource) {
+  fs.copyFileSync(validationReplaySource, path.join(moduleRoot, "validation-replay.json"));
+}
+const cartSha256 = createHash("sha256")
+  .update(fs.readFileSync(romSource))
+  .update(fs.readFileSync(luaSource))
+  .digest("hex");
 const gameManifest = {
   formatVersion: 1,
   id,
@@ -96,6 +116,8 @@ const gameManifest = {
   source: `${id}/code.p8.lua`,
   presentation,
   persistenceKey,
+  cartSha256,
+  ...(validationReplaySource ? { validationReplay: `${id}/validation-replay.json` } : {}),
   researchOnly: true,
   audio: "original-silent-cart",
   sourceLicense,
@@ -120,6 +142,17 @@ fs.writeFileSync(path.join(output, "PRIVATE-RESEARCH-ONLY.txt"),
   + "Serve this directory over HTTP or HTTPS; opening index.html directly is not supported.\n");
 
 const files = listFiles(output).filter((relative) => relative !== "release-manifest.json");
+const artifacts = files.map((relative) => ({
+  path: relative.split(path.sep).join("/"),
+  sha256: sha256(path.join(output, relative)),
+  bytes: fs.statSync(path.join(output, relative)).size,
+}));
+const validationReplayArtifactPath = validationReplaySource
+  ? `private/${id}/validation-replay.json`
+  : undefined;
+const validationReplay = validationReplaySource
+  ? JSON.parse(fs.readFileSync(validationReplaySource, "utf8"))
+  : undefined;
 const releaseManifest = {
   schema_version: 1,
   game: { id, title, author },
@@ -128,15 +161,25 @@ const releaseManifest = {
   output_profile: "hd-1024-square",
   rights: { profile: "private-research-and-testing-only", sourceLicense, sourceUrl },
   audio: "original-silent-cart",
+  identities: {
+    visual_runtime_schema: "aico8.visual-runtime-identity.v1",
+    visual_runtime_sha256: visualRuntimeSha256(artifacts, validationReplayArtifactPath),
+    ...(validationReplaySource ? {
+      validation_replay_sha256: sha256(validationReplaySource),
+      validation_replay_semantics_schema: "aico8.validation-replay-semantics.v1",
+      validation_replay_semantics_sha256: validationReplaySemanticsSha256(validationReplay),
+    } : {}),
+  },
   inputs: [
     { path: "source.rom", sha256: sha256(romSource), bytes: fs.statSync(romSource).size },
     { path: "code.p8.lua", sha256: sha256(luaSource), bytes: fs.statSync(luaSource).size },
+    ...(validationReplaySource ? [{
+      path: "validation-replay.json",
+      sha256: sha256(validationReplaySource),
+      bytes: fs.statSync(validationReplaySource).size,
+    }] : []),
   ],
-  artifacts: files.map((relative) => ({
-    path: relative.split(path.sep).join("/"),
-    sha256: sha256(path.join(output, relative)),
-    bytes: fs.statSync(path.join(output, relative)).size,
-  })),
+  artifacts,
 };
 fs.writeFileSync(path.join(output, "release-manifest.json"), `${JSON.stringify(releaseManifest, null, 2)}\n`);
 process.stdout.write(`Private Web/PWA package: ${output}\n`);

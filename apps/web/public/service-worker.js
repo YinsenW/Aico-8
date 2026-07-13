@@ -38,7 +38,7 @@ async function cachePrivateModule(cache) {
   if (!response.ok) return;
   await cache.put(manifestUrl, response.clone());
   const manifest = await response.json();
-  for (const relative of [manifest.rom, manifest.source]) {
+  for (const relative of [manifest.rom, manifest.source, manifest.validationReplay]) {
     if (typeof relative !== "string") continue;
     const url = new URL(relative, manifestUrl);
     const asset = await fetch(url, { cache: "no-store" });

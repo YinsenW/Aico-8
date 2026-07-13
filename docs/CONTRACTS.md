@@ -14,7 +14,7 @@ evidence, selectors, and open work live only in `governance/project.json`.
 | API-SEMANTIC-001 | `p8_draw_command` in `core.h` | Ordered original draw intent plus payloads/state revision | HD adapter and diagnostics |
 | API-TEXT-001 | Planned versioned core/TypeScript boundary | Raw P8SCII execution result plus ordered semantic text runs and diagnostic correspondence regions | HD text adapter, diagnostics, validation |
 | API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, semantic, map, global-inspection, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
-| API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, completeness, and diagnostic reference mode | PixiJS host and validation UI |
+| API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, source-timed visibility, completeness, and diagnostic reference mode | PixiJS host and validation UI |
 | API-HOST-001 | Planned host contract | Logical input, persistence, lifecycle, clock, audio, services | Browser Web/PWA, Android WebView, Linux Web shell, future ESP-IDF |
 | API-CLI-001 | Planned TypeScript CLI | Non-interactive execution of every pipeline Job | Agents, CI, maintainers |
 | API-GAME-MODULE-001 | Planned versioned TypeScript boundary | Bind one compatible game, HD presentation, saves, evidence, and provenance without exposing a public cart format | Assembly, Web host, validation, later platform hosts |
@@ -41,7 +41,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
 | DATA-TARGET-PROFILE-001 | Browser Web/PWA, Android WebView, Linux handheld Web, and future embedded capabilities, budgets, packaging mode, and signing policy | Target-profile schema |
 | DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links | Validation schema |
-| DATA-RELEASE-001 | Build profiles, checksums, notices, provenance, rights decision | Release schema |
+| DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, rights decision | Release schema |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
 
 JSON Schemas are required before a payload becomes a stable public contract.
@@ -97,6 +97,18 @@ only its linked exits determine acceptance.
   unchanged cart/state semantics, no test hooks or synthetic completion, and
   milestone/checkpoint lineage. Faster wall time is allowed only when every
   original logical update still executes.
+- Research Web packages may opt into explicit replay-backed scene capture. The
+  host must validate Replay v1, cart hash, initial persistence hash, and named
+  milestone, execute every ordinary input update, expose playback lineage in the
+  UI, and never treat the capture as a second completion claim.
+- Screenshot evidence binds the package's visual-runtime identity, which hashes
+  every artifact except the declared validation replay. Ending lineage also binds
+  the replay-semantics identity, which excludes only runtime/producer source-
+  revision metadata. Both identities are recomputed by package verification;
+  metadata churn may not mask visual or input/state drift.
+- Source-authored modern visuals are gated by source tokens from the same logical
+  update. Scene membership or a token retained from an earlier frame cannot
+  reveal copy, characters, effects, or cues before the source does.
 - A solver or AI planner may propose DATA-INPUT-TRACE-001 only. JOB-VALIDATE-001
   must replay each proposed transition on the unchanged cart and compare the
   declared observable state before JOB-CAPTURE-001 can promote it to

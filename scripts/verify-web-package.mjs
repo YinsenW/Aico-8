@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  validationReplaySemanticsSha256,
+  visualRuntimeSha256,
+} from "./lib/release-identities.mjs";
 
 const output = path.resolve(process.argv[2] ?? "");
 assert.ok(process.argv[2], "Usage: node scripts/verify-web-package.mjs <package-directory>");
@@ -61,12 +65,13 @@ assert.equal(game.formatVersion, 1);
 assert.equal(game.researchOnly, true);
 assert.match(game.id, /^[a-z0-9][a-z0-9-]*$/);
 assert.match(game.presentation, /^[a-z0-9][a-z0-9-]*$/);
+assert.match(game.cartSha256, /^[a-f0-9]{64}$/);
 assert.ok(game.sourceLicense && game.sourceUrl, "Private package needs source attribution and license");
 
 const privateEntries = fs.readdirSync(path.join(output, "private"), { withFileTypes: true });
 const moduleDirectories = privateEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 assert.deepEqual(moduleDirectories, [game.id], "Package must contain exactly its selected private game module");
-for (const relative of [game.rom, game.source]) {
+for (const relative of [game.rom, game.source, game.validationReplay].filter(Boolean)) {
   assert.ok(fs.statSync(path.join(output, "private", relative), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
 }
 
@@ -89,14 +94,46 @@ for (const artifact of release.artifacts) {
   assert.equal(fs.statSync(file).size, artifact.bytes, `${artifact.path} byte count`);
   assert.equal(sha256(file), artifact.sha256, `${artifact.path} sha256`);
 }
+const validationReplayArtifactPath = game.validationReplay ? `private/${game.validationReplay}` : undefined;
+assert.equal(release.identities.visual_runtime_schema, "aico8.visual-runtime-identity.v1");
+assert.equal(
+  release.identities.visual_runtime_sha256,
+  visualRuntimeSha256(release.artifacts, validationReplayArtifactPath),
+  "Visual runtime identity must bind every packaged artifact except validation replay provenance",
+);
 
 const bundledInputs = [
-  path.join(output, "private", game.rom),
-  path.join(output, "private", game.source),
+  ["source.rom", path.join(output, "private", game.rom)],
+  ["code.p8.lua", path.join(output, "private", game.source)],
+  ...(game.validationReplay ? [["validation-replay.json", path.join(output, "private", game.validationReplay)]] : []),
 ];
-for (let index = 0; index < release.inputs.length; index += 1) {
-  assert.equal(fs.statSync(bundledInputs[index]).size, release.inputs[index].bytes, `${release.inputs[index].path} input bytes`);
-  assert.equal(sha256(bundledInputs[index]), release.inputs[index].sha256, `${release.inputs[index].path} input sha256`);
+const bundledInputsByName = new Map(bundledInputs);
+assert.deepEqual(release.inputs.map(({ path: inputPath }) => inputPath).sort(), [...bundledInputsByName.keys()].sort(),
+  "Release inputs must enumerate every packaged build input");
+for (const input of release.inputs) {
+  const bundledInput = bundledInputsByName.get(input.path);
+  assert.ok(bundledInput, `Unknown release input ${input.path}`);
+  assert.equal(fs.statSync(bundledInput).size, input.bytes, `${input.path} input bytes`);
+  assert.equal(sha256(bundledInput), input.sha256, `${input.path} input sha256`);
+}
+
+if (game.validationReplay) {
+  const replay = readJson(path.join("private", game.validationReplay));
+  assert.equal(replay.schemaVersion, "aico8.replay.v1");
+  assert.equal(replay.cartSha256, game.cartSha256, "Validation replay must bind the packaged cart");
+  assert.equal(replay.canonicality?.testHooks, false);
+  assert.equal(replay.canonicality?.compatibilityStateMutation, "none");
+  assert.equal(replay.canonicality?.logicalUpdatePolicy, "execute-all");
+  assert.equal(release.identities.validation_replay_sha256, sha256(path.join(output, "private", game.validationReplay)));
+  assert.equal(release.identities.validation_replay_semantics_schema, "aico8.validation-replay-semantics.v1");
+  assert.equal(
+    release.identities.validation_replay_semantics_sha256,
+    validationReplaySemanticsSha256(replay),
+    "Replay semantic identity must bind cart, input, milestones, checkpoints, and result",
+  );
+} else {
+  assert.equal("validation_replay_sha256" in release.identities, false);
+  assert.equal("validation_replay_semantics_sha256" in release.identities, false);
 }
 
 const html = fs.readFileSync(path.join(output, "index.html"), "utf8");

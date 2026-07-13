@@ -37,6 +37,12 @@
       "sourceHdModeSwitchAtomic": true,
       "authenticWinStateCaptured": true,
       "copyProvenanceEnforced": true,
+      "sourceTimedVisibilityEnforced": true,
+      "canonicalReplayEndingCaptured": true,
+      "sceneEvidenceSingleBuild": true,
+      "allFiveSceneComparisonsComplete": true,
+      "identityReviewRemainsIndependent": true,
+      "visualRuntimeLineageStableUnderReplayProvenanceRefresh": true,
       "pwaPackageVerified": true
     },
     "identity_human_review_accepted": false
@@ -44,8 +50,11 @@
   "package": {
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
-    "artifact_count": 36,
-    "release_manifest_sha256": "17ab443521e58e8a9fa477566431bd9ac5af89aaedc13dcdb3f5e4fda401691a",
+    "artifact_count": 37,
+    "release_manifest_sha256": "a2f11d1902e1dab2f43f43dedc68374c5bebafe35cce35a5036085a56338a226",
+    "visual_runtime_sha256": "699faea79c0647abc44083be9fd7482a0cddeae980a3f31c0451658bffeedad9",
+    "validation_replay_sha256": "52ef2333c3280e2e7b1aeb17185dbfc905a2d292e6d2eb0d6dea150c568e92db",
+    "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },
   "private_evidence": {
@@ -53,7 +62,7 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "631a17f9bbba6a9a8624dd626501c5724dce5a3499962d65b2790fbe8e5610f6",
-    "hd_presentation_audit_sha256": "f870205035ee2aaf03a2862dfabc3bec212584299a80e325068da65776bcb369",
-    "browser_validation_sha256": "fa7973ab9674c9633d3f1d7a690bffbcce81915d9582ba76beca0e7e2a7bc082"
+    "hd_presentation_audit_sha256": "e1216c13acc1d203551c27ae09d96154289dcb45d9fe6dddec273ec34d1879f3",
+    "browser_validation_sha256": "7fa51a3ba2bb1c67da7bccc2f7c8c7ca333bdc2bec4677d7c2a4c28097f0716e"
   }
 }

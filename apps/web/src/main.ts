@@ -1,11 +1,12 @@
 import { Application, Graphics, Text } from "pixi.js";
 
-import { REFERENCE_PROFILE } from "@aico8/contracts";
+import { assertReplay, REFERENCE_PROFILE, type ReplayV1 } from "@aico8/contracts";
 
 import { InputController } from "./runtime/input.js";
-import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
+import { Aico8Kernel, decodeStoredPersistence, loadGameManifest } from "./runtime/kernel.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
+import { playReplayToMilestone } from "./runtime/replay-player.js";
 
 import "./style.css";
 
@@ -118,6 +119,34 @@ function showEmptyPlayer(): void {
   app.stage.addChild(background, halo, mark, message);
 }
 
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function loadValidationReplay(
+  manifestUrl: URL,
+  relative: string,
+  persistenceKey: string,
+): Promise<ReplayV1> {
+  const response = await fetch(new URL(relative, manifestUrl));
+  if (!response.ok) throw new Error(`Unable to load validation replay (${response.status})`);
+  const replay: unknown = await response.json();
+  assertReplay(replay);
+  let stored: string | null;
+  try {
+    stored = localStorage.getItem(persistenceKey);
+  } catch {
+    throw new Error("Validation replay requires readable local persistence");
+  }
+  const normalized = new Uint8Array(256);
+  normalized.set(decodeStoredPersistence(stored).slice(0, normalized.length));
+  if (await sha256Hex(normalized) !== replay.trace.initialState.persistenceSha256) {
+    throw new Error("Validation replay initial persistence does not match this browser profile");
+  }
+  return replay;
+}
+
 const input = new InputController();
 input.bindTouchControls(touchControls);
 let paused = false;
@@ -144,7 +173,22 @@ try {
   loadingTitle.textContent = `Opening ${manifest.title}`;
   loadingDetail.textContent = "Restoring game logic and saved progress…";
 
-  runtime = await Aico8Kernel.create(import.meta.env.BASE_URL, manifestUrl, manifest);
+  const requestedReplayMilestone = new URL(window.location.href).searchParams.get("validation-replay");
+  let validationReplay: ReplayV1 | undefined;
+  if (requestedReplayMilestone) {
+    if (!manifest.researchOnly || !manifest.validationReplay || !manifest.cartSha256) {
+      throw new Error("This package does not expose research validation playback");
+    }
+    loadingDetail.textContent = `Executing ordinary replay input through ${requestedReplayMilestone}…`;
+    validationReplay = await loadValidationReplay(
+      manifestUrl,
+      manifest.validationReplay,
+      manifest.persistenceKey,
+    );
+  }
+
+  const loadedRuntime = await Aico8Kernel.create(import.meta.env.BASE_URL, manifestUrl, manifest);
+  runtime = loadedRuntime;
   const referenceRenderer = new ReferenceRenderer(app);
   let hdRenderer: PresentationRenderer | undefined;
   if (manifest.presentation !== "reference") {
@@ -165,6 +209,37 @@ try {
     frame.dataset.presentationMode = showHd ? "hd" : "reference";
     displayButton.textContent = showHd ? "Original view" : "HD view";
   });
+  const renderCurrentFrame = (): void => {
+    const commands = loadedRuntime.drawCommands();
+    referenceRenderer.render(loadedRuntime.framebuffer(), commands);
+    hdRenderer?.update(loadedRuntime, commands);
+    const diagnostics = hdRenderer?.diagnostics?.();
+    if (diagnostics) {
+      frame.dataset.presentationScene = diagnostics.sceneId;
+      frame.dataset.unmappedVisualTokens = String(diagnostics.unmappedSourceTokenIds.length);
+      frame.dataset.mixedIndexedFragments = String(diagnostics.mixedIndexedFragments);
+      frame.dataset.diagnosticReferenceSwitches = String(diagnostics.diagnosticReferenceSwitches);
+    }
+    const description = hdRenderer?.accessibleDescription?.();
+    if (description && announcer.textContent !== description) announcer.textContent = description;
+  };
+
+  let validationPlaybackStatus: string | undefined;
+  if (requestedReplayMilestone && validationReplay && manifest.cartSha256) {
+    const playback = playReplayToMilestone(
+      validationReplay,
+      requestedReplayMilestone,
+      (buttonMask) => loadedRuntime.tickLogicalUpdate(buttonMask),
+      { expectedCartSha256: manifest.cartSha256, requireCleanInitialState: true },
+    );
+    renderCurrentFrame();
+    paused = true;
+    pauseButton.textContent = "Resume";
+    frame.dataset.validationReplayId = playback.replayId;
+    frame.dataset.validationReplayMilestone = playback.milestoneId;
+    frame.dataset.validationReplayUpdates = String(playback.updatesExecuted);
+    validationPlaybackStatus = `Validation replay · ${playback.milestoneId} · ${playback.updatesExecuted.toLocaleString("en-US")} logical updates`;
+  }
   let accumulator = 0;
   const stepMilliseconds = 1000 / 60;
   app.ticker.add((ticker) => {
@@ -172,20 +247,9 @@ try {
     accumulator = Math.min(accumulator + ticker.deltaMS, 250);
     while (accumulator >= stepMilliseconds) {
       accumulator -= stepMilliseconds;
-      if (runtime.tick60(input.mask())) {
+      if (loadedRuntime.tick60(input.mask())) {
         input.commitLogicalUpdate();
-        const commands = runtime.drawCommands();
-        referenceRenderer.render(runtime.framebuffer(), commands);
-        hdRenderer?.update(runtime, commands);
-        const diagnostics = hdRenderer?.diagnostics?.();
-        if (diagnostics) {
-          frame.dataset.presentationScene = diagnostics.sceneId;
-          frame.dataset.unmappedVisualTokens = String(diagnostics.unmappedSourceTokenIds.length);
-          frame.dataset.mixedIndexedFragments = String(diagnostics.mixedIndexedFragments);
-          frame.dataset.diagnosticReferenceSwitches = String(diagnostics.diagnosticReferenceSwitches);
-        }
-        const description = hdRenderer?.accessibleDescription?.();
-        if (description && announcer.textContent !== description) announcer.textContent = description;
+        renderCurrentFrame();
       }
     }
     hdRenderer?.animate(ticker.deltaMS);
@@ -195,7 +259,8 @@ try {
   });
   loadingCard.classList.add("hidden");
   pauseButton.disabled = false;
-  status.textContent = manifest.researchOnly ? "Playing · research build" : "Playing";
+  status.textContent = validationPlaybackStatus
+    ?? (manifest.researchOnly ? "Playing · research build" : "Playing");
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("game manifest (404)")) {

@@ -98,6 +98,10 @@ Official-runtime selectors remain pending until licensed captures are available.
   and byte buffers before changing gameplay code.
 - HD mismatch: run HD off/on against the same replay; any state divergence is a
   product defect even if the visual result looks correct.
+- Browser-evidence lineage mismatch: compare the recomputed visual-runtime and
+  replay-semantics identities before recapturing. Provenance-only replay revision
+  churn may preserve both; visual artifacts, cart, input, milestones, checkpoints,
+  or result changes must invalidate the affected evidence.
 - HD omission: capture the raw scene-contextual token before render dispatch,
   fix the shared classification/render rule, then add a deleted-mapping mutation
   that must fail. Do not patch one level, coordinate, or tile occurrence, and do

@@ -171,6 +171,16 @@ The detailed mapping is defined in `specs/display-1024.md` and
   bytes, accept only PICO-8 button masks, and forbid test hooks, state writes,
   level skips, or synthetic completion; wall-clock acceleration may not skip an
   update. Instrumented reachability remains a diagnostic evidence grade.
+- The research-only Web validation player may accelerate an accepted replay to
+  a declared milestone for source/HD scene capture only after cart and initial-
+  persistence hashes match. It is visibly labeled, executes all intervening
+  logical inputs, and does not replace the independent completion audit.
+- Browser evidence binds two fail-closed identities: the visual-runtime identity
+  covers every packaged artifact except the replay payload, while the replay-
+  semantics identity covers cart, runtime kind, canonicality, input, milestones,
+  checkpoints, and result but excludes producer/source revision metadata. Thus a
+  provenance-only replay regeneration does not invalidate unchanged pixels, and
+  any visual, cart, input, or completion drift still fails qualification.
 - State diffs for every logical update in representative canonical replays.
 - Search-only shadow models are untrusted accelerators. Their transition order
   and state must be differentially checked against the unchanged cart for every

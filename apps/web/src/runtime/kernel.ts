@@ -7,6 +7,8 @@ export interface GameManifest {
   readonly source: string;
   readonly presentation: string;
   readonly persistenceKey: string;
+  readonly cartSha256?: string;
+  readonly validationReplay?: string;
   readonly researchOnly?: boolean;
   readonly sourceLicense?: string;
   readonly sourceUrl?: string;
@@ -51,7 +53,7 @@ const DRAW_COMMAND_BYTES = 68;
 const DRAW_ARGUMENT_COUNT = 12;
 const PERSISTENT_BYTES = 256;
 
-function decodeStoredBytes(value: string | null): Uint8Array {
+export function decodeStoredPersistence(value: string | null): Uint8Array {
   if (!value) return new Uint8Array();
   const pairs = value.match(/[0-9a-f]{2}/gi);
   return pairs ? Uint8Array.from(pairs, (pair) => Number.parseInt(pair, 16)) : new Uint8Array();
@@ -141,7 +143,7 @@ export class Aico8Kernel {
 
     let stored: Uint8Array<ArrayBufferLike> = new Uint8Array();
     try {
-      stored = decodeStoredBytes(localStorage.getItem(this.manifest.persistenceKey));
+      stored = decodeStoredPersistence(localStorage.getItem(this.manifest.persistenceKey));
     } catch {
       // Storage is optional in private browsing and locked-down WebViews.
     }
@@ -159,6 +161,13 @@ export class Aico8Kernel {
     if (result < 0) throw new Error(this.lastError());
     if (result > 0) this.#persistIfChanged();
     return result > 0;
+  }
+
+  tickLogicalUpdate(buttons: number): void {
+    for (let hostTick = 0; hostTick < 3; hostTick += 1) {
+      if (this.tick60(buttons)) return;
+    }
+    throw new Error("The cartridge did not produce a logical update within three 60 Hz host ticks");
   }
 
   framebuffer(): Uint8Array {
