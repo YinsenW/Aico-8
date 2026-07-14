@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "subject": "steps-private-research unchanged-cart canonical gameplay",
+  "status": "canonical-gameplay-passed-game-qualification-still-open",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "runtime": {
+    "id": "aico8-core-wasm",
+    "revision": "e49072e8c56f3212c7009fa9bb794bedbd52bb8ef2ee084c36152603d162a22c"
+  },
+  "observations": {
+    "boundary_kind": "checkpoint",
+    "required_boundaries": 13,
+    "completed_boundaries": 13,
+    "ordinary_input_logical_updates": 1761,
+    "input_spans": 711,
+    "strokes": 353,
+    "state_checkpoints": 33,
+    "mutation_regressions_rejected": 3,
+    "ending_reached": true,
+    "progression_complete": true,
+    "host_input_surfaces": 3,
+    "host_input_mask_mismatches": 0
+  },
+  "canonicality": {
+    "mode": "canonical-real-input",
+    "cartMutation": "none",
+    "compatibilityStateMutation": "none",
+    "inputSource": "pico8-buttons-only",
+    "logicalUpdatePolicy": "execute-all",
+    "testHooks": false,
+    "wallClockAcceleration": true
+  },
+  "private_artifact_sha256": {
+    "replay_v1": "6052662e3b3ddc166835645fa6c28bcd1dbf83daf14c2bbe8421210c57f65db3",
+    "differential": "815e9bea84be445e7a78b0d944a5e301675474c747dc7139b2dbcec4531098f8",
+    "input_projection": "1d730168b40b4c43a6dfbed0042df9e438d226ab9ab3fe6827420c583934ad27",
+    "input_trace_provenance": "fe0ce2d8aa7e30b4c34c35a9f3c7ad0acfe0c0f4520ef4a04120a65bcaea9d4a"
+  },
+  "limitations": [
+    "Canonical gameplay passed only against the unchanged shared Wasm runtime; licensed official-runtime compatibility evidence remains separate.",
+    "HD rendering, human identity/visual review, publication rights, and any formal release remain unverified and unauthorized."
+  ],
+  "selector": "TEST-QUALIFICATION-GAMEPLAY-PRIVATE"
+}

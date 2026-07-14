@@ -200,6 +200,10 @@ only its linked exits determine acceptance.
   deliberate semantic-mutation rejection. Its sanitized attestation proves
   canonical gameplay only; HD, host-input, package, rights, and official-runtime
   gates remain independent.
+- A finite game's qualification boundary retains its source meaning. Real
+  sequential courses/levels may use ordered `level-complete` ordinals; every
+  other boundary kind binds the exact ordered Replay v1 milestone IDs and may
+  not be relabeled as synthetic levels merely to satisfy a shared validator.
 - Qualification counts at least ten materially different finite games only after
   each independently proves every required level, ending, and progression
   boundary; diagnostic reachability or a collection launch never counts.

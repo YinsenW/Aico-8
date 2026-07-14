@@ -71,7 +71,10 @@ the emitted Replay v1 and differential record, rejects uncovered semantic mutati
 projects the complete trace through keyboard, controller, and touch with zero
 logical-mask mismatch, and verifies a sanitized public attestation. Passing it
 does not count a game until that game's accepted HD, Web/PWA, and rights-isolation
-gates also pass.
+gates also pass. A non-level progression structure must declare its exact ordered
+Replay milestone IDs in `differential.boundary.milestoneIds`; do not invent
+`level-complete` milestones for checkpoints, chapters, waves, or other source
+boundaries.
 `pnpm verify:qualification-plan-private` requires
 `AICO8_PRIVATE_QUALIFICATION_ROOT` and `AICO8_PRIVATE_CARTS`. It recomputes the
 private 12-candidate plan from durable corpus, audio, compiler, rights, and finite-

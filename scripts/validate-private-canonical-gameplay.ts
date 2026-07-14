@@ -9,6 +9,7 @@ import {
   assertInputTraceProvenance,
   inputTraceSha256,
 } from "./lib/input-trace-provenance.mjs";
+import { assertQualificationBoundaryMilestones } from "./lib/qualification-boundary.mjs";
 
 type DifferentialReport = {
   schemaVersion: string;
@@ -21,7 +22,7 @@ type DifferentialReport = {
     authority: string;
   };
   differential: {
-    boundary: { kind: string; required: number; completed: number };
+    boundary: { kind: string; required: number; completed: number; milestoneIds?: string[] };
     strokes: number;
     checkpoints: { update: number; snapshotSha256: string }[];
     mutationRejections: Record<string, { course: number; stroke: number }>;
@@ -147,14 +148,8 @@ for (const [surface, projection] of Object.entries(inputProjection.surfaces)) {
 }
 
 const boundary = report.differential.boundary;
-assert.match(boundary.kind, /^[a-z][a-z0-9-]{1,39}$/);
-assert.ok(Number.isInteger(boundary.required) && boundary.required > 0);
-assert.equal(boundary.completed, boundary.required);
+assertQualificationBoundaryMilestones(boundary, replay);
 assert.ok(Number.isInteger(report.differential.strokes) && report.differential.strokes > 0);
-const levelMilestones = replay.milestones.filter(({ kind }) => kind === "level-complete");
-assert.equal(levelMilestones.length, boundary.required);
-assert.deepEqual(levelMilestones.map(({ levelOrdinal }) => levelOrdinal),
-  Array.from({ length: boundary.required }, (_, index) => index + 1));
 assert.equal(report.differential.checkpoints.length, replay.checkpoints.length);
 for (const [index, checkpoint] of report.differential.checkpoints.entries()) {
   assert.equal(checkpoint.update, replay.checkpoints[index]?.atUpdate);
