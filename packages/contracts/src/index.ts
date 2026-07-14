@@ -101,6 +101,19 @@ export {
   type HdReviewDecisionValidationResult,
 } from "./hd-review-decision.js";
 export {
+  HD_EVIDENCE_ARTIFACT_CLASSES,
+  HD_EVIDENCE_LIFECYCLE_SCHEMA_VERSION,
+  HD_EVIDENCE_LIFECYCLE_STATES,
+  assertHdEvidenceLifecycle,
+  validateHdEvidenceLifecycle,
+  type HdEvidenceArtifactClass,
+  type HdEvidenceGateState,
+  type HdEvidenceGateVerdict,
+  type HdEvidenceLifecycleState,
+  type HdEvidenceLifecycleV1,
+  type HdEvidenceLifecycleValidationResult,
+} from "./hd-evidence-lifecycle.js";
+export {
   RELEASE_MANIFEST_SCHEMA_VERSION,
   RELEASE_VALIDATION_SCHEMA_VERSION,
   TARGET_PROFILE_SCHEMA_VERSION,

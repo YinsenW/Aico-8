@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const acceptScript = path.join(repository, "scripts/accept-private-hd-review.ts");
 const reviewPacketBuilder = path.join(repository, "scripts/build-private-hd-review-packet.mjs");
-const statement = "我已按顺序完成 Dust Bunny 当前构建的三重审查：神似还原、画质跃升、审美进化；确认前一项通过后才审查后一项，并同意全部 20 个源相对元素的身份、完整性、动画与视觉语法检查。";
+const statement = "我已按顺序完成 Dust Bunny 当前构建的三重审查：神似还原、画质跃升、审美进化；确认前一项通过后才审查后一项，并同意全部 1 个源相对元素的身份、完整性、动画与视觉语法检查。";
 const pendingReviewer = "pending-human-side-by-side-review";
 const checkNames = [
   "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
@@ -85,6 +85,7 @@ function makeWorkspace() {
     },
   };
   const browserEvidence = {
+    subject: "Dust Bunny private test build",
     build: { visualRuntimeSha256 },
     validationReplay: { replayId: "test-replay", semanticsSha256: "b".repeat(64) },
     identityReview: {

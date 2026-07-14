@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "subject": "steps-private-research offline HD evidence lifecycle",
+  "status": "offline-draft-only-packaging-and-human-review-blocked",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "observations": {
+    "artifact_class": "offline-hd-draft",
+    "lifecycle_state": "offline-hd-draft",
+    "reachable_elements": 28,
+    "mapped_elements": 28,
+    "unmapped_elements": 0,
+    "glyph_evidence": "blocked-unverified",
+    "mixed_indexed_fragments": 0,
+    "indexed_pixel_fallback": false,
+    "runtime_model_calls": false,
+    "runtime_evidence_attached": false,
+    "browser_evidence_attached": false,
+    "human_review_attached": false
+  },
+  "private_artifact_sha256": {
+    "hd_evidence_lifecycle": "f195eca8d4e54929ec6b2de1cb30b48ee47394a47ba1de2dbeb61dd463c094bf"
+  },
+  "limitations": [
+    "The 1024x1024 mapping board is an offline source-relative atlas, not a playable target frame or same-state browser capture.",
+    "Unverified body-glyph evidence blocks promotion to packaged capture even though all declared source-relative elements have mappings.",
+    "No human principle gate has passed; acceptance remains a separate immutable decision after real packaged capture."
+  ],
+  "verification": {
+    "public_contract_selector": "TEST-HD-IDENTITY-PUBLIC",
+    "private_case_verifier": "validation/verify-offline-hd-draft.ts"
+  }
+}

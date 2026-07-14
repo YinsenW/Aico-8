@@ -36,6 +36,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-QUALIFICATION-PLAN-001 | Exactly twelve private-research candidates, finite source boundaries, pinned compiler status, ordered priority, independent qualification evidence, and selected/qualified risk coverage for the ten-game gate | `specs/schemas/qualification-plan-v1.schema.json` and TypeScript validator |
 | DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, copy provenance/authorization, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
 | DATA-HD-AUDIT-001 | Contextual raw visual tokens, observation runs, identity-map lineage, zero-unmapped/mixed/reference coverage, per-update HD-off/on state comparison, and rejected mutations | `specs/schemas/hd-presentation-audit-v1.schema.json` and TypeScript validator |
+| DATA-HD-EVIDENCE-LIFECYCLE-001 | Fail-closed progression from source-inventoried offline draft through zero-unmapped packaged capture to a pending human packet, with immutable draft/runtime/capture hashes, browser readiness, source/HD pair counts, fixed review-gate order, and zero acceptance claims | `specs/schemas/hd-evidence-lifecycle-v1.schema.json` and TypeScript validator |
 | DATA-ASSET-PACK-001 | Frozen hashed atlases, fonts, effects, audio, visual grammar, metadata, and licenses | Asset-pack schema |
 | DATA-SEMANTIC-VECTOR-001 | Build-only constrained SVG provenance plus renderer-independent semantic layers, origins, palette tokens, compiled-recipe hashes, and packaged input lineage | `specs/schemas/semantic-vector-set-v1.schema.json`, `scripts/lib/semantic-svg.mjs`, and `apps/web/src/runtime/semantic-vector.ts` |
 | DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Text-run schema |
@@ -109,6 +110,10 @@ only its linked exits determine acceptance.
   browser record, replay semantics, visual runtime, elements, checks, and required
   statement. Acceptance promotes every review field together; a later selector
   must reproduce the reviewed draft before it can regenerate accepted evidence.
+- DATA-HD-EVIDENCE-LIFECYCLE-001 separates offline drafts, packaged captures,
+  and pending review packets. Offline artifacts cannot claim runtime, capture,
+  browser, or human proof; the lifecycle never embeds acceptance, which remains
+  an independent immutable `aico8.hd-review-decision.v1` artifact.
 - HD acceptance is ordered and non-compensatory: DATA-HD-MAP-001 plus replay evidence gate Spirit fidelity; HD surface/asset evidence gates Quality leap; DATA-ASSET-PACK-001 visual grammar plus the whole-frame human decision gate Aesthetic evolution. The pending packet stores all three gates in contract order, and the immutable decision must record `passed` for each; aesthetic polish cannot offset identity, atmosphere, play-feel, or material-quality failure.
 - Every element's source/HD review anchors are ordered one-to-one and every pair
   must bind the same scene and state; the review document renders every declared
