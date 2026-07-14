@@ -28,6 +28,35 @@ export interface KernelMenuItem {
   readonly filter: number;
 }
 
+export const KernelAudioCapability = {
+  eventLedger: 1 << 0,
+  channelStatus: 1 << 1,
+  stat57: 1 << 2,
+  stat46Through56: 1 << 3,
+  filters: 1 << 4,
+  customInstruments: 1 << 5,
+  customWaveforms: 1 << 6,
+} as const;
+
+export interface KernelAudioChannelStatus {
+  readonly sfx: number;
+  readonly note: number;
+  readonly deferredMusicSfx: number;
+  readonly isMusic: boolean;
+  readonly isReleasing: boolean;
+}
+
+export interface KernelAudioEvent {
+  readonly sequence: number;
+  readonly sampleLow: number;
+  readonly sampleHigh: number;
+  readonly kind: number;
+  readonly channel: number;
+  readonly sfx: number;
+  readonly note: number;
+  readonly musicPattern: number;
+}
+
 export interface KernelHostOptions {
   /** Overrides host storage for deterministic replay/capture sessions. */
   readonly initialPersistence?: Uint8Array;
@@ -80,6 +109,9 @@ interface EmscriptenKernel {
   _aico8_tick60(runtime: number, buttons: number): number;
   _aico8_audio_available(runtime: number): number;
   _aico8_read_audio(runtime: number, destination: number, capacity: number): number;
+  _aico8_audio_capabilities(runtime: number): number;
+  _aico8_get_audio_channel_status(runtime: number, channel: number, status: number): number;
+  _aico8_copy_audio_events(runtime: number, destination: number, capacity: number): number;
   _aico8_framebuffer(runtime: number): number;
   _aico8_framebuffer_size(): number;
   _aico8_draw_commands(runtime: number): number;
@@ -110,6 +142,8 @@ const DRAW_COMMAND_BYTES = 68;
 const DRAW_ARGUMENT_COUNT = 12;
 const PERSISTENT_BYTES = 256;
 const AUDIO_SCRATCH_SAMPLES = 2048;
+const AUDIO_CHANNEL_STATUS_BYTES = 20;
+const AUDIO_EVENT_BYTES = 32;
 const MENU_LABEL_BYTES = 17;
 
 export function decodeStoredPersistence(value: string | null): Uint8Array {
@@ -275,6 +309,61 @@ export class Aico8Kernel {
       offset += chunk.length;
     }
     return result;
+  }
+
+  audioCapabilities(): number {
+    return this.#module._aico8_audio_capabilities(this.#runtime) >>> 0;
+  }
+
+  audioChannelStatus(channel: number): KernelAudioChannelStatus | undefined {
+    if (!Number.isSafeInteger(channel) || channel < 0 || channel > 3) {
+      throw new Error("PICO-8 audio channel indices must be integers from 0 through 3");
+    }
+    const pointer = this.#module._malloc(AUDIO_CHANNEL_STATUS_BYTES);
+    if (!pointer) throw new Error("Unable to allocate the audio status snapshot");
+    try {
+      if (!this.#module._aico8_get_audio_channel_status(this.#runtime, channel, pointer)) {
+        return undefined;
+      }
+      const view = new DataView(this.#module.HEAPU8.buffer);
+      return {
+        sfx: view.getInt32(pointer, true),
+        note: view.getInt32(pointer + 4, true),
+        deferredMusicSfx: view.getInt32(pointer + 8, true),
+        isMusic: view.getInt32(pointer + 12, true) !== 0,
+        isReleasing: view.getInt32(pointer + 16, true) !== 0,
+      };
+    } finally {
+      this.#module._free(pointer);
+    }
+  }
+
+  audioEvents(maximumEvents = 256): readonly KernelAudioEvent[] {
+    if (!Number.isSafeInteger(maximumEvents) || maximumEvents < 1 || maximumEvents > 256) {
+      throw new Error("maximumEvents must be an integer from 1 through 256");
+    }
+    const pointer = this.#module._malloc(maximumEvents * AUDIO_EVENT_BYTES);
+    if (!pointer) throw new Error("Unable to allocate the audio event snapshot");
+    try {
+      const count = this.#module._aico8_copy_audio_events(this.#runtime, pointer, maximumEvents);
+      if (count > maximumEvents) throw new Error("Kernel returned too many audio events");
+      const view = new DataView(this.#module.HEAPU8.buffer);
+      return Array.from({ length: count }, (_, index) => {
+        const offset = pointer + index * AUDIO_EVENT_BYTES;
+        return {
+          sequence: view.getUint32(offset, true),
+          sampleLow: view.getUint32(offset + 4, true),
+          sampleHigh: view.getUint32(offset + 8, true),
+          kind: view.getInt32(offset + 12, true),
+          channel: view.getInt32(offset + 16, true),
+          sfx: view.getInt32(offset + 20, true),
+          note: view.getInt32(offset + 24, true),
+          musicPattern: view.getInt32(offset + 28, true),
+        };
+      });
+    } finally {
+      this.#module._free(pointer);
+    }
   }
 
   framebuffer(): Uint8Array {
