@@ -30,6 +30,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-CART-001 | Supplied cart bytes, format, source hash | Ingest schema |
 | DATA-WORKSPACE-001 | Lossless decoded resources, aliases, hashes, provenance | Workspace schema |
 | DATA-INPUT-TRACE-001 | Contiguous logical-update button-mask spans, initial persistence lineage, and no-skip policy | `specs/schemas/input-trace-v1.schema.json` |
+| DATA-TRACE-PROVENANCE-001 | Exact trace hash, derivation kind, generator identity, and explicit licensed provenance for every contributing external action seed | `specs/schemas/input-trace-provenance-v1.schema.json` and `scripts/lib/input-trace-provenance.mjs` |
 | DATA-REPLAY-001 | Cart/runtime identity, canonicality declaration, input trace, milestones, and ordered checkpoints | `specs/schemas/replay-v1.schema.json` and TypeScript validator |
 | DATA-CHECKPOINT-001 | RAM/raster/audio/semantic hashes at named updates | Validation schema |
 | DATA-QUALIFICATION-PLAN-001 | Exactly twelve private-research candidates, finite source boundaries, pinned compiler status, ordered priority, independent qualification evidence, and selected/qualified risk coverage for the ten-game gate | `specs/schemas/qualification-plan-v1.schema.json` and TypeScript validator |
@@ -184,7 +185,12 @@ only its linked exits determine acceptance.
 - Source-authored modern visuals are gated by source tokens from the same logical
   update. Scene membership or a token retained from an earlier frame cannot
   reveal copy, characters, effects, or cues before the source does.
-- A solver or AI planner may propose DATA-INPUT-TRACE-001 only. JOB-VALIDATE-001
+- A solver or AI planner may propose DATA-INPUT-TRACE-001 only. Every promoted
+  trace also requires DATA-TRACE-PROVENANCE-001 bound to its exact canonical
+  trace hash. An external action seed is ineligible when its artifact, revision,
+  action hash, explicit reusable license, license evidence, or reviewed reuse
+  decision is absent; `NOASSERTION`, unknown, and unlicensed sources fail closed.
+  JOB-VALIDATE-001
   must replay each proposed transition on the unchanged cart and compare the
   declared observable state before JOB-CAPTURE-001 can promote it to
   DATA-REPLAY-001; model-only success is never evidence.

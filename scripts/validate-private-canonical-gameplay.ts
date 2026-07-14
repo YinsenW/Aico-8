@@ -5,6 +5,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertReplay, type ReplayV1 } from "../packages/contracts/src/replay.ts";
+import {
+  assertInputTraceProvenance,
+  inputTraceSha256,
+} from "./lib/input-trace-provenance.mjs";
 
 type DifferentialReport = {
   schemaVersion: string;
@@ -60,10 +64,12 @@ const workspace = path.resolve(workspaceValue);
 const runner = path.join(workspace, "validation", "verify-canonical-gameplay.ts");
 const reportPath = path.join(workspace, "validation", "qualification-differential-v1.json");
 const replayPath = path.join(workspace, "validation", "canonical-replay-v1.json");
+const traceProvenancePath = path.join(workspace, "validation", "input-trace-provenance-v1.json");
 const inputProjectionPath = path.join(workspace, "validation", "input-surface-projection-v1.json");
 assert.ok(fs.existsSync(runner), `missing private canonical-gameplay runner: ${runner}`);
 assert.ok(fs.existsSync(path.join(workspace, "source.rom")), "private workspace is missing source.rom");
 assert.ok(fs.existsSync(path.join(workspace, "code.p8.lua")), "private workspace is missing code.p8.lua");
+assert.ok(fs.existsSync(traceProvenancePath), "private workspace is missing input-trace-provenance-v1.json");
 
 const result = spawnSync(process.execPath, [
   "--experimental-strip-types",
@@ -103,6 +109,10 @@ assert.equal(inputProjectionResult.status, 0,
 const replayText = fs.readFileSync(replayPath, "utf8");
 const replay = JSON.parse(replayText) as ReplayV1;
 assertReplay(replay);
+const traceProvenance = JSON.parse(fs.readFileSync(traceProvenancePath, "utf8"));
+assertInputTraceProvenance(traceProvenance);
+assert.equal(traceProvenance.traceSha256, inputTraceSha256(replay.trace),
+  "input-trace provenance does not bind the exact canonical trace");
 const report = JSON.parse(fs.readFileSync(reportPath, "utf8")) as DifferentialReport;
 const inputProjection = JSON.parse(fs.readFileSync(inputProjectionPath, "utf8")) as InputProjectionReport;
 assert.equal(report.schemaVersion, "aico8.qualification-differential.v1");
@@ -193,6 +203,7 @@ const attestation = {
     replay_v1: sha256(replayText),
     differential: sha256(fs.readFileSync(reportPath)),
     input_projection: sha256(fs.readFileSync(inputProjectionPath)),
+    input_trace_provenance: sha256(fs.readFileSync(traceProvenancePath)),
   },
   limitations: report.limitations,
   selector: "TEST-QUALIFICATION-GAMEPLAY-PRIVATE",

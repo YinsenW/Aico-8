@@ -213,3 +213,11 @@ canonical level paths, build hardening, corpus risk inventory, then games 2–10
 one at a time through unchanged-cart replay, HD invariance, Web/PWA packaging,
 static plus exact-update temporal manual review, and the independent rights gate. Secondary platform work cannot
 enter this path unless it removes a shared blocker.
+
+Before replaying a solver- or Agent-proposed trace, create
+`validation/input-trace-provenance-v1.json` and bind it to the exact canonical
+trace hash. First-party search carries no external sources. If any external
+action sequence contributes, record its pinned revision, artifact and action
+hashes, explicit reusable license and license evidence, plus the reviewed
+private-research reuse decision. Unknown, `NOASSERTION`, or unlicensed sources
+must be quarantined and the affected completion claim independently re-proved.

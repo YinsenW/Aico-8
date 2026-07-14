@@ -5,6 +5,10 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { validationReplaySemanticsSha256 } from "./lib/release-identities.mjs";
+import {
+  assertInputTraceProvenance,
+  inputTraceSha256,
+} from "./lib/input-trace-provenance.mjs";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceValue = process.env.AICO8_PRIVATE_WORKSPACE;
@@ -13,11 +17,18 @@ const workspace = path.resolve(workspaceValue);
 const identityBuilder = path.join(workspace, "validation", "build-hd-identity-map.ts");
 const differential = path.join(workspace, "validation", "verify-solver-differential.ts");
 const invariants = path.join(workspace, "validation", "verify-solver-invariants.ts");
+const traceProvenancePath = path.join(workspace, "validation", "input-trace-provenance-v1.json");
 assert.ok(fs.existsSync(identityBuilder), `missing private HD identity builder: ${identityBuilder}`);
 assert.ok(fs.existsSync(differential), `missing private solver differential: ${differential}`);
 assert.ok(fs.existsSync(invariants), `missing private solver invariants: ${invariants}`);
 assert.ok(fs.existsSync(path.join(workspace, "source.rom")), "private workspace is missing source.rom");
 assert.ok(fs.existsSync(path.join(workspace, "code.p8.lua")), "private workspace is missing code.p8.lua");
+assert.ok(fs.existsSync(traceProvenancePath), "private workspace is missing input-trace-provenance-v1.json");
+const replay = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "canonical-replay-v1.json"), "utf8"));
+const traceProvenance = JSON.parse(fs.readFileSync(traceProvenancePath, "utf8"));
+assertInputTraceProvenance(traceProvenance);
+assert.equal(traceProvenance.traceSha256, inputTraceSha256(replay.trace),
+  "input-trace provenance does not bind the exact canonical trace");
 
 function runPrivateCheck(script) {
   const result = spawnSync(process.execPath, ["--experimental-strip-types", script], {
@@ -59,7 +70,6 @@ assert.ok(audit.candidates.every((candidate) => candidate.result === "match"));
 assert.ok(Number.isInteger(audit.totalTransitions) && audit.totalTransitions > 0);
 assert.ok(Array.isArray(audit.mutations) && audit.mutations.every((mutation) => mutation.detected === true));
 
-const replay = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "canonical-replay-v1.json"), "utf8"));
 const canonicalAudit = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "canonical-run-audit.json"), "utf8"));
 const identityMap = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "hd-identity-map.json"), "utf8"));
 const hdAudit = JSON.parse(fs.readFileSync(path.join(workspace, "validation", "hd-presentation-audit.json"), "utf8"));
@@ -135,6 +145,7 @@ const privateArtifactPaths = {
   canonical_run_audit: path.join(workspace, "validation", "canonical-run-audit.json"),
   solver_differential: path.join(workspace, "validation", "solver-differential.json"),
   solver_invariants: path.join(workspace, "validation", "solver-invariants.json"),
+  input_trace_provenance: traceProvenancePath,
 };
 const privateArtifactSha256 = {
   canonical_replay_semantics_v1: validationReplaySemanticsSha256(replay),

@@ -185,8 +185,7 @@ semantic mismatch requires a root-cause category, a general invariant, a
 regression fixture, and a mutation check that proves the test detects the faulty
 rule; level-specific solver exceptions cannot satisfy qualification.
 
-Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-INPUT-TRACE-001`, `DATA-REPLAY-001`,
-`DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
+Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
 
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 

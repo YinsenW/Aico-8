@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/input-trace-provenance-v1.schema.json",
+  "title": "Aico 8 input trace derivation provenance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "traceSha256", "derivation", "externalSources"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.input-trace-provenance.v1" },
+    "traceSha256": { "$ref": "#/$defs/sha256" },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "generatorName", "generatorVersion", "sourceRevision"],
+      "properties": {
+        "kind": { "enum": ["human-recorded", "first-party-search", "agent-authored", "external-action-seed"] },
+        "generatorName": { "type": "string", "minLength": 1 },
+        "generatorVersion": { "type": "string", "minLength": 1 },
+        "sourceRevision": { "type": "string", "minLength": 1 }
+      }
+    },
+    "externalSources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceUrl", "revision", "artifactPath", "artifactSha256", "actionSha256", "declaredLicense", "licenseEvidenceUrl", "reuseDecision", "reviewedBy"],
+        "properties": {
+          "sourceUrl": { "type": "string", "pattern": "^https://" },
+          "revision": { "type": "string", "minLength": 1 },
+          "artifactPath": { "type": "string", "minLength": 1 },
+          "artifactSha256": { "$ref": "#/$defs/sha256" },
+          "actionSha256": { "$ref": "#/$defs/sha256" },
+          "declaredLicense": { "type": "string", "minLength": 1 },
+          "licenseEvidenceUrl": { "type": "string", "pattern": "^https://" },
+          "reuseDecision": { "const": "approved-private-research" },
+          "reviewedBy": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

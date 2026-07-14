@@ -5,7 +5,7 @@
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "runtime": {
     "id": "aico8-core-wasm",
-    "revision": "800f7262e74b6bf31fe94cb41af36986dabbeffa51aa33c27f1f9081cc546c57"
+    "revision": "8f2280406080e0d1ea3779c9e926155d06a2b38b48ce9c5298a8aaf1ed64ae93"
   },
   "observations": {
     "boundary_kind": "course",
@@ -31,9 +31,10 @@
     "wallClockAcceleration": true
   },
   "private_artifact_sha256": {
-    "replay_v1": "f7f8688e12b2d25b4109db593c4684451e43438bfde111f863752c3202c90922",
-    "differential": "339da580ed143cc294230a68f683315a975051dd4ff1bec84ad7c250f419fd03",
-    "input_projection": "39ec6838d873bbffd08a43a87d6f268ff820916b5d30b22a727eb5a5e2d45dd7"
+    "replay_v1": "d33ccb6b65d3699061a915d2de5b3ae61919687c206b1af97b5a9665902f03fe",
+    "differential": "7bd4af22ed85be49376b8ef4b2832ac029fd165618c51c0d29fadc1ebcfaf4d1",
+    "input_projection": "39ec6838d873bbffd08a43a87d6f268ff820916b5d30b22a727eb5a5e2d45dd7",
+    "input_trace_provenance": "ba1c6977635e1c58f182d770415392141555f787f1185e0d37da29a147df4fdf"
   },
   "limitations": [
     "This validates the unchanged cart against a source-derived model and a second fixed-input Wasm replay.",
