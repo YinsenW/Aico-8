@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validationReplaySemanticsSha256 } from "./lib/release-identities.mjs";
 import { assertFullViewportScreenshot } from "./lib/viewport-evidence.mjs";
+import { assertCaptureReadinessEvidence } from "./lib/capture-readiness-evidence.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceValue = process.env.AICO8_PRIVATE_WORKSPACE;
@@ -260,6 +261,10 @@ try {
   assert.equal(identityReviewPacket.sceneComparisons.length, browser.sceneComparisons.length);
   assert.equal(identityReviewPacket.temporalComparisons.length, browser.temporalComparisons.length);
   const screenshotsById = new Map();
+  const captureReadinessById = new Map((browser.captureReadiness ?? []).map((record) => [record.id, record]));
+  const layoutCaptureReadinessById = new Map(
+    (browser.layoutCaptureReadiness ?? []).map((record) => [record.id, record]),
+  );
   for (const screenshot of browser.screenshots) {
     assert.ok(!screenshotsById.has(screenshot.id), `${screenshot.id}: duplicate screenshot ID`);
     screenshotsById.set(screenshot.id, screenshot);
@@ -274,7 +279,25 @@ try {
     assert.match(screenshot.sceneId, /^scene\.[a-z][a-z0-9-]*$/);
     assert.ok(typeof screenshot.stateBoundary === "string" && screenshot.stateBoundary.length > 0,
       `${screenshot.id}: state boundary`);
+    assertCaptureReadinessEvidence(captureReadinessById.get(screenshot.id), {
+      id: screenshot.id,
+      presentationMode: screenshot.presentationMode,
+      sceneId: screenshot.sceneId,
+      stateBoundary: screenshot.stateBoundary,
+    });
   }
+  assert.equal(captureReadinessById.size, browser.screenshots.length,
+    "Every retained screenshot must have one DOM-bound capture readiness record");
+  for (const profile of browser.layoutQualification.profiles) {
+    assertCaptureReadinessEvidence(layoutCaptureReadinessById.get(profile.id), {
+      id: profile.id,
+      presentationMode: "hd",
+      sceneId: "scene.title",
+      stateBoundary: "canonical-replay:update:9206:presentation-ms:0",
+    });
+  }
+  assert.equal(layoutCaptureReadinessById.size, browser.layoutQualification.profiles.length,
+    "Every layout screenshot must have one DOM-bound capture readiness record");
   for (const comparison of browser.sceneComparisons) {
     const source = screenshotsById.get(comparison.sourceScreenshotId);
     const target = screenshotsById.get(comparison.targetScreenshotId);
@@ -395,6 +418,7 @@ try {
     > browser.captureProtocol.loadingOverlayTransitionMilliseconds,
   "capture settle interval must exceed the complete loading-overlay transition");
   assert.equal(browser.captureProtocol.loadingOverlayExcluded, true);
+  assert.equal(browser.captureProtocol.domReadinessEnforced, true);
   for (const element of identityMap.elements) {
     for (const sceneId of element.review.sourceSceneIds) {
       assert.equal(screenshotsById.get(sceneId)?.presentationMode, "reference",

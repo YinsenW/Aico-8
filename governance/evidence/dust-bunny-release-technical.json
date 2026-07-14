@@ -3,7 +3,7 @@
   "subject": {
     "gameId": "dust-bunny-private-research",
     "target": "web-pwa",
-    "visualRuntimeSha256": "eecf5c322cd589699c3afccb5e3ae3e0aac381a84b56b846a6f6f19b942931e6"
+    "visualRuntimeSha256": "8b9a2c84eb91ab6f3792bb12b17ddca7eea90ba39ad0830cb9221893d03d1dbb"
   },
   "targetProfile": {
     "id": "web-pwa-private-research-v1",
@@ -19,7 +19,7 @@
   },
   "package": {
     "artifactCount": 40,
-    "unpackedBytes": 1776002,
+    "unpackedBytes": 1778035,
     "largestArtifactBytes": 632022
   },
   "runtime": {
@@ -86,7 +86,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "d7bb4c44c5fc1dd0cd3cd927c2b2777bc20eba05e61156c9fb17428e21d3c34e"
+      "screenshotSha256": "1695d04da910af4376a6717239cc24a6bac35cdd503aca08cc772b189e13e67c"
     },
     {
       "class": "android-handheld-landscape",
@@ -115,7 +115,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "5ba55b877395359722657d003bcd6780421d7d1e9957caeb0a1937ad20d7f0d3"
+      "screenshotSha256": "360c1b24a726f276e7d85f1e4a78e14d1bcc31782d59e4210de58da0ad6ab88f"
     },
     {
       "class": "wide-web",
@@ -144,7 +144,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "a8247ce0a8f93d25d4485920cd354aa183de08e7f3e47e9b071f4c939849ca0e"
+      "screenshotSha256": "c5515c4e42bb05ce57dade1d6c44ae708b1cabfd934837c2b9fa77054cc80691"
     }
   ],
   "checks": {

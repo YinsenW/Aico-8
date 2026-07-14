@@ -21,7 +21,7 @@
     "verify:private-remake": "node scripts/validate-private-remake.mjs",
     "verify:qualification-private": "make -C runtime/core wasm && node scripts/validate-private-qualification.mjs",
     "verify:web-package": "node scripts/verify-web-package.mjs",
-    "verify:web": "node --test scripts/lib/release-identities.test.mjs scripts/lib/semantic-svg.test.mjs scripts/lib/viewport-evidence.test.mjs && pnpm check && pnpm test && pnpm build"
+    "verify:web": "node --test scripts/lib/capture-readiness-evidence.test.mjs scripts/lib/release-identities.test.mjs scripts/lib/semantic-svg.test.mjs scripts/lib/viewport-evidence.test.mjs && pnpm check && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@xmldom/xmldom": "0.8.13"

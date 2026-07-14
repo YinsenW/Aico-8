@@ -67,6 +67,11 @@ through an active browser and bind its no-overflow, clipping, game/control bound
 font, safe-area, screenshot, and visual-runtime results into release validation.
 Any visual-runtime change invalidates and requires recapture of all retained
 identity and layout screenshots; hashes may never be relabeled across builds.
+Capture automation must wait for `data-capture-status="ready"` and record the
+matching DOM readiness fields for every screenshot. A timeout alone, a hidden
+class alone, or a screenshot hash without the readiness record is insufficient;
+the private selector rejects visible/transitioning overlays and records copied
+from another mode, scene, state boundary, or viewport.
 Only after the human repeats the packet's exact acceptance statement may
 an Agent invoke `scripts/accept-private-hd-review.ts`; that command archives the
 exact pending packet/document and writes one immutable decision. Subsequent

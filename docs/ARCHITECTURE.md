@@ -2,8 +2,7 @@
 
 ## Product boundary
 
-Aico 8 is a monorepo for the complete remake lifecycle, not a source translator
-and not a single emulator. It preserves an authoritative compatibility path and
+Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and
 adds a separate HD presentation path that can be enabled incrementally.
 
 The product is TypeScript-first. C++ is restricted to a small deterministic
@@ -143,6 +142,7 @@ The complete policy is owned by
 - Human review consumes a generated packet that hashes its identity map, browser
   record, visual-runtime identity, every displayed screenshot, and review HTML;
   stale or cross-state review material cannot promote an accepted build.
+- Review capture is readiness-driven: `captureStatus=ready` requires the rendered boundary, class-hidden/zero-opacity/hidden-visibility loading overlay, two newly presented frames, and a retained exact mode/scene/boundary/viewport record.
 - Acceptance is a separate immutable decision over the exact pending packet and
   required statement. The pipeline archives what the human saw, deterministically
   rebuilds the reviewed draft, promotes all element checks atomically, and then

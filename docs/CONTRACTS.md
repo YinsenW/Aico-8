@@ -146,6 +146,11 @@ only its linked exits determine acceptance.
   replay provenance. Public attestations record the stable visual-runtime and
   replay-semantics identities instead of a self-referential full replay/package
   hash whose embedded source revision would change when the attestation is committed.
+- A declared settle duration is not capture evidence. Static, temporal, and
+  layout screenshots require one DOM-bound readiness record proving the exact
+  mode/scene/boundary, hidden loading class, computed opacity zero, computed
+  visibility hidden, and at least two newly presented frames; missing, stale, or
+  duplicate records fail private remake validation.
 - Source-authored modern visuals are gated by source tokens from the same logical
   update. Scene membership or a token retained from an earlier frame cannot
   reveal copy, characters, effects, or cues before the source does.

@@ -9,6 +9,7 @@ import {
 } from "@aico8/contracts";
 
 import { InputController } from "./runtime/input.js";
+import { settleCaptureReadiness } from "./runtime/capture-readiness.js";
 import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
@@ -86,6 +87,68 @@ if (!surface || !frame || !loadingCard || !loadingTitle || !loadingDetail || !ti
 }
 const performanceFrame = frame;
 const performanceLoadingCard = loadingCard;
+const captureFrame = frame;
+const captureLoadingCard = loadingCard;
+captureFrame.dataset.captureStatus = "initializing";
+
+function waitForPresentedFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function waitForLoadingOverlayTransition(): Promise<void> {
+  const style = getComputedStyle(captureLoadingCard);
+  if (captureLoadingCard.classList.contains("hidden") && style.opacity === "0" && style.visibility === "hidden") {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    let finished = false;
+    const finish = (): void => {
+      if (finished) return;
+      finished = true;
+      captureLoadingCard.removeEventListener("transitionend", onTransitionEnd);
+      resolve();
+    };
+    const onTransitionEnd = (event: TransitionEvent): void => {
+      if (event.target === captureLoadingCard && event.propertyName === "opacity") finish();
+    };
+    captureLoadingCard.addEventListener("transitionend", onTransitionEnd);
+    window.setTimeout(finish, 320);
+  });
+}
+
+let captureReadinessGeneration = 0;
+function beginCaptureReadiness(): void {
+  const generation = ++captureReadinessGeneration;
+  delete captureFrame.dataset.captureLoadingHidden;
+  delete captureFrame.dataset.captureLoadingOpacity;
+  delete captureFrame.dataset.captureLoadingVisibility;
+  delete captureFrame.dataset.capturePresentedFrames;
+  delete captureFrame.dataset.captureError;
+  captureFrame.dataset.captureStatus = "settling";
+  void settleCaptureReadiness({
+    waitForOverlayTransition: waitForLoadingOverlayTransition,
+    waitForPresentedFrame,
+    readOverlay: () => {
+      const style = getComputedStyle(captureLoadingCard);
+      return {
+        hiddenClass: captureLoadingCard.classList.contains("hidden"),
+        opacity: Number(style.opacity),
+        visibility: style.visibility,
+      };
+    },
+  }).then((readiness) => {
+    if (generation !== captureReadinessGeneration) return;
+    captureFrame.dataset.captureLoadingHidden = String(readiness.hiddenClass);
+    captureFrame.dataset.captureLoadingOpacity = String(readiness.opacity);
+    captureFrame.dataset.captureLoadingVisibility = readiness.visibility;
+    captureFrame.dataset.capturePresentedFrames = String(readiness.presentedFrames);
+    captureFrame.dataset.captureStatus = "ready";
+  }).catch((error: unknown) => {
+    if (generation !== captureReadinessGeneration) return;
+    captureFrame.dataset.captureStatus = "failed";
+    captureFrame.dataset.captureError = error instanceof Error ? error.message : String(error);
+  });
+}
 
 const app = new Application();
 await app.init({
@@ -294,6 +357,7 @@ try {
     hdRenderer?.setVisible(showHd);
     frame.dataset.presentationMode = showHd ? "hd" : "reference";
     displayButton.textContent = showHd ? "Original view" : "HD view";
+    beginCaptureReadiness();
   });
   const renderCurrentFrame = (): void => {
     const commands = loadedRuntime.drawCommands();
@@ -360,10 +424,12 @@ try {
     accumulator = 0;
   });
   loadingCard.classList.add("hidden");
+  loadingCard.setAttribute("aria-hidden", "true");
   pauseButton.disabled = false;
   status.textContent = validationPlaybackStatus
     ?? (manifest.researchOnly ? "Playing · research build" : "Playing");
   measureReleasePerformance(targetProfile);
+  beginCaptureReadiness();
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("game manifest (404)")) {
@@ -371,12 +437,16 @@ try {
     title.textContent = "Aico 8 Player";
     credit.textContent = "The public runtime is ready for a rights-cleared game module.";
     loadingCard.classList.add("hidden");
+    loadingCard.setAttribute("aria-hidden", "true");
     status.textContent = "Player ready · no game bundled";
+    beginCaptureReadiness();
   } else {
     loadingTitle.textContent = "The game could not start";
     loadingDetail.textContent = message;
     loadingCard.classList.add("error");
     status.textContent = "Start failed";
+    captureFrame.dataset.captureStatus = "failed";
+    captureFrame.dataset.captureError = message;
   }
 }
 
