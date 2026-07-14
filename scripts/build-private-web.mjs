@@ -12,6 +12,8 @@ import {
   semanticVectorManifest,
   semanticVectorModuleSource,
 } from "./lib/semantic-svg.mjs";
+import { validateSourceContourLineage } from "./lib/source-contour-lineage.mjs";
+import { validateSourceVisualStructureLineage } from "./lib/source-visual-structure-lineage.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -61,6 +63,18 @@ const validationReplayArgument = argumentsMap.get("validation-replay");
 const privateSourceRoot = path.join(root, "apps/web/src/private");
 const privateRoot = path.join(root, "apps/web/public/private");
 const semanticVectorSourceRoot = path.join(workspace, "web-overlay", "vector-assets");
+const validationRoot = path.join(workspace, "validation");
+const validationLineageFiles = fs.readdirSync(validationRoot).sort();
+const sourceContourLineages = validationLineageFiles.filter((name) => name.endsWith("-contour-lineage.json")).map((name) => {
+  const absolutePath = path.join(validationRoot, name);
+  validateSourceContourLineage(workspace, JSON.parse(fs.readFileSync(absolutePath, "utf8")));
+  return { absolutePath, relativePath: path.join("validation", name) };
+});
+const sourceVisualStructureLineages = validationLineageFiles.filter((name) => name.endsWith("-visual-structure.json")).map((name) => {
+  const absolutePath = path.join(validationRoot, name);
+  validateSourceVisualStructureLineage(workspace, JSON.parse(fs.readFileSync(absolutePath, "utf8")));
+  return { absolutePath, relativePath: path.join("validation", name) };
+});
 const semanticVectorSet = compileSemanticSvgDirectory(
   semanticVectorSourceRoot,
   "web-overlay/vector-assets",
@@ -226,6 +240,11 @@ const releaseManifest = {
       sha256: sha256(sourceFile.absolutePath),
       bytes: fs.statSync(sourceFile.absolutePath).size,
     })) : []),
+    ...[...sourceContourLineages, ...sourceVisualStructureLineages].map((lineage) => ({
+      path: lineage.relativePath,
+      sha256: sha256(lineage.absolutePath),
+      bytes: fs.statSync(lineage.absolutePath).size,
+    })),
   ],
   artifacts,
 };

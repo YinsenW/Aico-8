@@ -39,8 +39,27 @@ export {
   type NormalizedCompositionBounds,
   type ProportionCheck,
   type RequiredPartMapping,
+  type ContourCheck,
   type VisualElementKind,
 } from "./hd-identity-map.js";
+export {
+  roundedSourceContour,
+  sourceContourTopology,
+  traceSourceMaskContours,
+  type MaskPoint,
+  type RoundedSourceContour,
+  type SourceContourTopology,
+} from "./source-contour.js";
+export {
+  indexedVisualLayers,
+  sourceEdgeSignature,
+  visualStructureProjectionErrors,
+  visualStructureSignature,
+  visualVariantCollapseErrors,
+  type IndexedVisualLayer,
+  type SourceEdgeSignature,
+  type VisualStructureVariant,
+} from "./source-visual-structure.js";
 export {
   HD_PRESENTATION_AUDIT_SCHEMA_VERSION,
   assertHdPresentationAudit,

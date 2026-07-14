@@ -53,11 +53,27 @@ export interface CompositionCheck {
   maximumEdgeDelta: number;
 }
 
+export interface ContourCheck {
+  id: string;
+  label: string;
+  sourceEvidenceIds: string[];
+  targetRegionIds: string[];
+  sourceMaskSha256: string;
+  targetDownsampledMaskSha256: string;
+  sourceComponentCount: number;
+  targetComponentCount: number;
+  sourceHoleCount: number;
+  targetHoleCount: number;
+  measuredMaximumDisplacementSourcePixels: number;
+  maximumDisplacementSourcePixels: number;
+}
+
 export interface IdentityAnchors {
   silhouetteTraits: string[];
   requiredParts: RequiredPartMapping[];
   proportionChecks: ProportionCheck[];
   compositionChecks: CompositionCheck[];
+  contourChecks: ContourCheck[];
   faceAndExpressionTraits: string[];
   colorHierarchy: string[];
   motionCues: string[];
@@ -86,6 +102,7 @@ export interface IdentityReview {
   silhouettePassed: boolean;
   requiredPartsPassed: boolean;
   proportionsPassed: boolean;
+  contoursPassed: boolean;
   expressionPassed: boolean;
   colorHierarchyPassed: boolean;
   motionPassed: boolean;
@@ -286,6 +303,7 @@ function validateAnchors(
     "requiredParts",
     "proportionChecks",
     "compositionChecks",
+    "contourChecks",
     "faceAndExpressionTraits",
     "colorHierarchy",
     "motionCues",
@@ -364,6 +382,68 @@ function validateAnchors(
     }
   }
 
+  if (!Array.isArray(value.contourChecks)) {
+    errors.push(`${path}.contourChecks must be an array`);
+  } else {
+    const contourIds = new Set<string>();
+    for (const [index, rawCheck] of value.contourChecks.entries()) {
+      const checkPath = `${path}.contourChecks[${index}]`;
+      if (!isRecord(rawCheck)) {
+        errors.push(`${checkPath} must be an object`);
+        continue;
+      }
+      const checkKeysList = [
+        "id", "label", "sourceEvidenceIds", "targetRegionIds",
+        "sourceMaskSha256", "targetDownsampledMaskSha256",
+        "sourceComponentCount", "targetComponentCount", "sourceHoleCount", "targetHoleCount",
+        "measuredMaximumDisplacementSourcePixels", "maximumDisplacementSourcePixels",
+      ] as const;
+      checkKeys(rawCheck, checkKeysList, checkKeysList, checkPath, errors);
+      if (checkId(rawCheck.id, `${checkPath}.id`, errors)) {
+        if (contourIds.has(rawCheck.id)) errors.push(`${checkPath}.id must be unique within the element`);
+        contourIds.add(rawCheck.id);
+      }
+      checkString(rawCheck.label, `${checkPath}.label`, errors);
+      for (const evidenceId of checkUniqueStrings(rawCheck.sourceEvidenceIds, `${checkPath}.sourceEvidenceIds`, errors)) {
+        if (!evidenceIds.has(evidenceId)) errors.push(`${checkPath}.sourceEvidenceIds references unknown evidence ${evidenceId}`);
+      }
+      for (const regionId of checkUniqueStrings(rawCheck.targetRegionIds, `${checkPath}.targetRegionIds`, errors)) {
+        if (!targetRegionIds.has(regionId)) errors.push(`${checkPath}.targetRegionIds references unknown target region ${regionId}`);
+      }
+      checkHash(rawCheck.sourceMaskSha256, `${checkPath}.sourceMaskSha256`, errors);
+      checkHash(rawCheck.targetDownsampledMaskSha256, `${checkPath}.targetDownsampledMaskSha256`, errors);
+      if (rawCheck.sourceMaskSha256 !== rawCheck.targetDownsampledMaskSha256) {
+        errors.push(`${checkPath}.targetDownsampledMaskSha256 must preserve the exact source-cell projection`);
+      }
+      for (const key of ["sourceComponentCount", "targetComponentCount"] as const) {
+        if (!Number.isInteger(rawCheck[key]) || (rawCheck[key] as number) < 1) {
+          errors.push(`${checkPath}.${key} must be a positive integer`);
+        }
+      }
+      for (const key of ["sourceHoleCount", "targetHoleCount"] as const) {
+        if (!Number.isInteger(rawCheck[key]) || (rawCheck[key] as number) < 0) {
+          errors.push(`${checkPath}.${key} must be a non-negative integer`);
+        }
+      }
+      if (rawCheck.sourceComponentCount !== rawCheck.targetComponentCount) {
+        errors.push(`${checkPath}.targetComponentCount must preserve source component topology`);
+      }
+      if (rawCheck.sourceHoleCount !== rawCheck.targetHoleCount) {
+        errors.push(`${checkPath}.targetHoleCount must preserve source counter/hole topology`);
+      }
+      const measured = rawCheck.measuredMaximumDisplacementSourcePixels;
+      const maximum = rawCheck.maximumDisplacementSourcePixels;
+      if (typeof measured !== "number" || !Number.isFinite(measured) || measured < 0) {
+        errors.push(`${checkPath}.measuredMaximumDisplacementSourcePixels must be a finite non-negative number`);
+      }
+      if (typeof maximum !== "number" || !Number.isFinite(maximum) || maximum < 0 || maximum >= 0.5) {
+        errors.push(`${checkPath}.maximumDisplacementSourcePixels must stay below half a source pixel`);
+      } else if (typeof measured === "number" && Number.isFinite(measured) && measured > maximum) {
+        errors.push(`${checkPath}.measuredMaximumDisplacementSourcePixels exceeds the declared maximum`);
+      }
+    }
+  }
+
   if (!Array.isArray(value.compositionChecks) || value.compositionChecks.length === 0) {
     errors.push(`${path}.compositionChecks must preserve at least one measurable source-to-target frame region`);
   } else {
@@ -416,6 +496,7 @@ function validateReview(value: unknown, path: string, accepted: boolean, errors:
     "silhouettePassed",
     "requiredPartsPassed",
     "proportionsPassed",
+    "contoursPassed",
     "expressionPassed",
     "colorHierarchyPassed",
     "motionPassed",

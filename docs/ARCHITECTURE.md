@@ -90,7 +90,7 @@ is accepted only as an authoring candidate, then reviewed, normalized, hashed,
 and frozen in the asset pack. No model is called at runtime, and changing model
 quality cannot change an accepted build.
 
-The source-relative semantic redraw standard uses hashed renderer-independent recipes for identity-bearing vectors; constrained SVG is build-only, requires stable IDs/layers/origins, and rejects scripts, links, external resources, transforms, inherited styles, and unsupported paths.
+The source-relative semantic redraw standard uses hashed renderer-independent recipes for identity-bearing vectors; constrained SVG is build-only, requires stable IDs/layers/origins, and rejects scripts, links, external resources, transforms, inherited styles, and unsupported paths. Distinctive wordmarks and hand-drawn glyphs use source-mask contour recipes, not the typography path: build validation binds exact downsampled masks, component/hole topology, and sub-half-source-pixel contour displacement before antialiasing. Indexed tile/sprite variants use the same projection per palette/material layer and boundary edge; structurally distinct variants receive distinct frozen recipes even when they share one semantic role and renderer implementation.
 Web compiles recipes to shared Pixi contexts; repeated actors share one geometry template with explicit layers and palette tokens, while future hosts may produce native geometry or raster atlases.
 Regular geometry/effects stay procedural, text uses the typography path, and texture-rich art may use frozen raster atlases.
 Identity traits are evidence-derived per element, not a global style checklist; validation rejects source-relative drift without preferring any universal face, anatomy, or design vocabulary.

@@ -57,18 +57,18 @@ canonical 1024 design resolution. Preserve each source element's recognizable
 role, silhouette, anatomy/key parts, proportions, face/expression, color hierarchy,
 screen footprint, motion, and gameplay cue while applying one coherent modern
 visual grammar. Modernization may add material, light, detail, and animation
-quality but cannot redesign those identity anchors. Runtime output must use frozen, hashed assets and deterministic render
-rules rather than model generation. Accepted HD play may not mix indexed source
-fragments with modern elements; the exact reference renderer is a separate
+quality but cannot redesign those identity anchors. Distinctive title lettering, logos, and source-drawn glyphs are artwork rather than interchangeable fonts:
+preserve each glyph contour/counter, component/hole topology, spacing, and line placement from declared source evidence. Edge smoothing stays below half a source pixel; generic-font substitution fails even if readable. Likewise, semantic labels such as wall, dirt, or collectible never authorize collapsing distinct source contours, palette/material layers, boundary connections, or state variants into one generic shape.
+Runtime output uses frozen, hashed assets and deterministic rules. Accepted HD play may not mix indexed source fragments with modern elements; the exact reference renderer is a separate
 diagnostic mode. Enabling HD must not change compatibility snapshots. Rendered
 copy must be source-authored, state-derived for accessibility, or backed by a
 durable product authorization; unapproved slogans and celebration text fail HD.
 
 “Preserve” is identity preservation, not literal pixel enlargement. Traits are
-declared per source element, never as universal aesthetic rules: for example, a
-round, cute rabbit with two ears and whiskers must remain round-faced, cute,
-two-eared, and whiskered, while an originally long-faced character must remain
-long-faced. An unsupported face-shape change, missing declared part, changed
+declared per element, never as universal rules: for example, a round, cute rabbit
+with two ears and whiskers remains round-faced, cute, two-eared, and whiskered,
+while an originally long-faced character remains long-faced. An unsupported
+face-shape change, missing declared part, changed
 expression, or materially different proportion is a failed remake even if the
 new drawing is technically polished. Required parts map source evidence to target
 asset regions, and declared source/target ratios must remain within explicit

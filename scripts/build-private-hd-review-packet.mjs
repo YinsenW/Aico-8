@@ -102,6 +102,8 @@ const elements = identityMap.elements.map((element) => ({
       const target = check.targetBounds;
       return `${check.label}: source [${source.x}, ${source.y}, ${source.width}, ${source.height}] → HD [${target.x}, ${target.y}, ${target.width}, ${target.height}], maximum edge delta ${check.maximumEdgeDelta}`;
     }),
+    contourChecks: element.anchors.contourChecks.map((check) =>
+      `${check.label}: exact projected mask ${check.sourceMaskSha256}; components ${check.sourceComponentCount} → ${check.targetComponentCount}; holes ${check.sourceHoleCount} → ${check.targetHoleCount}; maximum displacement ${check.measuredMaximumDisplacementSourcePixels}/${check.maximumDisplacementSourcePixels} source pixels`),
     faceAndExpressionTraits: element.anchors.faceAndExpressionTraits,
     colorHierarchy: element.anchors.colorHierarchy,
     motionCues: element.anchors.motionCues,
@@ -114,6 +116,7 @@ const elements = identityMap.elements.map((element) => ({
     silhouettePassed: element.review.silhouettePassed,
     requiredPartsPassed: element.review.requiredPartsPassed,
     proportionsPassed: element.review.proportionsPassed,
+    contoursPassed: element.review.contoursPassed,
     expressionPassed: element.review.expressionPassed,
     colorHierarchyPassed: element.review.colorHierarchyPassed,
     motionPassed: element.review.motionPassed,
@@ -189,6 +192,7 @@ const elementSections = elements.map((element) => {
         <div><h4>Required parts</h4>${list(element.criteria.requiredParts)}</div>
         <div><h4>Proportions</h4>${list(element.criteria.proportionChecks)}</div>
         <div><h4>Composition bounds</h4>${list(element.criteria.compositionChecks)}</div>
+        <div><h4>Source contour lock</h4>${list(element.criteria.contourChecks)}</div>
         <div><h4>Face / expression</h4>${list(element.criteria.faceAndExpressionTraits)}</div>
         <div><h4>Color hierarchy</h4>${list(element.criteria.colorHierarchy)}</div>
         <div><h4>Motion</h4>${list(element.criteria.motionCues)}</div>

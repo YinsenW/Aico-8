@@ -35,6 +35,7 @@ function bunnyMap(): Record<string, unknown> {
           targetBounds: { x: 0.26, y: 0.24, width: 0.26, height: 0.26 },
           maximumEdgeDelta: 0.05,
         }],
+        contourChecks: [],
         faceAndExpressionTraits: ["gentle cute expression"],
         colorHierarchy: ["light face mass", "dark facial features", "accent inner ears"],
         motionCues: ["soft compact locomotion"],
@@ -55,6 +56,7 @@ function bunnyMap(): Record<string, unknown> {
         silhouettePassed: true,
         requiredPartsPassed: true,
         proportionsPassed: true,
+        contoursPassed: true,
         expressionPassed: true,
         colorHierarchyPassed: true,
         motionPassed: true,
@@ -91,6 +93,35 @@ describe("HD identity map v1", () => {
     };
     expect(validateHdIdentityMap(map).errors).toContain(
       "$.elements[0].anchors.compositionChecks[0].targetBounds changes the declared source composition beyond maximumEdgeDelta",
+    );
+  });
+
+  it("accepts source-locked logo contours and rejects topology or projected-mask redesign", () => {
+    const map = bunnyMap() as any;
+    map.elements[0].anchors.contourChecks = [{
+      id: "logo-outline",
+      label: "source wordmark outline",
+      sourceEvidenceIds: ["player-source"],
+      targetRegionIds: ["face"],
+      sourceMaskSha256: hash,
+      targetDownsampledMaskSha256: hash,
+      sourceComponentCount: 4,
+      targetComponentCount: 4,
+      sourceHoleCount: 2,
+      targetHoleCount: 2,
+      measuredMaximumDisplacementSourcePixels: 0.3125,
+      maximumDisplacementSourcePixels: 0.375,
+    }];
+    expect(validateHdIdentityMap(map)).toEqual({ valid: true, errors: [] });
+
+    map.elements[0].anchors.contourChecks[0].targetDownsampledMaskSha256 = "b".repeat(64);
+    map.elements[0].anchors.contourChecks[0].targetHoleCount = 1;
+    const errors = validateHdIdentityMap(map).errors;
+    expect(errors).toContain(
+      "$.elements[0].anchors.contourChecks[0].targetDownsampledMaskSha256 must preserve the exact source-cell projection",
+    );
+    expect(errors).toContain(
+      "$.elements[0].anchors.contourChecks[0].targetHoleCount must preserve source counter/hole topology",
     );
   });
 

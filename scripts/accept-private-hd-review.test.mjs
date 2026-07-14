@@ -13,7 +13,7 @@ const reviewPacketBuilder = path.join(repository, "scripts/build-private-hd-revi
 const statement = "我已逐项审查 Dust Bunny 当前构建的 20 个源相对元素，同意所有身份、完整性、动画与视觉语法检查。";
 const pendingReviewer = "pending-human-side-by-side-review";
 const checkNames = [
-  "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
+  "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
   "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
 ];
 
@@ -62,6 +62,7 @@ function makeWorkspace() {
           sourceBounds: { x: 0.25, y: 0.25, width: 0.5, height: 0.5 },
           targetBounds: { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }, maximumEdgeDelta: 0.05,
         }],
+        contourChecks: [],
         faceAndExpressionTraits: [],
         colorHierarchy: ["warm white over dark"],
         motionCues: ["source-timed hop"],

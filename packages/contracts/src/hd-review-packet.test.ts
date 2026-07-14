@@ -11,6 +11,7 @@ const review = {
   silhouettePassed: false,
   requiredPartsPassed: false,
   proportionsPassed: false,
+  contoursPassed: false,
   expressionPassed: false,
   colorHierarchyPassed: false,
   motionPassed: false,
@@ -40,6 +41,7 @@ const packet = {
       requiredParts: ["paired source ears"],
       proportionChecks: ["footprint: 1 → 1, maximum delta 0.1"],
       compositionChecks: ["frame region: source [0.25,0.25,0.5,0.5] → HD [0.25,0.25,0.5,0.5], maximum edge delta 0.05"],
+      contourChecks: [],
       faceAndExpressionTraits: ["friendly source expression"],
       colorHierarchy: ["warm white over dark"],
       motionCues: ["source-timed hop"],
@@ -127,7 +129,7 @@ describe("HD identity review packet", () => {
     mutated.reviewDecision = { path: "evidence/identity-review-decision.json", sha256: hash };
     mutated.elements[0]!.review.reviewer = "product-owner";
     for (const name of [
-      "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
+      "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
       "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
     ] as const) mutated.elements[0]!.review[name] = true;
     expect(validateHdReviewPacket(mutated)).toEqual({ valid: true, errors: [] });
@@ -139,7 +141,7 @@ describe("HD identity review packet", () => {
     mutated.reviewer = "product-owner";
     mutated.elements[0]!.review.reviewer = "product-owner";
     for (const name of [
-      "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
+      "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
       "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
     ] as const) mutated.elements[0]!.review[name] = true;
     const result = validateHdReviewPacket(mutated);

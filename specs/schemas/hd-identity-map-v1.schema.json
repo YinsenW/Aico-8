@@ -109,17 +109,37 @@
     "anchors": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "faceAndExpressionTraits", "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations"],
+      "required": ["silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "contourChecks", "faceAndExpressionTraits", "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations"],
       "properties": {
         "silhouetteTraits": { "$ref": "#/$defs/stringList" },
         "requiredParts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/requiredPart" } },
         "proportionChecks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/proportionCheck" } },
         "compositionChecks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/compositionCheck" } },
+        "contourChecks": { "type": "array", "items": { "$ref": "#/$defs/contourCheck" } },
         "faceAndExpressionTraits": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
         "colorHierarchy": { "$ref": "#/$defs/stringList" },
         "motionCues": { "$ref": "#/$defs/stringList" },
         "gameplayCues": { "$ref": "#/$defs/stringList" },
         "forbiddenTransformations": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "contourCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "sourceEvidenceIds", "targetRegionIds", "sourceMaskSha256", "targetDownsampledMaskSha256", "sourceComponentCount", "targetComponentCount", "sourceHoleCount", "targetHoleCount", "measuredMaximumDisplacementSourcePixels", "maximumDisplacementSourcePixels"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceEvidenceIds": { "$ref": "#/$defs/idList" },
+        "targetRegionIds": { "$ref": "#/$defs/idList" },
+        "sourceMaskSha256": { "$ref": "#/$defs/sha256" },
+        "targetDownsampledMaskSha256": { "$ref": "#/$defs/sha256" },
+        "sourceComponentCount": { "type": "integer", "minimum": 1 },
+        "targetComponentCount": { "type": "integer", "minimum": 1 },
+        "sourceHoleCount": { "type": "integer", "minimum": 0 },
+        "targetHoleCount": { "type": "integer", "minimum": 0 },
+        "measuredMaximumDisplacementSourcePixels": { "type": "number", "minimum": 0 },
+        "maximumDisplacementSourcePixels": { "type": "number", "minimum": 0, "exclusiveMaximum": 0.5 }
       }
     },
     "render": {
@@ -147,7 +167,7 @@
     "review": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["reviewer", "sourceSceneIds", "targetSceneIds", "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed", "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed"],
+      "required": ["reviewer", "sourceSceneIds", "targetSceneIds", "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed", "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed"],
       "properties": {
         "reviewer": { "$ref": "#/$defs/nonEmptyString" },
         "sourceSceneIds": { "$ref": "#/$defs/idList" },
@@ -155,6 +175,7 @@
         "silhouettePassed": { "type": "boolean" },
         "requiredPartsPassed": { "type": "boolean" },
         "proportionsPassed": { "type": "boolean" },
+        "contoursPassed": { "type": "boolean" },
         "expressionPassed": { "type": "boolean" },
         "colorHierarchyPassed": { "type": "boolean" },
         "motionPassed": { "type": "boolean" },

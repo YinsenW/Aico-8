@@ -111,6 +111,14 @@ only its linked exits determine acceptance.
   an element beyond its per-check edge tolerance fails even when its internal
   aspect ratio still passes; this prevents a faithful part from being accepted
   inside an unfaithful re-layout.
+- Identity-bearing wordmarks and source-drawn glyphs are artwork. Their contour
+  checks bind the source crop and target vector hashes, exact downsampled masks,
+  component/hole topology, and measured displacement strictly below half a
+  source pixel; ordinary semantic text remains owned by the typography path.
+- Source tile/sprite structure lineage binds every retained palette/material
+  layer's exact mask, topology, and four boundary-edge signatures. Different
+  source structures may share renderer code but not one frozen recipe; a broad
+  semantic category never proves shape or material-layer equivalence.
 - Human rejection invalidates the pending review packet as an acceptance
   candidate. Replacing its visual runtime invalidates every runtime-bound capture,
   technical report, packet, and document; all must be regenerated from the same

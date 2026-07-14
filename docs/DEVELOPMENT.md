@@ -72,6 +72,16 @@ matching DOM readiness fields for every screenshot. A timeout alone, a hidden
 class alone, or a screenshot hash without the readiness record is insufficient;
 the private selector rejects visible/transitioning overlays and records copied
 from another mode, scene, state boundary, or viewport.
+Readiness requires two consecutive presented frames with the overlay fully
+excluded; a transition event or one valid sample cannot close the gate. Treat
+distinctive wordmarks/source-drawn glyphs as contour-locked artwork: derive a
+hashed source mask, preserve counters/topology and spacing, enforce less than
+half-source-pixel displacement, then compile the constrained vector recipe.
+Do not replace identity lettering with a generic font.
+For indexed tile/sprite art, extract every palette/material layer and boundary
+edge before authoring. Preserve each layer mask and give structurally distinct
+variants distinct recipe IDs; shared labels such as wall, dirt, or collectible
+are classification aids, not permission to substitute one generic primitive.
 Only after the human repeats the packet's exact acceptance statement may
 an Agent invoke `scripts/accept-private-hd-review.ts`; that command archives the
 exact pending packet/document and writes one immutable decision. Subsequent

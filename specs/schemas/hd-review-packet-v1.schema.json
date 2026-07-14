@@ -100,7 +100,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "reviewer", "silhouettePassed", "requiredPartsPassed", "proportionsPassed",
+        "reviewer", "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed",
         "expressionPassed", "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed",
         "visualGrammarPassed"
       ],
@@ -109,6 +109,7 @@
         "silhouettePassed": { "type": "boolean" },
         "requiredPartsPassed": { "type": "boolean" },
         "proportionsPassed": { "type": "boolean" },
+        "contoursPassed": { "type": "boolean" },
         "expressionPassed": { "type": "boolean" },
         "colorHierarchyPassed": { "type": "boolean" },
         "motionPassed": { "type": "boolean" },
@@ -120,7 +121,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "faceAndExpressionTraits",
+        "silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "contourChecks", "faceAndExpressionTraits",
         "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations",
         "allowedModernization"
       ],
@@ -129,6 +130,11 @@
         "requiredParts": { "$ref": "#/$defs/stringList" },
         "proportionChecks": { "$ref": "#/$defs/stringList" },
         "compositionChecks": { "$ref": "#/$defs/stringList" },
+        "contourChecks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
         "faceAndExpressionTraits": {
           "type": "array",
           "uniqueItems": true,
