@@ -1,8 +1,9 @@
-import { assertReplay, type ReplayV1 } from "@aico8/contracts";
+import { assertReplay, type ReplayHostAction, type ReplayV1 } from "@aico8/contracts";
 
 export interface ReplayPlaybackOptions {
   readonly expectedCartSha256: string;
   readonly requireCleanInitialState?: boolean;
+  readonly executeHostAction?: (action: ReplayHostAction) => void;
 }
 
 export interface ReplayPlaybackResult {
@@ -125,10 +126,19 @@ function executeReplayUpdates(
   replay: ReplayV1,
   targetUpdate: number,
   logicalUpdate: (buttonMask: number) => void,
+  executeHostAction: ((action: ReplayHostAction) => void) | undefined,
 ): void {
   let update = 0;
   let spanIndex = 0;
+  let hostActionIndex = 0;
   while (update < targetUpdate) {
+    while (replay.hostActions?.[hostActionIndex]?.atUpdate === update) {
+      if (!executeHostAction) {
+        throw new TypeError("Validation replay declares host actions but no host executor was provided");
+      }
+      executeHostAction(replay.hostActions[hostActionIndex]!);
+      hostActionIndex += 1;
+    }
     const span = replay.trace.spans[spanIndex];
     if (!span || update < span.startUpdate || update >= span.endUpdateExclusive) {
       throw new TypeError(`Validation replay lost input coverage at update ${update}`);
@@ -150,7 +160,7 @@ export function playReplayToUpdate(
   if (!Number.isSafeInteger(targetUpdate) || targetUpdate < 0 || targetUpdate > replay.trace.totalUpdates) {
     throw new TypeError(`Validation replay target update must be an integer from 0 to ${replay.trace.totalUpdates}`);
   }
-  executeReplayUpdates(replay, targetUpdate, logicalUpdate);
+  executeReplayUpdates(replay, targetUpdate, logicalUpdate, options.executeHostAction);
   return {
     replayId: replay.replayId,
     targetUpdate,
@@ -173,7 +183,7 @@ export function playReplayToMilestone(
   const replay = validatedReplay(value, options);
   const milestone = replay.milestones.find(({ id }) => id === milestoneId);
   if (!milestone) throw new TypeError(`Validation replay has no milestone ${milestoneId}`);
-  executeReplayUpdates(replay, milestone.atUpdate, logicalUpdate);
+  executeReplayUpdates(replay, milestone.atUpdate, logicalUpdate, options.executeHostAction);
   return {
     replayId: replay.replayId,
     milestoneId,

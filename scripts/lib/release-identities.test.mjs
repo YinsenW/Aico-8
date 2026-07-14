@@ -33,6 +33,26 @@ test("replay semantic identity changes with executed input", () => {
   assert.notEqual(validationReplaySemanticsSha256(changed), validationReplaySemanticsSha256(replay));
 });
 
+test("replay semantic identity changes with an executed host action", () => {
+  const withHostAction = structuredClone(replay);
+  withHostAction.canonicality.inputSource = "pico8-buttons-plus-source-menuitems";
+  withHostAction.hostActions = [{
+    kind: "source-authored-pause-menu-item",
+    atUpdate: 1,
+    index: 1,
+    label: "next level",
+    filter: 0,
+    buttons: 0,
+    keepOpen: false,
+  }];
+  const changed = structuredClone(withHostAction);
+  changed.hostActions[0].label = "skip level";
+  assert.notEqual(
+    validationReplaySemanticsSha256(changed),
+    validationReplaySemanticsSha256(withHostAction),
+  );
+});
+
 test("visual runtime identity excludes only the declared replay artifact", () => {
   const artifacts = [
     { path: "assets/app.js", sha256: "1".repeat(64), bytes: 10 },

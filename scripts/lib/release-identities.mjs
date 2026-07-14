@@ -23,6 +23,7 @@ export function replaySemantics(replay) {
     runtime,
     canonicality: replay.canonicality,
     trace: replay.trace,
+    hostActions: replay.hostActions ?? [],
     requiredMilestoneIds: replay.requiredMilestoneIds,
     milestones: replay.milestones,
     checkpoints: replay.checkpoints,

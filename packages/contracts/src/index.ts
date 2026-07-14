@@ -28,6 +28,7 @@ export {
   type InputSpan,
   type InputTraceV1,
   type ReplayCheckpoint,
+  type ReplayHostAction,
   type ReplayMilestone,
   type ReplayV1,
   type ReplayValidationResult,

@@ -173,10 +173,11 @@ Contracts: `DATA-HD-MAP-001`, `DATA-HD-AUDIT-001`, `DATA-ASSET-PACK-001`, `DATA-
 
 Qualify the shared Web-first conversion path on at least ten authorized,
 materially different, finite games. Each game must replay every required level,
-ending, and progression boundary on an unchanged cart using only real logical
-button input, retain per-game evidence and rights isolation, and cover a declared
-compatibility/presentation risk matrix. Instrumented reachability is diagnostic
-only and cannot count a game toward ten.
+ending, and progression boundary on an unchanged cart using real logical button
+input plus only source-authored `menuitem()` callbacks invoked through the normal
+host pause-menu boundary, retaining per-game evidence, rights isolation, and a
+declared risk matrix. Instrumented reachability, direct Lua calls, and undeclared host actions are diagnostic only
+and cannot count a game toward ten.
 
 Any faster shadow model used to search for inputs is non-authoritative. Before a
 candidate can enter canonical replay, every modeled transition it exercises must

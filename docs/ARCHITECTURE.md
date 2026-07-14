@@ -175,15 +175,15 @@ The detailed mapping is defined in `specs/display-1024.md` and
 ### 9. Validation and release
 
 - Canonical replays execute every original logical update on unchanged cart
-  bytes, accept only PICO-8 button masks, and forbid test hooks, state writes,
-  level skips, or synthetic completion; wall-clock acceleration may not skip an
-  update. Instrumented reachability remains a diagnostic evidence grade.
+  bytes and accept PICO-8 button masks plus source-authored `menuitem()` callbacks
+  through the host boundary. Each action is ordered at an exact update and checked against the live registration and keep-open
+  result. Test hooks, direct Lua calls, state writes, level skips, undeclared host
+  actions, and synthetic completion remain forbidden; acceleration may not skip updates.
 - The research-only Web validation player may accelerate an accepted replay to
-  a declared milestone or exact logical update for source/HD capture only after
-  cart and clean initial-persistence hashes match. It is visibly labeled,
-  executes every intervening logical input, isolates external persistence writes,
-  and may advance deterministic presentation-only time without advancing
-  compatibility state. Source/HD pairs bind the same update and presentation-
+  a milestone or exact update for source/HD capture only after cart and clean
+  initial-persistence hashes match. It is visibly labeled,
+  executes every intervening logical input and declared host action, isolates external persistence writes,
+  and may advance presentation-only time without compatibility state. Source/HD pairs bind the same update and presentation-
   time boundary and do not replace the independent completion audit.
 - Browser evidence binds two fail-closed identities: the visual-runtime identity
   covers every packaged artifact except the replay payload, while the replay-

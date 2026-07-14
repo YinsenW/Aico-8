@@ -35,10 +35,20 @@ export interface CanonicalityDeclaration {
   mode: "canonical-real-input";
   cartMutation: "none";
   compatibilityStateMutation: "none";
-  inputSource: "pico8-buttons-only";
+  inputSource: "pico8-buttons-only" | "pico8-buttons-plus-source-menuitems";
   logicalUpdatePolicy: "execute-all";
   testHooks: false;
   wallClockAcceleration: boolean;
+}
+
+export interface ReplayHostAction {
+  kind: "source-authored-pause-menu-item";
+  atUpdate: number;
+  index: number;
+  label: string;
+  filter: ButtonMask;
+  buttons: ButtonMask;
+  keepOpen: boolean;
 }
 
 export type MilestoneKind =
@@ -78,6 +88,7 @@ export interface ReplayV1 {
   };
   canonicality: CanonicalityDeclaration;
   trace: InputTraceV1;
+  hostActions?: ReplayHostAction[];
   requiredMilestoneIds: string[];
   milestones: ReplayMilestone[];
   checkpoints: ReplayCheckpoint[];
@@ -246,22 +257,71 @@ function validateCanonicality(value: unknown, errors: string[]): void {
     mode: "canonical-real-input",
     cartMutation: "none",
     compatibilityStateMutation: "none",
-    inputSource: "pico8-buttons-only",
     logicalUpdatePolicy: "execute-all",
     testHooks: false,
   } as const;
   checkKeys(
     value,
-    [...Object.keys(expected), "wallClockAcceleration"],
-    [...Object.keys(expected), "wallClockAcceleration"],
+    [...Object.keys(expected), "inputSource", "wallClockAcceleration"],
+    [...Object.keys(expected), "inputSource", "wallClockAcceleration"],
     "$.canonicality",
     errors,
   );
   for (const [key, expectedValue] of Object.entries(expected)) {
     if (value[key] !== expectedValue) errors.push(`$.canonicality.${key} must equal ${String(expectedValue)}`);
   }
+  if (value.inputSource !== "pico8-buttons-only"
+    && value.inputSource !== "pico8-buttons-plus-source-menuitems") {
+    errors.push("$.canonicality.inputSource must name the supported button/menuitem input boundary");
+  }
   if (typeof value.wallClockAcceleration !== "boolean") {
     errors.push("$.canonicality.wallClockAcceleration must be boolean");
+  }
+}
+
+function validateHostActions(
+  value: unknown,
+  totalUpdates: number | undefined,
+  inputSource: unknown,
+  errors: string[],
+): void {
+  if (value === undefined) {
+    if (inputSource === "pico8-buttons-plus-source-menuitems") {
+      errors.push("$.hostActions is required when canonicality declares source menuitems");
+    }
+    return;
+  }
+  if (!Array.isArray(value) || value.length === 0) {
+    errors.push("$.hostActions must contain at least one source-authored menu action");
+    return;
+  }
+  if (inputSource !== "pico8-buttons-plus-source-menuitems") {
+    errors.push("$.canonicality.inputSource must declare source menuitems when $.hostActions is present");
+  }
+  let lastUpdate = -1;
+  for (const [index, rawAction] of value.entries()) {
+    const path = `$.hostActions[${index}]`;
+    if (!isRecord(rawAction)) {
+      errors.push(`${path} must be an object`);
+      continue;
+    }
+    const keys = ["kind", "atUpdate", "index", "label", "filter", "buttons", "keepOpen"];
+    checkKeys(rawAction, keys, keys, path, errors);
+    if (rawAction.kind !== "source-authored-pause-menu-item") {
+      errors.push(`${path}.kind must equal source-authored-pause-menu-item`);
+    }
+    const maximum = totalUpdates === undefined ? Number.MAX_SAFE_INTEGER : Math.max(0, totalUpdates - 1);
+    if (checkInteger(rawAction.atUpdate, 0, maximum, `${path}.atUpdate`, errors)) {
+      if ((rawAction.atUpdate as number) < lastUpdate) errors.push(`${path}.atUpdate must be ordered`);
+      lastUpdate = rawAction.atUpdate as number;
+    }
+    checkInteger(rawAction.index, 1, 5, `${path}.index`, errors);
+    if (typeof rawAction.label !== "string" || rawAction.label.length < 1 || rawAction.label.length > 16) {
+      errors.push(`${path}.label must contain 1 through 16 characters`);
+    }
+    checkInteger(rawAction.filter, 0, 63, `${path}.filter`, errors);
+    checkInteger(rawAction.buttons, 0, 63, `${path}.buttons`, errors);
+    if (typeof rawAction.keepOpen !== "boolean") errors.push(`${path}.keepOpen must be boolean`);
   }
 }
 
@@ -347,13 +407,14 @@ export function validateReplay(value: unknown): ReplayValidationResult {
     "runtime",
     "canonicality",
     "trace",
+    "hostActions",
     "requiredMilestoneIds",
     "milestones",
     "checkpoints",
     "result",
     "producer",
   ];
-  checkKeys(value, topLevelKeys, topLevelKeys, "$", errors);
+  checkKeys(value, topLevelKeys, topLevelKeys.filter((key) => key !== "hostActions"), "$", errors);
   if (value.schemaVersion !== REPLAY_SCHEMA_VERSION) errors.push(`$.schemaVersion must equal ${REPLAY_SCHEMA_VERSION}`);
   checkId(value.replayId, "$.replayId", errors);
   checkId(value.gameId, "$.gameId", errors);
@@ -370,6 +431,12 @@ export function validateReplay(value: unknown): ReplayValidationResult {
   }
   validateCanonicality(value.canonicality, errors);
   const totalUpdates = validateTrace(value.trace, errors);
+  validateHostActions(
+    value.hostActions,
+    totalUpdates,
+    isRecord(value.canonicality) ? value.canonicality.inputSource : undefined,
+    errors,
+  );
   const milestoneIds = validateMilestones(value.milestones, totalUpdates, errors);
   validateCheckpoints(value.checkpoints, totalUpdates, errors);
 

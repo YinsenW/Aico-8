@@ -172,9 +172,13 @@ only its linked exits determine acceptance.
 - Batch execution isolates workspaces, failures, evidence, and retries. Assembly
   cannot include a module whose required validation exits are incomplete.
 - A canonical replay has contiguous real button input for every logical update,
-  unchanged cart/state semantics, no test hooks or synthetic completion, and
-  milestone/checkpoint lineage. Faster wall time is allowed only when every
-  original logical update still executes.
+  optionally interleaves only exact-update source-authored pause-menu callbacks,
+  retains unchanged cart/state semantics, has no test hooks, direct Lua calls,
+  or synthetic completion, and binds milestone/checkpoint lineage. Menu actions
+  are outside the six-bit DATA-INPUT-TRACE-001 stream and must match the live
+  registered index, label, button filter, and keep-open result. Faster wall time
+  is allowed only when every original logical update and declared host action
+  still executes in order.
 - Keyboard, standard controller, and touch qualification consumes the same
   DATA-INPUT-TRACE-001 through production mapping/latch functions. Each surface
   must emit the canonical six-bit player-one mask at the declared update rate for
@@ -182,8 +186,9 @@ only its linked exits determine acceptance.
   mismatch fails JOB-VALIDATE-001.
 - Research Web packages may opt into explicit replay-backed scene capture. The
   host must validate Replay v1, cart hash, initial persistence hash, and named
-  milestone, execute every ordinary input update, expose playback lineage in the
-  UI, and never treat the capture as a second completion claim.
+  milestone, execute every ordinary input update and declared source menu action,
+  expose playback lineage in the UI, and never treat the capture as a second
+  completion claim.
 - Screenshot evidence binds the package's visual-runtime identity, which hashes
   every artifact except the declared validation replay. Ending lineage also binds
   the replay-semantics identity, which excludes only runtime/producer source-

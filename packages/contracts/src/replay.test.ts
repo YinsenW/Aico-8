@@ -65,6 +65,39 @@ describe("Replay v1", () => {
     expect(result.errors.join("\n")).toContain("priorReplayId is required");
   });
 
+  it("accepts ordered source menu actions only with an explicit canonical input source", () => {
+    const replay = structuredClone(validReplay()) as unknown as Record<string, any>;
+    replay.canonicality.inputSource = "pico8-buttons-plus-source-menuitems";
+    replay.hostActions = [{
+      kind: "source-authored-pause-menu-item",
+      atUpdate: 1,
+      index: 2,
+      label: "main menu",
+      filter: 0,
+      buttons: 0,
+      keepOpen: false,
+    }];
+    expect(validateReplay(replay)).toEqual({ valid: true, errors: [] });
+    delete replay.hostActions;
+    expect(validateReplay(replay).errors.join("\n")).toMatch(/hostActions is required/);
+  });
+
+  it("rejects undeclared, unordered, or malformed host actions", () => {
+    const replay = structuredClone(validReplay()) as unknown as Record<string, any>;
+    replay.hostActions = [
+      { kind: "source-authored-pause-menu-item", atUpdate: 2, index: 2, label: "main menu", filter: 0, buttons: 0, keepOpen: false },
+      { kind: "source-authored-pause-menu-item", atUpdate: 1, index: 6, label: "", filter: 64, buttons: 64, keepOpen: "no" },
+    ];
+    const errors = validateReplay(replay).errors.join("\n");
+    expect(errors).toMatch(/must declare source menuitems/);
+    expect(errors).toMatch(/atUpdate must be ordered/);
+    expect(errors).toMatch(/index/);
+    expect(errors).toMatch(/label/);
+    expect(errors).toMatch(/filter/);
+    expect(errors).toMatch(/buttons/);
+    expect(errors).toMatch(/keepOpen/);
+  });
+
   it("throws an actionable error from the assertion helper", () => {
     expect(() => assertReplay({})).toThrowError(/Invalid Replay v1/);
   });

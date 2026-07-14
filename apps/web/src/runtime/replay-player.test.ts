@@ -47,6 +47,14 @@ const replay = {
   producer: { name: "synthetic producer", version: "1", sourceRevision: "test" },
 };
 
+const replayWithHostActions = {
+  ...replay,
+  canonicality: { ...replay.canonicality, inputSource: "pico8-buttons-plus-source-menuitems" },
+  hostActions: [
+    { kind: "source-authored-pause-menu-item", atUpdate: 2, index: 2, label: "main menu", filter: 0, buttons: 0, keepOpen: false },
+  ],
+};
+
 describe("browser validation replay", () => {
   it("captures an exact startup host tick without entering logical updates", () => {
     let ticks = 0;
@@ -107,6 +115,30 @@ describe("browser validation replay", () => {
       expectedCartSha256: hash,
     });
     expect(masks).toEqual([16, 0]);
+  });
+
+  it("interleaves declared source menu actions before the next logical update", () => {
+    const events: string[] = [];
+    playReplayToMilestone(replayWithHostActions, "game-complete", (mask) => events.push(`input:${mask}`), {
+      expectedCartSha256: hash,
+      executeHostAction: (action) => events.push(`menu:${action.atUpdate}:${action.index}:${action.label}`),
+    });
+    expect(events).toEqual(["input:16", "input:0", "menu:2:2:main menu", "input:2", "input:0"]);
+  });
+
+  it("captures a boundary before a host action declared at that same update", () => {
+    const events: string[] = [];
+    playReplayToMilestone(replayWithHostActions, "ending-reached", (mask) => events.push(`input:${mask}`), {
+      expectedCartSha256: hash,
+      executeHostAction: () => events.push("menu"),
+    });
+    expect(events).toEqual(["input:16", "input:0"]);
+  });
+
+  it("fails closed when a replay host action has no executor", () => {
+    expect(() => playReplayToMilestone(replayWithHostActions, "game-complete", () => undefined, {
+      expectedCartSha256: hash,
+    })).toThrow(/host executor/);
   });
 
   it("captures an exact logical-update boundary without a synthetic milestone", () => {

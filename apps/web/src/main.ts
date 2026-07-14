@@ -4,6 +4,7 @@ import {
   assertReplay,
   REFERENCE_PROFILE,
   validateTargetProfile,
+  type ReplayHostAction,
   type ReplayV1,
   type WebTargetProfileV1,
 } from "@aico8/contracts";
@@ -558,7 +559,23 @@ try {
     const initialization = prepareKernelForLogicalReplay(loadedRuntime);
     frame.dataset.validationInitializationHostTicks = String(initialization.hostTicks);
     frame.dataset.validationInitializationAudioSamples = String(initialization.discardedAudioSamples);
-    const options = { expectedCartSha256: manifest.cartSha256, requireCleanInitialState: true };
+    const options = {
+      expectedCartSha256: manifest.cartSha256,
+      requireCleanInitialState: true,
+      executeHostAction: (action: ReplayHostAction): void => {
+        const registered = loadedRuntime.menuItems().find(({ index }) => index === action.index);
+        if (!registered || registered.label !== action.label) {
+          throw new Error(`Validation replay host action does not match live menu item ${action.index}: ${action.label}`);
+        }
+        if (registered.filter !== action.filter) {
+          throw new Error(`Validation replay host action filter does not match live menu item ${action.index}`);
+        }
+        const keepOpen = loadedRuntime.invokeMenuItem(action.index, action.buttons);
+        if (keepOpen !== action.keepOpen) {
+          throw new Error(`Validation replay host action keep-open result drifted at update ${action.atUpdate}`);
+        }
+      },
+    };
     const playback = requestedReplayMilestone
       ? playReplayToMilestone(
           validationReplay,
