@@ -69,6 +69,14 @@ for (const screenshot of packet.screenshots) {
 const documentPath = path.resolve(workspace, packet.document.path);
 assert.ok(documentPath.startsWith(`${workspace}${path.sep}`), "Unsafe review document path");
 assert.equal(sha256(documentPath), packet.document.sha256, "Review document hash");
+const reviewDocument = fs.readFileSync(documentPath, "utf8");
+for (const screenshot of packet.screenshots) {
+  assert.ok(screenshot.path.startsWith("evidence/"), `${screenshot.id}: review image must be inside evidence`);
+  const contentAddressedUrl = `${screenshot.path.slice("evidence/".length)}?sha256=${screenshot.sha256}`;
+  const escaped = contentAddressedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert.match(reviewDocument, new RegExp(`<a[^>]+href="${escaped}"[^>]*><img[^>]+src="${escaped}"`),
+    `${screenshot.id}: review document must bind both zoom and inline image URLs to screenshot bytes`);
+}
 
 if (packet.status === "accepted") {
   assert.ok(packet.reviewDecision, "Accepted review packet must reference its immutable decision");

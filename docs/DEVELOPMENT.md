@@ -92,6 +92,9 @@ through an active browser and bind its no-overflow, clipping, game/control bound
 font, safe-area, screenshot, and visual-runtime results into release validation.
 Any visual-runtime change invalidates and requires recapture of all retained
 identity and layout screenshots; hashes may never be relabeled across builds.
+Review HTML must address both inline and zoom images with the verified screenshot
+SHA-256 query key. A fixed `file://` path can display stale browser cache and is
+not review evidence, even when the adjacent JSON record names the current hash.
 Capture automation must wait for `data-capture-status="ready"` and record the
 matching DOM readiness fields for every screenshot. A timeout alone, a hidden
 class alone, or a screenshot hash without the readiness record is insufficient;

@@ -51,7 +51,8 @@ function list(items) {
 }
 function imagePath(screenshot) {
   assert.ok(screenshot.path.startsWith("evidence/"), `${screenshot.id}: review image must be inside evidence`);
-  return screenshot.path.slice("evidence/".length);
+  assert.match(screenshot.sha256, /^[0-9a-f]{64}$/, `${screenshot.id}: review image must have a SHA-256 cache key`);
+  return `${screenshot.path.slice("evidence/".length)}?sha256=${screenshot.sha256}`;
 }
 
 assert.equal(identityMap.canonicalReplayId, browser.validationReplay.replayId);

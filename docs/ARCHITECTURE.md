@@ -124,7 +124,6 @@ The complete policy is owned by
   waveform, onset, loop, and duration validation against the reference path.
 - Web assets prefer compact delivery codecs while validation retains lossless
   evidence. Embedded profiles may select synth or compressed samples by budget.
-
 ### 7. 1024×1024 reference presentation
 
 - Native 1024×1024 output, using 64×64 pixels per logical 8×8 tile.
@@ -139,7 +138,8 @@ The complete policy is owned by
   alone cannot pass fidelity, motion, timing, completeness, or aesthetics.
 - Human review consumes a generated packet that hashes its identity map, browser
   record, visual-runtime identity, every displayed screenshot, and review HTML;
-  stale or cross-state review material cannot promote an accepted build.
+  stale or cross-state material cannot promote a build, and both inline and zoom
+  URLs carry the screenshot SHA-256 so browsers cannot reuse older capture bytes.
 - Review capture is readiness-driven: `captureStatus=ready` requires the rendered boundary, class-hidden/zero-opacity/hidden-visibility loading overlay, two newly presented frames, and a retained exact mode/scene/boundary/viewport record.
 - Acceptance is a separate immutable decision over the exact pending packet and
   required statement. The pipeline archives what the human saw, deterministically

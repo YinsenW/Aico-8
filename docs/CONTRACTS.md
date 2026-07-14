@@ -117,6 +117,10 @@ only its linked exits determine acceptance.
   browser record, replay semantics, visual runtime, elements, checks, and required
   statement. Acceptance promotes every review field together; a later selector
   must reproduce the reviewed draft before it can regenerate accepted evidence.
+- Every image rendered by a pending or accepted review document uses the retained
+  screenshot SHA-256 as the URL cache key for both its inline and full-size link.
+  A fixed path, a missing key, or a key that differs from the verified file bytes
+  fails the packet even when its JSON metadata is otherwise current.
 - DATA-HD-EVIDENCE-LIFECYCLE-001 separates offline drafts, packaged captures,
   and pending review packets. Offline artifacts cannot claim runtime, capture,
   browser, or human proof; the lifecycle never embeds acceptance, which remains

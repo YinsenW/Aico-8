@@ -124,6 +124,9 @@ function makeWorkspace() {
     reviewPacketBuilder, "--workspace", workspace, "--write", "true",
   ], { cwd: repository, encoding: "utf8" });
   assert.equal(generation.status, 0, generation.stderr);
+  const reviewDocument = fs.readFileSync(path.join(workspace, "evidence/identity-review-packet.html"), "utf8");
+  assert.match(reviewDocument, new RegExp(`source\\.jpg\\?sha256=${sha256(sourceBytes)}`));
+  assert.match(reviewDocument, new RegExp(`target\\.jpg\\?sha256=${sha256(targetBytes)}`));
   return workspace;
 }
 
@@ -186,6 +189,21 @@ test("acceptance rejects evidence changed after packet generation", () => {
     const result = accept(workspace);
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /stale|Browser evidence changed|Command failed/);
+    assert.equal(fs.existsSync(path.join(workspace, "evidence/identity-review-decision.json")), false);
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("acceptance rejects a review document whose screenshot cache key was removed", () => {
+  const workspace = makeWorkspace();
+  try {
+    const documentPath = path.join(workspace, "evidence/identity-review-packet.html");
+    const document = fs.readFileSync(documentPath, "utf8");
+    fs.writeFileSync(documentPath, document.replaceAll(/\?sha256=[0-9a-f]{64}/g, ""));
+    const result = accept(workspace);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /stale|Command failed/);
     assert.equal(fs.existsSync(path.join(workspace, "evidence/identity-review-decision.json")), false);
   } finally {
     fs.rmSync(workspace, { recursive: true, force: true });
