@@ -91,6 +91,7 @@ and material frames for visual preflight. Do not regenerate the complete packet
 until those frames visibly improve line smoothness and internal/material detail;
 this prevents a technically valid but aesthetically failed build from producing
 false-looking completion evidence.
+Review in the same fixed order every time: first Spirit fidelity (identity, atmosphere, motion, cues, and play feel), then Quality leap (resolution, surfaces, animation, detail, and sampling), then Aesthetic evolution (coherent modern color, light, composition, and finish). Stop at the first failed gate; never trade an earlier failure for later polish.
 Only after the human repeats the packet's exact acceptance statement may
 an Agent invoke `scripts/accept-private-hd-review.ts`; that command archives the
 exact pending packet/document and writes one immutable decision. Subsequent

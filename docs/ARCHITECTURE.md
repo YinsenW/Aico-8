@@ -85,10 +85,8 @@ evidence to semantic role; invariant silhouette, anatomy/key parts, proportions,
 face/expression, color hierarchy, footprint, motion, and gameplay cues; allowed
 modernization dimensions; replacement asset; animation; layer; and diagnostic
 reference correspondence. A compact shared renderer interprets this data; new
-games do not earn arbitrary simulation branches in the HD layer. Generated art
-is accepted only as an authoring candidate, then reviewed, normalized, hashed,
-and frozen in the asset pack. No model is called at runtime, and changing model
-quality cannot change an accepted build.
+games do not earn arbitrary simulation branches in the HD layer. Generated art is accepted only as an authoring candidate, then reviewed, normalized, hashed, and frozen in the asset pack. No model is called at runtime, and changing model quality cannot change an accepted build.
+The pipeline enforces the product's ordered gates: identity/replay evidence protects Spirit fidelity, surface lineage proves Quality leap, and the frozen visual grammar plus human whole-frame review bounds Aesthetic evolution; a later gate cannot waive an earlier failure.
 
 The source-relative semantic redraw standard uses hashed renderer-independent recipes for identity-bearing vectors; constrained SVG is build-only, requires stable IDs/layers/origins, and rejects scripts, links, external resources, transforms, inherited styles, and unsupported paths. It has two mandatory layers: an identity scaffold and an HD surface. Distinctive wordmarks and hand-drawn glyphs bind exact downsampled masks, component/hole topology, and sub-half-source-pixel displacement; topology-constrained splines then remove source-cell stair steps without changing any source cell centre. Indexed tile/sprite variants preserve each palette/material layer and boundary edge, while structurally distinct variants receive distinct frozen recipes. The HD surface lineage binds the real target primitives and requires continuous curve commands, visible shade/base/highlight treatment, and deterministic 2x edge supersampling. Passing the scaffold alone never qualifies enlarged pixel geometry as a remake.
 Web compiles recipes to shared Pixi contexts; protected negative spaces use explicit cut primitives, and the compiler assigns each cut to its containing component when one fill has disconnected shapes instead of relying on renderer winding defaults. Repeated actors share one geometry template with explicit layers and palette tokens, while future hosts may produce native geometry or raster atlases.

@@ -28,8 +28,8 @@ Current status, exits, evidence, selectors, and unfinished work are owned by
    metrics, control effects, and custom glyph behavior remain compatibility truth.
 9. Runtime and games are internally modular, while public delivery starts with
    statically bound standalone artifacts rather than a general cartridge player.
-10. A multi-cart request fans out into isolated workspaces and acceptance records;
-    one game's success may never hide another game's failure.
+10. A multi-cart request fans out into isolated workspaces and acceptance records; one game's success may never hide another game's failure.
+11. HD work passes three ordered gates: Spirit fidelity is a hard identity-and-experience constraint; Quality leap is a measurable presentation floor; Aesthetic evolution is bounded optimization that may proceed only after both pass.
 
 ## Requirements
 
@@ -53,7 +53,7 @@ Contracts: `API-CORE-001`, `API-RASTER-001`, `DATA-REPLAY-001`,
 ### REQ-HD-001 — Native 1024 presentation without gameplay drift
 
 Render every reachable entity, tile, UI, animation, lighting, and effect at the
-canonical 1024 design resolution. Preserve each source element's recognizable
+canonical 1024 design resolution. Apply the three gates in order: preserve the original's recognizable soul, identity, atmosphere, and play feel; prove a material resolution, surface, motion, and detail-quality leap; then evolve color, light, composition, and finish only inside those constraints. Preserve each source element's recognizable
 role, silhouette, anatomy/key parts, proportions, face/expression, color hierarchy,
 screen footprint, motion, and gameplay cue while applying one coherent modern
 visual grammar. Modernization may add material, light, detail, and animation
