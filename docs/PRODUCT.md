@@ -17,9 +17,9 @@ Current status, exits, evidence, selectors, and unfinished work are owned by
 1. Compatibility state is authoritative; HD presentation is replaceable.
 2. The original cart runs unchanged unless an explicit, reviewed product option
    documents a deliberate behavior change.
-3. Unknown or unsafe semantic replacements fall back to the indexed reference frame.
-4. Browser Web/PWA is first; Android and Linux handhelds reuse the same Web host,
-   while a future ESP32 host reuses contracts without requiring a browser.
+3. Unknown or unsafe replacements force whole-scene indexed diagnostic mode and block HD acceptance; reference pixels never mix into a modern frame.
+4. Browser Web/PWA is first; Android and Linux handhelds reuse the same Web host;
+   future ESP32 reuses contracts. A 1024x1024 square handheld is a first-class native-1:1, 8x-scale Web layout.
 5. Audio preserves original composition and synthesis intent by default.
 6. Publication is separate from technical readiness and always passes rights review.
 7. Agents advance the project through tested tools and durable evidence, not

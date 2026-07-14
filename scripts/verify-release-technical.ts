@@ -8,6 +8,7 @@ import {
   validateReleaseValidation,
   validateTargetProfile,
 } from "../packages/contracts/src/release.ts";
+import { assertFullViewportScreenshot } from "./lib/viewport-evidence.mjs";
 
 function argumentsMap(values: string[]): Map<string, string> {
   const result = new Map<string, string>();
@@ -109,10 +110,12 @@ const browserLayouts = browser.layoutQualification.profiles.map((profile: any) =
   const screenshotPath = path.resolve(workspaceRoot, profile.screenshot.path);
   assert.ok(screenshotPath.startsWith(`${workspaceRoot}${path.sep}`), `${profile.id}: unsafe layout screenshot path`);
   assert.equal(sha256(screenshotPath), profile.screenshot.sha256, `${profile.id}: layout screenshot sha256`);
-  assert.deepEqual(jpegDimensions(screenshotPath), {
+  const dimensions = jpegDimensions(screenshotPath);
+  assert.deepEqual(dimensions, {
     width: profile.screenshot.width,
     height: profile.screenshot.height,
   }, `${profile.id}: layout screenshot dimensions`);
+  assertFullViewportScreenshot(profile, dimensions);
   const { screenshot, ...measurement } = profile;
   return { ...measurement, screenshotSha256: screenshot.sha256 };
 });

@@ -71,7 +71,7 @@ assert.ok(game.sourceLicense && game.sourceUrl, "Private package needs source at
 const privateEntries = fs.readdirSync(path.join(output, "private"), { withFileTypes: true });
 const moduleDirectories = privateEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 assert.deepEqual(moduleDirectories, [game.id], "Package must contain exactly its selected private game module");
-for (const relative of [game.rom, game.source, game.validationReplay].filter(Boolean)) {
+for (const relative of [game.rom, game.source, game.validationReplay, game.semanticVectors].filter(Boolean)) {
   assert.ok(fs.statSync(path.join(output, "private", relative), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
 }
 
@@ -83,8 +83,12 @@ assert.equal(targetProfile.measurementEnvironment.class, "local-http-active-brow
 assert.ok(targetProfile.measurementEnvironment.warmupFrames >= 0);
 assert.ok(targetProfile.measurementEnvironment.sampleFrames >= 120);
 assert.ok(targetProfile.measurementEnvironment.droppedFrameThresholdMilliseconds > 0);
-assert.deepEqual(targetProfile.layoutProfiles.map((profile) => profile.class),
-  ["phone-portrait", "android-handheld-landscape", "wide-web"]);
+assert.ok(Array.isArray(targetProfile.layoutProfiles) && targetProfile.layoutProfiles.length > 0,
+  "Target profile needs at least one layout profile");
+assert.equal(new Set(targetProfile.layoutProfiles.map((profile) => profile.id)).size,
+  targetProfile.layoutProfiles.length, "Target layout profile ids must be unique");
+assert.equal(new Set(targetProfile.layoutProfiles.map((profile) => profile.class)).size,
+  targetProfile.layoutProfiles.length, "Target layout profile classes must be unique");
 for (const profile of targetProfile.layoutProfiles) {
   assert.ok(profile.viewport.width > 0 && profile.viewport.height > 0, `${profile.id}: valid viewport`);
   assert.ok(profile.minGameFrameCssPixels > 0, `${profile.id}: game-frame minimum`);
@@ -133,19 +137,36 @@ assert.equal(
   "Visual runtime identity must bind every packaged artifact except validation replay provenance",
 );
 
-const bundledInputs = [
-  ["source.rom", path.join(output, "private", game.rom)],
-  ["code.p8.lua", path.join(output, "private", game.source)],
-  ...(game.validationReplay ? [["validation-replay.json", path.join(output, "private", game.validationReplay)]] : []),
-];
-const bundledInputsByName = new Map(bundledInputs);
+const bundledInputsByName = new Map([
+  ["source.rom", { file: path.join(output, "private", game.rom) }],
+  ["code.p8.lua", { file: path.join(output, "private", game.source) }],
+  ...(game.validationReplay ? [["validation-replay.json", { file: path.join(output, "private", game.validationReplay) }]] : []),
+]);
+if (game.semanticVectors) {
+  const vectors = readJson(path.join("private", game.semanticVectors));
+  assert.equal(vectors.schemaVersion, "aico8.semantic-vector-set.v1");
+  assert.ok(Array.isArray(vectors.assets) && vectors.assets.length > 0, "Semantic vector set must contain assets");
+  for (const asset of vectors.assets) {
+    assert.match(asset.id, /^[a-z0-9][a-z0-9._-]{1,127}$/);
+    assert.match(asset.sourcePath, /^web-overlay\/vector-assets\/[a-z0-9][a-z0-9._-]*\.svg$/);
+    assert.match(asset.sourceSha256, /^[a-f0-9]{64}$/);
+    assert.match(asset.recipeSha256, /^[a-f0-9]{64}$/);
+    assert.ok(Number.isSafeInteger(asset.sourceBytes) && asset.sourceBytes > 0);
+    assert.ok(Array.isArray(asset.requiredLayerIds) && asset.requiredLayerIds.length > 0);
+    assert.ok(Array.isArray(asset.elementIds) && asset.elementIds.length >= asset.requiredLayerIds.length);
+    assert.equal(bundledInputsByName.has(asset.sourcePath), false, `Duplicate release input ${asset.sourcePath}`);
+    bundledInputsByName.set(asset.sourcePath, { sha256: asset.sourceSha256, bytes: asset.sourceBytes });
+  }
+}
 assert.deepEqual(release.inputs.map(({ path: inputPath }) => inputPath).sort(), [...bundledInputsByName.keys()].sort(),
   "Release inputs must enumerate every packaged build input");
 for (const input of release.inputs) {
   const bundledInput = bundledInputsByName.get(input.path);
   assert.ok(bundledInput, `Unknown release input ${input.path}`);
-  assert.equal(fs.statSync(bundledInput).size, input.bytes, `${input.path} input bytes`);
-  assert.equal(sha256(bundledInput), input.sha256, `${input.path} input sha256`);
+  const expectedBytes = bundledInput.file ? fs.statSync(bundledInput.file).size : bundledInput.bytes;
+  const expectedSha256 = bundledInput.file ? sha256(bundledInput.file) : bundledInput.sha256;
+  assert.equal(expectedBytes, input.bytes, `${input.path} input bytes`);
+  assert.equal(expectedSha256, input.sha256, `${input.path} input sha256`);
 }
 
 if (game.validationReplay) {

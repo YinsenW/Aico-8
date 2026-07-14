@@ -34,12 +34,13 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, copy provenance/authorization, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
 | DATA-HD-AUDIT-001 | Contextual raw visual tokens, observation runs, identity-map lineage, zero-unmapped/mixed/reference coverage, per-update HD-off/on state comparison, and rejected mutations | `specs/schemas/hd-presentation-audit-v1.schema.json` and TypeScript validator |
 | DATA-ASSET-PACK-001 | Frozen hashed atlases, fonts, effects, audio, visual grammar, metadata, and licenses | Asset-pack schema |
+| DATA-SEMANTIC-VECTOR-001 | Build-only constrained SVG provenance plus renderer-independent semantic layers, origins, palette tokens, compiled-recipe hashes, and packaged input lineage | `specs/schemas/semantic-vector-set-v1.schema.json`, `scripts/lib/semantic-svg.mjs`, and `apps/web/src/runtime/semantic-vector.ts` |
 | DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Text-run schema |
 | DATA-TYPOGRAPHY-001 | Semantic roles, Unicode mappings, font assets/hashes/licenses, complete coverage, layout, fit, and diagnostic policy | Typography-manifest schema |
 | DATA-BATCH-001 | Authorized cart inputs, desired products/targets, policy, immutable IDs, and per-game Job states | Batch schema |
 | DATA-GAME-MODULE-001 | One remake's compatible payload, mappings, assets, saves, provenance, validation references, and runtime constraints | Internal game-module schema |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
-| DATA-TARGET-PROFILE-001 | Browser Web/PWA representative layout classes and minimum game/control dimensions, plus Android WebView, Linux handheld Web, future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
+| DATA-TARGET-PROFILE-001 | Browser Web/PWA phone, priority 1024-square-handheld, landscape-handheld, and wide-Web layout classes and minimum game/control dimensions, plus Android WebView, Linux handheld Web, future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
 | DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, immutable human decision lineage, measured release budgets, and active-browser layout measurements/screenshots for every target profile | `specs/schemas/hd-review-packet-v1.schema.json`, `specs/schemas/hd-review-decision-v1.schema.json`, `specs/schemas/release-validation-v1.schema.json`, and domain validators |
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, and rights decision | `specs/schemas/release-manifest-v1.schema.json` and TypeScript validator |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
@@ -84,9 +85,14 @@ only its linked exits determine acceptance.
 - AI-generated media is an authoring candidate only. Accepted builds use reviewed,
   frozen assets and deterministic mappings; no model call or model-specific
   behavior exists in runtime execution or sole-source acceptance.
+- SVG is an optional authoring input, not a portable runtime. Only the constrained
+  DATA-SEMANTIC-VECTOR-001 subset may enter a build; it is compiled to a hashed
+  semantic recipe before Vite, and release inputs bind source bytes while the
+  visual-runtime identity binds the compiled recipe and packaged manifest.
 - Web layout acceptance is fail-closed over every DATA-TARGET-PROFILE-001 layout
   class. Each matching DATA-VALIDATION-001 record binds the exact visual runtime,
-  viewport/document dimensions, game and minimum-control bounds, overflow,
+  viewport/document dimensions, a full-frame screenshot whose pixel dimensions
+  exactly equal that viewport, game and minimum-control bounds, overflow,
   clipping, font and safe-area checks, plus a screenshot hash.
 - A human HD decision binds the exact pending packet, document, identity draft,
   browser record, replay semantics, visual runtime, elements, checks, and required

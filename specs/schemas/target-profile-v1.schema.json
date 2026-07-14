@@ -32,15 +32,15 @@
     },
     "layoutProfiles": {
       "type": "array",
-      "minItems": 3,
-      "maxItems": 3,
+      "minItems": 4,
+      "maxItems": 4,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["id", "class", "viewport", "minGameFrameCssPixels", "minTouchTargetCssPixels"],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-          "class": { "enum": ["phone-portrait", "android-handheld-landscape", "wide-web"] },
+          "class": { "enum": ["phone-portrait", "square-handheld", "android-handheld-landscape", "wide-web"] },
           "viewport": {
             "type": "object",
             "additionalProperties": false,

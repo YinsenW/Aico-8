@@ -19,6 +19,13 @@
       "minTouchTargetCssPixels": 44
     },
     {
+      "id": "square-handheld-1024x1024",
+      "class": "square-handheld",
+      "viewport": { "width": 1024, "height": 1024 },
+      "minGameFrameCssPixels": 800,
+      "minTouchTargetCssPixels": 44
+    },
+    {
       "id": "android-handheld-landscape-1280x720",
       "class": "android-handheld-landscape",
       "viewport": { "width": 1280, "height": 720 },

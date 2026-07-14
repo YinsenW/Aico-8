@@ -9,6 +9,7 @@ export interface GameManifest {
   readonly persistenceKey: string;
   readonly cartSha256?: string;
   readonly validationReplay?: string;
+  readonly semanticVectors?: string;
   readonly researchOnly?: boolean;
   readonly sourceLicense?: string;
   readonly sourceUrl?: string;

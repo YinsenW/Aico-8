@@ -3,11 +3,11 @@
   "subject": {
     "gameId": "dust-bunny-private-research",
     "target": "web-pwa",
-    "visualRuntimeSha256": "bef92c99dff0c80562f31ac78178777071a041ee78bb8948154c9f18c08fb63d"
+    "visualRuntimeSha256": "eecf5c322cd589699c3afccb5e3ae3e0aac381a84b56b846a6f6f19b942931e6"
   },
   "targetProfile": {
     "id": "web-pwa-private-research-v1",
-    "sha256": "000cb558c5883fc4e3fafef93059e4bf488af4e2b91f96d5ca36e655726b24ec"
+    "sha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809"
   },
   "environment": {
     "class": "local-http-active-browser",
@@ -18,8 +18,8 @@
     }
   },
   "package": {
-    "artifactCount": 39,
-    "unpackedBytes": 1763529,
+    "artifactCount": 40,
+    "unpackedBytes": 1776002,
     "largestArtifactBytes": 632022
   },
   "runtime": {
@@ -31,8 +31,8 @@
   },
   "layouts": [
     {
-      "id": "phone-portrait-390x844",
       "class": "phone-portrait",
+      "id": "phone-portrait-390x844",
       "viewport": {
         "width": 390,
         "height": 844
@@ -60,8 +60,37 @@
       "screenshotSha256": "8db655cc2819da827a1e684cb2210181d21cd1d11b2aba1a7d50ace9fc100f40"
     },
     {
-      "id": "android-handheld-landscape-1280x720",
+      "class": "square-handheld",
+      "id": "square-handheld-1024x1024",
+      "viewport": {
+        "width": 1024,
+        "height": 1024
+      },
+      "document": {
+        "scrollWidth": 1024,
+        "scrollHeight": 1024
+      },
+      "gameFrame": {
+        "width": 814,
+        "height": 814
+      },
+      "minimumTouchTarget": {
+        "width": 50,
+        "height": 50
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "d7bb4c44c5fc1dd0cd3cd927c2b2777bc20eba05e61156c9fb17428e21d3c34e"
+    },
+    {
       "class": "android-handheld-landscape",
+      "id": "android-handheld-landscape-1280x720",
       "viewport": {
         "width": 1280,
         "height": 720
@@ -86,11 +115,11 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "ba1667c6563cc9807bf3530081baa706204f8f9eaa8e6d35a8043253ddcb9992"
+      "screenshotSha256": "5ba55b877395359722657d003bcd6780421d7d1e9957caeb0a1937ad20d7f0d3"
     },
     {
-      "id": "wide-web-1440x900",
       "class": "wide-web",
+      "id": "wide-web-1440x900",
       "viewport": {
         "width": 1440,
         "height": 900
@@ -115,7 +144,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "83ed55585da5966b7a5fb0b2f827d1cac4b4d2adfbd40c6019f86ebd5e37b6ec"
+      "screenshotSha256": "a8247ce0a8f93d25d4485920cd354aa183de08e7f3e47e9b071f4c939849ca0e"
     }
   ],
   "checks": {

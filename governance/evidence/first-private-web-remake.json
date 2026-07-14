@@ -69,20 +69,20 @@
     "identity_review_static_pairs": 11,
     "identity_review_temporal_sequences": 6,
     "identity_review_screenshots": 56,
-    "qualified_layout_profiles": 3
+    "qualified_layout_profiles": 4
   },
   "package": {
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
-    "artifact_count": 39,
-    "visual_runtime_sha256": "bef92c99dff0c80562f31ac78178777071a041ee78bb8948154c9f18c08fb63d",
+    "artifact_count": 40,
+    "visual_runtime_sha256": "eecf5c322cd589699c3afccb5e3ae3e0aac381a84b56b846a6f6f19b942931e6",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },
   "release_technical": {
     "target_profile_id": "web-pwa-private-research-v1",
-    "target_profile_sha256": "000cb558c5883fc4e3fafef93059e4bf488af4e2b91f96d5ca36e655726b24ec",
-    "unpacked_bytes": 1763529,
+    "target_profile_sha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809",
+    "unpacked_bytes": 1776002,
     "largest_artifact_bytes": 632022,
     "startup_milliseconds": 329.2,
     "sample_frames": 180,
@@ -96,10 +96,10 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "e27b2d4b9ec70379d5a07c09c4dcb985a7c6e0cf21d3b02af0ee84b1dbd923af",
-    "browser_validation_sha256": "c7d3e32739b1270cc5b82dec4d2e3964930ee14e819fbed2c31c5acfcad825ee",
-    "hd_review_packet_sha256": "aadbb35dd331375364c1e58bb6986f354cf4e72e19e972a3a166aa0cd8e71426",
-    "hd_review_document_sha256": "b98707302a10d165d6f6ae2f17e74ed2319e22262903a77a5914274c567c5727",
+    "hd_presentation_audit_sha256": "9e921b5b8bf507f460ff7ad5ae8f28fb90ada2c83037f6fe566f2a23457f9d93",
+    "browser_validation_sha256": "860a51e8ad5f12be4bf176e3e6e4c89c53ce9b0d40c435a312d9a3cea3258e15",
+    "hd_review_packet_sha256": "60af1baa0039903d48eba2e2c64bce52b8397d7d8960a43a769f1b461db29931",
+    "hd_review_document_sha256": "e692bc30ac6c1bac03c9492a0fcfdb32234d152e25d0cc85b5631c38dc41532e",
     "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }

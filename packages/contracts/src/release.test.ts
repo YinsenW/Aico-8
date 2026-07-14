@@ -25,6 +25,7 @@ const targetProfile = {
   },
   layoutProfiles: [
     { id: "phone-portrait-390x844", class: "phone-portrait", viewport: { width: 390, height: 844 }, minGameFrameCssPixels: 360, minTouchTargetCssPixels: 44 },
+    { id: "square-handheld-1024x1024", class: "square-handheld", viewport: { width: 1024, height: 1024 }, minGameFrameCssPixels: 800, minTouchTargetCssPixels: 44 },
     { id: "android-handheld-landscape-1280x720", class: "android-handheld-landscape", viewport: { width: 1280, height: 720 }, minGameFrameCssPixels: 500, minTouchTargetCssPixels: 44 },
     { id: "wide-web-1440x900", class: "wide-web", viewport: { width: 1440, height: 900 }, minGameFrameCssPixels: 680, minTouchTargetCssPixels: 44 },
   ],
@@ -107,12 +108,12 @@ describe("release contracts", () => {
   it("rejects missing layout classes, overflow, undersized game frames, and failed safe areas", () => {
     const invalidProfile = structuredClone(targetProfile);
     invalidProfile.layoutProfiles[1]!.class = "phone-portrait";
-    expect(validateTargetProfile(invalidProfile).errors.join("\n")).toMatch(/duplicates|include android-handheld/);
+    expect(validateTargetProfile(invalidProfile).errors.join("\n")).toMatch(/duplicates|include square-handheld/);
 
     const mutated = structuredClone(releaseValidation);
-    mutated.layouts[1]!.document.scrollHeight = 721;
-    mutated.layouts[1]!.gameFrame.width = 499;
-    mutated.layouts[1]!.checks.safeAreaContract = false;
+    mutated.layouts[2]!.document.scrollHeight = 721;
+    mutated.layouts[2]!.gameFrame.width = 499;
+    mutated.layouts[2]!.checks.safeAreaContract = false;
     const result = validateReleaseValidation(mutated, targetProfile);
     expect(result.ok).toBe(false);
     expect(result.errors.join("\n")).toMatch(/vertical overflow/);

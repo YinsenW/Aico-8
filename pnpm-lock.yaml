@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      '@xmldom/xmldom':
+        specifier: 0.8.13
+        version: 0.8.13
 
   apps/web:
     dependencies:

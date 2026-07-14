@@ -21,7 +21,7 @@ export interface WebTargetProfileV1 {
   };
   readonly layoutProfiles: readonly {
     readonly id: string;
-    readonly class: "phone-portrait" | "android-handheld-landscape" | "wide-web";
+    readonly class: "phone-portrait" | "square-handheld" | "android-handheld-landscape" | "wide-web";
     readonly viewport: { readonly width: number; readonly height: number };
     readonly minGameFrameCssPixels: number;
     readonly minTouchTargetCssPixels: number;
@@ -121,7 +121,7 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     integer(environment.sampleFrames, "$.measurementEnvironment.sampleFrames", errors, 1);
     finite(environment.droppedFrameThresholdMilliseconds, "$.measurementEnvironment.droppedFrameThresholdMilliseconds", errors, Number.EPSILON);
   }
-  const requiredLayoutClasses = ["phone-portrait", "android-handheld-landscape", "wide-web"] as const;
+  const requiredLayoutClasses = ["phone-portrait", "square-handheld", "android-handheld-landscape", "wide-web"] as const;
   if (!Array.isArray(root.layoutProfiles)) {
     errors.push("$.layoutProfiles must be an array");
   } else {

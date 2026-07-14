@@ -7,6 +7,11 @@ import {
   validationReplaySemanticsSha256,
   visualRuntimeSha256,
 } from "./lib/release-identities.mjs";
+import {
+  compileSemanticSvgDirectory,
+  semanticVectorManifest,
+  semanticVectorModuleSource,
+} from "./lib/semantic-svg.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -55,6 +60,11 @@ const sourceUrl = required(argumentsMap, "source-url");
 const validationReplayArgument = argumentsMap.get("validation-replay");
 const privateSourceRoot = path.join(root, "apps/web/src/private");
 const privateRoot = path.join(root, "apps/web/public/private");
+const semanticVectorSourceRoot = path.join(workspace, "web-overlay", "vector-assets");
+const semanticVectorSet = compileSemanticSvgDirectory(
+  semanticVectorSourceRoot,
+  "web-overlay/vector-assets",
+);
 
 // These are disposable build stages, never canonical private inputs. Cleaning on
 // every exit prevents a later public build from accidentally copying stale data.
@@ -66,6 +76,9 @@ process.on("exit", () => {
 if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) throw new Error("--id must use lowercase letters, digits, and hyphens");
 if (!/^[a-z0-9][a-z0-9-]*$/.test(presentation)) throw new Error("--presentation must use lowercase letters, digits, and hyphens");
 if (fs.existsSync(output)) throw new Error(`Output already exists: ${output}`);
+if (semanticVectorSet && presentation === "reference") {
+  throw new Error("Semantic vector assets require a private HD presentation adapter");
+}
 
 const romSource = path.join(workspace, "source.rom");
 const luaSource = path.join(workspace, "code.p8.lua");
@@ -93,6 +106,14 @@ if (presentation !== "reference") {
   if (fs.statSync(supportSource, { throwIfNoEntry: false })?.isDirectory()) {
     fs.cpSync(supportSource, path.join(privateSourceRoot, "support"), { recursive: true });
   }
+  if (semanticVectorSet) {
+    const generatedSupportRoot = path.join(privateSourceRoot, "support");
+    fs.mkdirSync(generatedSupportRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(generatedSupportRoot, "generated-semantic-vectors.ts"),
+      semanticVectorModuleSource(semanticVectorSet),
+    );
+  }
 }
 
 const moduleRoot = path.join(privateRoot, id);
@@ -102,6 +123,12 @@ fs.copyFileSync(romSource, path.join(moduleRoot, "source.rom"));
 fs.copyFileSync(luaSource, path.join(moduleRoot, "code.p8.lua"));
 if (validationReplaySource) {
   fs.copyFileSync(validationReplaySource, path.join(moduleRoot, "validation-replay.json"));
+}
+if (semanticVectorSet) {
+  fs.writeFileSync(
+    path.join(moduleRoot, "semantic-vectors.json"),
+    `${JSON.stringify(semanticVectorManifest(semanticVectorSet), null, 2)}\n`,
+  );
 }
 const cartSha256 = createHash("sha256")
   .update(fs.readFileSync(romSource))
@@ -118,6 +145,7 @@ const gameManifest = {
   persistenceKey,
   cartSha256,
   ...(validationReplaySource ? { validationReplay: `${id}/validation-replay.json` } : {}),
+  ...(semanticVectorSet ? { semanticVectors: `${id}/semantic-vectors.json` } : {}),
   researchOnly: true,
   audio: "original-silent-cart",
   sourceLicense,
@@ -193,6 +221,11 @@ const releaseManifest = {
       sha256: sha256(validationReplaySource),
       bytes: fs.statSync(validationReplaySource).size,
     }] : []),
+    ...(semanticVectorSet ? semanticVectorSet.sourceFiles.map((sourceFile) => ({
+      path: sourceFile.path,
+      sha256: sha256(sourceFile.absolutePath),
+      bytes: fs.statSync(sourceFile.absolutePath).size,
+    })) : []),
   ],
   artifacts,
 };

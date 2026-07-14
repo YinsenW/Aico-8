@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validationReplaySemanticsSha256 } from "./lib/release-identities.mjs";
+import { assertFullViewportScreenshot } from "./lib/viewport-evidence.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceValue = process.env.AICO8_PRIVATE_WORKSPACE;
@@ -215,8 +216,9 @@ try {
   assert.ok(browser.mobile.actionButtonCss.width >= 44 && browser.mobile.actionButtonCss.height >= 44);
   assert.equal(browser.mobile.bundledFontsLoaded, true);
   assert.equal(browser.layoutQualification.source, "real-packaged-build-active-browser");
+  const targetProfile = JSON.parse(fs.readFileSync(path.join(outputA, "target-profile.json"), "utf8"));
   assert.deepEqual(browser.layoutQualification.profiles.map(({ class: layoutClass }) => layoutClass),
-    ["phone-portrait", "android-handheld-landscape", "wide-web"]);
+    targetProfile.layoutProfiles.map(({ class: layoutClass }) => layoutClass));
   for (const layout of browser.layoutQualification.profiles) {
     assert.ok(layout.document.scrollWidth <= layout.viewport.width, `${layout.id}: no horizontal overflow`);
     assert.ok(layout.document.scrollHeight <= layout.viewport.height, `${layout.id}: no vertical overflow`);
@@ -224,10 +226,12 @@ try {
     const screenshotPath = path.resolve(workspace, layout.screenshot.path);
     assert.ok(screenshotPath.startsWith(`${workspace}${path.sep}`), `${layout.id}: layout screenshot escapes workspace`);
     assert.equal(sha256(screenshotPath), layout.screenshot.sha256, `${layout.id}: layout screenshot hash`);
-    assert.deepEqual(jpegDimensions(screenshotPath), {
+    const dimensions = jpegDimensions(screenshotPath);
+    assert.deepEqual(dimensions, {
       width: layout.screenshot.width,
       height: layout.screenshot.height,
     }, `${layout.id}: layout screenshot dimensions`);
+    assertFullViewportScreenshot(layout, dimensions);
     assert.equal(layout.screenshot.visualRuntimeSha256, browser.build.visualRuntimeSha256,
       `${layout.id}: layout screenshot visual-runtime identity`);
   }

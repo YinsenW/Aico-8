@@ -91,10 +91,10 @@ is accepted only as an authoring candidate, then reviewed, normalized, hashed,
 and frozen in the asset pack. No model is called at runtime, and changing model
 quality cannot change an accepted build.
 
-Identity traits are evidence-derived per element, not a global style checklist.
-The validator rejects drift from that element's source measurements and required
-parts; it does not prefer round over long faces, ears over no ears, or any other
-particular design vocabulary.
+The source-relative semantic redraw standard uses hashed renderer-independent recipes for identity-bearing vectors; constrained SVG is build-only, requires stable IDs/layers/origins, and rejects scripts, links, external resources, transforms, inherited styles, and unsupported paths.
+Web compiles recipes to shared Pixi contexts; repeated actors share one geometry template with explicit layers and palette tokens, while future hosts may produce native geometry or raster atlases.
+Regular geometry/effects stay procedural, text uses the typography path, and texture-rich art may use frozen raster atlases.
+Identity traits are evidence-derived per element, not a global style checklist; validation rejects source-relative drift without preferring any universal face, anatomy, or design vocabulary.
 
 ### 5. Text and typography
 
@@ -212,8 +212,8 @@ The detailed mapping is defined in `specs/display-1024.md` and
   Jobs or final Skill are treated as stable.
 - Fresh-clone builds are required for every supported platform profile; Web release validation binds the target-profile hash, complete artifact manifest,
   visual-runtime identity, real-browser environment, package size, startup time,
-  settled frame samples, and an active-browser measurement/screenshot for every
-  target-profile layout class in one fail-closed report.
+  settled frame samples, and an active-browser measurement/screenshot for every target-profile layout class in one fail-closed report; 1024x1024 square handheld
+  is a required class, not an inference from a wide viewport.
   Layout qualification rejects viewport overflow, clipped text, controls outside
   the game frame, unloaded bundled fonts, undersized touch targets, or a missing
   safe-area contract. Android and Linux profiles must extend this lineage rather
