@@ -14,7 +14,7 @@ evidence, selectors, and open work live only in `governance/project.json`.
 | API-AUDIO-001 | `runtime/core/include/p8/audio.h` | Four-channel scheduling, cart-memory synthesis, status, and deterministic mono PCM | VM, native/Wasm hosts, audio checkpoints |
 | API-SEMANTIC-001 | `p8_draw_command` in `core.h` | Ordered original draw intent plus payloads/state revision | HD adapter and diagnostics |
 | API-TEXT-001 | Planned versioned core/TypeScript boundary | Raw P8SCII execution result plus ordered semantic text runs and diagnostic correspondence regions | HD text adapter, diagnostics, validation |
-| API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, PCM audio, semantic, map, global-inspection, pause-menu, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
+| API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, PCM audio, semantic, map, read-only global/table inspection, pause-menu, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
 | API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, source-timed visibility, completeness, and diagnostic reference mode | PixiJS host and validation UI |
 | API-HOST-001 | Planned host contract | Logical input, persistence, lifecycle, clock, audio, services | Browser Web/PWA, Android WebView, Linux Web shell, future ESP-IDF |
 | API-CLI-001 | Planned TypeScript CLI | Non-interactive execution of every pipeline Job | Agents, CI, maintainers |
