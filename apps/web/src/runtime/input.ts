@@ -6,8 +6,9 @@ const keyButtons = new Map<string, number>([
   ["ArrowUp", 2], ["KeyW", 2],
   ["ArrowDown", 3], ["KeyS", 3],
   ["KeyZ", 4], ["KeyC", 4], ["KeyN", 4], ["Space", 4],
-  ["KeyX", 5], ["KeyV", 5], ["KeyM", 5], ["Enter", 5],
+  ["KeyX", 5], ["KeyV", 5], ["KeyM", 5],
 ]);
+const menuKeys = new Set(["Enter", "KeyP"]);
 
 export const CANONICAL_KEY_CODES = [
   "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "KeyZ", "KeyX",
@@ -22,6 +23,10 @@ export interface GamepadLike {
 
 export function keyboardButton(code: string): number | undefined {
   return keyButtons.get(code);
+}
+
+export function keyboardMenuKey(code: string): boolean {
+  return menuKeys.has(code);
 }
 
 export function touchButton(value: string | number | undefined): number | undefined {
@@ -42,6 +47,10 @@ export function gamepadMask(gamepad: GamepadLike | null | undefined): number {
   if (gamepad.buttons[0]?.pressed) mask |= 1 << 4;
   if (gamepad.buttons[1]?.pressed) mask |= 1 << 5;
   return mask & 0x3f;
+}
+
+export function gamepadMenuPressed(gamepad: GamepadLike | null | undefined): boolean {
+  return Boolean(gamepad?.buttons[8]?.pressed || gamepad?.buttons[9]?.pressed);
 }
 
 export class LogicalInputLatch {
@@ -154,15 +163,27 @@ export function projectInputTrace(trace: InputTraceV1, surface: HostInputSurface
 export class InputController {
   readonly #keyboard = new LogicalInputLatch();
   readonly #touch = new LogicalInputLatch();
+  #pendingMenu = false;
+  #gamepadMenuHeld = false;
+  #suppressGamepadUntilRelease = false;
 
   constructor(target: Window = window) {
     target.addEventListener("keydown", (event) => {
+      if (keyboardMenuKey(event.code)) {
+        if (!event.repeat) this.#pendingMenu = true;
+        event.preventDefault();
+        return;
+      }
       const button = keyboardButton(event.code);
       if (button === undefined) return;
       this.#keyboard.press(button);
       event.preventDefault();
     }, { passive: false });
     target.addEventListener("keyup", (event) => {
+      if (keyboardMenuKey(event.code)) {
+        event.preventDefault();
+        return;
+      }
       const button = keyboardButton(event.code);
       if (button === undefined) return;
       this.#keyboard.release(button);
@@ -184,16 +205,43 @@ export class InputController {
         control.addEventListener(eventName, () => this.#touch.release(button));
       }
     }
+    for (const control of root.querySelectorAll<HTMLElement>("[data-p8-menu]")) {
+      control.addEventListener("pointerdown", (event) => {
+        this.#pendingMenu = true;
+        event.preventDefault();
+      });
+    }
   }
 
   mask(): number {
-    const mask = this.#keyboard.mask() | this.#touch.mask()
-      | gamepadMask(navigator.getGamepads?.()[0]);
+    const rawGamepad = gamepadMask(navigator.getGamepads?.()[0]);
+    if (this.#suppressGamepadUntilRelease && rawGamepad === 0) {
+      this.#suppressGamepadUntilRelease = false;
+    }
+    const gamepad = this.#suppressGamepadUntilRelease ? 0 : rawGamepad;
+    const mask = this.#keyboard.mask() | this.#touch.mask() | gamepad;
     return mask & 0x3f;
   }
 
   commitLogicalUpdate(): void {
     this.#keyboard.commitLogicalUpdate();
     this.#touch.commitLogicalUpdate();
+  }
+
+  consumeMenuRequest(): boolean {
+    const gamepadPressed = gamepadMenuPressed(navigator.getGamepads?.()[0]);
+    if (gamepadPressed && !this.#gamepadMenuHeld) this.#pendingMenu = true;
+    this.#gamepadMenuHeld = gamepadPressed;
+    const requested = this.#pendingMenu;
+    this.#pendingMenu = false;
+    return requested;
+  }
+
+  resetAfterMenu(): void {
+    this.#keyboard.reset();
+    this.#touch.reset();
+    this.#keyboard.commitLogicalUpdate();
+    this.#touch.commitLogicalUpdate();
+    this.#suppressGamepadUntilRelease = true;
   }
 }

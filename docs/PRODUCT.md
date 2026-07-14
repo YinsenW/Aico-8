@@ -47,7 +47,7 @@ Run unchanged cart Lua with compatible fixed-point, RAM/ROM, draw, input, audio,
 persistence, and 30/60 Hz behavior. Native and WebAssembly builds must produce
 identical versioned checkpoints. Licensed official-runtime captures are the oracle.
 
-Contracts: `API-CORE-001`, `API-RASTER-001`, `DATA-REPLAY-001`,
+Contracts: `API-CORE-001`, `API-RASTER-001`, `API-AUDIO-001`, `DATA-REPLAY-001`,
 `DATA-CHECKPOINT-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
 
 ### REQ-HD-001 — Native 1024 presentation without gameplay drift
@@ -149,9 +149,9 @@ Contracts: `API-CORE-001`, `API-HOST-001`, `API-GAME-MODULE-001`,
 
 ### REQ-INPUT-001 — Modern input without feel drift
 
-Support keyboard and controller first, then touch controls mapped to logical
-PICO-8 input sampling. Responsive layout, safe areas, and presentation refresh
-must not change update order or button-repeat behavior.
+Map keyboard, controller, and touch to logical PICO-8 input without changing
+update or repeat behavior. Host menu requests stay outside gameplay; source
+`menuitem` labels, filters, callbacks, and keep-open behavior remain intact.
 
 Contracts: `API-HOST-001`, `DATA-INPUT-TRACE-001`, `JOB-VALIDATE-001`.
 
@@ -185,8 +185,8 @@ semantic mismatch requires a root-cause category, a general invariant, a
 regression fixture, and a mutation check that proves the test detects the faulty
 rule; level-specific solver exceptions cannot satisfy qualification.
 
-Contracts: `DATA-INPUT-TRACE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`,
-`DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
+Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-INPUT-TRACE-001`, `DATA-REPLAY-001`,
+`DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
 
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 

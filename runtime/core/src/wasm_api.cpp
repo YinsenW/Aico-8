@@ -1,10 +1,12 @@
 #include "p8/wasm.h"
 
+#include "p8/audio.h"
 #include "p8/raster.h"
 #include "p8/vm.h"
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <new>
 #include <string>
 #include <vector>
@@ -24,6 +26,7 @@ struct aico8_runtime {
     std::string source;
     bool loaded = false;
     bool started = false;
+    bool initialization_complete = false;
 };
 
 namespace {
@@ -52,6 +55,9 @@ bool restart_cart(aico8_runtime *runtime)
         && p8_vm_load_source(runtime->vm, runtime->source.data(), runtime->source.size(),
                              "@aico8-cart");
     runtime->started = runtime->loaded && p8_vm_call(runtime->vm, "_init");
+    runtime->initialization_complete = runtime->started
+        && !(p8_vm_call_pending(runtime->vm)
+             && std::string(p8_vm_active_function(runtime->vm)) == "_init");
     return runtime->started;
 }
 
@@ -96,6 +102,7 @@ int aico8_load_cart(aico8_runtime *runtime, const uint8_t *rom, size_t rom_size,
     runtime->rom.assign(rom, rom + rom_size);
     runtime->source.assign(source, source_size);
     runtime->started = false;
+    runtime->initialization_complete = false;
     return runtime->loaded ? 1 : 0;
 }
 
@@ -117,7 +124,14 @@ int aico8_start(aico8_runtime *runtime)
         return 0;
     }
     runtime->started = true;
+    runtime->initialization_complete = !(p8_vm_call_pending(runtime->vm)
+        && std::string(p8_vm_active_function(runtime->vm)) == "_init");
     return 1;
+}
+
+int aico8_initialization_complete(const aico8_runtime *runtime)
+{
+    return runtime && runtime->started && runtime->initialization_complete ? 1 : 0;
 }
 
 int aico8_tick60(aico8_runtime *runtime, uint8_t player_zero_buttons)
@@ -130,10 +144,27 @@ int aico8_tick60(aico8_runtime *runtime, uint8_t player_zero_buttons)
     if (p8_vm_last_error(runtime->vm)[0] != '\0') {
         return -1;
     }
+    if (p8_audio_last_error(runtime->core)[0] != '\0') {
+        return -1;
+    }
+    if (!runtime->initialization_complete && !p8_vm_call_pending(runtime->vm)) {
+        runtime->initialization_complete = true;
+    }
     if (p8_vm_restart_requested(runtime->vm) && !restart_cart(runtime)) {
         return -1;
     }
     return updated;
+}
+
+size_t aico8_audio_available(const aico8_runtime *runtime)
+{
+    return runtime ? p8_audio_available(runtime->core) : 0;
+}
+
+size_t aico8_read_audio(aico8_runtime *runtime, int16_t *destination,
+                        size_t capacity)
+{
+    return runtime ? p8_audio_read(runtime->core, destination, capacity) : 0;
 }
 
 const uint8_t *aico8_framebuffer(aico8_runtime *runtime)
@@ -203,6 +234,71 @@ int aico8_get_global_boolean(aico8_runtime *runtime, const char *name, int *valu
     return runtime && runtime->vm ? p8_vm_get_global_boolean(runtime->vm, name, value) : 0;
 }
 
+size_t aico8_copy_global_string(aico8_runtime *runtime, const char *name,
+                                char *destination, size_t capacity)
+{
+    return runtime && runtime->vm
+        ? p8_vm_copy_global_string(runtime->vm, name, destination, capacity) : 0;
+}
+
+int aico8_get_table_length(aico8_runtime *runtime, const char *name,
+                           size_t *length)
+{
+    return runtime && runtime->vm ? p8_vm_get_table_length(runtime->vm, name, length) : 0;
+}
+
+int aico8_get_table_value_raw(aico8_runtime *runtime, const char *name,
+                              size_t one_based_index, int32_t *raw_16_16)
+{
+    return runtime && runtime->vm
+        ? p8_vm_get_table_value_raw(runtime->vm, name, one_based_index, raw_16_16) : 0;
+}
+
+int aico8_get_table_entry_raw(aico8_runtime *runtime, const char *name,
+                              size_t one_based_index, const char *field,
+                              int32_t *raw_16_16)
+{
+    return runtime && runtime->vm
+        ? p8_vm_get_table_entry_raw(runtime->vm, name, one_based_index, field, raw_16_16) : 0;
+}
+
+int aico8_get_table_entry_boolean(aico8_runtime *runtime, const char *name,
+                                  size_t one_based_index, const char *field,
+                                  int *value)
+{
+    return runtime && runtime->vm
+        ? p8_vm_get_table_entry_boolean(runtime->vm, name, one_based_index, field, value) : 0;
+}
+
+size_t aico8_copy_menu_item_label(const aico8_runtime *runtime, unsigned index,
+                                  char *destination, size_t capacity)
+{
+    if (!runtime || !runtime->vm || !destination || capacity == 0) return 0;
+    const char *label = p8_vm_menu_item_label(runtime->vm, index);
+    const size_t size = std::strlen(label);
+    if (size == 0 || size + 1 > capacity) return 0;
+    std::memcpy(destination, label, size);
+    destination[size] = '\0';
+    return size;
+}
+
+uint8_t aico8_menu_item_filter(const aico8_runtime *runtime, unsigned index)
+{
+    return runtime && runtime->vm ? p8_vm_menu_item_filter(runtime->vm, index) : 0;
+}
+
+int aico8_invoke_menu_item(aico8_runtime *runtime, unsigned index,
+                           uint8_t buttons, int *keep_open)
+{
+    if (!runtime || !runtime->vm || !keep_open) return 0;
+    if (!p8_vm_invoke_menu_item(runtime->vm, index, buttons, keep_open)) return 0;
+    if (p8_vm_restart_requested(runtime->vm)) {
+        *keep_open = 0;
+        return restart_cart(runtime) ? 1 : 0;
+    }
+    return 1;
+}
+
 size_t aico8_copy_persistent(const aico8_runtime *runtime, uint8_t *destination,
                              size_t capacity)
 {
@@ -218,7 +314,9 @@ size_t aico8_copy_persistent(const aico8_runtime *runtime, uint8_t *destination,
 
 const char *aico8_last_error(const aico8_runtime *runtime)
 {
-    return runtime && runtime->vm ? p8_vm_last_error(runtime->vm) : "runtime is not loaded";
+    if (!runtime || !runtime->vm) return "runtime is not loaded";
+    return p8_vm_last_error(runtime->vm)[0] != '\0'
+        ? p8_vm_last_error(runtime->vm) : p8_audio_last_error(runtime->core);
 }
 
 } // extern "C"

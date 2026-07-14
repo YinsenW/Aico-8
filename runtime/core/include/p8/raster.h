@@ -34,6 +34,7 @@ void p8_gfx_pal_reset(p8_core *core);
 void p8_gfx_palt(p8_core *core, uint8_t color, int transparent);
 void p8_gfx_palt_reset(p8_core *core);
 int p8_gfx_is_transparent(const p8_core *core, uint8_t color);
+int32_t p8_gfx_fillp(p8_core *core, int32_t raw_pattern);
 
 void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
 void p8_gfx_rect(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);

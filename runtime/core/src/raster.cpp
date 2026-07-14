@@ -13,6 +13,8 @@ constexpr uint16_t kClipWidth = 0x5f22;
 constexpr uint16_t kClipHeight = 0x5f23;
 constexpr uint16_t kCameraX = 0x5f28;
 constexpr uint16_t kCameraY = 0x5f2a;
+constexpr uint16_t kFillPatternLow = 0x5f31;
+constexpr uint16_t kFillPatternTransparency = 0x5f33;
 constexpr uint16_t kGfxBase = 0x0000;
 constexpr uint16_t kSpriteFlagsBase = 0x3000;
 constexpr uint16_t kScreenBase = 0x6000;
@@ -93,6 +95,26 @@ void draw_mapped_pixel(p8_core *core, int64_t world_x, int64_t world_y, uint8_t 
     }
 }
 
+void draw_patterned_pixel(p8_core *core, int64_t world_x, int64_t world_y,
+                          uint8_t color)
+{
+    if (!core) return;
+    const int64_t screen_x = world_x - signed_word(core, kCameraX);
+    const int64_t screen_y = world_y - signed_word(core, kCameraY);
+    if (screen_x < 0 || screen_y < 0 || screen_x >= P8_SCREEN_WIDTH
+        || screen_y >= P8_SCREEN_HEIGHT) return;
+    const int x = static_cast<int>(screen_x);
+    const int y = static_cast<int>(screen_y);
+    if (!inside_clip(core, x, y)) return;
+    const uint16_t pattern = p8_core_peek16(core, kFillPatternLow);
+    const unsigned bit = static_cast<unsigned>((3 - (x & 3)) + (3 - (y & 3)) * 4);
+    const bool secondary = (pattern & (1u << bit)) != 0;
+    if (secondary && (p8_core_peek(core, kFillPatternTransparency) & 1u) != 0) return;
+    const uint8_t selected = secondary ? static_cast<uint8_t>(color >> 4)
+                                       : static_cast<uint8_t>(color & kColorMask);
+    raw_set_pixel(core, kScreenBase, x, y, mapped_color(core, selected));
+}
+
 void draw_mapped_span(p8_core *core, int64_t world_x0, int64_t world_x1,
                       int64_t world_y, uint8_t color)
 {
@@ -119,22 +141,21 @@ void draw_mapped_span(p8_core *core, int64_t world_x0, int64_t world_x1,
     screen_x1 = std::min<int64_t>(screen_x1,
                                   std::min(P8_SCREEN_WIDTH - 1, clip_x + clip_width - 1));
     for (int64_t x = screen_x0; x <= screen_x1; ++x) {
-        raw_set_pixel(core, kScreenBase, static_cast<int>(x), static_cast<int>(screen_y),
-                      color);
+        draw_patterned_pixel(core, x + camera_x, world_y, color);
     }
 }
 
 void circle_octants(p8_core *core, int64_t cx, int64_t cy, int x, int y,
                     uint8_t color)
 {
-    draw_mapped_pixel(core, cx + x, cy + y, color);
-    draw_mapped_pixel(core, cx + y, cy + x, color);
-    draw_mapped_pixel(core, cx - y, cy + x, color);
-    draw_mapped_pixel(core, cx - x, cy + y, color);
-    draw_mapped_pixel(core, cx - x, cy - y, color);
-    draw_mapped_pixel(core, cx - y, cy - x, color);
-    draw_mapped_pixel(core, cx + y, cy - x, color);
-    draw_mapped_pixel(core, cx + x, cy - y, color);
+    draw_patterned_pixel(core, cx + x, cy + y, color);
+    draw_patterned_pixel(core, cx + y, cy + x, color);
+    draw_patterned_pixel(core, cx - y, cy + x, color);
+    draw_patterned_pixel(core, cx - x, cy + y, color);
+    draw_patterned_pixel(core, cx - x, cy - y, color);
+    draw_patterned_pixel(core, cx - y, cy - x, color);
+    draw_patterned_pixel(core, cx + y, cy - x, color);
+    draw_patterned_pixel(core, cx + x, cy - y, color);
 }
 
 void circle_spans(p8_core *core, int64_t cx, int64_t cy, int x, int y,
@@ -187,6 +208,7 @@ void p8_raster_reset(p8_core *core)
     p8_gfx_pal_reset(core);
     p8_gfx_clip_reset(core);
     p8_gfx_camera_reset(core);
+    p8_gfx_fillp(core, 0);
 }
 
 uint8_t p8_gfx_pget(const p8_core *core, int x, int y)
@@ -196,8 +218,7 @@ uint8_t p8_gfx_pget(const p8_core *core, int x, int y)
 
 void p8_gfx_pset(p8_core *core, int x, int y, uint8_t color)
 {
-    draw_mapped_pixel(core, bounded_coordinate(x), bounded_coordinate(y),
-                      mapped_color(core, color));
+    draw_patterned_pixel(core, bounded_coordinate(x), bounded_coordinate(y), color);
 }
 
 uint8_t p8_gfx_sget(const p8_core *core, int x, int y)
@@ -327,6 +348,18 @@ int p8_gfx_is_transparent(const p8_core *core, uint8_t color)
             kTransparentBit) != 0;
 }
 
+int32_t p8_gfx_fillp(p8_core *core, int32_t raw_pattern)
+{
+    if (!core) return 0;
+    const int32_t previous = static_cast<int32_t>(p8_core_peek16(core, kFillPatternLow)) << 16
+        | ((p8_core_peek(core, kFillPatternTransparency) & 1u) != 0 ? 0x8000 : 0);
+    const uint16_t pattern = static_cast<uint16_t>(static_cast<uint32_t>(raw_pattern) >> 16);
+    p8_core_poke16(core, kFillPatternLow, pattern);
+    p8_core_poke(core, kFillPatternTransparency,
+                 (static_cast<uint32_t>(raw_pattern) & 0x8000u) != 0 ? 1 : 0);
+    return previous;
+}
+
 void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color)
 {
     if (!core) {
@@ -341,9 +374,8 @@ void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color)
     const int delta_y = -(target_y >= y ? target_y - y : y - target_y);
     const int step_y = y < target_y ? 1 : -1;
     int error = delta_x + delta_y;
-    const uint8_t mapped = mapped_color(core, color);
     for (;;) {
-        draw_mapped_pixel(core, x, y, mapped);
+        draw_patterned_pixel(core, x, y, color);
         if (x == target_x && y == target_y) {
             break;
         }
@@ -368,15 +400,14 @@ void p8_gfx_rect(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color)
     const int right = std::max(bounded_coordinate(x0), bounded_coordinate(x1));
     const int top = std::min(bounded_coordinate(y0), bounded_coordinate(y1));
     const int bottom = std::max(bounded_coordinate(y0), bounded_coordinate(y1));
-    const uint8_t mapped = mapped_color(core, color);
-    draw_mapped_span(core, left, right, top, mapped);
+    draw_mapped_span(core, left, right, top, color);
     if (bottom != top) {
-        draw_mapped_span(core, left, right, bottom, mapped);
+        draw_mapped_span(core, left, right, bottom, color);
     }
     for (int y = top + 1; y < bottom; ++y) {
-        draw_mapped_pixel(core, left, y, mapped);
+        draw_patterned_pixel(core, left, y, color);
         if (right != left) {
-            draw_mapped_pixel(core, right, y, mapped);
+            draw_patterned_pixel(core, right, y, color);
         }
     }
 }
@@ -390,22 +421,21 @@ void p8_gfx_rectfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t colo
     const int right = std::max(bounded_coordinate(x0), bounded_coordinate(x1));
     const int top = std::min(bounded_coordinate(y0), bounded_coordinate(y1));
     const int bottom = std::max(bounded_coordinate(y0), bounded_coordinate(y1));
-    const uint8_t mapped = mapped_color(core, color);
     for (int y = top; y <= bottom; ++y) {
-        draw_mapped_span(core, left, right, y, mapped);
+        draw_mapped_span(core, left, right, y, color);
     }
 }
 
 void p8_gfx_circ(p8_core *core, int center_x, int center_y, int radius, uint8_t color)
 {
-    raster_circle(core, center_x, center_y, radius, mapped_color(core, color),
+    raster_circle(core, center_x, center_y, radius, color,
                   circle_octants);
 }
 
 void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
                      uint8_t color)
 {
-    raster_circle(core, center_x, center_y, radius, mapped_color(core, color),
+    raster_circle(core, center_x, center_y, radius, color,
                   circle_spans);
 }
 

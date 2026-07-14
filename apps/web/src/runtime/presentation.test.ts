@@ -1,6 +1,35 @@
 import { describe, expect, it } from "vitest";
 
-import { sourceTimedElementVisibility, sourceTimedVisibility } from "./presentation.js";
+import {
+  sourceAuthoredCopy,
+  sourceTimedElementVisibility,
+  sourceTimedVisibility,
+} from "./presentation.js";
+
+describe("source-authored HD copy", () => {
+  const contract = {
+    id: "hud.hole",
+    template: "hole {ordinal}",
+    sourceEvidence: "cart.lua:_draw:hole-label",
+  } as const;
+
+  it("preserves source case, punctuation, spacing, and number formatting", () => {
+    expect(sourceAuthoredCopy(contract, { ordinal: 12 })).toBe("hole 12");
+    expect(sourceAuthoredCopy({
+      id: "hud.total",
+      template: "total: {strokes}/{par}",
+      sourceEvidence: "cart.lua:_draw:total",
+    }, { strokes: 216, par: 233 })).toBe("total: 216/233");
+  });
+
+  it("fails closed when bindings can silently rewrite the declared template", () => {
+    expect(() => sourceAuthoredCopy(contract, {})).toThrow(/missing ordinal/);
+    expect(() => sourceAuthoredCopy(contract, { ordinal: 1, padding: 2 }))
+      .toThrow(/unexpected padding/);
+    expect(() => sourceAuthoredCopy({ ...contract, sourceEvidence: "" }, { ordinal: 1 }))
+      .toThrow(/source evidence/);
+  });
+});
 
 describe("source-timed HD visibility", () => {
   it("does not reveal source-authored content from scene membership alone", () => {

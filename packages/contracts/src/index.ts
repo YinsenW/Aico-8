@@ -99,3 +99,17 @@ export {
   type ContractValidationResult,
   type WebTargetProfileV1,
 } from "./release.js";
+export {
+  QUALIFICATION_PLAN_SCHEMA_VERSION,
+  QUALIFICATION_RISK_DIMENSIONS,
+  assertQualificationPlan,
+  validateQualificationPlan,
+  type QualificationBoundaryV1,
+  type QualificationCandidateStatus,
+  type QualificationCandidateV1,
+  type QualificationPlanStatus,
+  type QualificationPlanV1,
+  type QualificationPlanValidationResult,
+  type QualificationRiskCoverageV1,
+  type QualificationRiskDimension,
+} from "./qualification-plan.js";

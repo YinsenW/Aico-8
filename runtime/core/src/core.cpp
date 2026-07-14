@@ -1,5 +1,8 @@
 #include "p8/core.h"
+#include "p8/audio.h"
 #include "p8/raster.h"
+
+#include "audio_internal.h"
 
 #include <algorithm>
 #include <array>
@@ -41,6 +44,7 @@ struct p8_core {
     uint32_t draw_sequence = 0;
     std::vector<p8_draw_command> draw_commands;
     std::vector<uint8_t> draw_payload;
+    p8_audio_state audio{};
 
     uint16_t translate(uint16_t address) const
     {
@@ -107,6 +111,16 @@ struct p8_core {
     }
 };
 
+p8_audio_state &p8_core_audio_state(p8_core *core)
+{
+    return core->audio;
+}
+
+const p8_audio_state &p8_core_audio_state(const p8_core *core)
+{
+    return core->audio;
+}
+
 extern "C" {
 
 p8_core *p8_core_create(void)
@@ -162,6 +176,7 @@ void p8_core_reset(p8_core *core)
     core->draw_sequence = 0;
     core->draw_commands.clear();
     core->draw_payload.clear();
+    p8_audio_reset(core);
 }
 
 uint8_t p8_core_peek(const p8_core *core, uint16_t address)
@@ -389,6 +404,7 @@ int p8_core_host_tick60(p8_core *core, int allow_draw)
     if (core->update_rate == 30) {
         core->host_phase ^= 1u;
         if (core->host_phase == 0) {
+            p8_audio_host_tick60(core);
             return 0;
         }
     }
@@ -403,6 +419,7 @@ int p8_core_host_tick60(p8_core *core, int allow_draw)
     if (allow_draw && core->callbacks.draw) {
         core->callbacks.draw(core->callbacks.userdata);
     }
+    p8_audio_host_tick60(core);
     return 1;
 }
 

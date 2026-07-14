@@ -60,6 +60,7 @@ const presentation = argumentsMap.get("presentation") ?? "reference";
 const persistenceKey = argumentsMap.get("persistence-key") ?? `aico8.private.${id}.progress.v1`;
 const sourceLicense = required(argumentsMap, "source-license");
 const sourceUrl = required(argumentsMap, "source-url");
+const audio = argumentsMap.get("audio") ?? "original-silent-cart";
 const validationReplayArgument = argumentsMap.get("validation-replay");
 const privateSourceRoot = path.join(root, "apps/web/src/private");
 const privateRoot = path.join(root, "apps/web/public/private");
@@ -100,6 +101,7 @@ process.on("exit", () => {
 
 if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) throw new Error("--id must use lowercase letters, digits, and hyphens");
 if (!/^[a-z0-9][a-z0-9-]*$/.test(presentation)) throw new Error("--presentation must use lowercase letters, digits, and hyphens");
+if (!/^[a-z0-9][a-z0-9-]*$/.test(audio)) throw new Error("--audio must use lowercase letters, digits, and hyphens");
 if (fs.existsSync(output)) throw new Error(`Output already exists: ${output}`);
 if (semanticVectorSet && presentation === "reference") {
   throw new Error("Semantic vector assets require a private HD presentation adapter");
@@ -172,7 +174,7 @@ const gameManifest = {
   ...(validationReplaySource ? { validationReplay: `${id}/validation-replay.json` } : {}),
   ...(semanticVectorSet ? { semanticVectors: `${id}/semantic-vectors.json` } : {}),
   researchOnly: true,
-  audio: "original-silent-cart",
+  audio,
   sourceLicense,
   sourceUrl,
 };
@@ -222,7 +224,7 @@ const releaseManifest = {
   output_profile: "hd-1024-square",
   target_profile: { id: targetProfile.id, sha256: sha256(targetProfilePath) },
   rights: { profile: "private-research-and-testing-only", sourceLicense, sourceUrl },
-  audio: "original-silent-cart",
+  audio,
   identities: {
     visual_runtime_schema: "aico8.visual-runtime-identity.v1",
     visual_runtime_sha256: visualRuntimeSha256(artifacts, validationReplayArtifactPath),

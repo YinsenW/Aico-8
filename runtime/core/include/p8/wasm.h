@@ -20,9 +20,13 @@ int aico8_load_cart(aico8_runtime *runtime, const uint8_t *rom, size_t rom_size,
                     const char *source, size_t source_size);
 int aico8_load_persistent(aico8_runtime *runtime, const uint8_t *data, size_t size);
 int aico8_start(aico8_runtime *runtime);
+int aico8_initialization_complete(const aico8_runtime *runtime);
 
 /* Called by a 60 Hz host. Returns -1 on VM error, 0 when idle, and 1 after an update. */
 int aico8_tick60(aico8_runtime *runtime, uint8_t player_zero_buttons);
+size_t aico8_audio_available(const aico8_runtime *runtime);
+size_t aico8_read_audio(aico8_runtime *runtime, int16_t *destination,
+                        size_t capacity);
 
 const uint8_t *aico8_framebuffer(aico8_runtime *runtime);
 size_t aico8_framebuffer_size(void);
@@ -36,6 +40,23 @@ size_t aico8_copy_map_region(const aico8_runtime *runtime, int cell_x, int cell_
 int aico8_get_global_raw(aico8_runtime *runtime, const char *name,
                          int32_t *raw_16_16);
 int aico8_get_global_boolean(aico8_runtime *runtime, const char *name, int *value);
+size_t aico8_copy_global_string(aico8_runtime *runtime, const char *name,
+                                char *destination, size_t capacity);
+int aico8_get_table_length(aico8_runtime *runtime, const char *name,
+                           size_t *length);
+int aico8_get_table_value_raw(aico8_runtime *runtime, const char *name,
+                              size_t one_based_index, int32_t *raw_16_16);
+int aico8_get_table_entry_raw(aico8_runtime *runtime, const char *name,
+                              size_t one_based_index, const char *field,
+                              int32_t *raw_16_16);
+int aico8_get_table_entry_boolean(aico8_runtime *runtime, const char *name,
+                                  size_t one_based_index, const char *field,
+                                  int *value);
+size_t aico8_copy_menu_item_label(const aico8_runtime *runtime, unsigned index,
+                                  char *destination, size_t capacity);
+uint8_t aico8_menu_item_filter(const aico8_runtime *runtime, unsigned index);
+int aico8_invoke_menu_item(aico8_runtime *runtime, unsigned index,
+                           uint8_t buttons, int *keep_open);
 
 size_t aico8_copy_persistent(const aico8_runtime *runtime, uint8_t *destination,
                              size_t capacity);

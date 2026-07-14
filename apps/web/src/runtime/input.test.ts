@@ -4,7 +4,9 @@ import type { InputTraceV1 } from "@aico8/contracts";
 
 import {
   gamepadMask,
+  gamepadMenuPressed,
   keyboardButton,
+  keyboardMenuKey,
   LogicalInputLatch,
   projectInputTrace,
   touchButton,
@@ -49,7 +51,10 @@ describe("host input mappings", () => {
     expect(keyboardButton("KeyW")).toBe(2);
     expect(keyboardButton("KeyS")).toBe(3);
     expect(keyboardButton("Space")).toBe(4);
-    expect(keyboardButton("Enter")).toBe(5);
+    expect(keyboardButton("Enter")).toBeUndefined();
+    expect(keyboardMenuKey("Enter")).toBe(true);
+    expect(keyboardMenuKey("KeyP")).toBe(true);
+    expect(keyboardMenuKey("KeyX")).toBe(false);
     expect(keyboardButton("Escape")).toBeUndefined();
   });
 
@@ -57,6 +62,13 @@ describe("host input mappings", () => {
     expect(gamepadMask({ axes: [0, 0], buttons: buttons(14, 0) })).toBe((1 << 0) | (1 << 4));
     expect(gamepadMask({ axes: [0, 0], buttons: buttons(15, 1) })).toBe((1 << 1) | (1 << 5));
     expect(gamepadMask({ axes: [0, 0], buttons: buttons(12, 13) })).toBe((1 << 2) | (1 << 3));
+  });
+
+  it("keeps controller menu buttons outside the six-button gameplay mask", () => {
+    const gamepad = { axes: [0, 0], buttons: buttons(8, 9) };
+    expect(gamepadMask(gamepad)).toBe(0);
+    expect(gamepadMenuPressed(gamepad)).toBe(true);
+    expect(gamepadMenuPressed({ axes: [0, 0], buttons: buttons(0) })).toBe(false);
   });
 
   it("maps analog directions outside the dead zone", () => {

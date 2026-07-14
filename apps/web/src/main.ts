@@ -10,7 +10,8 @@ import {
 
 import { InputController } from "./runtime/input.js";
 import { settleCaptureReadiness } from "./runtime/capture-readiness.js";
-import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
+import { Aico8Kernel, loadGameManifest, prepareKernelForLogicalReplay } from "./runtime/kernel.js";
+import { KernelAudioOutput } from "./runtime/audio-output.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { HD_RENDER_QUALITY } from "./runtime/render-quality.js";
@@ -48,7 +49,15 @@ mount.innerHTML = `
         <strong id="loading-title">Loading the shared game kernel</strong>
         <span id="loading-detail">The first launch can take a moment.</span>
       </div>
+      <div id="system-menu" class="system-menu hidden" role="dialog" aria-modal="true" aria-labelledby="system-menu-title" aria-hidden="true">
+        <section class="system-menu-panel">
+          <p class="eyebrow">PICO-8 MENU</p>
+          <h2 id="system-menu-title">Game paused</h2>
+          <div id="system-menu-actions" class="system-menu-actions"></div>
+        </section>
+      </div>
       <div class="touch-controls" id="touch-controls" aria-label="Touch game controls">
+        <button class="touch menu-trigger" data-p8-menu aria-label="Game menu">☰</button>
         <div class="dpad">
           <button class="touch up" data-p8-button="2" aria-label="Up">↑</button>
           <button class="touch left" data-p8-button="0" aria-label="Left">←</button>
@@ -82,10 +91,18 @@ const pauseButton = document.querySelector<HTMLButtonElement>("#pause-button");
 const displayButton = document.querySelector<HTMLButtonElement>("#display-button");
 const fullscreenButton = document.querySelector<HTMLButtonElement>("#fullscreen-button");
 const touchControls = document.querySelector<HTMLElement>("#touch-controls");
+const systemMenu = document.querySelector<HTMLElement>("#system-menu");
+const systemMenuActions = document.querySelector<HTMLElement>("#system-menu-actions");
 if (!surface || !frame || !loadingCard || !loadingTitle || !loadingDetail || !title || !credit
-  || !status || !announcer || !pauseButton || !displayButton || !fullscreenButton || !touchControls) {
+  || !status || !announcer || !pauseButton || !displayButton || !fullscreenButton || !touchControls
+  || !systemMenu || !systemMenuActions) {
   throw new Error("Aico 8 player controls are incomplete");
 }
+const systemMenuElement = systemMenu;
+const systemMenuActionsElement = systemMenuActions;
+const systemMenuFrame = frame;
+const systemMenuToggle = pauseButton;
+const systemMenuStatus = status;
 const performanceFrame = frame;
 const performanceLoadingCard = loadingCard;
 const captureFrame = frame;
@@ -268,15 +285,122 @@ function measureReleasePerformance(profile: WebTargetProfileV1): void {
 
 const input = new InputController();
 input.bindTouchControls(touchControls);
+const audioOutput = new KernelAudioOutput();
+const unlockAudio = (): void => { void audioOutput.unlock().catch(() => undefined); };
+document.addEventListener("pointerdown", unlockAudio);
+document.addEventListener("keydown", unlockAudio);
 let paused = false;
 let runtime: Aico8Kernel | undefined;
+let validationPlaybackStatus: string | undefined;
+let systemMenuOpen = false;
+let priorSystemMenuMask = 0;
+let systemMenuButtons: HTMLButtonElement[] = [];
+const systemMenuInvocations = new WeakMap<HTMLButtonElement, (buttons: number) => void>();
 const privatePresentations = import.meta.glob<PrivatePresentationModule>("./private/*.ts");
 
-pauseButton.addEventListener("click", () => {
-  paused = !paused;
-  pauseButton.textContent = paused ? "Resume" : "Pause";
-  status.textContent = paused ? "Paused" : "Playing";
-});
+function closeSystemMenu(): void {
+  if (!systemMenuOpen) return;
+  systemMenuOpen = false;
+  paused = false;
+  systemMenuElement.classList.add("hidden");
+  systemMenuElement.setAttribute("aria-hidden", "true");
+  systemMenuFrame.dataset.systemMenuOpen = "false";
+  systemMenuToggle.textContent = "Menu";
+  systemMenuStatus.textContent = validationPlaybackStatus ?? "Playing";
+  input.resetAfterMenu();
+  beginCaptureReadiness();
+}
+
+function addSystemMenuButton(label: string, invoke: (buttons: number) => void): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.addEventListener("click", () => invoke(0));
+  systemMenuInvocations.set(button, invoke);
+  systemMenuActionsElement.append(button);
+  systemMenuButtons.push(button);
+  return button;
+}
+
+function refreshSystemMenu(): void {
+  systemMenuActionsElement.replaceChildren();
+  systemMenuButtons = [];
+  addSystemMenuButton("Continue", () => closeSystemMenu());
+  for (const item of runtime?.menuItems() ?? []) {
+    const button = addSystemMenuButton(item.label, (buttons) => {
+      if (!runtime) return;
+      const keepOpen = runtime.invokeMenuItem(item.index, buttons);
+      if (keepOpen) {
+        refreshSystemMenu();
+        systemMenuButtons[0]?.focus();
+      } else {
+        closeSystemMenu();
+      }
+    });
+    button.dataset.cartMenuItem = String(item.index);
+    button.dataset.buttonFilter = String(item.filter);
+  }
+  addSystemMenuButton("Restart game", () => window.location.reload());
+}
+
+function openSystemMenu(): void {
+  if (systemMenuOpen || !runtime) return;
+  systemMenuOpen = true;
+  paused = true;
+  refreshSystemMenu();
+  systemMenuElement.classList.remove("hidden");
+  systemMenuElement.setAttribute("aria-hidden", "false");
+  systemMenuFrame.dataset.systemMenuOpen = "true";
+  systemMenuToggle.textContent = "Resume";
+  systemMenuStatus.textContent = "Paused · game menu";
+  priorSystemMenuMask = input.mask();
+  input.commitLogicalUpdate();
+  systemMenuButtons[0]?.focus();
+  beginCaptureReadiness();
+}
+
+function toggleSystemMenu(): void {
+  if (systemMenuOpen) closeSystemMenu();
+  else openSystemMenu();
+}
+
+function moveSystemMenuFocus(direction: -1 | 1): void {
+  if (systemMenuButtons.length === 0) return;
+  const active = document.activeElement;
+  const current = active instanceof HTMLButtonElement ? systemMenuButtons.indexOf(active) : -1;
+  const next = (Math.max(0, current) + direction + systemMenuButtons.length) % systemMenuButtons.length;
+  systemMenuButtons[next]?.focus();
+}
+
+function processSystemMenuInput(): void {
+  const current = input.mask();
+  const pressed = current & ~priorSystemMenuMask;
+  priorSystemMenuMask = current;
+  input.commitLogicalUpdate();
+  if (pressed & (1 << 2)) moveSystemMenuFocus(-1);
+  else if (pressed & (1 << 3)) moveSystemMenuFocus(1);
+  else if (pressed & ((1 << 0) | (1 << 1) | (1 << 4) | (1 << 5))) {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLButtonElement)) return;
+    const isCartItem = active.dataset.cartMenuItem !== undefined;
+    if (isCartItem || (pressed & ((1 << 4) | (1 << 5)))) {
+      systemMenuInvocations.get(active)?.(pressed);
+    }
+  }
+}
+
+pauseButton.textContent = "Menu";
+pauseButton.addEventListener("click", toggleSystemMenu);
+document.addEventListener("keydown", (event) => {
+  if (!systemMenuOpen) return;
+  if (event.code === "Escape" || event.code === "KeyP") {
+    event.preventDefault();
+    event.stopPropagation();
+    closeSystemMenu();
+  } else if (event.code === "Enter") {
+    event.stopPropagation();
+  }
+}, { passive: false });
 fullscreenButton.addEventListener("click", async () => {
   if (document.fullscreenElement) await document.exitFullscreen();
   else await frame.requestFullscreen();
@@ -375,27 +499,34 @@ try {
     if (description && announcer.textContent !== description) announcer.textContent = description;
   };
 
-  let validationPlaybackStatus: string | undefined;
   if ((requestedReplayMilestone || requestedReplayUpdate !== undefined)
     && validationReplay && manifest.cartSha256) {
+    const initialization = prepareKernelForLogicalReplay(loadedRuntime);
+    frame.dataset.validationInitializationHostTicks = String(initialization.hostTicks);
+    frame.dataset.validationInitializationAudioSamples = String(initialization.discardedAudioSamples);
     const options = { expectedCartSha256: manifest.cartSha256, requireCleanInitialState: true };
     const playback = requestedReplayMilestone
       ? playReplayToMilestone(
           validationReplay,
           requestedReplayMilestone,
-          (buttonMask) => loadedRuntime.tickLogicalUpdate(buttonMask),
+          (buttonMask) => {
+            loadedRuntime.tickLogicalUpdate(buttonMask);
+            loadedRuntime.readAudio();
+          },
           options,
         )
       : playReplayToUpdate(
           validationReplay,
           requestedReplayUpdate!,
-          (buttonMask) => loadedRuntime.tickLogicalUpdate(buttonMask),
+          (buttonMask) => {
+            loadedRuntime.tickLogicalUpdate(buttonMask);
+            loadedRuntime.readAudio();
+          },
           options,
         );
     advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
     renderCurrentFrame();
     paused = true;
-    pauseButton.textContent = "Resume";
     frame.dataset.validationReplayId = playback.replayId;
     if ("milestoneId" in playback) frame.dataset.validationReplayMilestone = playback.milestoneId;
     else frame.dataset.validationReplayUpdate = String(playback.targetUpdate);
@@ -410,11 +541,18 @@ try {
   let accumulator = 0;
   const stepMilliseconds = 1000 / 60;
   app.ticker.add((ticker) => {
+    if (input.consumeMenuRequest()) toggleSystemMenu();
+    if (systemMenuOpen) {
+      processSystemMenuInput();
+      return;
+    }
     if (paused || !runtime) return;
     accumulator = Math.min(accumulator + ticker.deltaMS, 250);
     while (accumulator >= stepMilliseconds) {
       accumulator -= stepMilliseconds;
-      if (loadedRuntime.tick60(input.mask())) {
+      const updated = loadedRuntime.tick60(input.mask());
+      audioOutput.enqueue(loadedRuntime.readAudio());
+      if (updated) {
         input.commitLogicalUpdate();
         renderCurrentFrame();
       }
@@ -453,6 +591,7 @@ try {
 
 window.addEventListener("pagehide", () => {
   runtime?.destroy();
+  void audioOutput.destroy();
 }, { once: true });
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {

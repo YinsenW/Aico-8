@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "subject": "tiny-golf-puzzles-private-research unchanged-cart canonical gameplay",
+  "status": "canonical-gameplay-passed-game-qualification-still-open",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "runtime": {
+    "id": "aico8-core-wasm",
+    "revision": "800f7262e74b6bf31fe94cb41af36986dabbeffa51aa33c27f1f9081cc546c57"
+  },
+  "observations": {
+    "boundary_kind": "course",
+    "required_boundaries": 32,
+    "completed_boundaries": 32,
+    "ordinary_input_logical_updates": 5679,
+    "input_spans": 434,
+    "strokes": 216,
+    "state_checkpoints": 280,
+    "mutation_regressions_rejected": 4,
+    "ending_reached": true,
+    "progression_complete": true,
+    "host_input_surfaces": 3,
+    "host_input_mask_mismatches": 0
+  },
+  "canonicality": {
+    "mode": "canonical-real-input",
+    "cartMutation": "none",
+    "compatibilityStateMutation": "none",
+    "inputSource": "pico8-buttons-only",
+    "logicalUpdatePolicy": "execute-all",
+    "testHooks": false,
+    "wallClockAcceleration": true
+  },
+  "private_artifact_sha256": {
+    "replay_v1": "f7f8688e12b2d25b4109db593c4684451e43438bfde111f863752c3202c90922",
+    "differential": "339da580ed143cc294230a68f683315a975051dd4ff1bec84ad7c250f419fd03",
+    "input_projection": "39ec6838d873bbffd08a43a87d6f268ff820916b5d30b22a727eb5a5e2d45dd7"
+  },
+  "limitations": [
+    "This validates the unchanged cart against a source-derived model and a second fixed-input Wasm replay.",
+    "It is not licensed official-runtime compatibility evidence, HD review, or publication authorization."
+  ],
+  "selector": "TEST-QUALIFICATION-GAMEPLAY-PRIVATE"
+}

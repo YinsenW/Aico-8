@@ -1,10 +1,13 @@
 #include "p8/core.h"
+#include "p8/audio.h"
 #include "p8/raster.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <cstdio>
 
 namespace {
@@ -303,6 +306,26 @@ void test_raster_sprite_alias_and_primitives()
            P8_SCREEN_PIXELS);
     assert(frame[50 * P8_SCREEN_WIDTH + 50] == 9);
     assert(p8_gfx_copy_framebuffer_indexed(core, frame.data(), frame.size() - 1) == 0);
+
+    p8_gfx_cls(core, 0);
+    assert(p8_gfx_fillp(core, 0x01370000) == 0);
+    p8_gfx_rectfill(core, 0, 0, 3, 3, 0xe8);
+    const std::array<std::array<uint8_t, 4>, 4> patterned = {{{8, 8, 8, 8},
+                                                               {8, 8, 8, 14},
+                                                               {8, 8, 14, 14},
+                                                               {8, 14, 14, 14}}};
+    for (int y = 0; y < 4; ++y) {
+        for (int x = 0; x < 4; ++x) assert(p8_gfx_pget(core, x, y) == patterned[y][x]);
+    }
+    p8_gfx_cls(core, 3);
+    assert(p8_gfx_fillp(core, 0x5a5a8000) == 0x01370000);
+    p8_gfx_rectfill(core, 0, 0, 3, 0, 11);
+    assert(p8_gfx_pget(core, 0, 0) == 11);
+    assert(p8_gfx_pget(core, 1, 0) == 3);
+    assert(p8_gfx_pget(core, 2, 0) == 11);
+    assert(p8_gfx_pget(core, 3, 0) == 3);
+    assert(p8_gfx_fillp(core, 0) == static_cast<int32_t>(0x5a5a8000u));
+
     p8_core_destroy(core);
 }
 
@@ -351,6 +374,49 @@ void test_raster_sprite_map_palette_and_flip()
     p8_core_destroy(core);
 }
 
+void test_audio_is_deterministic_and_rejects_unqualified_features()
+{
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    rom[0x3100] = 0x80; // pattern 0 begins a loop and plays sfx 0 on channel 0
+    rom[0x3101] = 0x42;
+    rom[0x3102] = 0x43;
+    rom[0x3103] = 0x44;
+    rom[0x3200] = static_cast<uint8_t>(33 | (3 << 6)); // A, square
+    rom[0x3201] = static_cast<uint8_t>(7 << 1); // full volume, no effect
+    rom[0x3240] = 1; // editor mode only; no filters
+    rom[0x3241] = 2; // speed
+
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_audio_current_music(core) == 0);
+    assert(p8_audio_current_sfx(core, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    assert(p8_audio_available(core) == 367);
+    std::array<int16_t, 367> first{};
+    assert(p8_audio_read(core, first.data(), first.size()) == first.size());
+    assert(std::any_of(first.begin(), first.end(), [](int16_t sample) { return sample != 0; }));
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> second{};
+    assert(p8_audio_read(core, second.data(), second.size()) == second.size());
+    assert(first == second);
+
+    rom[0x3101] = 0; // the second song channel also references sfx 0
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x01));
+    assert(p8_audio_current_sfx(core, 0) == 0);
+    assert(p8_audio_current_sfx(core, 1) == -1); // channel mask reserves only channel 0
+
+    rom[0x3240] = 3; // editor flag plus noiz filter
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "filters") != nullptr);
+    p8_core_destroy(core);
+}
+
 } // namespace
 
 int main()
@@ -365,6 +431,7 @@ int main()
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
+    test_audio_is_deterministic_and_rejects_unqualified_features();
     std::puts("p8 core tests: ok");
     return 0;
 }

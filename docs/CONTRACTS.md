@@ -10,10 +10,11 @@ evidence, selectors, and open work live only in `governance/project.json`.
 | --- | --- | --- | --- |
 | API-CORE-001 | `runtime/core/include/p8/core.h` | Core lifecycle, RAM/ROM, input, scheduler, semantic stream | VM, native/Wasm hosts, tests |
 | API-RASTER-001 | `runtime/core/include/p8/raster.h` | Authoritative indexed pixels and PICO draw semantics | VM, compatibility renderer, checkpoints |
-| API-VM-001 | `runtime/core/include/p8/vm.h` | P8 Lua load, boot, update, draw, error, and inspection | Hosts and replay harnesses |
+| API-VM-001 | `runtime/core/include/p8/vm.h` | P8 Lua load, boot, update, draw, pause-menu callbacks, error, and inspection | Hosts and replay harnesses |
+| API-AUDIO-001 | `runtime/core/include/p8/audio.h` | Four-channel scheduling, cart-memory synthesis, status, and deterministic mono PCM | VM, native/Wasm hosts, audio checkpoints |
 | API-SEMANTIC-001 | `p8_draw_command` in `core.h` | Ordered original draw intent plus payloads/state revision | HD adapter and diagnostics |
 | API-TEXT-001 | Planned versioned core/TypeScript boundary | Raw P8SCII execution result plus ordered semantic text runs and diagnostic correspondence regions | HD text adapter, diagnostics, validation |
-| API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, semantic, map, global-inspection, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
+| API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, PCM audio, semantic, map, global-inspection, pause-menu, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
 | API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, source-timed visibility, completeness, and diagnostic reference mode | PixiJS host and validation UI |
 | API-HOST-001 | Planned host contract | Logical input, persistence, lifecycle, clock, audio, services | Browser Web/PWA, Android WebView, Linux Web shell, future ESP-IDF |
 | API-CLI-001 | Planned TypeScript CLI | Non-interactive execution of every pipeline Job | Agents, CI, maintainers |
@@ -31,6 +32,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-INPUT-TRACE-001 | Contiguous logical-update button-mask spans, initial persistence lineage, and no-skip policy | `specs/schemas/input-trace-v1.schema.json` |
 | DATA-REPLAY-001 | Cart/runtime identity, canonicality declaration, input trace, milestones, and ordered checkpoints | `specs/schemas/replay-v1.schema.json` and TypeScript validator |
 | DATA-CHECKPOINT-001 | RAM/raster/audio/semantic hashes at named updates | Validation schema |
+| DATA-QUALIFICATION-PLAN-001 | Exactly twelve private-research candidates, finite source boundaries, pinned compiler status, ordered priority, independent qualification evidence, and selected/qualified risk coverage for the ten-game gate | `specs/schemas/qualification-plan-v1.schema.json` and TypeScript validator |
 | DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, copy provenance/authorization, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
 | DATA-HD-AUDIT-001 | Contextual raw visual tokens, observation runs, identity-map lineage, zero-unmapped/mixed/reference coverage, per-update HD-off/on state comparison, and rejected mutations | `specs/schemas/hd-presentation-audit-v1.schema.json` and TypeScript validator |
 | DATA-ASSET-PACK-001 | Frozen hashed atlases, fonts, effects, audio, visual grammar, metadata, and licenses | Asset-pack schema |
@@ -75,6 +77,10 @@ only its linked exits determine acceptance.
 - `specs/display-profiles.json` owns `128 → 1024`, scale `8`, and tile `64` values.
 - The kernel is the only owner of fixed-point, memory, scheduler, raster, input
   repeat, persistence, and reference audio semantics.
+- Host pause-menu requests remain outside the six-button gameplay mask. The Web
+  host presents built-in actions plus the kernel's source-registered `menuitem`
+  labels, invokes their filtered callbacks through the same VM, honors keep-open
+  results, and suppresses held selection input before gameplay resumes.
 - The semantic/HD path is presentation-only. Accepted HD frames have complete,
   coherent modern coverage; indexed output is a separate diagnostic mode and
   cannot be composited element-by-element into an accepted frame.
@@ -116,6 +122,10 @@ only its linked exits determine acceptance.
   checks bind the source crop and target vector hashes, exact downsampled masks,
   component/hole topology, and measured displacement strictly below half a
   source pixel; ordinary semantic text remains owned by the typography path.
+- Source-authored copy keeps the cart template's exact case, punctuation,
+  spacing, and number format. The HD path may bind only declared state values to
+  named placeholders and modernize typography/layout; every template requires a
+  stable ID and source evidence, and cannot paraphrase or normalize the text.
 - Source tile/sprite structure lineage binds every retained palette/material
   layer's exact mask, topology, and four boundary-edge signatures. Different
   source structures may share renderer code but not one frozen recipe; a broad
@@ -174,9 +184,19 @@ only its linked exits determine acceptance.
   must replay each proposed transition on the unchanged cart and compare the
   declared observable state before JOB-CAPTURE-001 can promote it to
   DATA-REPLAY-001; model-only success is never evidence.
+- The reusable private gameplay selector runs a workspace-owned verifier, then
+  independently validates Replay v1 continuity, clean initial persistence,
+  ordinary six-bit masks, ordered boundary/checkpoint coverage, final state, and
+  deliberate semantic-mutation rejection. Its sanitized attestation proves
+  canonical gameplay only; HD, host-input, package, rights, and official-runtime
+  gates remain independent.
 - Qualification counts at least ten materially different finite games only after
   each independently proves every required level, ending, and progression
   boundary; diagnostic reachability or a collection launch never counts.
+- DATA-QUALIFICATION-PLAN-001 locks candidate identity and derives risk coverage
+  from per-game declarations. Selection, compilation, source-confirmed finiteness,
+  or diagnostic boot cannot populate qualified coverage; that requires canonical
+  replay, accepted HD decision, and reproducible Web-package hashes for the game.
 - Save keys are namespaced by game-module ID and schema version; collection
   switching resets compatibility state before another module starts.
 - A rights decision is data in DATA-RELEASE-001, never inferred from technical success.

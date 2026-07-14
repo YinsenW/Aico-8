@@ -58,6 +58,19 @@ public CI or enter the clean public repository history.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
 reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
 level/ending milestones, and broken replay lineage.
+`pnpm verify:qualification-gameplay-private` is the reusable game-2-and-later
+gameplay gate. The ignored workspace supplies `validation/verify-canonical-gameplay.ts`;
+the public runner rebuilds Wasm, executes it twice from clean persistence, validates
+the emitted Replay v1 and differential record, rejects uncovered semantic mutations,
+projects the complete trace through keyboard, controller, and touch with zero
+logical-mask mismatch, and verifies a sanitized public attestation. Passing it
+does not count a game until that game's accepted HD, Web/PWA, and rights-isolation
+gates also pass.
+`pnpm verify:qualification-plan-private` requires
+`AICO8_PRIVATE_QUALIFICATION_ROOT` and `AICO8_PRIVATE_CARTS`. It recomputes the
+private 12-candidate plan from durable corpus, audio, compiler, rights, and finite-
+boundary inputs and verifies the sanitized public attestation byte-for-byte. It
+does not qualify a selected game or authorize publication.
 `pnpm verify:private-remake` additionally requires `AICO8_PRIVATE_WORKSPACE` to
 point at the authorized ignored workspace. It rebuilds twice, regenerates the
 private content and complete keyboard/controller/touch input-projection evidence,
@@ -100,6 +113,8 @@ accepted identity map/audit. Set
 `AICO8_WRITE_ATTESTATION=1` only when intentionally refreshing the reviewed
 sanitized public attestation.
 Official-runtime selectors remain pending until licensed captures are available.
+Accelerated replay must finish any `flip()`-driven initialization with neutral
+host input, drain its pre-replay PCM, and only then number canonical update zero.
 
 ## Recovery after interruption or failure
 
@@ -135,6 +150,13 @@ Official-runtime selectors remain pending until licensed captures are available.
 - Host-input mismatch: project the complete canonical trace through the shared
   keyboard/touch latch and controller sampler. Fix mapping or latch semantics,
   then require zero per-update mask mismatches; do not patch a recorded path.
+- Host-menu mismatch: verify Enter/P, controller menu, and touch menu requests are
+  absent from the gameplay mask; inspect registered labels, callback filters,
+  invocation, keep-open behavior, and post-close suppression before changing a
+  game. Fix the shared host/kernel boundary, not a cart-specific shortcut.
+- HD copy mismatch: preserve the exact source-authored template, including case,
+  punctuation, spacing, and number format; modernize only typography and layout
+  through `sourceAuthoredCopy`. Do not normalize, paraphrase, or zero-pad copy.
 - HD mismatch: run HD off/on against the same replay; any state divergence is a
   product defect even if the visual result looks correct.
 - Browser-evidence lineage mismatch: compare the recomputed visual-runtime and

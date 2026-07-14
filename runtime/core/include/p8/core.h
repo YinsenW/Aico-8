@@ -45,6 +45,7 @@ typedef enum p8_draw_opcode {
     P8_DRAW_TLINE,
     P8_DRAW_PRINT,
     P8_DRAW_PAL,
+    P8_DRAW_FILLP,
     P8_DRAW_CUSTOM,
 } p8_draw_opcode;
 

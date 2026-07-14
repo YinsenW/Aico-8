@@ -11,6 +11,46 @@ export interface PresentationDiagnostics {
   readonly diagnosticReferenceSwitches: number;
 }
 
+export interface SourceAuthoredCopyContract {
+  readonly id: string;
+  readonly template: string;
+  readonly sourceEvidence: string;
+}
+
+/**
+ * Renders cart-authored copy without permitting an HD adapter to normalize its
+ * case, punctuation, spacing, or number format. Typography may change; words do
+ * not. The declared source evidence is retained for the review packet.
+ */
+export function sourceAuthoredCopy(
+  contract: SourceAuthoredCopyContract,
+  values: Readonly<Record<string, string | number>> = {},
+): string {
+  if (!contract.id.trim() || !contract.sourceEvidence.trim()) {
+    throw new TypeError("Source-authored copy requires an ID and source evidence");
+  }
+  const placeholders = [...contract.template.matchAll(/\{([a-z][a-z0-9-]*)\}/g)]
+    .map((match) => match[1]!);
+  const required = new Set(placeholders);
+  const provided = Object.keys(values);
+  const missing = [...required].filter((name) => !(name in values));
+  const unexpected = provided.filter((name) => !required.has(name));
+  if (missing.length > 0 || unexpected.length > 0) {
+    throw new TypeError(
+      `Source-authored copy binding mismatch for ${contract.id}`
+      + `${missing.length > 0 ? `; missing ${missing.join(", ")}` : ""}`
+      + `${unexpected.length > 0 ? `; unexpected ${unexpected.join(", ")}` : ""}`,
+    );
+  }
+  return contract.template.replace(/\{([a-z][a-z0-9-]*)\}/g, (_match, name: string) => {
+    const value = values[name]!;
+    if (typeof value === "number" && !Number.isFinite(value)) {
+      throw new TypeError(`Source-authored copy value ${name} must be finite`);
+    }
+    return String(value);
+  });
+}
+
 /**
  * Keeps a modern visual tied to the source frame that authorizes it.  Callers
  * must pass tokens from the current logical update; scene membership or a token

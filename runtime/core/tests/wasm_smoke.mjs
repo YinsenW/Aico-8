@@ -11,6 +11,10 @@ const source = new Uint8Array(await readFile(new URL("./fixtures/synthetic_cart.
 const rom = new Uint8Array(0x8000);
 rom[4] = 0x21;
 rom[0x2000] = 1;
+rom[0x3200] = 33 | (3 << 6);
+rom[0x3201] = 7 << 1;
+rom[0x3240] = 1;
+rom[0x3241] = 2;
 const persistent = new Uint8Array(256);
 persistent[2] = 5;
 
@@ -45,6 +49,7 @@ try {
   assert.equal(kernel._aico8_load_cart(runtime, romPointer, rom.length, sourcePointer, source.length), 1);
   assert.equal(kernel._aico8_load_persistent(runtime, persistentPointer, persistent.length), 1);
   assert.equal(kernel._aico8_start(runtime), 1);
+  assert.equal(kernel._aico8_initialization_complete(runtime), 1);
   assert.equal(kernel._aico8_tick60(runtime, 1 << 1), 1);
 
   const framebuffer = kernel._aico8_framebuffer(runtime);
@@ -58,6 +63,13 @@ try {
   const valuePointer = kernel._malloc(4);
   const xNamePointer = copyToHeap(new TextEncoder().encode("x\0"));
   const readyNamePointer = copyToHeap(new TextEncoder().encode("ready\0"));
+  const modeNamePointer = copyToHeap(new TextEncoder().encode("mode\0"));
+  const actorsNamePointer = copyToHeap(new TextEncoder().encode("actors\0"));
+  const valuesNamePointer = copyToHeap(new TextEncoder().encode("values\0"));
+  const xFieldPointer = copyToHeap(new TextEncoder().encode("x\0"));
+  const rockFieldPointer = copyToHeap(new TextEncoder().encode("rock\0"));
+  const stringPointer = kernel._malloc(16);
+  const menuLabelPointer = kernel._malloc(17);
   try {
     assert.equal(kernel._aico8_copy_map_region(runtime, 0, 0, 16, 16, mapPointer, 256), 256);
     assert.equal(kernel.HEAPU8[mapPointer], 1);
@@ -65,7 +77,41 @@ try {
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 7 << 16);
     assert.equal(kernel._aico8_get_global_boolean(runtime, readyNamePointer, valuePointer), 1);
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 1);
+    assert.equal(kernel._aico8_copy_global_string(runtime, modeNamePointer, stringPointer, 16), 7);
+    assert.equal(kernel.UTF8ToString(stringPointer), "fixture");
+    assert.equal(kernel._aico8_get_table_length(runtime, actorsNamePointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getUint32(valuePointer, true), 2);
+    assert.equal(kernel._aico8_get_table_value_raw(runtime, valuesNamePointer, 2, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 9 << 16);
+    assert.equal(kernel._aico8_get_table_value_raw(runtime, valuesNamePointer, 3, valuePointer), 0);
+    assert.equal(kernel._aico8_get_table_entry_raw(runtime, actorsNamePointer, 1, xFieldPointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 3 << 16);
+    assert.equal(kernel._aico8_get_table_entry_boolean(runtime, actorsNamePointer, 1, rockFieldPointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 1);
+    assert.equal(kernel._aico8_get_table_entry_boolean(runtime, actorsNamePointer, 2, rockFieldPointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 0);
+    assert.equal(kernel._aico8_copy_menu_item_label(runtime, 1, menuLabelPointer, 17), 14);
+    assert.equal(kernel.UTF8ToString(menuLabelPointer), "fixture action");
+    assert.equal(kernel._aico8_menu_item_filter(runtime, 1), 3);
+    assert.equal(kernel._aico8_invoke_menu_item(runtime, 1, 7, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 1);
+    assert.equal(kernel._aico8_copy_menu_item_label(runtime, 1, menuLabelPointer, 17), 9);
+    assert.equal(kernel.UTF8ToString(menuLabelPointer), "stay open");
+    const menuButtonsNamePointer = copyToHeap(new TextEncoder().encode("menu_buttons\0"));
+    try {
+      assert.equal(kernel._aico8_get_global_raw(runtime, menuButtonsNamePointer, valuePointer), 1);
+      assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 4 << 16);
+    } finally {
+      kernel._free(menuButtonsNamePointer);
+    }
   } finally {
+    kernel._free(menuLabelPointer);
+    kernel._free(stringPointer);
+    kernel._free(rockFieldPointer);
+    kernel._free(xFieldPointer);
+    kernel._free(actorsNamePointer);
+    kernel._free(valuesNamePointer);
+    kernel._free(modeNamePointer);
     kernel._free(readyNamePointer);
     kernel._free(xNamePointer);
     kernel._free(valuePointer);
@@ -76,7 +122,7 @@ try {
   const commands = kernel._aico8_draw_commands(runtime);
   const payload = kernel._aico8_draw_payload(runtime);
   const payloadSize = kernel._aico8_draw_payload_size(runtime);
-  assert.equal(commandCount, 9);
+  assert.equal(commandCount, 11);
   assert.equal(payloadSize, 2);
   assert.equal(new TextDecoder().decode(kernel.HEAPU8.slice(payload, payload + 2)), "ok");
 
@@ -99,6 +145,15 @@ try {
     }
     appendU32(checkpoint, payloadSize);
     checkpoint.push(...kernel.HEAPU8.slice(payload, payload + payloadSize));
+    const audioCount = kernel._aico8_audio_available(runtime);
+    const audioPointer = kernel._malloc(Math.max(2, audioCount * 2));
+    try {
+      assert.equal(kernel._aico8_read_audio(runtime, audioPointer, audioCount), audioCount);
+      appendU32(checkpoint, audioCount);
+      checkpoint.push(...kernel.HEAPU8.slice(audioPointer, audioPointer + audioCount * 2));
+    } finally {
+      kernel._free(audioPointer);
+    }
     checkpoint.push(...kernel.HEAPU8.slice(savedPointer, savedPointer + 256));
     wasmCheckpoint = Buffer.from(checkpoint).toString("hex");
 
@@ -129,5 +184,21 @@ try {
 const nativeCheckpoint = execFileSync("./build/vm_tests", ["--checkpoint"], { encoding: "utf8" }).trim();
 assert.match(nativeCheckpoint, /^[0-9a-f]+$/);
 assert.equal(wasmCheckpoint, nativeCheckpoint, "native and Wasm checkpoints differ");
+
+const errorRuntime = kernel._aico8_create();
+assert.notEqual(errorRuntime, 0);
+const errorSource = new TextEncoder().encode("function _init() missing_shared_api() end\n");
+const errorSourcePointer = copyToHeap(errorSource);
+const errorRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(errorRuntime, errorRomPointer, 0x8000, errorSourcePointer, errorSource.length), 1);
+  assert.equal(kernel._aico8_start(errorRuntime), 0, "A Lua runtime error must fail the ABI call without aborting Wasm");
+  assert.match(kernel.UTF8ToString(kernel._aico8_last_error(errorRuntime)), /missing_shared_api/);
+} finally {
+  kernel._aico8_destroy(errorRuntime);
+  kernel._free(errorRomPointer);
+  kernel._free(errorSourcePointer);
+}
+
 const digest = createHash("sha256").update(Buffer.from(wasmCheckpoint, "hex")).digest("hex").slice(0, 12);
 process.stdout.write(`p8 Wasm identity: ok (${wasmCheckpoint.length / 2} bytes, sha256 ${digest})\n`);
