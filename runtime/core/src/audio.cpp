@@ -15,6 +15,17 @@ constexpr uint16_t kMusicBase = 0x3100;
 constexpr uint16_t kSfxBase = 0x3200;
 constexpr unsigned kSfxSize = 68;
 constexpr uint64_t kOneNote = uint64_t{1} << 32;
+constexpr uint32_t kCapabilities = P8_AUDIO_CAP_EVENT_LEDGER
+    | P8_AUDIO_CAP_CHANNEL_STATUS | P8_AUDIO_CAP_STAT_57;
+static_assert((kCapabilities & (P8_AUDIO_CAP_STAT_46_56 | P8_AUDIO_CAP_FILTERS
+                                | P8_AUDIO_CAP_CUSTOM_INSTRUMENTS
+                                | P8_AUDIO_CAP_CUSTOM_WAVEFORMS)) == 0,
+              "unqualified audio features must remain fail-closed");
+
+static_assert(sizeof(p8_audio_channel_status) == 20,
+              "audio channel status ABI must remain fixed-width");
+static_assert(sizeof(p8_audio_event) == 32,
+              "audio event ABI must remain fixed-width");
 
 constexpr std::array<uint32_t, 64> kPhaseIncrement = {
     12740059, 13497623, 14300233, 15150569, 16051469, 17005939, 18017165, 19088521,
@@ -34,6 +45,44 @@ struct note_data {
     uint8_t effect = 0;
     bool custom = false;
 };
+
+int current_note(const p8_audio_playback &playback)
+{
+    if (playback.sfx < 0) return -1;
+    return static_cast<int>(std::min<uint64_t>(31, playback.position >> 32));
+}
+
+void append_event(p8_audio_state &state, uint64_t sample, int kind, int channel,
+                  int sfx, int note, int music_pattern)
+{
+    if ((kCapabilities & P8_AUDIO_CAP_EVENT_LEDGER) == 0) return;
+    if (state.event_count == state.events.size()) {
+        state.event_read = (state.event_read + 1) % state.events.size();
+        --state.event_count;
+    }
+    const size_t write = (state.event_read + state.event_count) % state.events.size();
+    state.events[write] = {
+        state.next_event_sequence++,
+        static_cast<uint32_t>(sample),
+        static_cast<uint32_t>(sample >> 32),
+        kind,
+        channel,
+        sfx,
+        note,
+        music_pattern,
+    };
+    ++state.event_count;
+}
+
+void stop_channel(p8_audio_state &state, unsigned index, uint64_t sample)
+{
+    p8_audio_playback &playback = state.channels[index].playback;
+    if (playback.sfx < 0) return;
+    append_event(state, sample, P8_AUDIO_EVENT_CHANNEL_STOP,
+                 static_cast<int>(index), playback.sfx, current_note(playback),
+                 state.music.pattern);
+    playback.sfx = -1;
+}
 
 void clear_error(p8_audio_state &state)
 {
@@ -81,13 +130,17 @@ uint8_t sfx_loop_end(const p8_core *core, int sfx)
 bool validate_sfx(p8_core *core, int sfx)
 {
     p8_audio_state &state = p8_core_audio_state(core);
-    if ((p8_core_peek(core, sfx_address(sfx, 64)) & 0xfe) != 0) {
+    if ((kCapabilities & P8_AUDIO_CAP_FILTERS) == 0
+        && (p8_core_peek(core, sfx_address(sfx, 64)) & 0xfe) != 0) {
         set_error(state, "sfx %d uses filters that are not yet conformance-qualified", sfx);
         return false;
     }
     for (unsigned note = 0; note < 32; ++note) {
         const note_data data = read_note(core, sfx, note);
-        if (data.volume != 0 && data.custom) {
+        constexpr uint32_t custom_capabilities = P8_AUDIO_CAP_CUSTOM_INSTRUMENTS
+            | P8_AUDIO_CAP_CUSTOM_WAVEFORMS;
+        if ((kCapabilities & custom_capabilities) != custom_capabilities
+            && data.volume != 0 && data.custom) {
             set_error(state, "sfx %d uses a custom instrument that is not yet conformance-qualified", sfx);
             return false;
         }
@@ -122,15 +175,17 @@ bool song_stop(const p8_core *core, int pattern)
 
 void stop_music_channels(p8_audio_state &state)
 {
-    for (p8_audio_channel &channel : state.channels) {
-        if (channel.playback.is_music) channel.playback.sfx = -1;
+    for (unsigned index = 0; index < state.channels.size(); ++index) {
+        p8_audio_channel &channel = state.channels[index];
+        if (channel.playback.is_music) stop_channel(state, index, state.sample_clock);
         channel.deferred_music_sfx = -1;
     }
 }
 
-void launch_sfx(p8_audio_channel &channel, int sfx, unsigned offset, unsigned length,
-                bool is_music)
+void launch_sfx(p8_audio_state &state, unsigned index, int sfx, unsigned offset,
+                unsigned length, bool is_music)
 {
+    p8_audio_channel &channel = state.channels[index];
     channel.playback = {};
     channel.playback.sfx = static_cast<int16_t>(sfx);
     channel.playback.position = static_cast<uint64_t>(std::min(offset, 31u)) << 32;
@@ -139,6 +194,9 @@ void launch_sfx(p8_audio_channel &channel, int sfx, unsigned offset, unsigned le
     channel.playback.is_music = is_music;
     channel.phase = 0;
     channel.secondary_phase = 0;
+    append_event(state, state.sample_clock, P8_AUDIO_EVENT_CHANNEL_START,
+                 static_cast<int>(index), sfx, current_note(channel.playback),
+                 state.music.pattern);
 }
 
 uint64_t pattern_duration_samples(const p8_core *core, int pattern, uint8_t channel_mask)
@@ -170,6 +228,7 @@ uint64_t pattern_duration_samples(const p8_core *core, int pattern, uint8_t chan
 bool set_music_pattern(p8_core *core, int pattern)
 {
     p8_audio_state &state = p8_core_audio_state(core);
+    const int previous_pattern = state.music.pattern;
     stop_music_channels(state);
     if (pattern < 0 || pattern > 63) {
         state.music.pattern = -1;
@@ -177,6 +236,10 @@ bool set_music_pattern(p8_core *core, int pattern)
         state.music.mask = 0;
         state.music.elapsed_samples = 0;
         state.music.duration_samples = 0;
+        if (previous_pattern >= 0) {
+            append_event(state, state.sample_clock, P8_AUDIO_EVENT_MUSIC_STOP,
+                         -1, -1, -1, previous_pattern);
+        }
         return true;
     }
     for (unsigned channel = 0; channel < 4; ++channel) {
@@ -187,13 +250,15 @@ bool set_music_pattern(p8_core *core, int pattern)
     state.music.pattern = static_cast<int16_t>(pattern);
     state.music.elapsed_samples = 0;
     state.music.duration_samples = pattern_duration_samples(core, pattern, state.music.mask);
+    append_event(state, state.sample_clock, P8_AUDIO_EVENT_MUSIC_PATTERN,
+                 -1, -1, -1, pattern);
     for (unsigned index = 0; index < 4; ++index) {
         if ((state.music.mask & (1u << index)) == 0) continue;
         const uint8_t value = song_byte(core, pattern, index);
         if (song_channel_silent(value)) continue;
         const int sfx = value & 0x3f;
         p8_audio_channel &channel = state.channels[index];
-        if (channel.playback.sfx < 0) launch_sfx(channel, sfx, 0, 0, true);
+        if (channel.playback.sfx < 0) launch_sfx(state, index, sfx, 0, 0, true);
         else channel.deferred_music_sfx = static_cast<int16_t>(sfx);
     }
     return true;
@@ -291,8 +356,10 @@ int32_t effect_volume(const p8_audio_playback &playback, const note_data &note)
     return volume;
 }
 
-void advance_playback(const p8_core *core, p8_audio_playback &playback)
+void advance_playback(const p8_core *core, p8_audio_state &state, unsigned channel_index,
+                      uint64_t transition_sample)
 {
+    p8_audio_playback &playback = state.channels[channel_index].playback;
     if (playback.sfx < 0) return;
     const unsigned speed = sfx_speed(core, playback.sfx);
     const uint64_t step = kOneNote / (183u * speed);
@@ -315,7 +382,15 @@ void advance_playback(const p8_core *core, p8_audio_playback &playback)
     }
     unsigned end = playback.length > 0 ? std::min<unsigned>(32, playback.length) : 32;
     if (!playback.is_music && loop_end == 0 && loop_start > 0) end = std::min(end, loop_start);
-    if ((!playback.can_loop || loop_end <= loop_start) && next_note >= end) playback.sfx = -1;
+    if ((!playback.can_loop || loop_end <= loop_start) && next_note >= end) {
+        stop_channel(state, channel_index, transition_sample);
+        return;
+    }
+    if (next_note != previous_note) {
+        append_event(state, transition_sample, P8_AUDIO_EVENT_NOTE,
+                     static_cast<int>(channel_index), playback.sfx,
+                     static_cast<int>(next_note), state.music.pattern);
+    }
 }
 
 int32_t render_channel(p8_core *core, unsigned index)
@@ -327,14 +402,14 @@ int32_t render_channel(p8_core *core, unsigned index)
         const uint64_t divisor = static_cast<uint64_t>(183) * sfx_speed(core, sfx);
         const unsigned offset = static_cast<unsigned>(std::min<uint64_t>(31,
             state.music.elapsed_samples / divisor));
-        launch_sfx(channel, sfx, offset, 0, true);
+        launch_sfx(state, index, sfx, offset, 0, true);
         channel.deferred_music_sfx = -1;
     }
     p8_audio_playback &playback = channel.playback;
     if (playback.sfx < 0) return 0;
     const unsigned note_index = static_cast<unsigned>(playback.position >> 32);
     if (note_index >= 32) {
-        playback.sfx = -1;
+        stop_channel(state, index, state.sample_clock);
         return 0;
     }
     note_data note = read_note(core, playback.sfx, note_index);
@@ -348,7 +423,7 @@ int32_t render_channel(p8_core *core, unsigned index)
             * state.music.volume) >> 17);
         else sample /= 2;
     }
-    advance_playback(core, playback);
+    advance_playback(core, state, index, state.sample_clock + 1);
     return sample;
 }
 
@@ -411,8 +486,10 @@ int p8_audio_sfx(p8_core *core, int sfx, int channel, int offset, int length)
         return -1;
     }
     if (channel == -2) {
-        for (p8_audio_channel &item : state.channels) {
-            if (item.playback.sfx == sfx) item.playback.sfx = -1;
+        for (unsigned index = 0; index < state.channels.size(); ++index) {
+            if (state.channels[index].playback.sfx == sfx) {
+                stop_channel(state, index, state.sample_clock);
+            }
         }
         return -1;
     }
@@ -422,8 +499,14 @@ int p8_audio_sfx(p8_core *core, int sfx, int channel, int offset, int length)
         for (unsigned index = first; index < last; ++index) {
             p8_audio_playback &playback = state.channels[index].playback;
             if (playback.is_music) continue;
-            if (sfx == -1) playback.sfx = -1;
-            else playback.can_loop = false;
+            if (sfx == -1) {
+                stop_channel(state, index, state.sample_clock);
+            } else if (playback.sfx >= 0 && playback.can_loop) {
+                playback.can_loop = false;
+                append_event(state, state.sample_clock, P8_AUDIO_EVENT_CHANNEL_RELEASE,
+                             static_cast<int>(index), playback.sfx,
+                             current_note(playback), state.music.pattern);
+            }
         }
         return -1;
     }
@@ -459,14 +542,20 @@ int p8_audio_sfx(p8_core *core, int sfx, int channel, int offset, int length)
         }
     }
     if (channel < 0) return -1;
-    for (p8_audio_channel &item : state.channels) {
-        if (item.playback.sfx == sfx) item.playback.sfx = -1;
+    for (unsigned index = 0; index < state.channels.size(); ++index) {
+        if (state.channels[index].playback.sfx == sfx) {
+            stop_channel(state, index, state.sample_clock);
+        }
     }
     p8_audio_channel &target = state.channels[static_cast<unsigned>(channel)];
     if (target.playback.sfx >= 0 && target.playback.is_music) {
         target.deferred_music_sfx = target.playback.sfx;
     }
-    launch_sfx(target, sfx, static_cast<unsigned>(std::max(0, offset)),
+    if (target.playback.sfx >= 0) {
+        stop_channel(state, static_cast<unsigned>(channel), state.sample_clock);
+    }
+    launch_sfx(state, static_cast<unsigned>(channel), sfx,
+               static_cast<unsigned>(std::max(0, offset)),
                static_cast<unsigned>(std::max(0, length)), false);
     return channel;
 }
@@ -513,6 +602,7 @@ void p8_audio_host_tick60(p8_core *core)
         int32_t mixed = 0;
         for (unsigned channel = 0; channel < 4; ++channel) mixed += render_channel(core, channel);
         push_sample(state, static_cast<int16_t>(std::clamp(mixed, -32768, 32767)));
+        ++state.sample_clock;
         advance_music(core);
     }
 }
@@ -533,6 +623,58 @@ size_t p8_audio_read(p8_core *core, int16_t *destination, size_t capacity)
     }
     state.ring_count -= count;
     return count;
+}
+
+uint32_t p8_audio_capabilities(const p8_core *core)
+{
+    return core ? kCapabilities : 0;
+}
+
+int p8_audio_get_channel_status(const p8_core *core, unsigned channel,
+                                p8_audio_channel_status *status)
+{
+    if (!core || channel >= P8_AUDIO_CHANNEL_COUNT || !status
+        || (kCapabilities & P8_AUDIO_CAP_CHANNEL_STATUS) == 0) {
+        return 0;
+    }
+    const p8_audio_channel &source = p8_core_audio_state(core).channels[channel];
+    const bool active = source.playback.sfx >= 0;
+    *status = {
+        source.playback.sfx,
+        current_note(source.playback),
+        source.deferred_music_sfx,
+        active && source.playback.is_music ? 1 : 0,
+        active && !source.playback.can_loop ? 1 : 0,
+    };
+    return 1;
+}
+
+size_t p8_audio_copy_events(const p8_core *core, p8_audio_event *destination,
+                            size_t capacity)
+{
+    if (!core || !destination || capacity == 0
+        || (kCapabilities & P8_AUDIO_CAP_EVENT_LEDGER) == 0) {
+        return 0;
+    }
+    const p8_audio_state &state = p8_core_audio_state(core);
+    const size_t count = std::min(capacity, state.event_count);
+    for (size_t index = 0; index < count; ++index) {
+        destination[index] = state.events[(state.event_read + index) % state.events.size()];
+    }
+    return count;
+}
+
+int p8_audio_stat(const p8_core *core, unsigned selector, int32_t *value)
+{
+    if (!core || !value || selector < 46 || selector > 57) return 0;
+    if (selector == 57 && (kCapabilities & P8_AUDIO_CAP_STAT_57) != 0) {
+        *value = p8_core_audio_state(core).music.pattern >= 0 ? 1 : 0;
+        return 1;
+    }
+    /* Field names are documented, but their tick-history transition boundaries
+     * are normative runtime behavior. Do not expose guessed values before the
+     * licensed capture closes P8_AUDIO_CAP_STAT_46_56. */
+    return 0;
 }
 
 int p8_audio_current_sfx(const p8_core *core, unsigned channel)

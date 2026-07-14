@@ -1042,6 +1042,28 @@ int api_stat(lua_State *state)
         }
         lua_pushnumber(state, 0);
         return 1;
+    case 46:
+    case 47:
+    case 48:
+    case 49:
+    case 50:
+    case 51:
+    case 52:
+    case 53:
+    case 54:
+    case 55:
+    case 56:
+    case 57: {
+        int32_t value = 0;
+        if (!p8_audio_stat(vm->core, static_cast<unsigned>(selector), &value)) {
+            return luaL_error(state,
+                              "stat audio selector %d is not conformance-qualified",
+                              selector);
+        }
+        if (selector == 57) lua_pushboolean(state, value != 0);
+        else lua_pushnumber(state, value);
+        return 1;
+    }
     default:
         return luaL_error(state, "stat selector %d is not conformance-qualified", selector);
     }

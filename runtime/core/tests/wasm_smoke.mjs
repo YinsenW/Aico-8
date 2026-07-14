@@ -154,6 +154,25 @@ try {
     } finally {
       kernel._free(audioPointer);
     }
+    appendU32(checkpoint, kernel._aico8_audio_capabilities(runtime));
+    const audioStatusPointer = kernel._malloc(20);
+    const audioEventsPointer = kernel._malloc(16 * 32);
+    try {
+      assert.equal(kernel._aico8_get_audio_channel_status(runtime, 0, audioStatusPointer), 1);
+      for (let offset = 0; offset < 20; offset += 4) {
+        appendU32(checkpoint, view.getUint32(audioStatusPointer + offset, true));
+      }
+      const eventCount = kernel._aico8_copy_audio_events(runtime, audioEventsPointer, 16);
+      appendU32(checkpoint, eventCount);
+      for (let index = 0; index < eventCount; index += 1) {
+        for (let offset = 0; offset < 32; offset += 4) {
+          appendU32(checkpoint, view.getUint32(audioEventsPointer + index * 32 + offset, true));
+        }
+      }
+    } finally {
+      kernel._free(audioEventsPointer);
+      kernel._free(audioStatusPointer);
+    }
     checkpoint.push(...kernel.HEAPU8.slice(savedPointer, savedPointer + 256));
     wasmCheckpoint = Buffer.from(checkpoint).toString("hex");
 
@@ -218,6 +237,56 @@ try {
   kernel._aico8_destroy(policyRuntime);
   kernel._free(policyRomPointer);
   kernel._free(policySourcePointer);
+}
+
+const audioStatRuntime = kernel._aico8_create();
+assert.notEqual(audioStatRuntime, 0);
+const audioStatSource = new TextEncoder().encode(
+  "function _init() before=stat(57) music(0) during=stat(57) music(-1) after=stat(57) end\n",
+);
+const audioStatSourcePointer = copyToHeap(audioStatSource);
+const audioStatRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(audioStatRuntime, audioStatRomPointer, 0x8000,
+    audioStatSourcePointer, audioStatSource.length), 1);
+  assert.equal(kernel._aico8_start(audioStatRuntime), 1);
+  const valuePointer = kernel._malloc(4);
+  const beforePointer = copyToHeap(new TextEncoder().encode("before\0"));
+  const duringPointer = copyToHeap(new TextEncoder().encode("during\0"));
+  const afterPointer = copyToHeap(new TextEncoder().encode("after\0"));
+  try {
+    for (const [namePointer, expected] of [[beforePointer, 0], [duringPointer, 1], [afterPointer, 0]]) {
+      assert.equal(kernel._aico8_get_global_boolean(audioStatRuntime, namePointer, valuePointer), 1);
+      assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), expected);
+    }
+  } finally {
+    kernel._free(afterPointer);
+    kernel._free(duringPointer);
+    kernel._free(beforePointer);
+    kernel._free(valuePointer);
+  }
+} finally {
+  kernel._aico8_destroy(audioStatRuntime);
+  kernel._free(audioStatRomPointer);
+  kernel._free(audioStatSourcePointer);
+}
+
+const tickHistoryRuntime = kernel._aico8_create();
+assert.notEqual(tickHistoryRuntime, 0);
+const tickHistorySource = new TextEncoder().encode("function _init() observed=stat(46) end\n");
+const tickHistorySourcePointer = copyToHeap(tickHistorySource);
+const tickHistoryRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(tickHistoryRuntime, tickHistoryRomPointer, 0x8000,
+    tickHistorySourcePointer, tickHistorySource.length), 1);
+  assert.equal(kernel._aico8_start(tickHistoryRuntime), 0,
+    "unqualified stat(46..56) must remain fail-closed in Wasm");
+  assert.match(kernel.UTF8ToString(kernel._aico8_last_error(tickHistoryRuntime)),
+    /audio selector 46 is not conformance-qualified/);
+} finally {
+  kernel._aico8_destroy(tickHistoryRuntime);
+  kernel._free(tickHistoryRomPointer);
+  kernel._free(tickHistorySourcePointer);
 }
 
 const digest = createHash("sha256").update(Buffer.from(wasmCheckpoint, "hex")).digest("hex").slice(0, 12);

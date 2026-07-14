@@ -1,6 +1,7 @@
 #ifndef AICO8_WASM_H
 #define AICO8_WASM_H
 
+#include "p8/audio.h"
 #include "p8/core.h"
 
 #include <stddef.h>
@@ -27,6 +28,11 @@ int aico8_tick60(aico8_runtime *runtime, uint8_t player_zero_buttons);
 size_t aico8_audio_available(const aico8_runtime *runtime);
 size_t aico8_read_audio(aico8_runtime *runtime, int16_t *destination,
                         size_t capacity);
+uint32_t aico8_audio_capabilities(const aico8_runtime *runtime);
+int aico8_get_audio_channel_status(const aico8_runtime *runtime, unsigned channel,
+                                   p8_audio_channel_status *status);
+size_t aico8_copy_audio_events(const aico8_runtime *runtime,
+                               p8_audio_event *destination, size_t capacity);
 
 const uint8_t *aico8_framebuffer(aico8_runtime *runtime);
 size_t aico8_framebuffer_size(void);

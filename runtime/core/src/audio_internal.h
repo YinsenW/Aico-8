@@ -39,6 +39,7 @@ struct p8_audio_music_state {
 
 struct p8_audio_state {
     static constexpr size_t kRingCapacity = 16384;
+    static constexpr size_t kEventCapacity = 256;
     std::array<p8_audio_channel, 4> channels{};
     p8_audio_music_state music{};
     std::array<int16_t, kRingCapacity> ring{};
@@ -46,6 +47,11 @@ struct p8_audio_state {
     size_t ring_write = 0;
     size_t ring_count = 0;
     unsigned sample_remainder = 0;
+    uint64_t sample_clock = 0;
+    uint32_t next_event_sequence = 1;
+    std::array<p8_audio_event, kEventCapacity> events{};
+    size_t event_read = 0;
+    size_t event_count = 0;
     std::array<char, 192> error{};
 };
 

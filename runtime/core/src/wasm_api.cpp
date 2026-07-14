@@ -167,6 +167,23 @@ size_t aico8_read_audio(aico8_runtime *runtime, int16_t *destination,
     return runtime ? p8_audio_read(runtime->core, destination, capacity) : 0;
 }
 
+uint32_t aico8_audio_capabilities(const aico8_runtime *runtime)
+{
+    return runtime ? p8_audio_capabilities(runtime->core) : 0;
+}
+
+int aico8_get_audio_channel_status(const aico8_runtime *runtime, unsigned channel,
+                                   p8_audio_channel_status *status)
+{
+    return runtime ? p8_audio_get_channel_status(runtime->core, channel, status) : 0;
+}
+
+size_t aico8_copy_audio_events(const aico8_runtime *runtime,
+                               p8_audio_event *destination, size_t capacity)
+{
+    return runtime ? p8_audio_copy_events(runtime->core, destination, capacity) : 0;
+}
+
 const uint8_t *aico8_framebuffer(aico8_runtime *runtime)
 {
     if (!runtime) {

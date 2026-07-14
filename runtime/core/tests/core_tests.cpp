@@ -388,10 +388,41 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
 
     p8_core *core = p8_core_create();
     assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    const uint32_t capabilities = p8_audio_capabilities(core);
+    assert((capabilities & P8_AUDIO_CAP_EVENT_LEDGER) != 0);
+    assert((capabilities & P8_AUDIO_CAP_CHANNEL_STATUS) != 0);
+    assert((capabilities & P8_AUDIO_CAP_STAT_57) != 0);
+    assert((capabilities & P8_AUDIO_CAP_STAT_46_56) == 0);
+    assert((capabilities & P8_AUDIO_CAP_FILTERS) == 0);
+    assert((capabilities & P8_AUDIO_CAP_CUSTOM_INSTRUMENTS) == 0);
+    assert((capabilities & P8_AUDIO_CAP_CUSTOM_WAVEFORMS) == 0);
+    int32_t music_active = -1;
+    assert(p8_audio_stat(core, 57, &music_active));
+    assert(music_active == 0);
     assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_audio_stat(core, 57, &music_active));
+    assert(music_active == 1);
     assert(p8_audio_current_music(core) == 0);
     assert(p8_audio_current_sfx(core, 0) == 0);
+    p8_audio_channel_status status{};
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == 0 && status.note == 0 && status.is_music == 1);
+    int32_t stat_value = 123;
+    assert(!p8_audio_stat(core, 46, &stat_value));
+    assert(stat_value == 123); // unsupported status must not manufacture a value
+    std::array<p8_audio_event, 8> events{};
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 2);
+    assert(events[0].kind == P8_AUDIO_EVENT_MUSIC_PATTERN);
+    assert(events[0].music_pattern == 0);
+    assert(events[1].kind == P8_AUDIO_EVENT_CHANNEL_START);
+    assert(events[1].channel == 0 && events[1].sfx == 0 && events[1].note == 0);
     assert(p8_core_host_tick60(core, 1) == 1);
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == 0 && status.note == 1);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 3);
+    assert(events[2].kind == P8_AUDIO_EVENT_NOTE);
+    assert(events[2].sample_low == 367 && events[2].sample_high == 0);
+    assert(events[2].note == 1);
     assert(p8_audio_available(core) == 367);
     std::array<int16_t, 367> first{};
     assert(p8_audio_read(core, first.data(), first.size()) == first.size());
@@ -410,10 +441,37 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     assert(p8_audio_current_sfx(core, 0) == 0);
     assert(p8_audio_current_sfx(core, 1) == -1); // channel mask reserves only channel 0
 
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == 0);
+    assert(p8_audio_sfx(core, -2, 0, 0, 0) == -1);
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == 0 && status.is_releasing == 1);
+    assert(p8_audio_sfx(core, -1, 0, 0, 0) == -1);
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == -1 && status.note == -1);
+    assert(status.is_music == 0 && status.is_releasing == 0);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 3);
+    assert(events[0].kind == P8_AUDIO_EVENT_CHANNEL_START);
+    assert(events[1].kind == P8_AUDIO_EVENT_CHANNEL_RELEASE);
+    assert(events[2].kind == P8_AUDIO_EVENT_CHANNEL_STOP);
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_audio_stat(core, 57, &music_active) && music_active == 1);
+    assert(p8_audio_music(core, -1, 0, 0x0f));
+    assert(p8_audio_stat(core, 57, &music_active) && music_active == 0);
+
     rom[0x3240] = 3; // editor flag plus noiz filter
     assert(p8_core_load_rom(core, rom.data(), rom.size()));
     assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
     assert(std::strstr(p8_audio_last_error(core), "filters") != nullptr);
+
+    rom[0x3240] = 1;
+    rom[0x3201] = static_cast<uint8_t>((7 << 1) | 0x80); // active custom instrument
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "custom instrument") != nullptr);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 0);
     p8_core_destroy(core);
 }
 

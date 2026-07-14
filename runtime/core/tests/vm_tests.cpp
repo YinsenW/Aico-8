@@ -72,6 +72,27 @@ std::vector<uint8_t> canonical_checkpoint(p8_core *core)
     for (size_t index = 0; index < audio_count; ++index) {
         append_u16(checkpoint, static_cast<uint16_t>(audio[index]));
     }
+    append_u32(checkpoint, p8_audio_capabilities(core));
+    p8_audio_channel_status channel{};
+    assert(p8_audio_get_channel_status(core, 0, &channel));
+    append_u32(checkpoint, static_cast<uint32_t>(channel.sfx));
+    append_u32(checkpoint, static_cast<uint32_t>(channel.note));
+    append_u32(checkpoint, static_cast<uint32_t>(channel.deferred_music_sfx));
+    append_u32(checkpoint, static_cast<uint32_t>(channel.is_music));
+    append_u32(checkpoint, static_cast<uint32_t>(channel.is_releasing));
+    std::array<p8_audio_event, 16> events{};
+    const size_t event_count = p8_audio_copy_events(core, events.data(), events.size());
+    append_u32(checkpoint, static_cast<uint32_t>(event_count));
+    for (size_t index = 0; index < event_count; ++index) {
+        append_u32(checkpoint, events[index].sequence);
+        append_u32(checkpoint, events[index].sample_low);
+        append_u32(checkpoint, events[index].sample_high);
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].kind));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].channel));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].sfx));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].note));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].music_pattern));
+    }
     for (size_t index = 0; index < 256; ++index) {
         append_byte(checkpoint, p8_core_peek(core, static_cast<uint16_t>(kPersistentBase + index)));
     }
@@ -472,6 +493,46 @@ function _draw() drawn+=1 end
     p8_core_destroy(core);
 }
 
+void test_audio_stat_routes_fail_closed_until_official_tick_history_is_qualified()
+{
+    constexpr char music_state_source[] = R"p8lua(
+function _init()
+ before=stat(57)
+ music(0)
+ during=stat(57)
+ music(-1)
+ after=stat(57)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, music_state_source, sizeof(music_state_source) - 1,
+                             "@audio-music-state"));
+    assert(p8_vm_call(vm, "_init"));
+    int value = -1;
+    assert(p8_vm_get_global_boolean(vm, "before", &value) && value == 0);
+    assert(p8_vm_get_global_boolean(vm, "during", &value) && value == 1);
+    assert(p8_vm_get_global_boolean(vm, "after", &value) && value == 0);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+
+    constexpr char source[] = R"p8lua(
+function _init() observed=stat(46) end
+)p8lua";
+    core = p8_core_create();
+    vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@audio-stat-gate"));
+    assert(!p8_vm_call(vm, "_init"));
+    assert(std::strstr(p8_vm_last_error(vm),
+                       "audio selector 46 is not conformance-qualified") != nullptr);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -484,6 +545,7 @@ int main(int argc, char **argv)
     test_menu_items_register_filter_invoke_update_and_remove();
     test_palette_transparency_diagnostics_and_deterministic_time();
     test_update_error_is_sticky_and_draw_is_skipped();
+    test_audio_stat_routes_fail_closed_until_official_tick_history_is_qualified();
     if (argc == 2 && std::string(argv[1]) == "--checkpoint") {
         for (uint8_t byte : checkpoint) std::printf("%02x", byte);
         std::putchar('\n');
