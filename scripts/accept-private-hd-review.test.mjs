@@ -51,6 +51,8 @@ function makeWorkspace() {
         silhouetteTraits: ["compact source silhouette"],
         requiredParts: [{
           id: "head", label: "paired source ears", sourceEvidenceIds: ["character.test.source"], targetRegionIds: ["head"],
+          recognitionCues: ["two separately readable source-relative ears"],
+          forbiddenSubstitutions: ["ears merged into unrelated head bumps"],
         }],
         proportionChecks: [{
           id: "footprint", label: "footprint stays one cell", sourceRatio: 1, targetRatio: 1, maximumAbsoluteDelta: 0.1,

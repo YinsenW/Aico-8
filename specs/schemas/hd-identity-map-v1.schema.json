@@ -59,12 +59,14 @@
     "requiredPart": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "label", "sourceEvidenceIds", "targetRegionIds"],
+      "required": ["id", "label", "sourceEvidenceIds", "targetRegionIds", "recognitionCues", "forbiddenSubstitutions"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "label": { "$ref": "#/$defs/nonEmptyString" },
         "sourceEvidenceIds": { "$ref": "#/$defs/idList" },
-        "targetRegionIds": { "$ref": "#/$defs/idList" }
+        "targetRegionIds": { "$ref": "#/$defs/idList" },
+        "recognitionCues": { "$ref": "#/$defs/stringList" },
+        "forbiddenSubstitutions": { "$ref": "#/$defs/stringList" }
       }
     },
     "proportionCheck": {

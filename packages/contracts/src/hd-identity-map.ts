@@ -24,6 +24,8 @@ export interface RequiredPartMapping {
   label: string;
   sourceEvidenceIds: string[];
   targetRegionIds: string[];
+  recognitionCues: string[];
+  forbiddenSubstitutions: string[];
 }
 
 export interface ProportionCheck {
@@ -316,7 +318,11 @@ function validateAnchors(
         errors.push(`${partPath} must be an object`);
         continue;
       }
-      checkKeys(rawPart, ["id", "label", "sourceEvidenceIds", "targetRegionIds"], ["id", "label", "sourceEvidenceIds", "targetRegionIds"], partPath, errors);
+      const partKeys = [
+        "id", "label", "sourceEvidenceIds", "targetRegionIds",
+        "recognitionCues", "forbiddenSubstitutions",
+      ] as const;
+      checkKeys(rawPart, partKeys, partKeys, partPath, errors);
       if (checkId(rawPart.id, `${partPath}.id`, errors)) {
         if (partIds.has(rawPart.id)) errors.push(`${partPath}.id must be unique within the element`);
         partIds.add(rawPart.id);
@@ -328,6 +334,8 @@ function validateAnchors(
       for (const regionId of checkUniqueStrings(rawPart.targetRegionIds, `${partPath}.targetRegionIds`, errors)) {
         if (!targetRegionIds.has(regionId)) errors.push(`${partPath}.targetRegionIds references unknown target region ${regionId}`);
       }
+      checkUniqueStrings(rawPart.recognitionCues, `${partPath}.recognitionCues`, errors);
+      checkUniqueStrings(rawPart.forbiddenSubstitutions, `${partPath}.forbiddenSubstitutions`, errors);
     }
   }
 

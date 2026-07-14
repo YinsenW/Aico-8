@@ -93,6 +93,10 @@ assert.deepEqual(identityMap.coverage.reachableElementIds, identityMap.coverage.
 assert.ok(identityMap.elements.every((element) => element.copy && typeof element.copy.origin === "string"));
 assert.ok(identityMap.elements.every((element) => Array.isArray(element.anchors?.compositionChecks)
   && element.anchors.compositionChecks.length > 0), "every identity element must bind source/target composition bounds");
+assert.ok(identityMap.elements.every((element) => element.anchors.requiredParts.every((part) =>
+  Array.isArray(part.recognitionCues) && part.recognitionCues.length > 0
+  && Array.isArray(part.forbiddenSubstitutions) && part.forbiddenSubstitutions.length > 0)),
+"every required part must bind positive recognition cues and forbidden substitutions");
 assert.equal(identityMap.elements.filter((element) => element.copy.origin !== "none").length, 5);
 assert.equal(identityMap.elements.filter((element) => element.copy.origin === "supplemental-authorized").length, 0);
 const identityReviewFields = [
@@ -183,6 +187,10 @@ const hdAttestation = {
     identity_elements: identityMap.elements.length,
     composition_checks: identityMap.elements.reduce(
       (total, element) => total + element.anchors.compositionChecks.length,
+      0,
+    ),
+    required_part_recognition_contracts: identityMap.elements.reduce(
+      (total, element) => total + element.anchors.requiredParts.length,
       0,
     ),
     copy_provenance_elements: identityMap.elements.filter((element) => element.copy.origin !== "none").length,

@@ -3,7 +3,7 @@
   "subject": {
     "gameId": "dust-bunny-private-research",
     "target": "web-pwa",
-    "visualRuntimeSha256": "53a5392d6a07e0ba031768238a3e3a97d9ba9faaa3e43c6ee77aa62488e4e557"
+    "visualRuntimeSha256": "bef92c99dff0c80562f31ac78178777071a041ee78bb8948154c9f18c08fb63d"
   },
   "targetProfile": {
     "id": "web-pwa-private-research-v1",
@@ -19,7 +19,7 @@
   },
   "package": {
     "artifactCount": 39,
-    "unpackedBytes": 1763008,
+    "unpackedBytes": 1763529,
     "largestArtifactBytes": 632022
   },
   "runtime": {
@@ -86,7 +86,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "1309a0c55ce7de4c9bfa754fbd2305e9858a056bd2d1ec95b31f58ec4c65cd45"
+      "screenshotSha256": "ba1667c6563cc9807bf3530081baa706204f8f9eaa8e6d35a8043253ddcb9992"
     },
     {
       "id": "wide-web-1440x900",
@@ -115,7 +115,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "a5af32b02705039bd8d99290d07e50d7084838b1f9241c660922dc3770410487"
+      "screenshotSha256": "83ed55585da5966b7a5fb0b2f827d1cac4b4d2adfbd40c6019f86ebd5e37b6ec"
     }
   ],
   "checks": {

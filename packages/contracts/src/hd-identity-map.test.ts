@@ -21,9 +21,9 @@ function bunnyMap(): Record<string, unknown> {
       anchors: {
         silhouetteTraits: ["compact round face", "two upright ears"],
         requiredParts: [
-          { id: "face", label: "round face", sourceEvidenceIds: ["player-source"], targetRegionIds: ["face"] },
-          { id: "ears", label: "paired ears", sourceEvidenceIds: ["player-source"], targetRegionIds: ["left-ear", "right-ear"] },
-          { id: "whiskers", label: "visible whiskers", sourceEvidenceIds: ["player-source"], targetRegionIds: ["whiskers"] },
+          { id: "face", label: "round face", sourceEvidenceIds: ["player-source"], targetRegionIds: ["face"], recognitionCues: ["source-round facial mass"], forbiddenSubstitutions: ["elongated replacement face"] },
+          { id: "ears", label: "paired ears", sourceEvidenceIds: ["player-source"], targetRegionIds: ["left-ear", "right-ear"], recognitionCues: ["two separately readable upright ears"], forbiddenSubstitutions: ["ears merged into ambiguous head bumps"] },
+          { id: "whiskers", label: "visible whiskers", sourceEvidenceIds: ["player-source"], targetRegionIds: ["whiskers"], recognitionCues: ["source-count whisker strokes"], forbiddenSubstitutions: ["cheek decoration without whisker direction"] },
         ],
         proportionChecks: [{ id: "face-ratio", label: "face width / face height", sourceRatio: 1.05, targetRatio: 1.08, maximumAbsoluteDelta: 0.1 }],
         compositionChecks: [{
@@ -99,8 +99,8 @@ describe("HD identity map v1", () => {
     map.elements[0].semanticRole = "recognizably long-faced source character";
     map.elements[0].anchors.silhouetteTraits = ["long narrow face", "source-specific head crest"];
     map.elements[0].anchors.requiredParts = [
-      { id: "face", label: "long narrow face", sourceEvidenceIds: ["player-source"], targetRegionIds: ["face"] },
-      { id: "crest", label: "head crest", sourceEvidenceIds: ["player-source"], targetRegionIds: ["left-ear"] },
+      { id: "face", label: "long narrow face", sourceEvidenceIds: ["player-source"], targetRegionIds: ["face"], recognitionCues: ["source-long facial silhouette"], forbiddenSubstitutions: ["rounding the source face"] },
+      { id: "crest", label: "head crest", sourceEvidenceIds: ["player-source"], targetRegionIds: ["left-ear"], recognitionCues: ["single source crest"], forbiddenSubstitutions: ["replacing the crest with paired ears"] },
     ];
     map.elements[0].anchors.proportionChecks[0] = {
       id: "face-ratio",
@@ -119,6 +119,15 @@ describe("HD identity map v1", () => {
     expect(validateHdIdentityMap(map).errors).toContain(
       "$.elements[0].anchors.requiredParts[2].targetRegionIds references unknown target region missing-whiskers-region",
     );
+  });
+
+  it("rejects a named target region whose identity-bearing part has no visual recognition contract", () => {
+    const map = bunnyMap() as any;
+    delete map.elements[0].anchors.requiredParts[1].recognitionCues;
+    map.elements[0].anchors.requiredParts[1].forbiddenSubstitutions = [];
+    const errors = validateHdIdentityMap(map).errors;
+    expect(errors).toContain("$.elements[0].anchors.requiredParts[1].recognitionCues is required");
+    expect(errors).toContain("$.elements[0].anchors.requiredParts[1].forbiddenSubstitutions must contain at least 1 string(s)");
   });
 
   it("rejects runtime model generation and identity redesign dimensions", () => {

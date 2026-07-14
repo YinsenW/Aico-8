@@ -95,6 +95,11 @@ only its linked exits determine acceptance.
 - Every element's source/HD review anchors are ordered one-to-one and every pair
   must bind the same scene and state; the review document renders every declared
   anchor, including variant parts and reachable persisted UI states.
+- Naming a target region is not proof that an identity-bearing part survived.
+  Every required-part mapping also declares positive source-relative recognition
+  cues and forbidden substitutions; the human review packet exposes both so an
+  ear, face, limb, glyph, or prop cannot pass merely because a same-named region
+  exists while its visible silhouette reads as something else.
 - Source-relative identity anchors bind normalized source and target composition
   rectangles to declared source evidence and target regions. Moving or resizing
   an element beyond its per-check edge tolerance fails even when its internal

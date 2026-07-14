@@ -114,6 +114,8 @@ const identityMap = {
       silhouetteTraits: ["compact source silhouette"],
       requiredParts: [{
         id: "head", label: "head", sourceEvidenceIds: ["character.test.source"], targetRegionIds: ["head"],
+        recognitionCues: ["source-relative head silhouette"],
+        forbiddenSubstitutions: ["unrelated substitute silhouette"],
       }],
       proportionChecks: [{ id: "footprint", label: "footprint", sourceRatio: 1, targetRatio: 1, maximumAbsoluteDelta: 0.1 }],
       compositionChecks: [{

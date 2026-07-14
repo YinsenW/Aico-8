@@ -6,6 +6,7 @@
   "observations": {
     "identity_elements": 20,
     "composition_checks": 21,
+    "required_part_recognition_contracts": 30,
     "copy_provenance_elements": 5,
     "supplemental_copy_elements": 0,
     "source_tokens": 178,
@@ -26,8 +27,8 @@
     "acceptance_may_not_be_inferred_from_code_or_automated_audit": true
   },
   "private_artifact_sha256": {
-    "hd_identity_map": "3824b913f465423681136748ed00c48ae9e3d2e160abcc24c36d22daed60d620",
-    "hd_presentation_audit": "3fea0de08f8801f52cc9bd7a49c84163bb61c7a58385203050aede81fb27a5db"
+    "hd_identity_map": "58abcfc5dfa85095e01c36f496a29dbab8462fa0b804a2b2413118967ccf683e",
+    "hd_presentation_audit": "e27b2d4b9ec70379d5a07c09c4dcb985a7c6e0cf21d3b02af0ee84b1dbd923af"
   },
   "selector": "TEST-QUALIFICATION-PRIVATE"
 }

@@ -93,7 +93,8 @@ const elements = identityMap.elements.map((element) => ({
   targetScreenshotIds: element.review.targetSceneIds,
   criteria: {
     silhouetteTraits: element.anchors.silhouetteTraits,
-    requiredParts: element.anchors.requiredParts.map(({ label }) => label),
+    requiredParts: element.anchors.requiredParts.map((part) =>
+      `${part.label}: recognize by ${part.recognitionCues.join("; ")}; reject ${part.forbiddenSubstitutions.join("; ")}`),
     proportionChecks: element.anchors.proportionChecks.map((check) =>
       `${check.label}: ${check.sourceRatio} → ${check.targetRatio}, maximum delta ${check.maximumAbsoluteDelta}`),
     compositionChecks: element.anchors.compositionChecks.map((check) => {
