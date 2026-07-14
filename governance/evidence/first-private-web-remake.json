@@ -32,7 +32,7 @@
     "quick_tap_latch": "pending-until-consumed-by-logical-update"
   },
   "presentation": {
-    "automated_audit_status": "draft",
+    "automated_audit_status": "accepted",
     "total_observed_updates": 9224,
     "source_tokens": 178,
     "unmapped_source_tokens": 0,
@@ -63,8 +63,8 @@
       "representativeViewportMatrixComplete": true,
       "requiredPartReviewAnchorsComplete": true
     },
-    "identity_human_review_accepted": false,
-    "identity_review_packet_status": "pending-human-side-by-side-review",
+    "identity_human_review_accepted": true,
+    "identity_review_packet_status": "accepted",
     "identity_review_elements": 20,
     "identity_review_static_pairs": 11,
     "identity_review_temporal_sequences": 6,
@@ -96,11 +96,11 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "c7c68c4b4c113b2260cd2c61eb4dcd192403cbffb43cd7957c94e9c45eb9dbcd",
+    "hd_presentation_audit_sha256": "04e33d69dceb3adc3268f76ad2c39768a99fdb51e13427c4d2a600b93bd621bf",
     "browser_validation_sha256": "9ec9672ab32e4b6413233f28261ade52bdbf2747df343b62310a9a5838a97840",
-    "hd_review_packet_sha256": "419b512ca9497be10316359c054c5e105733f5079a2be02f48f52c88e031bfec",
-    "hd_review_document_sha256": "74ba89ea71e992015270d7eaefdb6355473cfa0488a2cb114f3ca2a275652590",
-    "hd_review_decision_sha256": null,
+    "hd_review_packet_sha256": "9f4e08aab2994d78780718fa843185e538c7720824770b89657ac02d0bf57e04",
+    "hd_review_document_sha256": "e146dbc93661ebd4da1574e441db7f525300b30f4f631a5d560a2400ca22eafe",
+    "hd_review_decision_sha256": "d3917c7a86543ab091f110097926e4799c6e5e9cfb6e75559c2a7f8b0ccf8ef8",
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }
 }
