@@ -319,4 +319,9 @@ const char *aico8_last_error(const aico8_runtime *runtime)
         ? p8_vm_last_error(runtime->vm) : p8_audio_last_error(runtime->core);
 }
 
+const char *aico8_diagnostic_output(const aico8_runtime *runtime)
+{
+    return runtime && runtime->vm ? p8_vm_diagnostic_output(runtime->vm) : "";
+}
+
 } // extern "C"

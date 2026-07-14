@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cassert>
+#include <cstring>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -259,8 +260,15 @@ peek_b=-1
 peek_c=-1
 peek_word=-1
 peek_fixed=-1
+copied_a=-1
+copied_b=-1
+filled_a=-1
 screen_pixel=-1
 sprite_pixel=-1
+count_all=-1
+count_ones=-1
+stat_rate=-1
+stat_key=true
 function _init()
  initial_time=time()
  printh("boot "..initial_time)
@@ -271,6 +279,11 @@ function _init()
  peek_word=peek2(0x3204)
  poke4(0x3210,0x1234.5678)
  peek_fixed=peek4(0x3210)
+ poke(0x3220,1,2,3,4)
+ memcpy(0x3221,0x3220,3)
+ copied_a,copied_b=peek(0x3221,2)
+ memset(0x3230,7,3)
+ filled_a=peek(0x3232)
  cls(3)
  camera(2,1)
  pset(22,21,9)
@@ -283,6 +296,11 @@ function _init()
  screen_pixel=pget(1,1)
  sset(20,20,15)
  sprite_pixel=sget(20,20)
+ count_all=count({1,2,1})
+ count_ones=count({1,2,1},1)
+ stat_rate=stat(8)
+ stat_key=stat(30)
+ extcmd("rec")
  line()
  line(30,30,10)
  line(32,30,10)
@@ -313,7 +331,8 @@ function denied_file_output() printh("unsafe","log.txt") end
 
     int32_t value = -1;
     assert(p8_vm_get_global_raw(vm, "initial_time", &value) && value == 0);
-    assert(std::string(p8_vm_diagnostic_output(vm)) == "boot 0\n");
+    assert(std::string(p8_vm_diagnostic_output(vm))
+           == "boot 0\nextcmd(rec): recording is unavailable in this host; gameplay continued\n");
     assert(p8_vm_get_global_raw(vm, "unpacked_a", &value) && value == 4 << 16);
     assert(p8_vm_get_global_raw(vm, "unpacked_b", &value) && value == 5 << 16);
     assert(p8_vm_get_global_raw(vm, "peek_a", &value) && value == 1 << 16);
@@ -323,8 +342,16 @@ function denied_file_output() printh("unsafe","log.txt") end
            && static_cast<uint32_t>(value) == 0xabcd0000u);
     assert(p8_vm_get_global_raw(vm, "peek_fixed", &value)
            && static_cast<uint32_t>(value) == 0x12345678u);
+    assert(p8_vm_get_global_raw(vm, "copied_a", &value) && value == 1 << 16);
+    assert(p8_vm_get_global_raw(vm, "copied_b", &value) && value == 2 << 16);
+    assert(p8_vm_get_global_raw(vm, "filled_a", &value) && value == 7 << 16);
     assert(p8_vm_get_global_raw(vm, "screen_pixel", &value) && value == 8 << 16);
     assert(p8_vm_get_global_raw(vm, "sprite_pixel", &value) && value == 15 << 16);
+    assert(p8_vm_get_global_raw(vm, "count_all", &value) && value == 3 << 16);
+    assert(p8_vm_get_global_raw(vm, "count_ones", &value) && value == 2 << 16);
+    assert(p8_vm_get_global_raw(vm, "stat_rate", &value) && value == 30 << 16);
+    int boolean = 1;
+    assert(p8_vm_get_global_boolean(vm, "stat_key", &boolean) && boolean == 0);
     assert(p8_gfx_pget(core, 20, 20) == 9);
     assert(p8_gfx_pget(core, 1, 1) == 8);
     assert(p8_gfx_pget(core, 0, 0) == 0); // palt(0,false) makes sprite color zero visible
@@ -354,6 +381,32 @@ function denied_file_output() printh("unsafe","log.txt") end
     p8_core_destroy(core);
 }
 
+void test_update_error_is_sticky_and_draw_is_skipped()
+{
+    constexpr char source[] = R"p8lua(
+drawn=0
+function _update() missing_runtime_api() end
+function _draw() drawn+=1 end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@sticky-error-test"));
+    assert(p8_core_host_tick60(core, 1) == 1);
+    const std::string first_error = p8_vm_last_error(vm);
+    assert(first_error.find("missing_runtime_api") != std::string::npos);
+    int32_t drawn = -1;
+    assert(p8_vm_get_global_raw(vm, "drawn", &drawn) && drawn == 0);
+    assert(p8_core_host_tick60(core, 1) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    assert(std::string(p8_vm_last_error(vm)) == first_error);
+    assert(p8_vm_get_global_raw(vm, "drawn", &drawn) && drawn == 0);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -363,6 +416,7 @@ int main(int argc, char **argv)
     test_flip_suspends_and_resumes_initialization_at_frame_boundaries();
     test_menu_items_register_filter_invoke_update_and_remove();
     test_palette_transparency_diagnostics_and_deterministic_time();
+    test_update_error_is_sticky_and_draw_is_skipped();
     if (argc == 2 && std::string(argv[1]) == "--checkpoint") {
         for (uint8_t byte : checkpoint) std::printf("%02x", byte);
         std::putchar('\n');

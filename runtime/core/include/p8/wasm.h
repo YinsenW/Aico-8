@@ -61,6 +61,7 @@ int aico8_invoke_menu_item(aico8_runtime *runtime, unsigned index,
 size_t aico8_copy_persistent(const aico8_runtime *runtime, uint8_t *destination,
                              size_t capacity);
 const char *aico8_last_error(const aico8_runtime *runtime);
+const char *aico8_diagnostic_output(const aico8_runtime *runtime);
 
 #ifdef __cplusplus
 }

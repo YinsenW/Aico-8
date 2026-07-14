@@ -99,6 +99,7 @@ interface EmscriptenKernel {
   _aico8_invoke_menu_item(runtime: number, index: number, buttons: number, keepOpen: number): number;
   _aico8_copy_persistent(runtime: number, destination: number, capacity: number): number;
   _aico8_last_error(runtime: number): number;
+  _aico8_diagnostic_output(runtime: number): number;
 }
 
 interface KernelModule {
@@ -414,6 +415,10 @@ export class Aico8Kernel {
 
   lastError(): string {
     return this.#module.UTF8ToString(this.#module._aico8_last_error(this.#runtime));
+  }
+
+  diagnosticOutput(): string {
+    return this.#module.UTF8ToString(this.#module._aico8_diagnostic_output(this.#runtime));
   }
 
   destroy(): void {

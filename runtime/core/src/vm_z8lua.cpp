@@ -65,6 +65,16 @@ function deli(c,index)
  end
 end
 
+function count(c,...)
+ if c==nil then return 0 end
+ if select("#",...)==0 then return #c end
+ local value,n=...,0
+ for i=1,#c do
+  if c[i]==value then n+=1 end
+ end
+ return n
+end
+
 local __host_sub=string.sub
 function sub(value,first,last)
  if last!=nil and type(last)!="number" then last=first end
@@ -116,6 +126,7 @@ struct p8_vm {
     bool cartdata_active = false;
     bool has_update60 = false;
     bool restart_requested = false;
+    bool faulted = false;
     lua_State *active_thread = nullptr;
     int active_thread_ref = LUA_NOREF;
     std::string active_function;
@@ -178,6 +189,7 @@ struct p8_vm {
         }
         if (status != LUA_OK) {
             set_error_from_stack(active_thread);
+            faulted = true;
             clear_active_thread();
             return 0;
         }
@@ -188,7 +200,6 @@ struct p8_vm {
 
     int start_resumable_call(const char *function_name)
     {
-        error.clear();
         lua_getglobal(state, function_name);
         if (!lua_isfunction(state, -1)) {
             lua_pop(state, 1);
@@ -304,6 +315,30 @@ int api_poke4(lua_State *state)
     p8_vm *vm = p8_vm::from(state);
     p8_core_poke32(vm->core, static_cast<uint16_t>(integer(state, 1)),
                    static_cast<uint32_t>(raw_number(state, 2)));
+    return 0;
+}
+
+int api_memcpy(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const int length = integer(state, 3);
+    if (length > 0) {
+        p8_core_memcpy(vm->core, static_cast<uint16_t>(integer(state, 1)),
+                       static_cast<uint16_t>(integer(state, 2)),
+                       static_cast<size_t>(length));
+    }
+    return 0;
+}
+
+int api_memset(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const int length = integer(state, 3);
+    if (length > 0) {
+        p8_core_memset(vm->core, static_cast<uint16_t>(integer(state, 1)),
+                       static_cast<uint8_t>(integer(state, 2)),
+                       static_cast<size_t>(length));
+    }
     return 0;
 }
 
@@ -830,6 +865,66 @@ int api_time(lua_State *state)
     return 1;
 }
 
+int api_stat(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const int selector = integer(state, 1);
+    switch (selector) {
+    case 0: // Host-independent memory diagnostic; exact CPU accounting is not modelled.
+    case 1:
+        lua_pushnumber(state, 0);
+        return 1;
+    case 4: // Clipboard is unavailable until an explicit host paste capability exists.
+    case 31: // No queued keyboard character in the controller-only host profile.
+        lua_pushnil(state);
+        return 1;
+    case 6:
+        lua_pushliteral(state, "");
+        return 1;
+    case 7:
+    case 8: // Current and target logical frame rates.
+        lua_pushnumber(state, static_cast<int32_t>(p8_core_get_update_rate(vm->core)));
+        return 1;
+    case 30:
+    case 110:
+        lua_pushboolean(state, 0);
+        return 1;
+    case 32:
+    case 33:
+    case 34:
+    case 36:
+    case 38:
+    case 39:
+        if (vm->diagnostic_output.find("stat(30..39): extended input unavailable")
+            == std::string::npos) {
+            vm->diagnostic_output.append(
+                "stat(30..39): extended input unavailable; returning neutral state\n");
+        }
+        lua_pushnumber(state, 0);
+        return 1;
+    default:
+        return luaL_error(state, "stat selector %d is not conformance-qualified", selector);
+    }
+}
+
+int api_extcmd(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    size_t size = 0;
+    const char *command = luaL_checklstring(state, 1, &size);
+    const std::string name(command, size);
+    if (name == "rec" || name == "rec_frames") {
+        const std::string message = "extcmd(" + name
+            + "): recording is unavailable in this host; gameplay continued";
+        if (vm->diagnostic_output.find(message) == std::string::npos) {
+            vm->diagnostic_output.append(message);
+            vm->diagnostic_output.push_back('\n');
+        }
+        return 0;
+    }
+    return luaL_error(state, "extcmd(%s) is unsupported by this host", name.c_str());
+}
+
 int api_run(lua_State *state)
 {
     p8_vm::from(state)->restart_requested = true;
@@ -843,17 +938,28 @@ int api_flip(lua_State *state)
 
 int run_update_step(p8_vm *vm)
 {
+    if (vm->faulted) return 0;
     if (vm->active_thread) {
         p8_core_begin_draw_stream(vm->core);
         vm->suppress_draw_once = true;
         return vm->resume_active_thread();
     }
-    return p8_vm_call(vm, vm->has_update60 ? "_update60" : "_update");
+    return vm->start_resumable_call(vm->has_update60 ? "_update60" : "_update");
 }
 
-void update_callback(void *userdata) { run_update_step(static_cast<p8_vm *>(userdata)); }
-void update60_callback(void *userdata) { run_update_step(static_cast<p8_vm *>(userdata)); }
-void draw_callback(void *userdata) { p8_vm_draw(static_cast<p8_vm *>(userdata)); }
+void update_callback(void *userdata)
+{
+    p8_vm *vm = static_cast<p8_vm *>(userdata);
+    if (!run_update_step(vm)) vm->faulted = true;
+}
+
+void update60_callback(void *userdata) { update_callback(userdata); }
+
+void draw_callback(void *userdata)
+{
+    p8_vm *vm = static_cast<p8_vm *>(userdata);
+    if (!vm->faulted && !p8_vm_draw(vm)) vm->faulted = true;
+}
 
 } // namespace
 
@@ -885,6 +991,8 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("poke2", api_poke2);
     vm->install("peek4", api_peek4);
     vm->install("poke4", api_poke4);
+    vm->install("memcpy", api_memcpy);
+    vm->install("memset", api_memset);
     vm->install("mget", api_mget);
     vm->install("mset", api_mset);
     vm->install("fget", api_fget);
@@ -921,6 +1029,8 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("printh", api_printh);
     vm->install("time", api_time);
     vm->install("t", api_time);
+    vm->install("stat", api_stat);
+    vm->install("extcmd", api_extcmd);
     vm->install("flip", api_flip);
     vm->install("run", api_run);
     vm->seed_rng(0);
@@ -956,6 +1066,7 @@ int p8_vm_load_source(p8_vm *vm, const char *source, size_t size, const char *ch
         return 0;
     }
     vm->error.clear();
+    vm->faulted = false;
     vm->clear_menu_items();
     const char *name = chunk_name ? chunk_name : "@cart";
     if (luaL_loadbuffer(vm->state, source, size, name) != LUA_OK
@@ -987,6 +1098,8 @@ int p8_vm_call(p8_vm *vm, const char *function_name)
             + vm->active_function + " is suspended at flip()";
         return 0;
     }
+    vm->error.clear();
+    vm->faulted = false;
     return vm->start_resumable_call(function_name);
 }
 
@@ -1001,7 +1114,7 @@ int p8_vm_update(p8_vm *vm)
 
 int p8_vm_draw(p8_vm *vm)
 {
-    if (!vm) {
+    if (!vm || vm->faulted) {
         return 0;
     }
     if (vm->active_thread || vm->suppress_draw_once) {
@@ -1009,7 +1122,7 @@ int p8_vm_draw(p8_vm *vm)
         return 1;
     }
     p8_core_begin_draw_stream(vm->core);
-    return p8_vm_call(vm, "_draw");
+    return vm->start_resumable_call("_draw");
 }
 
 int p8_vm_call_pending(const p8_vm *vm)

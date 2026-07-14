@@ -200,5 +200,25 @@ try {
   kernel._free(errorSourcePointer);
 }
 
+const policyRuntime = kernel._aico8_create();
+assert.notEqual(policyRuntime, 0);
+const policySource = new TextEncoder().encode(
+  "function _init() extcmd('rec') end\nfunction _update() missing_update_api() end\nfunction _draw() printh('must not draw') end\n",
+);
+const policySourcePointer = copyToHeap(policySource);
+const policyRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(policyRuntime, policyRomPointer, 0x8000, policySourcePointer, policySource.length), 1);
+  assert.equal(kernel._aico8_start(policyRuntime), 1);
+  assert.match(kernel.UTF8ToString(kernel._aico8_diagnostic_output(policyRuntime)), /recording is unavailable/);
+  assert.equal(kernel._aico8_tick60(policyRuntime, 0), -1, "an update error must survive the draw boundary");
+  assert.match(kernel.UTF8ToString(kernel._aico8_last_error(policyRuntime)), /missing_update_api/);
+  assert.doesNotMatch(kernel.UTF8ToString(kernel._aico8_diagnostic_output(policyRuntime)), /must not draw/);
+} finally {
+  kernel._aico8_destroy(policyRuntime);
+  kernel._free(policyRomPointer);
+  kernel._free(policySourcePointer);
+}
+
 const digest = createHash("sha256").update(Buffer.from(wasmCheckpoint, "hex")).digest("hex").slice(0, 12);
 process.stdout.write(`p8 Wasm identity: ok (${wasmCheckpoint.length / 2} bytes, sha256 ${digest})\n`);
