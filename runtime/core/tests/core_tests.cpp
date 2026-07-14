@@ -41,6 +41,16 @@ void test_rom_reset_and_memory_alias()
 
     p8_core_poke(core, 0x1000, 0xab);
     assert(p8_core_debug_peek_physical(core, 0x1000) == 0xab);
+    p8_core_poke(core, 0x2000, 0xaa);
+    p8_core_clear_dirty(core);
+    assert(p8_core_reload(core, 0x2000, 0x1000, 2));
+    assert(p8_core_peek(core, 0x2000) == 0x34);
+    assert(p8_core_peek(core, 0x2001) == 0x00);
+    assert(p8_core_is_dirty(core, 0x2000, 2));
+    p8_core_poke(core, 0x2000, 0xbb);
+    assert(!p8_core_reload(core, 0x2000, 0x42ff, 2));
+    assert(p8_core_peek(core, 0x2000) == 0xbb);
+    assert(p8_core_reload(core, 0x2000, 0x4300, 0));
     p8_core_reset(core);
     assert(p8_core_peek(core, 0x1000) == 0x34);
     p8_core_destroy(core);

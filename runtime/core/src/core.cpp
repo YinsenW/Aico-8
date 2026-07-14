@@ -244,6 +244,24 @@ void p8_core_memcpy(p8_core *core, uint16_t destination, uint16_t source, size_t
     }
 }
 
+int p8_core_reload(p8_core *core, uint16_t destination, uint16_t source, size_t length)
+{
+    if (!core) {
+        return 0;
+    }
+    if (length == 0) {
+        return 1;
+    }
+    if (source >= P8_CART_DATA_SIZE
+        || length > static_cast<size_t>(P8_CART_DATA_SIZE - source)) {
+        return 0;
+    }
+    for (size_t offset = 0; offset < length; ++offset) {
+        p8_core_poke(core, add_wrapped(destination, offset), core->rom[source + offset]);
+    }
+    return 1;
+}
+
 uint8_t p8_core_mget(const p8_core *core, int x, int y)
 {
     uint16_t address = 0;

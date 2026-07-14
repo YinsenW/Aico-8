@@ -2,7 +2,7 @@
 
 - Status: maintained implementation reference; edge-raster details require official probes
 - Primary source: PICO-8 User Manual v0.2.7
-- Last reviewed: 2026-07-13
+- Last reviewed: 2026-07-15
 
 ## Why the compatibility image stays 128x128
 
@@ -42,6 +42,9 @@ frames require complete modern coverage rather than mixed indexed fragments.
   the low nibble.
 - `0x5f54` remaps GFX and `0x5f55` remaps the screen below memory/graphics APIs.
 - The second half of the sprite sheet and lower half of the 128x64 map share memory.
+- `reload(dest,source,len)` copies the immutable current-cart ROM data region
+  `0x0000..0x42ff` into base RAM; the code section at `0x4300` and above is
+  protected.
 - `map()` treats cell value `0` as empty and skips it even when sprite `0` has
   visible pixels; layer filtering applies only to non-zero cells.
 
@@ -56,6 +59,11 @@ so low-level screen and GFX remapping remains authoritative.
 API calls. Semantic draw commands always contain the resolved raw colour even
 when the cart omitted the optional argument, so native rasterization and the HD
 presentation bridge consume the same deterministic value.
+
+`runtime/core/src/core.cpp` owns current-cart ROM reload so native and Wasm VM
+calls share one copy path, dirty tracking, remapping behavior, and protected-code
+range check. External-cart filenames are deliberately rejected until a host
+resource contract can provide a declared cartridge rather than an implicit file.
 
 The same source targets native, WebAssembly, and ESP-IDF builds. A TypeScript
 host consumes the indexed frame; it does not duplicate compatibility raster rules.

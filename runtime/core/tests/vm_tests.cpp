@@ -152,6 +152,9 @@ std::vector<uint8_t> test_synthetic_cart_updates_raster_and_semantic_stream()
     assert(actor_rock == 1);
     assert(p8_vm_get_table_entry_boolean(vm, "actors", 2, "rock", &actor_rock));
     assert(actor_rock == 0);
+    int32_t restored = 0;
+    assert(p8_vm_get_global_raw(vm, "restored", &restored));
+    assert(restored == 1 << 16);
     assert(p8_core_peek(core, 0x3001) == 4);
     p8_core_set_buttons(core, 0, 1u << 1);
     assert(p8_core_host_tick60(core, 1) == 1);
@@ -357,6 +360,8 @@ peek_fixed=-1
 copied_a=-1
 copied_b=-1
 filled_a=-1
+reload_a=-1
+reload_b=-1
 screen_pixel=-1
 sprite_pixel=-1
 count_all=-1
@@ -378,6 +383,9 @@ function _init()
  copied_a,copied_b=peek(0x3221,2)
  memset(0x3230,7,3)
  filled_a=peek(0x3232)
+ poke(0x2000,99,98)
+ reload(0x2000,0x1000,2)
+ reload_a,reload_b=peek(0x2000,2)
  cls(3)
  camera(2,1)
  pset(22,21,9)
@@ -407,6 +415,8 @@ function _init()
  sspr(16,16,2,1,64,60,4,2,true)
  palt(0xc000)
 end
+function denied_reload_code() reload(0,0x42ff,2) end
+function denied_reload_external() reload(0,0,1,"other.p8") end
 function _update()
  clock=time()
  alias_clock=t()
@@ -414,6 +424,8 @@ end
 function denied_file_output() printh("unsafe","log.txt") end
 )p8lua";
     std::array<uint8_t, P8_ROM_SIZE> rom{};
+    rom[0x1000] = 21;
+    rom[0x1001] = 22;
     p8_core *core = p8_core_create();
     assert(p8_core_load_rom(core, rom.data(), rom.size()));
     p8_vm *vm = p8_vm_create(core);
@@ -439,6 +451,8 @@ function denied_file_output() printh("unsafe","log.txt") end
     assert(p8_vm_get_global_raw(vm, "copied_a", &value) && value == 1 << 16);
     assert(p8_vm_get_global_raw(vm, "copied_b", &value) && value == 2 << 16);
     assert(p8_vm_get_global_raw(vm, "filled_a", &value) && value == 7 << 16);
+    assert(p8_vm_get_global_raw(vm, "reload_a", &value) && value == 21 << 16);
+    assert(p8_vm_get_global_raw(vm, "reload_b", &value) && value == 22 << 16);
     assert(p8_vm_get_global_raw(vm, "screen_pixel", &value) && value == 8 << 16);
     assert(p8_vm_get_global_raw(vm, "sprite_pixel", &value) && value == 15 << 16);
     assert(p8_vm_get_global_raw(vm, "count_all", &value) && value == 3 << 16);
@@ -469,6 +483,10 @@ function denied_file_output() printh("unsafe","log.txt") end
     assert(p8_vm_get_global_raw(vm, "clock", &value) && value == one_thirtieth);
     assert(p8_vm_get_global_raw(vm, "alias_clock", &value) && value == one_thirtieth);
 
+    assert(!p8_vm_call(vm, "denied_reload_code"));
+    assert(std::string(p8_vm_last_error(vm)).find("protected cart code") != std::string::npos);
+    assert(!p8_vm_call(vm, "denied_reload_external"));
+    assert(std::string(p8_vm_last_error(vm)).find("external cartridge") != std::string::npos);
     assert(!p8_vm_call(vm, "denied_file_output"));
     assert(std::strstr(p8_vm_last_error(vm), "file output is disabled") != nullptr);
     p8_vm_destroy(vm);

@@ -67,6 +67,7 @@ try {
   const actorsNamePointer = copyToHeap(new TextEncoder().encode("actors\0"));
   const playerNamePointer = copyToHeap(new TextEncoder().encode("player\0"));
   const valuesNamePointer = copyToHeap(new TextEncoder().encode("values\0"));
+  const restoredNamePointer = copyToHeap(new TextEncoder().encode("restored\0"));
   const xFieldPointer = copyToHeap(new TextEncoder().encode("x\0"));
   const activeFieldPointer = copyToHeap(new TextEncoder().encode("active\0"));
   const rockFieldPointer = copyToHeap(new TextEncoder().encode("rock\0"));
@@ -86,6 +87,8 @@ try {
     assert.equal(kernel._aico8_get_table_value_raw(runtime, valuesNamePointer, 2, valuePointer), 1);
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 9 << 16);
     assert.equal(kernel._aico8_get_table_value_raw(runtime, valuesNamePointer, 3, valuePointer), 0);
+    assert.equal(kernel._aico8_get_global_raw(runtime, restoredNamePointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 1 << 16);
     assert.equal(kernel._aico8_get_table_field_raw(runtime, playerNamePointer, xFieldPointer, valuePointer), 1);
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 11 << 16);
     assert.equal(kernel._aico8_get_table_field_raw(runtime, playerNamePointer, activeFieldPointer, valuePointer), 0);
@@ -121,6 +124,7 @@ try {
     kernel._free(playerNamePointer);
     kernel._free(actorsNamePointer);
     kernel._free(valuesNamePointer);
+    kernel._free(restoredNamePointer);
     kernel._free(modeNamePointer);
     kernel._free(readyNamePointer);
     kernel._free(xNamePointer);

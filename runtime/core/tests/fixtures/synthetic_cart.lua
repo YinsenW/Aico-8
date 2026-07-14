@@ -11,6 +11,9 @@ function _init()
  player={x=11,active=true}
  values={4,9}
  menu_buttons=-1
+ poke(0x2000,2)
+ reload(0x2000,0x2000,1)
+ restored=peek(0x2000)
  menuitem(0x301,"fixture action",function(buttons)
   menu_buttons=buttons
   menuitem(nil,"stay open",function() return false end)

@@ -58,7 +58,7 @@ Output: a compatibility report, semantic model, replay suite, and remake risk ma
 ### 3. Portable compatibility core
 
 - C++17 implementation exposed through a small C ABI.
-- 64 KiB RAM, 32 KiB ROM, aliases, remapping, dirty tracking, and P8 Lua VM.
+- 64 KiB RAM/32 KiB ROM, aliases, remapping, dirty tracking, current-cart ROM-to-RAM `reload()`, and P8 Lua VM.
 - Fixed 30/60 Hz simulation, original input repeat, persistence, and host contracts.
 - Reference 128×128 indexed rasterizer and four-channel PICO audio synth.
 - No DOM/browser API, platform UI, store SDK, asset-generation policy, or

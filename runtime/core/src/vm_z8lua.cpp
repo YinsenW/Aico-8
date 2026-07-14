@@ -501,6 +501,25 @@ int api_memset(lua_State *state)
     return 0;
 }
 
+int api_reload(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    if (!lua_isnoneornil(state, 4)) {
+        return luaL_error(state,
+                          "reload from an external cartridge is unavailable in this host");
+    }
+    const int length = integer(state, 3);
+    if (length <= 0) {
+        return 0;
+    }
+    if (!p8_core_reload(vm->core, static_cast<uint16_t>(integer(state, 1)),
+                        static_cast<uint16_t>(integer(state, 2)),
+                        static_cast<size_t>(length))) {
+        return luaL_error(state, "reload source range overlaps protected cart code");
+    }
+    return 0;
+}
+
 int api_mget(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
@@ -1203,6 +1222,7 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("poke4", api_poke4);
     vm->install("memcpy", api_memcpy);
     vm->install("memset", api_memset);
+    vm->install("reload", api_reload);
     vm->install("mget", api_mget);
     vm->install("mset", api_mset);
     vm->install("fget", api_fget);

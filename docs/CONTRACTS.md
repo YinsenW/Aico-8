@@ -8,7 +8,7 @@ evidence, selectors, and open work live only in `governance/project.json`.
 
 | ID | Owner | Responsibility | Consumers |
 | --- | --- | --- | --- |
-| API-CORE-001 | `runtime/core/include/p8/core.h` | Core lifecycle, RAM/ROM, input, scheduler, semantic stream | VM, native/Wasm hosts, tests |
+| API-CORE-001 | `runtime/core/include/p8/core.h` | Core lifecycle, RAM/ROM including protected-range current-cart reload, input, scheduler, semantic stream | VM, native/Wasm hosts, tests |
 | API-RASTER-001 | `runtime/core/include/p8/raster.h` | Authoritative indexed pixels and PICO draw semantics | VM, compatibility renderer, checkpoints |
 | API-VM-001 | `runtime/core/include/p8/vm.h` | P8 Lua load, boot, update, draw, pause-menu callbacks, error, and inspection | Hosts and replay harnesses |
 | API-AUDIO-001 | `runtime/core/include/p8/audio.h` | Four-channel scheduling, cart-memory synthesis, status, and deterministic mono PCM | VM, native/Wasm hosts, audio checkpoints |
@@ -78,6 +78,10 @@ only its linked exits determine acceptance.
 - `specs/display-profiles.json` owns `128 → 1024`, scale `8`, and tile `64` values.
 - The kernel is the only owner of fixed-point, memory, scheduler, raster, input
   repeat, persistence, and reference audio semantics.
+- Current-cart `reload(dest,source,len)` copies immutable cart data only from
+  `0x0000..0x42ff` into base RAM. The protected code range is rejected, and an
+  optional external-cart filename fails closed until a declared host resource
+  contract supplies that cartridge; neither case may silently become a no-op.
 - Host pause-menu requests remain outside the six-button gameplay mask. The Web
   host presents built-in actions plus the kernel's source-registered `menuitem`
   labels, invokes their filtered callbacks through the same VM, honors keep-open

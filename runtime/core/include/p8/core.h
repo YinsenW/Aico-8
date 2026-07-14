@@ -79,6 +79,8 @@ void p8_core_poke16(p8_core *core, uint16_t address, uint16_t value);
 void p8_core_poke32(p8_core *core, uint16_t address, uint32_t value);
 void p8_core_memset(p8_core *core, uint16_t destination, uint8_t value, size_t length);
 void p8_core_memcpy(p8_core *core, uint16_t destination, uint16_t source, size_t length);
+/* Copies from the immutable current-cart ROM into base RAM. */
+int p8_core_reload(p8_core *core, uint16_t destination, uint16_t source, size_t length);
 
 uint8_t p8_core_mget(const p8_core *core, int x, int y);
 int p8_core_mset(p8_core *core, int x, int y, uint8_t value);
