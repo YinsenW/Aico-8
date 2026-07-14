@@ -3,6 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { assertCanonicalGameplayAttestation } from './lib/canonical-gameplay-attestation.mjs'
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const failures = []
 
@@ -69,6 +71,17 @@ requireCondition(license.includes('Apache License') && license.includes('Version
   'LICENSE is not Apache-2.0 text')
 requireCondition(packageManifest.license === 'Apache-2.0', 'package.json license is not Apache-2.0')
 requireCondition(thirdPartyNotice.length > 0, 'third-party notice is missing or empty')
+
+const evidenceDirectory = path.join(root, 'governance/evidence')
+for (const name of fs.readdirSync(evidenceDirectory)
+  .filter((entry) => entry.endsWith('-canonical-gameplay.json')).sort()) {
+  try {
+    const attestation = JSON.parse(fs.readFileSync(path.join(evidenceDirectory, name), 'utf8'))
+    assertCanonicalGameplayAttestation(attestation)
+  } catch (error) {
+    failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
 
 if (process.env.GITHUB_ACTIONS === 'true') {
   const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'))
