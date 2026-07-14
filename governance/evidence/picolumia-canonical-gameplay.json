@@ -5,7 +5,7 @@
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "runtime": {
     "id": "aico8-core-wasm",
-    "revision": "e49072e8c56f3212c7009fa9bb794bedbd52bb8ef2ee084c36152603d162a22c"
+    "revision": "e7652beb3c72e415cb132f5dab0b4d0db7a7f18cf8c1a2821270ec298eb4f3d9"
   },
   "observations": {
     "boundary_kind": "clear-threshold",
@@ -19,7 +19,8 @@
     "ending_reached": true,
     "progression_complete": true,
     "host_input_surfaces": 3,
-    "host_input_mask_mismatches": 0
+    "host_input_mask_mismatches": 0,
+    "audio_diagnostic_flags": 0
   },
   "canonicality": {
     "mode": "canonical-real-input",
@@ -31,10 +32,10 @@
     "wallClockAcceleration": true
   },
   "private_artifact_sha256": {
-    "replay_v1": "2e2e1935b613c2d9c9377fdb8154cb6a42a3bc2003a90b60659b2a49230ae95b",
-    "differential": "fd76c064f58cdb295238e77d13f0e5680b1ff8d761b14a5795b8f062ddcff93b",
+    "replay_v1": "2795c5807312631b8346278420a37c1a9e0699e7066ad3248bbfb3ca44b38300",
+    "differential": "c98eb2350fabe69135e67174543d4fb879d16d93d6da12cfc01500b5028f6883",
     "input_projection": "8fe2e2f8e47239bb886283b4f60f93fed3e76b69c46ebb33f2863b0768353c0c",
-    "input_trace_provenance": "827f63d09bf9c06b7792e8e29cd94333586ad8dda31c9f886e3fb275bb90ab9d"
+    "input_trace_provenance": "b06d388a0afcd2f4127e09440591d3633d9505a06c8f62eeee37587841925987"
   },
   "limitations": [
     "Licensed official PICO-8 runtime capture is not present in this workspace and remains an independent compatibility oracle.",
