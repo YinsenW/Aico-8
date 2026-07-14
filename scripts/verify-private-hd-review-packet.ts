@@ -5,6 +5,7 @@ import path from "node:path";
 
 import {
   HD_REVIEW_CHECK_NAMES,
+  HD_REVIEW_PRINCIPLE_GATES,
   validateHdReviewPacket,
 } from "../packages/contracts/src/hd-review-packet.ts";
 import { validateHdReviewDecision } from "../packages/contracts/src/hd-review-decision.ts";
@@ -41,6 +42,7 @@ assert.equal(packet.replaySemanticsSha256, browser.validationReplay.semanticsSha
 assert.equal(packet.identityMapSha256, sha256(identityMapPath));
 assert.equal(packet.browserEvidenceSha256, sha256(browserEvidencePath));
 assert.equal(packet.status, identityMap.status === "accepted" ? "accepted" : "pending-human-side-by-side-review");
+assert.deepEqual(packet.principleGates.map(({ id }: any) => id), HD_REVIEW_PRINCIPLE_GATES.map(({ id }) => id));
 assert.deepEqual(packet.sceneComparisons, browser.sceneComparisons);
 assert.deepEqual(packet.temporalComparisons, browser.temporalComparisons);
 
@@ -52,10 +54,9 @@ for (const element of packet.elements) {
   assert.deepEqual(element.sourceScreenshotIds, source.review.sourceSceneIds);
   assert.deepEqual(element.targetScreenshotIds, source.review.targetSceneIds);
   assert.equal(element.review.reviewer, source.review.reviewer);
-  for (const name of [
-    "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "expressionPassed",
-    "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed", "visualGrammarPassed",
-  ]) assert.equal(element.review[name], source.review[name], `${element.id}: ${name}`);
+  for (const name of HD_REVIEW_CHECK_NAMES) {
+    assert.equal(element.review[name], source.review[name], `${element.id}: ${name}`);
+  }
 }
 
 const browserScreenshots = new Map(browser.screenshots.map((screenshot: any) => [screenshot.id, screenshot]));
@@ -102,5 +103,6 @@ if (packet.status === "accepted") {
 
 process.stdout.write(
   `HD review packet verified: ${packet.elements.length} elements, ${packet.sceneComparisons.length} static pairs, `
-  + `${packet.temporalComparisons.length} temporal sequences, ${packet.screenshots.length} hash-bound screenshots; ${packet.status}\n`,
+  + `${packet.temporalComparisons.length} temporal sequences, ${packet.principleGates.length} ordered principle gates, `
+  + `${packet.screenshots.length} hash-bound screenshots; ${packet.status}\n`,
 );

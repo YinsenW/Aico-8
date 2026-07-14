@@ -13,6 +13,39 @@ export const HD_REVIEW_CHECK_NAMES = [
   "visualGrammarPassed",
 ] as const;
 
+export const HD_REVIEW_PRINCIPLE_GATES = [
+  {
+    id: "spirit-fidelity",
+    order: 1,
+    label: "神似还原 / Spirit fidelity",
+    dimensions: [
+      "source-relative identity and recognizable character",
+      "scene atmosphere and emotional tone",
+      "motion, gameplay cues, and play feel",
+    ],
+  },
+  {
+    id: "quality-leap",
+    order: 2,
+    label: "画质跃升 / Quality leap",
+    dimensions: [
+      "resolution and density-aware sampling",
+      "continuous contours and readable internal detail",
+      "materials, animation, and effects beyond enlarged pixels",
+    ],
+  },
+  {
+    id: "aesthetic-evolution",
+    order: 3,
+    label: "审美进化 / Aesthetic evolution",
+    dimensions: [
+      "coherent modern color and lighting",
+      "composition, hierarchy, and finish",
+      "one visual grammar without source-identity redesign",
+    ],
+  },
+] as const;
+
 export interface HdReviewPacketValidationResult {
   readonly valid: boolean;
   readonly errors: readonly string[];
@@ -112,6 +145,27 @@ function safeRelativePath(value: unknown, path: string, errors: string[]): value
   return true;
 }
 
+function validatePrincipleGates(value: unknown, status: unknown, errors: string[]): void {
+  if (!Array.isArray(value) || value.length !== HD_REVIEW_PRINCIPLE_GATES.length) {
+    errors.push(`$.principleGates must contain exactly ${HD_REVIEW_PRINCIPLE_GATES.length} ordered gates`);
+    return;
+  }
+  const expectedVerdict = status === "accepted" ? "passed" : "pending";
+  HD_REVIEW_PRINCIPLE_GATES.forEach((expected, index) => {
+    const path = `$.principleGates[${index}]`;
+    const gate = record(value[index], path, errors);
+    if (!gate) return;
+    exactKeys(gate, ["id", "order", "label", "dimensions", "verdict"], path, errors);
+    if (gate.id !== expected.id || gate.order !== expected.order || gate.label !== expected.label
+      || JSON.stringify(gate.dimensions) !== JSON.stringify(expected.dimensions)) {
+      errors.push(`${path} must match ${expected.id} in the governed contract order`);
+    }
+    if (gate.verdict !== expectedVerdict) {
+      errors.push(`${path}.verdict must equal ${expectedVerdict} while packet status is ${String(status)}`);
+    }
+  });
+}
+
 function validateReview(
   value: unknown,
   path: string,
@@ -158,7 +212,7 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
   exactKeys(root, [
     "schemaVersion", "gameId", "visualRuntimeSha256", "replaySemanticsSha256",
     "identityMapSha256", "browserEvidenceSha256", "status", "reviewer",
-    "acceptanceStatement", "reviewDecision", "elements", "sceneComparisons",
+    "acceptanceStatement", "principleGates", "reviewDecision", "elements", "sceneComparisons",
     "temporalComparisons", "screenshots", "document",
   ], "$", errors);
   if (root.schemaVersion !== HD_REVIEW_PACKET_SCHEMA_VERSION) {
@@ -176,6 +230,7 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
   }
   const reviewer = stringValue(root.reviewer, "$.reviewer", errors) ? root.reviewer as string : undefined;
   stringValue(root.acceptanceStatement, "$.acceptanceStatement", errors);
+  validatePrincipleGates(root.principleGates, status, errors);
   if (status === "pending-human-side-by-side-review" && reviewer !== PENDING_HD_REVIEWER) {
     errors.push(`$.reviewer must equal ${PENDING_HD_REVIEWER} while review is pending`);
   }

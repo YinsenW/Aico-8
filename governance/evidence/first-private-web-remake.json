@@ -96,10 +96,10 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "f94df5edae7f6d55f7fe8256ea452bd464889951a8a86e1f182e22d66ce34f91",
+    "hd_presentation_audit_sha256": "c7c68c4b4c113b2260cd2c61eb4dcd192403cbffb43cd7957c94e9c45eb9dbcd",
     "browser_validation_sha256": "9ec9672ab32e4b6413233f28261ade52bdbf2747df343b62310a9a5838a97840",
-    "hd_review_packet_sha256": "608516cad489781948c25e42b2c19279648b4bece1557579e9e969db80017991",
-    "hd_review_document_sha256": "f460614d702357e4366d0299fa83523c8cfd826e9fa1cc722133069bd074991e",
+    "hd_review_packet_sha256": "419b512ca9497be10316359c054c5e105733f5079a2be02f48f52c88e031bfec",
+    "hd_review_document_sha256": "74ba89ea71e992015270d7eaefdb6355473cfa0488a2cb114f3ca2a275652590",
     "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }

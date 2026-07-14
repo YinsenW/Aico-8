@@ -4,6 +4,7 @@ import {
 } from "./hd-identity-map.ts";
 import {
   HD_REVIEW_CHECK_NAMES,
+  HD_REVIEW_PRINCIPLE_GATES,
   PENDING_HD_REVIEWER,
   validateHdReviewPacket,
 } from "./hd-review-packet.ts";
@@ -28,6 +29,10 @@ export interface HdReviewDecisionV1 {
   };
   elementIds: string[];
   checkNames: (typeof HD_REVIEW_CHECK_NAMES)[number][];
+  principleGates: Array<{
+    id: (typeof HD_REVIEW_PRINCIPLE_GATES)[number]["id"];
+    verdict: "passed";
+  }>;
 }
 
 export interface HdReviewDecisionValidationResult {
@@ -121,6 +126,24 @@ function checkNameList(value: unknown, path: string, errors: string[]): string[]
   return names;
 }
 
+function principleGateList(value: unknown, path: string, errors: string[]): string[] {
+  if (!Array.isArray(value) || value.length !== HD_REVIEW_PRINCIPLE_GATES.length) {
+    errors.push(`${path} must contain every principle gate exactly once in contract order`);
+    return [];
+  }
+  const ids: string[] = [];
+  HD_REVIEW_PRINCIPLE_GATES.forEach((expected, index) => {
+    const itemPath = `${path}[${index}]`;
+    const gate = record(value[index], itemPath, errors);
+    if (!gate) return;
+    exactKeys(gate, ["id", "verdict"], itemPath, errors);
+    if (gate.id !== expected.id) errors.push(`${itemPath}.id must equal ${expected.id}`);
+    if (gate.verdict !== "passed") errors.push(`${itemPath}.verdict must equal passed`);
+    if (typeof gate.id === "string") ids.push(gate.id);
+  });
+  return ids;
+}
+
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -134,7 +157,7 @@ export function validateHdReviewDecision(
   if (!root) return { valid: false, errors };
   exactKeys(root, [
     "schemaVersion", "gameId", "decision", "reviewer", "acceptanceStatement",
-    "reviewedPacket", "elementIds", "checkNames",
+    "reviewedPacket", "elementIds", "checkNames", "principleGates",
   ], "$", errors);
   if (root.schemaVersion !== HD_REVIEW_DECISION_SCHEMA_VERSION) {
     errors.push(`$.schemaVersion must equal ${HD_REVIEW_DECISION_SCHEMA_VERSION}`);
@@ -147,6 +170,7 @@ export function validateHdReviewDecision(
     ? root.acceptanceStatement as string : undefined;
   const elementIds = idList(root.elementIds, "$.elementIds", errors);
   checkNameList(root.checkNames, "$.checkNames", errors);
+  const principleGateIds = principleGateList(root.principleGates, "$.principleGates", errors);
 
   const lineage = record(root.reviewedPacket, "$.reviewedPacket", errors);
   if (lineage) {
@@ -180,6 +204,10 @@ export function validateHdReviewDecision(
       if (gameId && packet.gameId !== gameId) errors.push("reviewed packet game must match the decision");
       if (acceptanceStatement && packet.acceptanceStatement !== acceptanceStatement) {
         errors.push("reviewed packet acceptance statement must match the decision");
+      }
+      const packetPrincipleGateIds = (packet.principleGates as JsonRecord[]).map((gate) => gate.id as string);
+      if (!sameStrings(principleGateIds, packetPrincipleGateIds)) {
+        errors.push("reviewed packet principle gates must match the decision in contract order");
       }
       const packetElements = packet.elements as JsonRecord[];
       const packetElementIds = packetElements.map((element) => element.id as string);

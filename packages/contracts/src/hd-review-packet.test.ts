@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
   HD_REVIEW_PACKET_SCHEMA_VERSION,
+  HD_REVIEW_PRINCIPLE_GATES,
   validateHdReviewPacket,
 } from "./hd-review-packet.js";
 
@@ -29,6 +32,7 @@ const packet = {
   status: "pending-human-side-by-side-review",
   reviewer: "pending-human-side-by-side-review",
   acceptanceStatement: "I reviewed every declared source-relative element in this build.",
+  principleGates: HD_REVIEW_PRINCIPLE_GATES.map((gate) => ({ ...gate, verdict: "pending" })),
   reviewDecision: null,
   elements: [{
     id: "character.test",
@@ -97,6 +101,10 @@ const packet = {
   document: { path: "evidence/identity-review-packet.html", sha256: hash },
 };
 
+function markPrincipleGatesPassed(value: any): void {
+  value.principleGates.forEach((gate: any) => { gate.verdict = "passed"; });
+}
+
 describe("HD identity review packet", () => {
   it("accepts a hash-bound pending source/HD review packet", () => {
     expect(validateHdReviewPacket(packet)).toEqual({ valid: true, errors: [] });
@@ -116,6 +124,7 @@ describe("HD identity review packet", () => {
     mutated.status = "accepted";
     mutated.reviewer = "product-owner";
     mutated.reviewDecision = { path: "evidence/identity-review-decision.json", sha256: hash };
+    markPrincipleGatesPassed(mutated);
     mutated.elements[0]!.review.reviewer = "product-owner";
     const result = validateHdReviewPacket(mutated);
     expect(result.valid).toBe(false);
@@ -127,6 +136,7 @@ describe("HD identity review packet", () => {
     mutated.status = "accepted";
     mutated.reviewer = "product-owner";
     mutated.reviewDecision = { path: "evidence/identity-review-decision.json", sha256: hash };
+    markPrincipleGatesPassed(mutated);
     mutated.elements[0]!.review.reviewer = "product-owner";
     for (const name of [
       "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
@@ -139,6 +149,7 @@ describe("HD identity review packet", () => {
     const mutated = structuredClone(packet);
     mutated.status = "accepted";
     mutated.reviewer = "product-owner";
+    markPrincipleGatesPassed(mutated);
     mutated.elements[0]!.review.reviewer = "product-owner";
     for (const name of [
       "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
@@ -178,5 +189,38 @@ describe("HD identity review packet", () => {
     const result = validateHdReviewPacket(mutated);
     expect(result.valid).toBe(false);
     expect(result.errors.join("\n")).toMatch(/review anchor pair 0.*same state boundary and scene/);
+  });
+
+  it("rejects skipped, reordered, or prematurely passed principle gates", () => {
+    const skipped: any = structuredClone(packet);
+    skipped.principleGates.splice(1, 1);
+    expect(validateHdReviewPacket(skipped).errors.join("\n")).toMatch(/exactly 3 ordered gates/);
+
+    const reordered: any = structuredClone(packet);
+    reordered.principleGates.reverse();
+    expect(validateHdReviewPacket(reordered).errors.join("\n")).toMatch(/governed contract order/);
+
+    const premature: any = structuredClone(packet);
+    premature.principleGates[2].verdict = "passed";
+    expect(validateHdReviewPacket(premature).errors.join("\n")).toMatch(/verdict must equal pending/);
+  });
+
+  it("keeps the JSON packet schema synchronized with executable principle gates", () => {
+    const schema = JSON.parse(readFileSync(
+      new URL("../../../specs/schemas/hd-review-packet-v1.schema.json", import.meta.url),
+      "utf8",
+    ));
+    const definitions = ["spiritFidelityGate", "qualityLeapGate", "aestheticEvolutionGate"];
+    const schemaGates = definitions.map((name) => {
+      const properties = schema.$defs[name].allOf[1].properties;
+      return {
+        id: properties.id.const,
+        order: properties.order.const,
+        label: properties.label.const,
+        dimensions: properties.dimensions.const,
+      };
+    });
+    expect(schema.required).toContain("principleGates");
+    expect(schemaGates).toEqual(HD_REVIEW_PRINCIPLE_GATES);
   });
 });

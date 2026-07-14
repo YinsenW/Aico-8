@@ -98,7 +98,7 @@ only its linked exits determine acceptance.
   browser record, replay semantics, visual runtime, elements, checks, and required
   statement. Acceptance promotes every review field together; a later selector
   must reproduce the reviewed draft before it can regenerate accepted evidence.
-- HD acceptance is ordered and non-compensatory: DATA-HD-MAP-001 plus replay evidence gate Spirit fidelity; HD surface/asset evidence gates Quality leap; DATA-ASSET-PACK-001 visual grammar plus the whole-frame human decision gate Aesthetic evolution. Aesthetic polish cannot offset identity, atmosphere, play-feel, or material-quality failure.
+- HD acceptance is ordered and non-compensatory: DATA-HD-MAP-001 plus replay evidence gate Spirit fidelity; HD surface/asset evidence gates Quality leap; DATA-ASSET-PACK-001 visual grammar plus the whole-frame human decision gate Aesthetic evolution. The pending packet stores all three gates in contract order, and the immutable decision must record `passed` for each; aesthetic polish cannot offset identity, atmosphere, play-feel, or material-quality failure.
 - Every element's source/HD review anchors are ordered one-to-one and every pair
   must bind the same scene and state; the review document renders every declared
   anchor, including variant parts and reachable persisted UI states.

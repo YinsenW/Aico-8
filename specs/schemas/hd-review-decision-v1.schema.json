@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schemaVersion", "gameId", "decision", "reviewer", "acceptanceStatement",
-    "reviewedPacket", "elementIds", "checkNames"
+    "reviewedPacket", "elementIds", "checkNames", "principleGates"
   ],
   "properties": {
     "schemaVersion": { "const": "aico8.hd-review-decision.v1" },
@@ -46,8 +46,15 @@
     "checkNames": {
       "const": [
         "silhouettePassed", "requiredPartsPassed", "proportionsPassed",
-        "expressionPassed", "colorHierarchyPassed", "motionPassed",
+        "contoursPassed", "expressionPassed", "colorHierarchyPassed", "motionPassed",
         "gameplayCuesPassed", "visualGrammarPassed"
+      ]
+    },
+    "principleGates": {
+      "const": [
+        { "id": "spirit-fidelity", "verdict": "passed" },
+        { "id": "quality-leap", "verdict": "passed" },
+        { "id": "aesthetic-evolution", "verdict": "passed" }
       ]
     }
   },

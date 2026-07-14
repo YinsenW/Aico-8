@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   HD_REVIEW_CHECK_NAMES,
+  HD_REVIEW_PRINCIPLE_GATES,
   PENDING_HD_REVIEWER,
   validateHdReviewPacket,
 } from "../packages/contracts/src/hd-review-packet.ts";
@@ -100,6 +101,7 @@ const decision = {
   },
   elementIds: packet.elements.map(({ id }: { id: string }) => id),
   checkNames: [...HD_REVIEW_CHECK_NAMES],
+  principleGates: HD_REVIEW_PRINCIPLE_GATES.map(({ id }) => ({ id, verdict: "passed" })),
 };
 const decisionValidation = validateHdReviewDecision(decision, packet);
 assert.equal(decisionValidation.valid, true, decisionValidation.errors.join("\n"));

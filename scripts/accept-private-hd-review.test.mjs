@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const acceptScript = path.join(repository, "scripts/accept-private-hd-review.ts");
 const reviewPacketBuilder = path.join(repository, "scripts/build-private-hd-review-packet.mjs");
-const statement = "我已逐项审查 Dust Bunny 当前构建的 20 个源相对元素，同意所有身份、完整性、动画与视觉语法检查。";
+const statement = "我已按顺序完成 Dust Bunny 当前构建的三重审查：神似还原、画质跃升、审美进化；确认前一项通过后才审查后一项，并同意全部 20 个源相对元素的身份、完整性、动画与视觉语法检查。";
 const pendingReviewer = "pending-human-side-by-side-review";
 const checkNames = [
   "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed", "expressionPassed",
@@ -161,6 +161,11 @@ test("acceptance archives exact evidence and is idempotent", () => {
     assert.equal(decision.decision, "accepted");
     assert.equal(decision.reviewer, "product-owner");
     assert.equal(decision.acceptanceStatement, statement);
+    assert.deepEqual(decision.principleGates, [
+      { id: "spirit-fidelity", verdict: "passed" },
+      { id: "quality-leap", verdict: "passed" },
+      { id: "aesthetic-evolution", verdict: "passed" },
+    ]);
     assert.equal(sha256(fs.readFileSync(path.join(workspace, decision.reviewedPacket.path))),
       decision.reviewedPacket.sha256);
     assert.equal(sha256(fs.readFileSync(path.join(workspace, decision.reviewedPacket.documentPath))),

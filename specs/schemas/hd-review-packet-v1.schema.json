@@ -7,7 +7,7 @@
   "required": [
     "schemaVersion", "gameId", "visualRuntimeSha256", "replaySemanticsSha256",
     "identityMapSha256", "browserEvidenceSha256", "status", "reviewer",
-    "acceptanceStatement", "reviewDecision", "elements", "sceneComparisons",
+    "acceptanceStatement", "principleGates", "reviewDecision", "elements", "sceneComparisons",
     "temporalComparisons", "screenshots", "document"
   ],
   "properties": {
@@ -20,6 +20,16 @@
     "status": { "enum": ["pending-human-side-by-side-review", "accepted"] },
     "reviewer": { "$ref": "#/$defs/nonEmptyString" },
     "acceptanceStatement": { "$ref": "#/$defs/nonEmptyString" },
+    "principleGates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "$ref": "#/$defs/spiritFidelityGate" },
+        { "$ref": "#/$defs/qualityLeapGate" },
+        { "$ref": "#/$defs/aestheticEvolutionGate" }
+      ]
+    },
     "reviewDecision": {
       "oneOf": [
         { "type": "null" },
@@ -59,11 +69,29 @@
   "allOf": [
     {
       "if": { "properties": { "status": { "const": "pending-human-side-by-side-review" } } },
-      "then": { "properties": { "reviewDecision": { "type": "null" } } }
+      "then": {
+        "properties": {
+          "reviewDecision": { "type": "null" },
+          "principleGates": {
+            "contains": { "type": "object", "required": ["verdict"], "properties": { "verdict": { "const": "pending" } } },
+            "minContains": 3,
+            "maxContains": 3
+          }
+        }
+      }
     },
     {
       "if": { "properties": { "status": { "const": "accepted" } } },
-      "then": { "properties": { "reviewDecision": { "$ref": "#/$defs/reviewDecisionRef" } } }
+      "then": {
+        "properties": {
+          "reviewDecision": { "$ref": "#/$defs/reviewDecisionRef" },
+          "principleGates": {
+            "contains": { "type": "object", "required": ["verdict"], "properties": { "verdict": { "const": "passed" } } },
+            "minContains": 3,
+            "maxContains": 3
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -74,6 +102,36 @@
       "type": "string",
       "minLength": 1,
       "pattern": "^(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\/$).+$"
+    },
+    "principleGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "order", "label", "dimensions", "verdict"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "order": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "dimensions": { "$ref": "#/$defs/stringList" },
+        "verdict": { "enum": ["pending", "passed"] }
+      }
+    },
+    "spiritFidelityGate": {
+      "allOf": [
+        { "$ref": "#/$defs/principleGate" },
+        { "properties": { "id": { "const": "spirit-fidelity" }, "order": { "const": 1 }, "label": { "const": "神似还原 / Spirit fidelity" }, "dimensions": { "const": ["source-relative identity and recognizable character", "scene atmosphere and emotional tone", "motion, gameplay cues, and play feel"] } } }
+      ]
+    },
+    "qualityLeapGate": {
+      "allOf": [
+        { "$ref": "#/$defs/principleGate" },
+        { "properties": { "id": { "const": "quality-leap" }, "order": { "const": 2 }, "label": { "const": "画质跃升 / Quality leap" }, "dimensions": { "const": ["resolution and density-aware sampling", "continuous contours and readable internal detail", "materials, animation, and effects beyond enlarged pixels"] } } }
+      ]
+    },
+    "aestheticEvolutionGate": {
+      "allOf": [
+        { "$ref": "#/$defs/principleGate" },
+        { "properties": { "id": { "const": "aesthetic-evolution" }, "order": { "const": 3 }, "label": { "const": "审美进化 / Aesthetic evolution" }, "dimensions": { "const": ["coherent modern color and lighting", "composition, hierarchy, and finish", "one visual grammar without source-identity redesign"] } } }
+      ]
     },
     "reviewDecisionRef": {
       "type": "object",

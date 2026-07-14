@@ -1,6 +1,12 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
-import { HD_REVIEW_CHECK_NAMES } from "./hd-review-packet.js";
+import {
+  HD_REVIEW_CHECK_NAMES,
+  HD_REVIEW_PACKET_SCHEMA_VERSION,
+  HD_REVIEW_PRINCIPLE_GATES,
+} from "./hd-review-packet.js";
 import {
   HD_REVIEW_DECISION_SCHEMA_VERSION,
   promoteHdIdentityMapFromReview,
@@ -13,7 +19,7 @@ const acceptanceStatement = "I reviewed every declared source-relative element i
 const review = Object.fromEntries(HD_REVIEW_CHECK_NAMES.map((name) => [name, false]));
 
 const reviewedPacket = {
-  schemaVersion: "aico8.hd-review-packet.v1",
+  schemaVersion: HD_REVIEW_PACKET_SCHEMA_VERSION,
   gameId: "test-game",
   visualRuntimeSha256: hash,
   replaySemanticsSha256: hash,
@@ -22,6 +28,7 @@ const reviewedPacket = {
   status: "pending-human-side-by-side-review",
   reviewer: pendingReviewer,
   acceptanceStatement,
+  principleGates: HD_REVIEW_PRINCIPLE_GATES.map((gate) => ({ ...gate, verdict: "pending" })),
   reviewDecision: null,
   elements: [{
     id: "character.test",
@@ -96,6 +103,7 @@ const decision = {
   },
   elementIds: ["character.test"],
   checkNames: [...HD_REVIEW_CHECK_NAMES],
+  principleGates: HD_REVIEW_PRINCIPLE_GATES.map(({ id }) => ({ id, verdict: "passed" })),
 };
 
 const identityMap = {
@@ -168,6 +176,32 @@ describe("HD human review decision", () => {
     const result = validateHdReviewDecision(mutatedDecision, mutatedPacket);
     expect(result.valid).toBe(false);
     expect(result.errors.join("\n")).toMatch(/every review check|must remain false/);
+  });
+
+  it("rejects a skipped, reordered, or non-passing principle gate", () => {
+    const skipped: any = structuredClone(decision);
+    skipped.principleGates.splice(1, 1);
+    expect(validateHdReviewDecision(skipped, reviewedPacket).errors.join("\n"))
+      .toMatch(/every principle gate/);
+
+    const reordered: any = structuredClone(decision);
+    reordered.principleGates.reverse();
+    expect(validateHdReviewDecision(reordered, reviewedPacket).errors.join("\n"))
+      .toMatch(/must equal spirit-fidelity|must equal aesthetic-evolution/);
+
+    const failed: any = structuredClone(decision);
+    failed.principleGates[1].verdict = "failed";
+    expect(validateHdReviewDecision(failed, reviewedPacket).errors.join("\n"))
+      .toMatch(/verdict must equal passed/);
+  });
+
+  it("keeps the JSON decision schema synchronized with executable review constants", () => {
+    const schema = JSON.parse(readFileSync(
+      new URL("../../../specs/schemas/hd-review-decision-v1.schema.json", import.meta.url),
+      "utf8",
+    ));
+    expect(schema.properties.checkNames.const).toEqual([...HD_REVIEW_CHECK_NAMES]);
+    expect(schema.properties.principleGates.const).toEqual(decision.principleGates);
   });
 
   it("promotes every review field together and preserves all non-review identity data", () => {
