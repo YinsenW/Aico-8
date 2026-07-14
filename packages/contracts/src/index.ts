@@ -35,6 +35,8 @@ export {
   type IdentityEvidence,
   type IdentityReview,
   type ModernizationDimension,
+  type CompositionCheck,
+  type NormalizedCompositionBounds,
   type ProportionCheck,
   type RequiredPartMapping,
   type VisualElementKind,

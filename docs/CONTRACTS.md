@@ -95,6 +95,15 @@ only its linked exits determine acceptance.
 - Every element's source/HD review anchors are ordered one-to-one and every pair
   must bind the same scene and state; the review document renders every declared
   anchor, including variant parts and reachable persisted UI states.
+- Source-relative identity anchors bind normalized source and target composition
+  rectangles to declared source evidence and target regions. Moving or resizing
+  an element beyond its per-check edge tolerance fails even when its internal
+  aspect ratio still passes; this prevents a faithful part from being accepted
+  inside an unfaithful re-layout.
+- Human rejection invalidates the pending review packet as an acceptance
+  candidate. Replacing its visual runtime invalidates every runtime-bound capture,
+  technical report, packet, and document; all must be regenerated from the same
+  replacement build, and review remains draft until a new explicit decision.
 - Cart-specific presentation adapters are injected from ignored private workspaces;
   the Apache source tree owns only the interface, loader, diagnostic reference
   renderer, and validators.

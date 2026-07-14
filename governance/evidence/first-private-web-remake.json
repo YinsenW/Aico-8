@@ -75,14 +75,14 @@
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 39,
-    "visual_runtime_sha256": "7c02e628d6c576f4c97b0d4caeefbb80b4066e79e590a146864eb1e155e119ac",
+    "visual_runtime_sha256": "53a5392d6a07e0ba031768238a3e3a97d9ba9faaa3e43c6ee77aa62488e4e557",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },
   "release_technical": {
     "target_profile_id": "web-pwa-private-research-v1",
     "target_profile_sha256": "000cb558c5883fc4e3fafef93059e4bf488af4e2b91f96d5ca36e655726b24ec",
-    "unpacked_bytes": 1761348,
+    "unpacked_bytes": 1763008,
     "largest_artifact_bytes": 632022,
     "startup_milliseconds": 329.2,
     "sample_frames": 180,
@@ -96,10 +96,10 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "b22ea01c73476c5616effe6deaedf57c0c9fbc1d914e5c18ef02d1444a7a74c1",
-    "browser_validation_sha256": "ae128fb47708c419cebb2f2b19a8a705481d8647e78897de2acd0b75075870ee",
-    "hd_review_packet_sha256": "7d4ebd04bbd2487acfecf66568467a8e7e458830b3d8964fda9249bbd2626200",
-    "hd_review_document_sha256": "86a9454e47bded845b7d4689765ce6ff970d9530be7068e084c7f1dd58d25f4a",
+    "hd_presentation_audit_sha256": "3fea0de08f8801f52cc9bd7a49c84163bb61c7a58385203050aede81fb27a5db",
+    "browser_validation_sha256": "d5ecc20309082bd1728fcfe6ab70a744090a574641aa67a0740b71cd6cc3d145",
+    "hd_review_packet_sha256": "a339bd2419c023f73f398c461f5d6d1837227bae1816618c0163ad1245f3e1b2",
+    "hd_review_document_sha256": "a6f30a583585162863c561e7d6ba2c56446d77ed74eb216ee0ebd6eac906a3ca",
     "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }

@@ -120,7 +120,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "silhouetteTraits", "requiredParts", "proportionChecks", "faceAndExpressionTraits",
+        "silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "faceAndExpressionTraits",
         "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations",
         "allowedModernization"
       ],
@@ -128,6 +128,7 @@
         "silhouetteTraits": { "$ref": "#/$defs/stringList" },
         "requiredParts": { "$ref": "#/$defs/stringList" },
         "proportionChecks": { "$ref": "#/$defs/stringList" },
+        "compositionChecks": { "$ref": "#/$defs/stringList" },
         "faceAndExpressionTraits": {
           "type": "array",
           "uniqueItems": true,

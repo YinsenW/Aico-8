@@ -91,6 +91,8 @@ assert.equal(identityMap.canonicalReplayId, replay.replayId);
 assert.equal(identityMap.elements.length, 20);
 assert.deepEqual(identityMap.coverage.reachableElementIds, identityMap.coverage.mappedElementIds);
 assert.ok(identityMap.elements.every((element) => element.copy && typeof element.copy.origin === "string"));
+assert.ok(identityMap.elements.every((element) => Array.isArray(element.anchors?.compositionChecks)
+  && element.anchors.compositionChecks.length > 0), "every identity element must bind source/target composition bounds");
 assert.equal(identityMap.elements.filter((element) => element.copy.origin !== "none").length, 5);
 assert.equal(identityMap.elements.filter((element) => element.copy.origin === "supplemental-authorized").length, 0);
 const identityReviewFields = [
@@ -179,6 +181,10 @@ const hdAttestation = {
   rights_scope: "Research and test evidence only; no formal game release is authorized by this record.",
   observations: {
     identity_elements: identityMap.elements.length,
+    composition_checks: identityMap.elements.reduce(
+      (total, element) => total + element.anchors.compositionChecks.length,
+      0,
+    ),
     copy_provenance_elements: identityMap.elements.filter((element) => element.copy.origin !== "none").length,
     supplemental_copy_elements: identityMap.elements.filter((element) => element.copy.origin === "supplemental-authorized").length,
     source_tokens: hdAudit.sourceTokens.length,

@@ -271,7 +271,7 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
       }
       const criteria = record(element.criteria, `${path}.criteria`, errors);
       if (criteria) {
-        const criteriaKeys = ["silhouetteTraits", "requiredParts", "proportionChecks", "faceAndExpressionTraits", "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations", "allowedModernization"];
+        const criteriaKeys = ["silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "faceAndExpressionTraits", "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations", "allowedModernization"];
         exactKeys(criteria, criteriaKeys, `${path}.criteria`, errors);
         for (const key of criteriaKeys) stringList(criteria[key], `${path}.criteria.${key}`, errors, key === "faceAndExpressionTraits" || key === "allowedModernization" ? 0 : 1);
       }

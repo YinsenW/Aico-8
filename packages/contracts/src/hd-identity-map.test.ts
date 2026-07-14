@@ -26,6 +26,15 @@ function bunnyMap(): Record<string, unknown> {
           { id: "whiskers", label: "visible whiskers", sourceEvidenceIds: ["player-source"], targetRegionIds: ["whiskers"] },
         ],
         proportionChecks: [{ id: "face-ratio", label: "face width / face height", sourceRatio: 1.05, targetRatio: 1.08, maximumAbsoluteDelta: 0.1 }],
+        compositionChecks: [{
+          id: "player-frame-region",
+          label: "player location and screen footprint",
+          sourceEvidenceIds: ["player-source"],
+          targetRegionIds: ["face", "left-ear", "right-ear", "whiskers"],
+          sourceBounds: { x: 0.25, y: 0.25, width: 0.25, height: 0.25 },
+          targetBounds: { x: 0.26, y: 0.24, width: 0.26, height: 0.26 },
+          maximumEdgeDelta: 0.05,
+        }],
         faceAndExpressionTraits: ["gentle cute expression"],
         colorHierarchy: ["light face mass", "dark facial features", "accent inner ears"],
         motionCues: ["soft compact locomotion"],
@@ -72,6 +81,16 @@ describe("HD identity map v1", () => {
     map.elements[0].anchors.proportionChecks[0].targetRatio = 1.65;
     expect(validateHdIdentityMap(map).errors).toContain(
       "$.elements[0].anchors.proportionChecks[0].targetRatio changes the declared source proportion beyond maximumAbsoluteDelta",
+    );
+  });
+
+  it("rejects relocating or resizing source composition even when its internal ratio still passes", () => {
+    const map = bunnyMap() as any;
+    map.elements[0].anchors.compositionChecks[0].targetBounds = {
+      x: 0.55, y: 0.25, width: 0.25, height: 0.25,
+    };
+    expect(validateHdIdentityMap(map).errors).toContain(
+      "$.elements[0].anchors.compositionChecks[0].targetBounds changes the declared source composition beyond maximumEdgeDelta",
     );
   });
 

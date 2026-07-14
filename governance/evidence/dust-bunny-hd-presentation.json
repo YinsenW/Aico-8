@@ -5,6 +5,7 @@
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "observations": {
     "identity_elements": 20,
+    "composition_checks": 21,
     "copy_provenance_elements": 5,
     "supplemental_copy_elements": 0,
     "source_tokens": 178,
@@ -25,8 +26,8 @@
     "acceptance_may_not_be_inferred_from_code_or_automated_audit": true
   },
   "private_artifact_sha256": {
-    "hd_identity_map": "593abca1fdb8779ca3523473b2254e9963888dfbf4f7f9309f341d6c9d131380",
-    "hd_presentation_audit": "b22ea01c73476c5616effe6deaedf57c0c9fbc1d914e5c18ef02d1444a7a74c1"
+    "hd_identity_map": "3824b913f465423681136748ed00c48ae9e3d2e160abcc24c36d22daed60d620",
+    "hd_presentation_audit": "3fea0de08f8801f52cc9bd7a49c84163bb61c7a58385203050aede81fb27a5db"
   },
   "selector": "TEST-QUALIFICATION-PRIVATE"
 }

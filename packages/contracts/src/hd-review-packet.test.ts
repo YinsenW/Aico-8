@@ -39,6 +39,7 @@ const packet = {
       silhouetteTraits: ["compact source silhouette"],
       requiredParts: ["paired source ears"],
       proportionChecks: ["footprint: 1 → 1, maximum delta 0.1"],
+      compositionChecks: ["frame region: source [0.25,0.25,0.5,0.5] → HD [0.25,0.25,0.5,0.5], maximum edge delta 0.05"],
       faceAndExpressionTraits: ["friendly source expression"],
       colorHierarchy: ["warm white over dark"],
       motionCues: ["source-timed hop"],

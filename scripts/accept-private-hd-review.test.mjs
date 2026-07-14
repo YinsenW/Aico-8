@@ -55,6 +55,11 @@ function makeWorkspace() {
         proportionChecks: [{
           id: "footprint", label: "footprint stays one cell", sourceRatio: 1, targetRatio: 1, maximumAbsoluteDelta: 0.1,
         }],
+        compositionChecks: [{
+          id: "frame-region", label: "frame region", sourceEvidenceIds: ["character.test.source"], targetRegionIds: ["head"],
+          sourceBounds: { x: 0.25, y: 0.25, width: 0.5, height: 0.5 },
+          targetBounds: { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }, maximumEdgeDelta: 0.05,
+        }],
         faceAndExpressionTraits: [],
         colorHierarchy: ["warm white over dark"],
         motionCues: ["source-timed hop"],

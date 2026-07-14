@@ -34,10 +34,28 @@ export interface ProportionCheck {
   maximumAbsoluteDelta: number;
 }
 
+export interface NormalizedCompositionBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface CompositionCheck {
+  id: string;
+  label: string;
+  sourceEvidenceIds: string[];
+  targetRegionIds: string[];
+  sourceBounds: NormalizedCompositionBounds;
+  targetBounds: NormalizedCompositionBounds;
+  maximumEdgeDelta: number;
+}
+
 export interface IdentityAnchors {
   silhouetteTraits: string[];
   requiredParts: RequiredPartMapping[];
   proportionChecks: ProportionCheck[];
+  compositionChecks: CompositionCheck[];
   faceAndExpressionTraits: string[];
   colorHierarchy: string[];
   motionCues: string[];
@@ -167,6 +185,31 @@ function checkPassed(value: unknown, path: string, accepted: boolean, errors: st
   else if (accepted && value !== true) errors.push(`${path} must pass before the map can be accepted`);
 }
 
+function validateNormalizedBounds(
+  value: unknown,
+  path: string,
+  errors: string[],
+): NormalizedCompositionBounds | undefined {
+  if (!isRecord(value)) {
+    errors.push(`${path} must be an object`);
+    return undefined;
+  }
+  const keys = ["x", "y", "width", "height"] as const;
+  checkKeys(value, keys, keys, path, errors);
+  const numbers = keys.map((key) => value[key]);
+  if (numbers.some((number) => typeof number !== "number" || !Number.isFinite(number))) {
+    errors.push(`${path} values must be finite numbers`);
+    return undefined;
+  }
+  const bounds = value as unknown as NormalizedCompositionBounds;
+  if (bounds.x < 0 || bounds.y < 0 || bounds.width <= 0 || bounds.height <= 0
+    || bounds.x + bounds.width > 1 || bounds.y + bounds.height > 1) {
+    errors.push(`${path} must be a positive rectangle normalized inside the source frame`);
+    return undefined;
+  }
+  return bounds;
+}
+
 function validateEvidence(value: unknown, path: string, errors: string[]): string | undefined {
   if (!isRecord(value)) {
     errors.push(`${path} must be an object`);
@@ -240,6 +283,7 @@ function validateAnchors(
     "silhouetteTraits",
     "requiredParts",
     "proportionChecks",
+    "compositionChecks",
     "faceAndExpressionTraits",
     "colorHierarchy",
     "motionCues",
@@ -308,6 +352,48 @@ function validateAnchors(
         errors.push(`${checkPath} ratios and delta must be finite non-negative numbers`);
       } else if (Math.abs((rawCheck.targetRatio as number) - (rawCheck.sourceRatio as number)) > (rawCheck.maximumAbsoluteDelta as number)) {
         errors.push(`${checkPath}.targetRatio changes the declared source proportion beyond maximumAbsoluteDelta`);
+      }
+    }
+  }
+
+  if (!Array.isArray(value.compositionChecks) || value.compositionChecks.length === 0) {
+    errors.push(`${path}.compositionChecks must preserve at least one measurable source-to-target frame region`);
+  } else {
+    const compositionIds = new Set<string>();
+    for (const [index, rawCheck] of value.compositionChecks.entries()) {
+      const checkPath = `${path}.compositionChecks[${index}]`;
+      if (!isRecord(rawCheck)) {
+        errors.push(`${checkPath} must be an object`);
+        continue;
+      }
+      const keys = [
+        "id", "label", "sourceEvidenceIds", "targetRegionIds",
+        "sourceBounds", "targetBounds", "maximumEdgeDelta",
+      ] as const;
+      checkKeys(rawCheck, keys, keys, checkPath, errors);
+      if (checkId(rawCheck.id, `${checkPath}.id`, errors)) {
+        if (compositionIds.has(rawCheck.id)) errors.push(`${checkPath}.id must be unique within the element`);
+        compositionIds.add(rawCheck.id);
+      }
+      checkString(rawCheck.label, `${checkPath}.label`, errors);
+      for (const evidenceId of checkUniqueStrings(rawCheck.sourceEvidenceIds, `${checkPath}.sourceEvidenceIds`, errors)) {
+        if (!evidenceIds.has(evidenceId)) errors.push(`${checkPath}.sourceEvidenceIds references unknown evidence ${evidenceId}`);
+      }
+      for (const regionId of checkUniqueStrings(rawCheck.targetRegionIds, `${checkPath}.targetRegionIds`, errors)) {
+        if (!targetRegionIds.has(regionId)) errors.push(`${checkPath}.targetRegionIds references unknown target region ${regionId}`);
+      }
+      const source = validateNormalizedBounds(rawCheck.sourceBounds, `${checkPath}.sourceBounds`, errors);
+      const target = validateNormalizedBounds(rawCheck.targetBounds, `${checkPath}.targetBounds`, errors);
+      const maximumEdgeDelta = rawCheck.maximumEdgeDelta;
+      if (typeof maximumEdgeDelta !== "number" || !Number.isFinite(maximumEdgeDelta)
+        || maximumEdgeDelta < 0 || maximumEdgeDelta > 1) {
+        errors.push(`${checkPath}.maximumEdgeDelta must be a finite normalized value from 0 through 1`);
+      } else if (source && target) {
+        const sourceEdges = [source.x, source.y, source.x + source.width, source.y + source.height];
+        const targetEdges = [target.x, target.y, target.x + target.width, target.y + target.height];
+        if (sourceEdges.some((edge, edgeIndex) => Math.abs(edge - (targetEdges[edgeIndex] ?? edge)) > maximumEdgeDelta)) {
+          errors.push(`${checkPath}.targetBounds changes the declared source composition beyond maximumEdgeDelta`);
+        }
       }
     }
   }

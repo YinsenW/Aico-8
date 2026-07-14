@@ -79,14 +79,40 @@
         "maximumAbsoluteDelta": { "type": "number", "minimum": 0 }
       }
     },
+    "normalizedCompositionBounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "compositionCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "sourceEvidenceIds", "targetRegionIds", "sourceBounds", "targetBounds", "maximumEdgeDelta"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceEvidenceIds": { "$ref": "#/$defs/idList" },
+        "targetRegionIds": { "$ref": "#/$defs/idList" },
+        "sourceBounds": { "$ref": "#/$defs/normalizedCompositionBounds" },
+        "targetBounds": { "$ref": "#/$defs/normalizedCompositionBounds" },
+        "maximumEdgeDelta": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
     "anchors": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["silhouetteTraits", "requiredParts", "proportionChecks", "faceAndExpressionTraits", "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations"],
+      "required": ["silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "faceAndExpressionTraits", "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations"],
       "properties": {
         "silhouetteTraits": { "$ref": "#/$defs/stringList" },
         "requiredParts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/requiredPart" } },
         "proportionChecks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/proportionCheck" } },
+        "compositionChecks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/compositionCheck" } },
         "faceAndExpressionTraits": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
         "colorHierarchy": { "$ref": "#/$defs/stringList" },
         "motionCues": { "$ref": "#/$defs/stringList" },
