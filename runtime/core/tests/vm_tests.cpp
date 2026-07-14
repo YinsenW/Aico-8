@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -157,6 +158,70 @@ void test_pico_button_glyph_constants_map_to_all_six_buttons()
         assert(p8_vm_get_global_raw(vm, glyphs[index], &value));
         assert(value == static_cast<int32_t>(index << 16));
     }
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
+void test_unicode_source_glyphs_execute_as_p8scii_byte_strings()
+{
+    constexpr char source[] = u8R"p8lua(
+sample="¹。▮○█🐱⬇️🅾️❎あョ◝"
+long_sample=[[²●ア]]
+-- 。 inside a comment is not executable text
+function _init()
+ sample_length=#sample
+ long_length=#long_sample
+ first=ord(sample,1)
+ punctuation=ord(sample,2)
+ control=ord(sample,3)
+ circle=ord(sample,4)
+ block=ord(sample,5)
+ cat=ord(sample,6)
+ down=ord(sample,7)
+ button=ord(sample,8)
+ cross=ord(sample,9)
+ hiragana=ord(sample,10)
+ katakana=ord(sample,11)
+ last=ord(sample,12)
+ sub_value=ord(sub(sample,2,2))
+end
+)p8lua";
+    p8_core *core = p8_core_create();
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@p8scii-source-test"));
+    assert(p8_vm_call(vm, "_init"));
+
+    const std::array<std::pair<const char *, int32_t>, 15> expected = {{
+        {"sample_length", 12}, {"long_length", 3}, {"first", 0x01},
+        {"punctuation", 0x1d}, {"control", 0x10}, {"circle", 0x7f},
+        {"block", 0x80}, {"cat", 0x82}, {"down", 0x83}, {"button", 0x8e},
+        {"cross", 0x97}, {"hiragana", 0x9a}, {"katakana", 0xfd},
+        {"last", 0xff}, {"sub_value", 0x1d},
+    }};
+    for (const auto &[name, value] : expected) {
+        int32_t actual = -1;
+        assert(p8_vm_get_global_raw(vm, name, &actual));
+        assert(actual == value << 16);
+    }
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
+void test_holdframe_defers_presentation_until_the_next_host_frame()
+{
+    constexpr char source[] = R"p8lua(
+holdframe()
+function _update() pset(4,4,9) end
+)p8lua";
+    p8_core *core = p8_core_create();
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@holdframe-test"));
+    assert(p8_vm_frame_held(vm));
+    assert(p8_core_host_tick60(core, 1) == 1);
+    assert(!p8_vm_frame_held(vm));
+    assert(p8_gfx_pget(core, 4, 4) == 9);
     p8_vm_destroy(vm);
     p8_core_destroy(core);
 }
@@ -413,6 +478,8 @@ int main(int argc, char **argv)
 {
     const std::vector<uint8_t> checkpoint = test_synthetic_cart_updates_raster_and_semantic_stream();
     test_pico_button_glyph_constants_map_to_all_six_buttons();
+    test_unicode_source_glyphs_execute_as_p8scii_byte_strings();
+    test_holdframe_defers_presentation_until_the_next_host_frame();
     test_flip_suspends_and_resumes_initialization_at_frame_boundaries();
     test_menu_items_register_filter_invoke_update_and_remove();
     test_palette_transparency_diagnostics_and_deterministic_time();

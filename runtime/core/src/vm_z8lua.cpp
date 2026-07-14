@@ -12,6 +12,7 @@
 #include <cstring>
 #include <new>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -19,6 +20,144 @@ constexpr uint16_t kRngStateA = 0x5f44;
 constexpr uint16_t kRngStateB = 0x5f48;
 constexpr uint16_t kPersistentBase = 0x5e00;
 constexpr uint16_t kSpriteFlagsBase = 0x3000;
+
+struct p8_unicode_glyph {
+    std::string_view unicode;
+    uint8_t p8scii;
+};
+
+// PICO-8 source files represent non-ASCII P8SCII bytes with Unicode display
+// glyphs. The VM itself must still receive byte strings: #, sub(), ord(), and
+// string indexing are byte-oriented. Keep this source-literal boundary
+// conversion separate from presentation text so Unicode never leaks into cart
+// execution semantics. The values are the official P8SCII character table.
+constexpr p8_unicode_glyph kP8UnicodeGlyphs[] = {
+    {u8"¹", 0x01}, {u8"²", 0x02}, {u8"³", 0x03}, {u8"⁴", 0x04},
+    {u8"⁵", 0x05}, {u8"⁶", 0x06}, {u8"⁷", 0x07}, {u8"⁸", 0x08},
+    {u8"ᵇ", 0x0b}, {u8"ᶜ", 0x0c}, {u8"ᵉ", 0x0e}, {u8"ᶠ", 0x0f},
+    {u8"▮", 0x10}, {u8"■", 0x11}, {u8"□", 0x12}, {u8"⁙", 0x13},
+    {u8"⁘", 0x14}, {u8"‖", 0x15}, {u8"◀", 0x16}, {u8"▶", 0x17},
+    {u8"「", 0x18}, {u8"」", 0x19}, {u8"¥", 0x1a}, {u8"•", 0x1b},
+    {u8"、", 0x1c}, {u8"。", 0x1d}, {u8"゛", 0x1e}, {u8"゜", 0x1f},
+    {u8"○", 0x7f}, {u8"█", 0x80}, {u8"▒", 0x81}, {u8"🐱", 0x82},
+    {u8"⬇️", 0x83}, {u8"░", 0x84}, {u8"✽", 0x85}, {u8"●", 0x86},
+    {u8"♥", 0x87}, {u8"☉", 0x88}, {u8"웃", 0x89}, {u8"⌂", 0x8a},
+    {u8"⬅️", 0x8b}, {u8"😐", 0x8c}, {u8"♪", 0x8d},
+    {u8"🅾️", 0x8e}, {u8"◆", 0x8f}, {u8"…", 0x90},
+    {u8"➡️", 0x91}, {u8"★", 0x92}, {u8"⧗", 0x93},
+    {u8"⬆️", 0x94}, {u8"ˇ", 0x95}, {u8"∧", 0x96},
+    {u8"❎", 0x97}, {u8"▤", 0x98}, {u8"▥", 0x99},
+    {u8"あ", 0x9a}, {u8"い", 0x9b}, {u8"う", 0x9c}, {u8"え", 0x9d},
+    {u8"お", 0x9e}, {u8"か", 0x9f}, {u8"き", 0xa0}, {u8"く", 0xa1},
+    {u8"け", 0xa2}, {u8"こ", 0xa3}, {u8"さ", 0xa4}, {u8"し", 0xa5},
+    {u8"す", 0xa6}, {u8"せ", 0xa7}, {u8"そ", 0xa8}, {u8"た", 0xa9},
+    {u8"ち", 0xaa}, {u8"つ", 0xab}, {u8"て", 0xac}, {u8"と", 0xad},
+    {u8"な", 0xae}, {u8"に", 0xaf}, {u8"ぬ", 0xb0}, {u8"ね", 0xb1},
+    {u8"の", 0xb2}, {u8"は", 0xb3}, {u8"ひ", 0xb4}, {u8"ふ", 0xb5},
+    {u8"へ", 0xb6}, {u8"ほ", 0xb7}, {u8"ま", 0xb8}, {u8"み", 0xb9},
+    {u8"む", 0xba}, {u8"め", 0xbb}, {u8"も", 0xbc}, {u8"や", 0xbd},
+    {u8"ゆ", 0xbe}, {u8"よ", 0xbf}, {u8"ら", 0xc0}, {u8"り", 0xc1},
+    {u8"る", 0xc2}, {u8"れ", 0xc3}, {u8"ろ", 0xc4}, {u8"わ", 0xc5},
+    {u8"を", 0xc6}, {u8"ん", 0xc7}, {u8"っ", 0xc8}, {u8"ゃ", 0xc9},
+    {u8"ゅ", 0xca}, {u8"ょ", 0xcb}, {u8"ア", 0xcc}, {u8"イ", 0xcd},
+    {u8"ウ", 0xce}, {u8"エ", 0xcf}, {u8"オ", 0xd0}, {u8"カ", 0xd1},
+    {u8"キ", 0xd2}, {u8"ク", 0xd3}, {u8"ケ", 0xd4}, {u8"コ", 0xd5},
+    {u8"サ", 0xd6}, {u8"シ", 0xd7}, {u8"ス", 0xd8}, {u8"セ", 0xd9},
+    {u8"ソ", 0xda}, {u8"タ", 0xdb}, {u8"チ", 0xdc}, {u8"ツ", 0xdd},
+    {u8"テ", 0xde}, {u8"ト", 0xdf}, {u8"ナ", 0xe0}, {u8"ニ", 0xe1},
+    {u8"ヌ", 0xe2}, {u8"ネ", 0xe3}, {u8"ノ", 0xe4}, {u8"ハ", 0xe5},
+    {u8"ヒ", 0xe6}, {u8"フ", 0xe7}, {u8"ヘ", 0xe8}, {u8"ホ", 0xe9},
+    {u8"マ", 0xea}, {u8"ミ", 0xeb}, {u8"ム", 0xec}, {u8"メ", 0xed},
+    {u8"モ", 0xee}, {u8"ヤ", 0xef}, {u8"ユ", 0xf0}, {u8"ヨ", 0xf1},
+    {u8"ラ", 0xf2}, {u8"リ", 0xf3}, {u8"ル", 0xf4}, {u8"レ", 0xf5},
+    {u8"ロ", 0xf6}, {u8"ワ", 0xf7}, {u8"ヲ", 0xf8}, {u8"ン", 0xf9},
+    {u8"ッ", 0xfa}, {u8"ャ", 0xfb}, {u8"ュ", 0xfc}, {u8"ョ", 0xfd},
+    {u8"◜", 0xfe}, {u8"◝", 0xff},
+    {u8"𝘢", 'A'}, {u8"𝘣", 'B'}, {u8"𝘤", 'C'},
+    {u8"𝘥", 'D'}, {u8"𝘦", 'E'}, {u8"𝘧", 'F'},
+    {u8"𝘨", 'G'}, {u8"𝘩", 'H'}, {u8"𝘪", 'I'},
+    {u8"𝘫", 'J'}, {u8"𝘬", 'K'}, {u8"𝘭", 'L'},
+    {u8"𝘮", 'M'}, {u8"𝘯", 'N'}, {u8"𝘰", 'O'},
+    {u8"𝘱", 'P'}, {u8"𝘲", 'Q'}, {u8"𝘳", 'R'},
+    {u8"𝘴", 'S'}, {u8"𝘵", 'T'}, {u8"𝘶", 'U'},
+    {u8"𝘷", 'V'}, {u8"𝘸", 'W'}, {u8"𝘹", 'X'},
+    {u8"𝘺", 'Y'}, {u8"𝘻", 'Z'},
+};
+
+bool append_p8scii_glyph(std::string_view source, size_t offset, std::string &output,
+                         size_t &consumed)
+{
+    for (const p8_unicode_glyph &glyph : kP8UnicodeGlyphs) {
+        if (source.substr(offset, glyph.unicode.size()) == glyph.unicode) {
+            output.push_back(static_cast<char>(glyph.p8scii));
+            consumed = glyph.unicode.size();
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string normalize_p8scii_source_literals(const char *source, size_t size)
+{
+    enum class lexical_state { code, quoted, line_comment, long_string, long_comment };
+    const std::string_view input(source, size);
+    std::string output;
+    output.reserve(size);
+    lexical_state state = lexical_state::code;
+    char quote = '\0';
+
+    for (size_t offset = 0; offset < size;) {
+        const char current = input[offset];
+        if (state == lexical_state::code) {
+            if (current == '\'' || current == '"') {
+                quote = current;
+                state = lexical_state::quoted;
+            } else if (current == '-' && offset + 1 < size && input[offset + 1] == '-') {
+                if (offset + 3 < size && input[offset + 2] == '[' && input[offset + 3] == '[') {
+                    output.append("--[[");
+                    offset += 4;
+                    state = lexical_state::long_comment;
+                    continue;
+                }
+                state = lexical_state::line_comment;
+            } else if (current == '[' && offset + 1 < size && input[offset + 1] == '[') {
+                output.append("[[");
+                offset += 2;
+                state = lexical_state::long_string;
+                continue;
+            }
+        } else if (state == lexical_state::quoted) {
+            if (current == '\\' && offset + 1 < size) {
+                output.push_back(current);
+                output.push_back(input[offset + 1]);
+                offset += 2;
+                continue;
+            }
+            if (current == quote) state = lexical_state::code;
+        } else if (state == lexical_state::line_comment) {
+            if (current == '\n' || current == '\r') state = lexical_state::code;
+        } else if (state == lexical_state::long_string || state == lexical_state::long_comment) {
+            if (current == ']' && offset + 1 < size && input[offset + 1] == ']') {
+                output.append("]]");
+                offset += 2;
+                state = lexical_state::code;
+                continue;
+            }
+        }
+
+        if ((state == lexical_state::quoted || state == lexical_state::long_string)
+            && static_cast<unsigned char>(current) >= 0x80) {
+            size_t consumed = 0;
+            if (append_p8scii_glyph(input, offset, output, consumed)) {
+                offset += consumed;
+                continue;
+            }
+        }
+        output.push_back(current);
+        ++offset;
+    }
+    return output;
+}
 
 constexpr char kHostBootstrap[] = R"p8lua(
 function all(c)
@@ -127,6 +266,7 @@ struct p8_vm {
     bool has_update60 = false;
     bool restart_requested = false;
     bool faulted = false;
+    bool frame_held = false;
     lua_State *active_thread = nullptr;
     int active_thread_ref = LUA_NOREF;
     std::string active_function;
@@ -933,7 +1073,14 @@ int api_run(lua_State *state)
 
 int api_flip(lua_State *state)
 {
+    p8_vm::from(state)->frame_held = false;
     return lua_yield(state, 0);
+}
+
+int api_holdframe(lua_State *state)
+{
+    p8_vm::from(state)->frame_held = true;
+    return 0;
 }
 
 int run_update_step(p8_vm *vm)
@@ -959,6 +1106,7 @@ void draw_callback(void *userdata)
 {
     p8_vm *vm = static_cast<p8_vm *>(userdata);
     if (!vm->faulted && !p8_vm_draw(vm)) vm->faulted = true;
+    if (!vm->faulted) vm->frame_held = false; // automatic end-of-frame presentation
 }
 
 } // namespace
@@ -1031,6 +1179,7 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("t", api_time);
     vm->install("stat", api_stat);
     vm->install("extcmd", api_extcmd);
+    vm->install("holdframe", api_holdframe);
     vm->install("flip", api_flip);
     vm->install("run", api_run);
     vm->seed_rng(0);
@@ -1069,7 +1218,8 @@ int p8_vm_load_source(p8_vm *vm, const char *source, size_t size, const char *ch
     vm->faulted = false;
     vm->clear_menu_items();
     const char *name = chunk_name ? chunk_name : "@cart";
-    if (luaL_loadbuffer(vm->state, source, size, name) != LUA_OK
+    const std::string normalized_source = normalize_p8scii_source_literals(source, size);
+    if (luaL_loadbuffer(vm->state, normalized_source.data(), normalized_source.size(), name) != LUA_OK
         || lua_pcall(vm->state, 0, 0, 0) != LUA_OK) {
         vm->set_error_from_stack();
         return 0;
@@ -1133,6 +1283,11 @@ int p8_vm_call_pending(const p8_vm *vm)
 const char *p8_vm_active_function(const p8_vm *vm)
 {
     return vm && vm->active_thread ? vm->active_function.c_str() : "";
+}
+
+int p8_vm_frame_held(const p8_vm *vm)
+{
+    return vm && vm->frame_held ? 1 : 0;
 }
 
 const char *p8_vm_last_error(const p8_vm *vm)

@@ -172,8 +172,10 @@ const uint8_t *aico8_framebuffer(aico8_runtime *runtime)
     if (!runtime) {
         return nullptr;
     }
-    p8_gfx_copy_framebuffer_indexed(runtime->core, runtime->framebuffer.data(),
-                                    runtime->framebuffer.size());
+    if (!runtime->vm || !p8_vm_frame_held(runtime->vm)) {
+        p8_gfx_copy_framebuffer_indexed(runtime->core, runtime->framebuffer.data(),
+                                        runtime->framebuffer.size());
+    }
     return runtime->framebuffer.data();
 }
 

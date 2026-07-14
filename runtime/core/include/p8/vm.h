@@ -22,6 +22,7 @@ int p8_vm_update(p8_vm *vm);
 int p8_vm_draw(p8_vm *vm);
 int p8_vm_call_pending(const p8_vm *vm);
 const char *p8_vm_active_function(const p8_vm *vm);
+int p8_vm_frame_held(const p8_vm *vm);
 
 const char *p8_vm_last_error(const p8_vm *vm);
 /* Newline-delimited output from printh() without granting host file access. */
