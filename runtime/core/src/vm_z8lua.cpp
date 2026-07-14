@@ -278,6 +278,7 @@ struct p8_vm {
     int line_cursor_y = 0;
     int32_t line_cursor_x_raw = 0;
     int32_t line_cursor_y_raw = 0;
+    int32_t draw_color_raw = 6 << 16;
 
     static p8_vm *from(lua_State *state)
     {
@@ -388,6 +389,24 @@ struct p8_vm {
         const unsigned count = std::min<unsigned>(argument_count, 12);
         for (unsigned i = 0; i < count; ++i) {
             command.args[i] = raw_number(source, static_cast<int>(i + 1));
+        }
+        p8_core_emit_draw(core, &command);
+    }
+
+    void emit_with_resolved_argument(uint16_t opcode, lua_State *source,
+                                     unsigned argument_count, unsigned argument_index,
+                                     int32_t resolved_value)
+    {
+        p8_draw_command command{};
+        command.opcode = opcode;
+        command.flags = static_cast<uint16_t>(lua_gettop(source));
+        const unsigned count = std::min<unsigned>(argument_count, 12);
+        for (unsigned i = 0; i < count; ++i) {
+            command.args[i] = raw_number(source, static_cast<int>(i + 1));
+        }
+        if (argument_index < count
+            && lua_isnoneornil(source, static_cast<int>(argument_index + 1))) {
+            command.args[argument_index] = resolved_value;
         }
         p8_core_emit_draw(core, &command);
     }
@@ -683,9 +702,9 @@ int api_cls(lua_State *state)
 int api_pset(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
-    vm->emit(P8_DRAW_PSET, state, 3);
+    vm->emit_with_resolved_argument(P8_DRAW_PSET, state, 3, 2, vm->draw_color_raw);
     p8_gfx_pset(vm->core, integer(state, 1), integer(state, 2),
-                static_cast<uint8_t>(integer(state, 3, 6)));
+                static_cast<uint8_t>(integer(state, 3, vm->draw_color_raw >> 16)));
     return 0;
 }
 
@@ -707,7 +726,14 @@ int api_sset(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     p8_gfx_sset(vm->core, integer(state, 1), integer(state, 2),
-                static_cast<uint8_t>(integer(state, 3, 6)));
+                static_cast<uint8_t>(integer(state, 3, vm->draw_color_raw >> 16)));
+    return 0;
+}
+
+int api_color(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->draw_color_raw = raw_number(state, 1, 6 << 16);
     return 0;
 }
 
@@ -732,18 +758,21 @@ int api_line(lua_State *state)
     int32_t y0_raw = raw_number(state, 2);
     int32_t x1_raw = x0_raw;
     int32_t y1_raw = y0_raw;
-    uint8_t color = 6;
+    int32_t color_raw = vm->draw_color_raw;
+    uint8_t color = static_cast<uint8_t>(color_raw >> 16);
     bool should_draw = true;
     if (argument_count >= 4) {
         x1 = integer(state, 3);
         y1 = integer(state, 4);
         x1_raw = raw_number(state, 3);
         y1_raw = raw_number(state, 4);
-        color = static_cast<uint8_t>(integer(state, 5, 6));
+        color_raw = raw_number(state, 5, vm->draw_color_raw);
+        color = static_cast<uint8_t>(color_raw >> 16);
     } else {
         x1 = x0;
         y1 = y0;
-        color = static_cast<uint8_t>(integer(state, 3, 6));
+        color_raw = raw_number(state, 3, vm->draw_color_raw);
+        color = static_cast<uint8_t>(color_raw >> 16);
         should_draw = vm->line_cursor_ready;
         if (should_draw) {
             x0 = vm->line_cursor_x;
@@ -756,7 +785,7 @@ int api_line(lua_State *state)
     command.args[1] = y0_raw;
     command.args[2] = x1_raw;
     command.args[3] = y1_raw;
-    command.args[4] = static_cast<int32_t>(color) << 16;
+    command.args[4] = color_raw;
     p8_core_emit_draw(vm->core, &command);
     if (should_draw) {
         p8_gfx_line(vm->core, x0, y0, x1, y1, color);
@@ -772,36 +801,38 @@ int api_line(lua_State *state)
 int api_rect(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
-    vm->emit(P8_DRAW_RECT, state, 5);
+    vm->emit_with_resolved_argument(P8_DRAW_RECT, state, 5, 4, vm->draw_color_raw);
     p8_gfx_rect(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
-                integer(state, 4), static_cast<uint8_t>(integer(state, 5, 6)));
+                integer(state, 4),
+                static_cast<uint8_t>(integer(state, 5, vm->draw_color_raw >> 16)));
     return 0;
 }
 
 int api_rectfill(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
-    vm->emit(P8_DRAW_RECTFILL, state, 5);
+    vm->emit_with_resolved_argument(P8_DRAW_RECTFILL, state, 5, 4, vm->draw_color_raw);
     p8_gfx_rectfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
-                    integer(state, 4), static_cast<uint8_t>(integer(state, 5, 6)));
+                    integer(state, 4),
+                    static_cast<uint8_t>(integer(state, 5, vm->draw_color_raw >> 16)));
     return 0;
 }
 
 int api_circ(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
-    vm->emit(P8_DRAW_CIRC, state, 4);
+    vm->emit_with_resolved_argument(P8_DRAW_CIRC, state, 4, 3, vm->draw_color_raw);
     p8_gfx_circ(vm->core, integer(state, 1), integer(state, 2), integer(state, 3, 4),
-                static_cast<uint8_t>(integer(state, 4, 6)));
+                static_cast<uint8_t>(integer(state, 4, vm->draw_color_raw >> 16)));
     return 0;
 }
 
 int api_circfill(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
-    vm->emit(P8_DRAW_CIRCFILL, state, 4);
+    vm->emit_with_resolved_argument(P8_DRAW_CIRCFILL, state, 4, 3, vm->draw_color_raw);
     p8_gfx_circfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3, 4),
-                    static_cast<uint8_t>(integer(state, 4, 6)));
+                    static_cast<uint8_t>(integer(state, 4, vm->draw_color_raw >> 16)));
     return 0;
 }
 
@@ -964,14 +995,23 @@ int api_fillp(lua_State *state)
 int api_print(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
+    const int argument_count = lua_gettop(state);
+    const int optional_argument_count = argument_count - 1;
     size_t size = 0;
     const char *text = luaL_tolstring(state, 1, &size);
     p8_draw_command command{};
     command.opcode = P8_DRAW_PRINT;
-    command.flags = static_cast<uint16_t>(lua_gettop(state) - 1);
-    command.args[0] = raw_number(state, 2);
-    command.args[1] = raw_number(state, 3);
-    command.args[2] = raw_number(state, 4, 6 << 16);
+    command.flags = static_cast<uint16_t>(argument_count);
+    if (optional_argument_count == 1) {
+        vm->draw_color_raw = raw_number(state, 2);
+    } else {
+        command.args[0] = raw_number(state, 2);
+        command.args[1] = raw_number(state, 3);
+        if (optional_argument_count >= 3) {
+            vm->draw_color_raw = raw_number(state, 4);
+        }
+    }
+    command.args[2] = vm->draw_color_raw;
     p8_core_emit_draw_payload(vm->core, &command, text, size);
     const int32_t rightmost = command.args[0] + static_cast<int32_t>(size * 4u << 16);
     lua_pop(state, 1);
@@ -1182,6 +1222,7 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("pget", api_pget);
     vm->install("sget", api_sget);
     vm->install("sset", api_sset);
+    vm->install("color", api_color);
     vm->install("line", api_line);
     vm->install("rect", api_rect);
     vm->install("rectfill", api_rectfill);
@@ -1239,6 +1280,8 @@ int p8_vm_load_source(p8_vm *vm, const char *source, size_t size, const char *ch
     vm->error.clear();
     vm->faulted = false;
     vm->clear_menu_items();
+    vm->draw_color_raw = 6 << 16;
+    vm->line_cursor_ready = false;
     const char *name = chunk_name ? chunk_name : "@cart";
     const std::string normalized_source = normalize_p8scii_source_literals(source, size);
     if (luaL_loadbuffer(vm->state, normalized_source.data(), normalized_source.size(), name) != LUA_OK

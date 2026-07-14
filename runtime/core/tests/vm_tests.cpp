@@ -475,6 +475,74 @@ function denied_file_output() printh("unsafe","log.txt") end
     p8_core_destroy(core);
 }
 
+void test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet()
+{
+    constexpr char source[] = R"p8lua(
+function verify_current_color()
+ color(8)
+ line(1,1,3,1)
+ pset(4,1,9)
+ pset(5,1)
+ rect(6,1,7,2)
+ circfill(9,2,1)
+ sset(9,9)
+ print("a",0,0)
+ print("b",1,1,12)
+ pset(11,1)
+ print("c",13)
+ pset(12,1)
+ color()
+ pset(13,1)
+end
+function leave_non_default_color() color(14) end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@draw-color-test"));
+    p8_core_begin_draw_stream(core);
+    assert(p8_vm_call(vm, "verify_current_color"));
+
+    assert(p8_gfx_pget(core, 1, 1) == 8);
+    assert(p8_gfx_pget(core, 3, 1) == 8);
+    assert(p8_gfx_pget(core, 4, 1) == 9); // explicit primitive colour is not sticky
+    assert(p8_gfx_pget(core, 5, 1) == 8);
+    assert(p8_gfx_pget(core, 6, 1) == 8);
+    assert(p8_gfx_pget(core, 9, 2) == 8);
+    assert(p8_gfx_sget(core, 9, 9) == 8);
+    assert(p8_gfx_pget(core, 11, 1) == 12); // print(str,x,y,col) sets current
+    assert(p8_gfx_pget(core, 12, 1) == 13); // print(str,col) sets current
+    assert(p8_gfx_pget(core, 13, 1) == 6);  // color() restores the default
+
+    const p8_draw_command *commands = p8_core_draw_data(core);
+    assert(p8_core_draw_count(core) == 11);
+    assert(commands[0].opcode == P8_DRAW_LINE && commands[0].args[4] == 8 << 16);
+    assert(commands[1].opcode == P8_DRAW_PSET && commands[1].args[2] == 9 << 16);
+    assert(commands[2].opcode == P8_DRAW_PSET && commands[2].args[2] == 8 << 16);
+    assert(commands[3].opcode == P8_DRAW_RECT && commands[3].args[4] == 8 << 16);
+    assert(commands[4].opcode == P8_DRAW_CIRCFILL && commands[4].args[3] == 8 << 16);
+    assert(commands[5].opcode == P8_DRAW_PRINT && commands[5].args[2] == 8 << 16);
+    assert(commands[6].opcode == P8_DRAW_PRINT && commands[6].args[2] == 12 << 16);
+    assert(commands[7].opcode == P8_DRAW_PSET && commands[7].args[2] == 12 << 16);
+    assert(commands[8].opcode == P8_DRAW_PRINT && commands[8].args[2] == 13 << 16);
+    assert(commands[9].opcode == P8_DRAW_PSET && commands[9].args[2] == 13 << 16);
+    assert(commands[10].opcode == P8_DRAW_PSET && commands[10].args[2] == 6 << 16);
+
+    assert(p8_vm_call(vm, "leave_non_default_color"));
+    constexpr char reload_source[] = R"p8lua(
+function verify_reload_default() pset(20,20) end
+)p8lua";
+    assert(p8_vm_load_source(vm, reload_source, sizeof(reload_source) - 1,
+                             "@draw-color-reload-test"));
+    assert(p8_vm_call(vm, "verify_reload_default"));
+    assert(p8_gfx_pget(core, 20, 20) == 6);
+
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_update_error_is_sticky_and_draw_is_skipped()
 {
     constexpr char source[] = R"p8lua(
@@ -552,6 +620,7 @@ int main(int argc, char **argv)
     test_flip_suspends_and_resumes_initialization_at_frame_boundaries();
     test_menu_items_register_filter_invoke_update_and_remove();
     test_palette_transparency_diagnostics_and_deterministic_time();
+    test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_routes_fail_closed_until_official_tick_history_is_qualified();
     if (argc == 2 && std::string(argv[1]) == "--checkpoint") {

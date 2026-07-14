@@ -16,6 +16,10 @@ frames require complete modern coverage rather than mixed indexed fragments.
 ## Draw-state rules captured from the manual
 
 - Program reset restores camera, palettes, clipping, draw colour, and fill pattern.
+- The current draw colour starts at 6. `color(col)` changes it and `color()`
+  restores 6; primitives with an omitted `col` consume that state. A colour
+  supplied to `print` also becomes current, while an explicit primitive colour
+  is local to that call.
 - `camera(x,y)` applies a screen offset of `-x,-y`; `camera()` resets it.
 - `clip(x,y,w,h)` uses a pixel rectangle. Its optional fifth argument intersects
   the new rectangle with the previous one. `clip()` resets it.
@@ -47,6 +51,11 @@ frames require complete modern coverage rather than mixed indexed fragments.
 palette/transparency state, camera, clipping, clear, line, rectangle, circle,
 and a flat 16,384-byte indexed-frame export. It only uses the core memory API,
 so low-level screen and GFX remapping remains authoritative.
+
+`runtime/core/src/vm_z8lua.cpp` owns the current-colour state used by PICO-8
+API calls. Semantic draw commands always contain the resolved raw colour even
+when the cart omitted the optional argument, so native rasterization and the HD
+presentation bridge consume the same deterministic value.
 
 The same source targets native, WebAssembly, and ESP-IDF builds. A TypeScript
 host consumes the indexed frame; it does not duplicate compatibility raster rules.
