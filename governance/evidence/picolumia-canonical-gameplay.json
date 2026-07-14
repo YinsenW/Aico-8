@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "subject": "picolumia-v1-2-private-research unchanged-cart canonical gameplay",
+  "status": "canonical-gameplay-passed-game-qualification-still-open",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "runtime": {
+    "id": "aico8-core-wasm",
+    "revision": "e49072e8c56f3212c7009fa9bb794bedbd52bb8ef2ee084c36152603d162a22c"
+  },
+  "observations": {
+    "boundary_kind": "clear-threshold",
+    "required_boundaries": 15,
+    "completed_boundaries": 15,
+    "ordinary_input_logical_updates": 5711,
+    "input_spans": 1373,
+    "strokes": 172,
+    "state_checkpoints": 17,
+    "mutation_regressions_rejected": 3,
+    "ending_reached": true,
+    "progression_complete": true,
+    "host_input_surfaces": 3,
+    "host_input_mask_mismatches": 0
+  },
+  "canonicality": {
+    "mode": "canonical-real-input",
+    "cartMutation": "none",
+    "compatibilityStateMutation": "none",
+    "inputSource": "pico8-buttons-only",
+    "logicalUpdatePolicy": "execute-all",
+    "testHooks": false,
+    "wallClockAcceleration": true
+  },
+  "private_artifact_sha256": {
+    "replay_v1": "2e2e1935b613c2d9c9377fdb8154cb6a42a3bc2003a90b60659b2a49230ae95b",
+    "differential": "fd76c064f58cdb295238e77d13f0e5680b1ff8d761b14a5795b8f062ddcff93b",
+    "input_projection": "8fe2e2f8e47239bb886283b4f60f93fed3e76b69c46ebb33f2863b0768353c0c",
+    "input_trace_provenance": "827f63d09bf9c06b7792e8e29cd94333586ad8dda31c9f886e3fb275bb90ab9d"
+  },
+  "limitations": [
+    "Licensed official PICO-8 runtime capture is not present in this workspace and remains an independent compatibility oracle.",
+    "This private gameplay record is not HD review or publication authorization."
+  ],
+  "selector": "TEST-QUALIFICATION-GAMEPLAY-PRIVATE"
+}
