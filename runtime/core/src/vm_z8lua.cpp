@@ -1409,6 +1409,38 @@ int p8_vm_get_table_value_raw(p8_vm *vm, const char *name,
     return numeric;
 }
 
+int p8_vm_get_table_field_raw(p8_vm *vm, const char *name, const char *field,
+                              int32_t *raw_16_16)
+{
+    if (!vm || !name || !field || !raw_16_16) return 0;
+    lua_getglobal(vm->state, name);
+    if (!lua_istable(vm->state, -1)) {
+        lua_pop(vm->state, 1);
+        return 0;
+    }
+    lua_getfield(vm->state, -1, field);
+    const int numeric = lua_isnumber(vm->state, -1);
+    if (numeric) *raw_16_16 = lua_tonumber(vm->state, -1).bits();
+    lua_pop(vm->state, 2);
+    return numeric;
+}
+
+int p8_vm_get_table_field_boolean(p8_vm *vm, const char *name,
+                                  const char *field, int *value)
+{
+    if (!vm || !name || !field || !value) return 0;
+    lua_getglobal(vm->state, name);
+    if (!lua_istable(vm->state, -1)) {
+        lua_pop(vm->state, 1);
+        return 0;
+    }
+    lua_getfield(vm->state, -1, field);
+    const int boolean = lua_isboolean(vm->state, -1);
+    if (boolean) *value = lua_toboolean(vm->state, -1);
+    lua_pop(vm->state, 2);
+    return boolean;
+}
+
 int p8_vm_get_table_entry_raw(p8_vm *vm, const char *name, size_t one_based_index,
                               const char *field, int32_t *raw_16_16)
 {

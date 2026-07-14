@@ -65,8 +65,10 @@ try {
   const readyNamePointer = copyToHeap(new TextEncoder().encode("ready\0"));
   const modeNamePointer = copyToHeap(new TextEncoder().encode("mode\0"));
   const actorsNamePointer = copyToHeap(new TextEncoder().encode("actors\0"));
+  const playerNamePointer = copyToHeap(new TextEncoder().encode("player\0"));
   const valuesNamePointer = copyToHeap(new TextEncoder().encode("values\0"));
   const xFieldPointer = copyToHeap(new TextEncoder().encode("x\0"));
+  const activeFieldPointer = copyToHeap(new TextEncoder().encode("active\0"));
   const rockFieldPointer = copyToHeap(new TextEncoder().encode("rock\0"));
   const stringPointer = kernel._malloc(16);
   const menuLabelPointer = kernel._malloc(17);
@@ -84,6 +86,12 @@ try {
     assert.equal(kernel._aico8_get_table_value_raw(runtime, valuesNamePointer, 2, valuePointer), 1);
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 9 << 16);
     assert.equal(kernel._aico8_get_table_value_raw(runtime, valuesNamePointer, 3, valuePointer), 0);
+    assert.equal(kernel._aico8_get_table_field_raw(runtime, playerNamePointer, xFieldPointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 11 << 16);
+    assert.equal(kernel._aico8_get_table_field_raw(runtime, playerNamePointer, activeFieldPointer, valuePointer), 0);
+    assert.equal(kernel._aico8_get_table_field_boolean(runtime, playerNamePointer, activeFieldPointer, valuePointer), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 1);
+    assert.equal(kernel._aico8_get_table_field_boolean(runtime, playerNamePointer, xFieldPointer, valuePointer), 0);
     assert.equal(kernel._aico8_get_table_entry_raw(runtime, actorsNamePointer, 1, xFieldPointer, valuePointer), 1);
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 3 << 16);
     assert.equal(kernel._aico8_get_table_entry_boolean(runtime, actorsNamePointer, 1, rockFieldPointer, valuePointer), 1);
@@ -108,7 +116,9 @@ try {
     kernel._free(menuLabelPointer);
     kernel._free(stringPointer);
     kernel._free(rockFieldPointer);
+    kernel._free(activeFieldPointer);
     kernel._free(xFieldPointer);
+    kernel._free(playerNamePointer);
     kernel._free(actorsNamePointer);
     kernel._free(valuesNamePointer);
     kernel._free(modeNamePointer);

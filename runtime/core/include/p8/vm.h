@@ -35,6 +35,10 @@ size_t p8_vm_copy_global_string(p8_vm *vm, const char *name, char *destination,
 int p8_vm_get_table_length(p8_vm *vm, const char *name, size_t *length);
 int p8_vm_get_table_value_raw(p8_vm *vm, const char *name,
                               size_t one_based_index, int32_t *raw_16_16);
+int p8_vm_get_table_field_raw(p8_vm *vm, const char *name, const char *field,
+                              int32_t *raw_16_16);
+int p8_vm_get_table_field_boolean(p8_vm *vm, const char *name,
+                                  const char *field, int *value);
 int p8_vm_get_table_entry_raw(p8_vm *vm, const char *name, size_t one_based_index,
                               const char *field, int32_t *raw_16_16);
 int p8_vm_get_table_entry_boolean(p8_vm *vm, const char *name,

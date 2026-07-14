@@ -273,6 +273,20 @@ int aico8_get_table_value_raw(aico8_runtime *runtime, const char *name,
         ? p8_vm_get_table_value_raw(runtime->vm, name, one_based_index, raw_16_16) : 0;
 }
 
+int aico8_get_table_field_raw(aico8_runtime *runtime, const char *name,
+                              const char *field, int32_t *raw_16_16)
+{
+    return runtime && runtime->vm
+        ? p8_vm_get_table_field_raw(runtime->vm, name, field, raw_16_16) : 0;
+}
+
+int aico8_get_table_field_boolean(aico8_runtime *runtime, const char *name,
+                                  const char *field, int *value)
+{
+    return runtime && runtime->vm
+        ? p8_vm_get_table_field_boolean(runtime->vm, name, field, value) : 0;
+}
+
 int aico8_get_table_entry_raw(aico8_runtime *runtime, const char *name,
                               size_t one_based_index, const char *field,
                               int32_t *raw_16_16)

@@ -136,6 +136,14 @@ std::vector<uint8_t> test_synthetic_cart_updates_raster_and_semantic_stream()
     assert(p8_vm_get_table_value_raw(vm, "values", 2, &table_value));
     assert(table_value == 9 << 16);
     assert(!p8_vm_get_table_value_raw(vm, "values", 3, &table_value));
+    int32_t player_x = 0;
+    assert(p8_vm_get_table_field_raw(vm, "player", "x", &player_x));
+    assert(player_x == 11 << 16);
+    assert(!p8_vm_get_table_field_raw(vm, "player", "active", &player_x));
+    int player_active = 0;
+    assert(p8_vm_get_table_field_boolean(vm, "player", "active", &player_active));
+    assert(player_active == 1);
+    assert(!p8_vm_get_table_field_boolean(vm, "player", "x", &player_active));
     int32_t actor_x = 0;
     assert(p8_vm_get_table_entry_raw(vm, "actors", 1, "x", &actor_x));
     assert(actor_x == 3 << 16);

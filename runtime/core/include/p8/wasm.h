@@ -52,6 +52,10 @@ int aico8_get_table_length(aico8_runtime *runtime, const char *name,
                            size_t *length);
 int aico8_get_table_value_raw(aico8_runtime *runtime, const char *name,
                               size_t one_based_index, int32_t *raw_16_16);
+int aico8_get_table_field_raw(aico8_runtime *runtime, const char *name,
+                              const char *field, int32_t *raw_16_16);
+int aico8_get_table_field_boolean(aico8_runtime *runtime, const char *name,
+                                  const char *field, int *value);
 int aico8_get_table_entry_raw(aico8_runtime *runtime, const char *name,
                               size_t one_based_index, const char *field,
                               int32_t *raw_16_16);

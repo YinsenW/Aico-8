@@ -124,6 +124,8 @@ interface EmscriptenKernel {
   _aico8_copy_global_string(runtime: number, name: number, destination: number, capacity: number): number;
   _aico8_get_table_length(runtime: number, name: number, output: number): number;
   _aico8_get_table_value_raw(runtime: number, name: number, oneBasedIndex: number, output: number): number;
+  _aico8_get_table_field_raw(runtime: number, name: number, field: number, output: number): number;
+  _aico8_get_table_field_boolean(runtime: number, name: number, field: number, output: number): number;
   _aico8_get_table_entry_raw(runtime: number, name: number, oneBasedIndex: number, field: number, output: number): number;
   _aico8_get_table_entry_boolean(runtime: number, name: number, oneBasedIndex: number, field: number, output: number): number;
   _aico8_copy_menu_item_label(runtime: number, index: number, destination: number, capacity: number): number;
@@ -452,6 +454,20 @@ export class Aico8Kernel {
       this.#runtime, this.#namePointer(name), oneBasedIndex, this.#valueScratch,
     )) return undefined;
     return new DataView(this.#module.HEAPU8.buffer).getInt32(this.#valueScratch, true) / 65536;
+  }
+
+  tableFieldNumber(name: string, field: string): number | undefined {
+    if (!this.#module._aico8_get_table_field_raw(
+      this.#runtime, this.#namePointer(name), this.#namePointer(field), this.#valueScratch,
+    )) return undefined;
+    return new DataView(this.#module.HEAPU8.buffer).getInt32(this.#valueScratch, true) / 65536;
+  }
+
+  tableFieldBoolean(name: string, field: string): boolean | undefined {
+    if (!this.#module._aico8_get_table_field_boolean(
+      this.#runtime, this.#namePointer(name), this.#namePointer(field), this.#valueScratch,
+    )) return undefined;
+    return new DataView(this.#module.HEAPU8.buffer).getInt32(this.#valueScratch, true) !== 0;
   }
 
   tableEntryNumber(name: string, oneBasedIndex: number, field: string): number | undefined {

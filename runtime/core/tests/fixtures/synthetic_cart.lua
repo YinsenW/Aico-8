@@ -8,6 +8,7 @@ function _init()
  layer=fget(1,2)
  mode="fixture"
  actors={{x=3,rock=true},{x=4,rock=false}}
+ player={x=11,active=true}
  values={4,9}
  menu_buttons=-1
  menuitem(0x301,"fixture action",function(buttons)
