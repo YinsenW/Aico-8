@@ -1,4 +1,15 @@
 export {
+  BATCH_SCHEMA_VERSION,
+  acceptedBatchGameIds,
+  validateBatch,
+  type BatchGameState,
+  type BatchGameV1,
+  type BatchStage,
+  type BatchStatus,
+  type BatchV1,
+  type BatchValidationResult,
+} from "./batch.js";
+export {
   REFERENCE_PROFILE,
   fitReferenceSquare,
   logicalToReference,

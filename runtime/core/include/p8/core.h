@@ -47,6 +47,10 @@ typedef enum p8_draw_opcode {
     P8_DRAW_PAL,
     P8_DRAW_FILLP,
     P8_DRAW_CUSTOM,
+    /* Appended to preserve the numeric ABI of every existing draw opcode. */
+    P8_DRAW_PALT,
+    P8_DRAW_CAMERA,
+    P8_DRAW_CLIP,
 } p8_draw_opcode;
 
 /* Arguments are raw PICO-8 16:16 values unless an opcode says otherwise. */

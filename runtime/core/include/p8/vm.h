@@ -24,6 +24,8 @@ int p8_vm_call_pending(const p8_vm *vm);
 const char *p8_vm_active_function(const p8_vm *vm);
 
 const char *p8_vm_last_error(const p8_vm *vm);
+/* Newline-delimited output from printh() without granting host file access. */
+const char *p8_vm_diagnostic_output(const p8_vm *vm);
 int p8_vm_has_global(p8_vm *vm, const char *name);
 int p8_vm_get_global_raw(p8_vm *vm, const char *name, int32_t *raw_16_16);
 int p8_vm_get_global_boolean(p8_vm *vm, const char *name, int *value);

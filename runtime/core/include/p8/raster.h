@@ -44,6 +44,10 @@ void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
                      uint8_t color);
 void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
                 int flip_x, int flip_y);
+void p8_gfx_sspr(p8_core *core, int source_x, int source_y, int source_width,
+                 int source_height, int destination_x, int destination_y,
+                 int destination_width, int destination_height,
+                 int flip_x, int flip_y);
 void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_y,
                 int cell_width, int cell_height, uint8_t layer);
 

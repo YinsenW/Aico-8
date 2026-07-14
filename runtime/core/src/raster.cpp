@@ -464,6 +464,35 @@ void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
     }
 }
 
+void p8_gfx_sspr(p8_core *core, int source_x, int source_y, int source_width,
+                 int source_height, int destination_x, int destination_y,
+                 int destination_width, int destination_height,
+                 int flip_x, int flip_y)
+{
+    if (!core || source_width <= 0 || source_height <= 0
+        || destination_width <= 0 || destination_height <= 0) {
+        return;
+    }
+    for (int y = 0; y < destination_height; ++y) {
+        int sample_y = static_cast<int>((static_cast<int64_t>(y) * source_height)
+                                        / destination_height);
+        if (flip_y) sample_y = source_height - sample_y - 1;
+        for (int x = 0; x < destination_width; ++x) {
+            int sample_x = static_cast<int>((static_cast<int64_t>(x) * source_width)
+                                            / destination_width);
+            if (flip_x) sample_x = source_width - sample_x - 1;
+            const uint8_t color = p8_gfx_sget(core, source_x + sample_x,
+                                              source_y + sample_y);
+            if (!p8_gfx_is_transparent(core, color)) {
+                draw_mapped_pixel(core,
+                                  static_cast<int64_t>(destination_x) + x,
+                                  static_cast<int64_t>(destination_y) + y,
+                                  mapped_color(core, color));
+            }
+        }
+    }
+}
+
 void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_y,
                 int cell_width, int cell_height, uint8_t layer)
 {

@@ -208,6 +208,8 @@ The detailed mapping is defined in `specs/display-1024.md` and
   after every required level, ending, and progression boundary passes. At least
   ten materially different games must cover the declared risk matrix before the
   Jobs or final Skill are treated as stable.
+- Batch qualification uses bounded isolated cart/workspace lanes; blocked siblings
+  cannot enter assembly, and aggregate status is derived from per-game evidence.
 - Fresh-clone builds are required for every supported platform profile; Web release validation binds the target-profile hash, complete artifact manifest,
   visual-runtime identity, real-browser environment, package size, startup time,
   settled frame samples, and an active-browser measurement/screenshot for every target-profile layout class in one fail-closed report; 1024x1024 square handheld

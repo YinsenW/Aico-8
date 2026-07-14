@@ -246,6 +246,114 @@ function remove_menu() menuitem(1) end
     p8_core_destroy(core);
 }
 
+void test_palette_transparency_diagnostics_and_deterministic_time()
+{
+    constexpr char source[] = R"p8lua(
+initial_time=-1
+clock=-1
+alias_clock=-1
+unpacked_a=-1
+unpacked_b=-1
+peek_a=-1
+peek_b=-1
+peek_c=-1
+peek_word=-1
+peek_fixed=-1
+screen_pixel=-1
+sprite_pixel=-1
+function _init()
+ initial_time=time()
+ printh("boot "..initial_time)
+ unpacked_a,unpacked_b=unpack({4,5})
+ poke(0x3200,1,2,3)
+ peek_a,peek_b,peek_c=peek(0x3200,3)
+ poke2(0x3204,0xabcd)
+ peek_word=peek2(0x3204)
+ poke4(0x3210,0x1234.5678)
+ peek_fixed=peek4(0x3210)
+ cls(3)
+ camera(2,1)
+ pset(22,21,9)
+ camera()
+ palt(0,false)
+ spr(0,0,0)
+ palt()
+ spr(0,8,0)
+ pset(1,1,8)
+ screen_pixel=pget(1,1)
+ sset(20,20,15)
+ sprite_pixel=sget(20,20)
+ line()
+ line(30,30,10)
+ line(32,30,10)
+ line(40,40,42,40,11)
+ clip(50,50,2,2)
+ pset(49,49,12)
+ pset(50,50,12)
+ clip()
+ sspr(16,16,2,1,60,60,4,2)
+ sspr(16,16,2,1,64,60,4,2,true)
+ palt(0xc000)
+end
+function _update()
+ clock=time()
+ alias_clock=t()
+end
+function denied_file_output() printh("unsafe","log.txt") end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    p8_gfx_sset(core, 16, 16, 13);
+    p8_gfx_sset(core, 17, 16, 14);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@host-api-test"));
+    assert(p8_vm_call(vm, "_init"));
+
+    int32_t value = -1;
+    assert(p8_vm_get_global_raw(vm, "initial_time", &value) && value == 0);
+    assert(std::string(p8_vm_diagnostic_output(vm)) == "boot 0\n");
+    assert(p8_vm_get_global_raw(vm, "unpacked_a", &value) && value == 4 << 16);
+    assert(p8_vm_get_global_raw(vm, "unpacked_b", &value) && value == 5 << 16);
+    assert(p8_vm_get_global_raw(vm, "peek_a", &value) && value == 1 << 16);
+    assert(p8_vm_get_global_raw(vm, "peek_b", &value) && value == 2 << 16);
+    assert(p8_vm_get_global_raw(vm, "peek_c", &value) && value == 3 << 16);
+    assert(p8_vm_get_global_raw(vm, "peek_word", &value)
+           && static_cast<uint32_t>(value) == 0xabcd0000u);
+    assert(p8_vm_get_global_raw(vm, "peek_fixed", &value)
+           && static_cast<uint32_t>(value) == 0x12345678u);
+    assert(p8_vm_get_global_raw(vm, "screen_pixel", &value) && value == 8 << 16);
+    assert(p8_vm_get_global_raw(vm, "sprite_pixel", &value) && value == 15 << 16);
+    assert(p8_gfx_pget(core, 20, 20) == 9);
+    assert(p8_gfx_pget(core, 1, 1) == 8);
+    assert(p8_gfx_pget(core, 0, 0) == 0); // palt(0,false) makes sprite color zero visible
+    assert(p8_gfx_pget(core, 8, 0) == 3); // palt() restores color-zero transparency
+    assert(p8_gfx_pget(core, 30, 30) == 10);
+    assert(p8_gfx_pget(core, 31, 30) == 10);
+    assert(p8_gfx_pget(core, 42, 40) == 11);
+    assert(p8_gfx_pget(core, 49, 49) == 3);
+    assert(p8_gfx_pget(core, 50, 50) == 12);
+    assert(p8_gfx_pget(core, 60, 60) == 13);
+    assert(p8_gfx_pget(core, 61, 61) == 13);
+    assert(p8_gfx_pget(core, 62, 60) == 14);
+    assert(p8_gfx_pget(core, 64, 60) == 14);
+    assert(p8_gfx_pget(core, 66, 60) == 13);
+    assert(p8_gfx_is_transparent(core, 0));
+    assert(p8_gfx_is_transparent(core, 1));
+    assert(!p8_gfx_is_transparent(core, 2));
+
+    assert(p8_core_host_tick60(core, 1) == 1);
+    constexpr int32_t one_thirtieth = 0x10000 / 30;
+    assert(p8_vm_get_global_raw(vm, "clock", &value) && value == one_thirtieth);
+    assert(p8_vm_get_global_raw(vm, "alias_clock", &value) && value == one_thirtieth);
+
+    assert(!p8_vm_call(vm, "denied_file_output"));
+    assert(std::strstr(p8_vm_last_error(vm), "file output is disabled") != nullptr);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -254,6 +362,7 @@ int main(int argc, char **argv)
     test_pico_button_glyph_constants_map_to_all_six_buttons();
     test_flip_suspends_and_resumes_initialization_at_frame_boundaries();
     test_menu_items_register_filter_invoke_update_and_remove();
+    test_palette_transparency_diagnostics_and_deterministic_time();
     if (argc == 2 && std::string(argv[1]) == "--checkpoint") {
         for (uint8_t byte : checkpoint) std::printf("%02x", byte);
         std::putchar('\n');

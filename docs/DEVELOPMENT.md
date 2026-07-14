@@ -47,6 +47,7 @@ pnpm verify:public
 pnpm verify:hd-identity
 pnpm verify:hd-presentation
 pnpm verify:replay
+pnpm verify:batch
 make -C runtime/core test
 make -C runtime/core wasm-test
 pnpm verify:web
@@ -55,6 +56,10 @@ pnpm verify:private-remake
 
 Private-archive selectors strengthen local evidence but never masquerade as
 public CI or enter the clean public repository history.
+`pnpm verify:batch` validates the public rolling-lane contract. It rejects shared
+workspace/cart identities, excess active lanes, acceptance without independent
+replay/HD/Web evidence, and aggregate status that hides partial failure. The
+batch ledger coordinates work; it cannot promote a game beyond its own gates.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
 reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
 level/ending milestones, and broken replay lineage.

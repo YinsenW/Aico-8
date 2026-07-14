@@ -111,6 +111,7 @@ struct p8_vm {
     p8_core *core = nullptr;
     lua_State *state = nullptr;
     std::string error;
+    std::string diagnostic_output;
     std::string cartdata_id;
     bool cartdata_active = false;
     bool has_update60 = false;
@@ -121,6 +122,11 @@ struct p8_vm {
     bool suppress_draw_once = false;
     std::array<p8_menu_item, 5> menu_items{};
     unsigned active_menu_item = 0;
+    bool line_cursor_ready = false;
+    int line_cursor_x = 0;
+    int line_cursor_y = 0;
+    int32_t line_cursor_x_raw = 0;
+    int32_t line_cursor_y_raw = 0;
 
     static p8_vm *from(lua_State *state)
     {
@@ -237,6 +243,69 @@ struct p8_vm {
 };
 
 namespace {
+
+int api_peek(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const uint16_t address = static_cast<uint16_t>(integer(state, 1));
+    const int count = integer(state, 2, 1);
+    if (count < 0 || count > 8192) {
+        return luaL_error(state, "peek result count must be between 0 and 8192");
+    }
+    luaL_checkstack(state, count, "too many peek results");
+    for (int offset = 0; offset < count; ++offset) {
+        lua_pushnumber(state, p8_core_peek(vm->core,
+                                          static_cast<uint16_t>(address + offset)));
+    }
+    return count;
+}
+
+int api_poke(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const uint16_t address = static_cast<uint16_t>(integer(state, 1));
+    const int count = lua_gettop(state) - 1;
+    if (count > 8192) {
+        return luaL_error(state, "poke value count must not exceed 8192");
+    }
+    for (int offset = 0; offset < count; ++offset) {
+        p8_core_poke(vm->core, static_cast<uint16_t>(address + offset),
+                     static_cast<uint8_t>(integer(state, offset + 2)));
+    }
+    return 0;
+}
+
+int api_peek2(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    lua_pushnumber(state, p8_core_peek16(vm->core,
+                                        static_cast<uint16_t>(integer(state, 1))));
+    return 1;
+}
+
+int api_poke2(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_core_poke16(vm->core, static_cast<uint16_t>(integer(state, 1)),
+                   static_cast<uint16_t>(integer(state, 2)));
+    return 0;
+}
+
+int api_peek4(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    lua_pushnumber(state, lua_Number::frombits(
+        p8_core_peek32(vm->core, static_cast<uint16_t>(integer(state, 1)))));
+    return 1;
+}
+
+int api_poke4(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_core_poke32(vm->core, static_cast<uint16_t>(integer(state, 1)),
+                   static_cast<uint32_t>(raw_number(state, 2)));
+    return 0;
+}
 
 int api_mget(lua_State *state)
 {
@@ -445,6 +514,86 @@ int api_pset(lua_State *state)
     return 0;
 }
 
+int api_pget(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    lua_pushnumber(state, p8_gfx_pget(vm->core, integer(state, 1), integer(state, 2)));
+    return 1;
+}
+
+int api_sget(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    lua_pushnumber(state, p8_gfx_sget(vm->core, integer(state, 1), integer(state, 2)));
+    return 1;
+}
+
+int api_sset(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_gfx_sset(vm->core, integer(state, 1), integer(state, 2),
+                static_cast<uint8_t>(integer(state, 3, 6)));
+    return 0;
+}
+
+int api_line(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const int argument_count = lua_gettop(state);
+    p8_draw_command command{};
+    command.opcode = P8_DRAW_LINE;
+    command.flags = static_cast<uint16_t>(argument_count);
+    if (argument_count == 0) {
+        vm->line_cursor_ready = false;
+        p8_core_emit_draw(vm->core, &command);
+        return 0;
+    }
+
+    int x0 = integer(state, 1);
+    int y0 = integer(state, 2);
+    int x1 = x0;
+    int y1 = y0;
+    int32_t x0_raw = raw_number(state, 1);
+    int32_t y0_raw = raw_number(state, 2);
+    int32_t x1_raw = x0_raw;
+    int32_t y1_raw = y0_raw;
+    uint8_t color = 6;
+    bool should_draw = true;
+    if (argument_count >= 4) {
+        x1 = integer(state, 3);
+        y1 = integer(state, 4);
+        x1_raw = raw_number(state, 3);
+        y1_raw = raw_number(state, 4);
+        color = static_cast<uint8_t>(integer(state, 5, 6));
+    } else {
+        x1 = x0;
+        y1 = y0;
+        color = static_cast<uint8_t>(integer(state, 3, 6));
+        should_draw = vm->line_cursor_ready;
+        if (should_draw) {
+            x0 = vm->line_cursor_x;
+            y0 = vm->line_cursor_y;
+            x0_raw = vm->line_cursor_x_raw;
+            y0_raw = vm->line_cursor_y_raw;
+        }
+    }
+    command.args[0] = x0_raw;
+    command.args[1] = y0_raw;
+    command.args[2] = x1_raw;
+    command.args[3] = y1_raw;
+    command.args[4] = static_cast<int32_t>(color) << 16;
+    p8_core_emit_draw(vm->core, &command);
+    if (should_draw) {
+        p8_gfx_line(vm->core, x0, y0, x1, y1, color);
+    }
+    vm->line_cursor_x = x1;
+    vm->line_cursor_y = y1;
+    vm->line_cursor_x_raw = x1_raw;
+    vm->line_cursor_y_raw = y1_raw;
+    vm->line_cursor_ready = true;
+    return 0;
+}
+
 int api_rect(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
@@ -501,6 +650,28 @@ int api_spr(lua_State *state)
     return 0;
 }
 
+int api_sspr(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_draw_command command{};
+    command.opcode = P8_DRAW_SSPR;
+    command.flags = static_cast<uint16_t>(lua_gettop(state));
+    for (int index = 0; index < 6; ++index) {
+        command.args[index] = raw_number(state, index + 1);
+    }
+    command.args[6] = raw_number(state, 7, command.args[2]);
+    command.args[7] = raw_number(state, 8, command.args[3]);
+    command.args[8] = lua_toboolean(state, 9) ? 0x10000 : 0;
+    command.args[9] = lua_toboolean(state, 10) ? 0x10000 : 0;
+    p8_core_emit_draw(vm->core, &command);
+    p8_gfx_sspr(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                integer(state, 4), integer(state, 5), integer(state, 6),
+                integer(state, 7, integer(state, 3)),
+                integer(state, 8, integer(state, 4)),
+                lua_toboolean(state, 9), lua_toboolean(state, 10));
+    return 0;
+}
+
 int api_map(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
@@ -541,6 +712,68 @@ int api_pal(lua_State *state)
     return 0;
 }
 
+int api_palt(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_draw_command command{};
+    command.opcode = P8_DRAW_PALT;
+    command.flags = static_cast<uint16_t>(lua_gettop(state));
+    command.args[0] = raw_number(state, 1);
+    command.args[1] = lua_isnoneornil(state, 2) || lua_toboolean(state, 2) ? 0x10000 : 0;
+    p8_core_emit_draw(vm->core, &command);
+    if (lua_gettop(state) == 0) {
+        p8_gfx_palt_reset(vm->core);
+    } else if (lua_gettop(state) == 1) {
+        const uint16_t mask = static_cast<uint16_t>(integer(state, 1));
+        for (uint8_t color = 0; color < 16; ++color) {
+            p8_gfx_palt(vm->core, color, (mask & (1u << (15u - color))) != 0);
+        }
+    } else {
+        p8_gfx_palt(vm->core, static_cast<uint8_t>(integer(state, 1)),
+                    lua_toboolean(state, 2));
+    }
+    return 0;
+}
+
+int api_camera(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_draw_command command{};
+    command.opcode = P8_DRAW_CAMERA;
+    command.flags = static_cast<uint16_t>(lua_gettop(state));
+    command.args[0] = raw_number(state, 1);
+    command.args[1] = raw_number(state, 2);
+    p8_core_emit_draw(vm->core, &command);
+    if (lua_gettop(state) == 0) {
+        p8_gfx_camera_reset(vm->core);
+    } else {
+        p8_gfx_camera(vm->core, integer(state, 1), integer(state, 2));
+    }
+    return 0;
+}
+
+int api_clip(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_draw_command command{};
+    command.opcode = P8_DRAW_CLIP;
+    command.flags = static_cast<uint16_t>(lua_gettop(state));
+    if (lua_gettop(state) == 0) {
+        p8_core_emit_draw(vm->core, &command);
+        p8_gfx_clip_reset(vm->core);
+        return 0;
+    }
+    command.args[0] = raw_number(state, 1);
+    command.args[1] = raw_number(state, 2);
+    command.args[2] = raw_number(state, 3);
+    command.args[3] = raw_number(state, 4);
+    command.args[4] = lua_toboolean(state, 5) ? 0x10000 : 0;
+    p8_core_emit_draw(vm->core, &command);
+    p8_gfx_clip(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                integer(state, 4), lua_toboolean(state, 5));
+    return 0;
+}
+
 int api_fillp(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
@@ -568,6 +801,32 @@ int api_print(lua_State *state)
     const int32_t rightmost = command.args[0] + static_cast<int32_t>(size * 4u << 16);
     lua_pop(state, 1);
     lua_pushnumber(state, lua_Number::frombits(rightmost));
+    return 1;
+}
+
+int api_printh(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    if (lua_gettop(state) >= 2 && !lua_isnil(state, 2)) {
+        return luaL_error(state,
+                          "printh file output is disabled by the Aico 8 host policy");
+    }
+    size_t size = 0;
+    const char *text = luaL_tolstring(state, 1, &size);
+    if (text) {
+        vm->diagnostic_output.append(text, size);
+        vm->diagnostic_output.push_back('\n');
+    }
+    return 0;
+}
+
+int api_time(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const uint64_t updates = p8_core_get_update_count(vm->core);
+    const unsigned rate = p8_core_get_update_rate(vm->core);
+    const uint64_t raw = rate == 0 ? 0 : (updates * 0x10000ull) / rate;
+    lua_pushnumber(state, lua_Number::frombits(static_cast<int32_t>(raw)));
     return 1;
 }
 
@@ -616,6 +875,16 @@ p8_vm *p8_vm_create(p8_core *core)
         return nullptr;
     }
     luaL_openlibs(vm->state);
+    lua_getglobal(vm->state, "table");
+    lua_getfield(vm->state, -1, "unpack");
+    lua_setglobal(vm->state, "unpack");
+    lua_pop(vm->state, 1);
+    vm->install("peek", api_peek);
+    vm->install("poke", api_poke);
+    vm->install("peek2", api_peek2);
+    vm->install("poke2", api_poke2);
+    vm->install("peek4", api_peek4);
+    vm->install("poke4", api_poke4);
     vm->install("mget", api_mget);
     vm->install("mset", api_mset);
     vm->install("fget", api_fget);
@@ -632,15 +901,26 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("menuitem", api_menuitem);
     vm->install("cls", api_cls);
     vm->install("pset", api_pset);
+    vm->install("pget", api_pget);
+    vm->install("sget", api_sget);
+    vm->install("sset", api_sset);
+    vm->install("line", api_line);
     vm->install("rect", api_rect);
     vm->install("rectfill", api_rectfill);
     vm->install("circ", api_circ);
     vm->install("circfill", api_circfill);
     vm->install("spr", api_spr);
+    vm->install("sspr", api_sspr);
     vm->install("map", api_map);
     vm->install("pal", api_pal);
+    vm->install("palt", api_palt);
+    vm->install("camera", api_camera);
+    vm->install("clip", api_clip);
     vm->install("fillp", api_fillp);
     vm->install("print", api_print);
+    vm->install("printh", api_printh);
+    vm->install("time", api_time);
+    vm->install("t", api_time);
     vm->install("flip", api_flip);
     vm->install("run", api_run);
     vm->seed_rng(0);
@@ -745,6 +1025,11 @@ const char *p8_vm_active_function(const p8_vm *vm)
 const char *p8_vm_last_error(const p8_vm *vm)
 {
     return vm ? vm->error.c_str() : "no vm";
+}
+
+const char *p8_vm_diagnostic_output(const p8_vm *vm)
+{
+    return vm ? vm->diagnostic_output.c_str() : "";
 }
 
 int p8_vm_has_global(p8_vm *vm, const char *name)
