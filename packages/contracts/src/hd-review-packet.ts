@@ -390,8 +390,21 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
         const framePath = `${path}.frames[${frameIndex}]`;
         const frame = record(item_, framePath, errors);
         if (!frame) return;
-        exactKeys(frame, ["update", "presentationMilliseconds", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"], framePath, errors);
-        const update = integer(frame.update, `${framePath}.update`, errors, 0) ? frame.update as number : undefined;
+        const hasUpdate = Object.prototype.hasOwnProperty.call(frame, "update");
+        const hasInitializationHostTick = Object.prototype.hasOwnProperty.call(frame, "initializationHostTick");
+        exactKeys(frame, [
+          "presentationMilliseconds", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState",
+          ...(hasUpdate ? ["update"] : []),
+          ...(hasInitializationHostTick ? ["initializationHostTick"] : []),
+        ], framePath, errors);
+        if (hasUpdate === hasInitializationHostTick) {
+          errors.push(`${framePath} must declare exactly one of update or initializationHostTick`);
+        }
+        const update = hasUpdate && integer(frame.update, `${framePath}.update`, errors, 0) ? frame.update as number : undefined;
+        const initializationHostTick = hasInitializationHostTick
+          && integer(frame.initializationHostTick, `${framePath}.initializationHostTick`, errors, 0)
+          ? frame.initializationHostTick as number
+          : undefined;
         const milliseconds = integer(frame.presentationMilliseconds, `${framePath}.presentationMilliseconds`, errors, 0)
           ? frame.presentationMilliseconds as number : undefined;
         const sourceId = idValue(frame.sourceScreenshotId, `${framePath}.sourceScreenshotId`, errors) ? frame.sourceScreenshotId as string : undefined;
@@ -402,6 +415,10 @@ export function validateHdReviewPacket(value: unknown): HdReviewPacketValidation
         if (sceneId && (source?.sceneId !== sceneId || target?.sceneId !== sceneId)) errors.push(`${framePath} screenshots must match sceneId`);
         if (update !== undefined && milliseconds !== undefined) {
           const expected = `canonical-replay:update:${update}:presentation-ms:${milliseconds}`;
+          if (source?.stateBoundary !== expected || target?.stateBoundary !== expected) errors.push(`${framePath} must bind ${expected}`);
+        }
+        if (initializationHostTick !== undefined && milliseconds !== undefined) {
+          const expected = `host-initialization:tick:${initializationHostTick}:presentation-ms:${milliseconds}`;
           if (source?.stateBoundary !== expected || target?.stateBoundary !== expected) errors.push(`${framePath} must bind ${expected}`);
         }
         if (booleanValue(frame.sameRuntimeState, `${framePath}.sameRuntimeState`, errors) && frame.sameRuntimeState !== true) {

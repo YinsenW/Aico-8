@@ -177,6 +177,10 @@ only its linked exits determine acceptance.
   mode/scene/boundary, hidden loading class, computed opacity zero, computed
   visibility hidden, and at least two newly presented frames; missing, stale, or
   duplicate records fail private remake validation.
+- Temporal review frames bind exactly one source clock: either a canonical
+  logical-update boundary or an `_init()/flip()` host-initialization tick. The
+  clocks may not be conflated; a startup frame represented as update zero is
+  invalid evidence.
 - Source-authored modern visuals are gated by source tokens from the same logical
   update. Scene membership or a token retained from an earlier frame cannot
   reveal copy, characters, effects, or cues before the source does.

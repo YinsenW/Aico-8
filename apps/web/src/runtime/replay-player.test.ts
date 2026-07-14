@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   advancePresentationTime,
   parseValidationInteger,
+  playInitializationToHostTick,
+  playNeutralInputProbe,
   playReplayToMilestone,
   playReplayToUpdate,
 } from "./replay-player.js";
@@ -46,6 +48,44 @@ const replay = {
 };
 
 describe("browser validation replay", () => {
+  it("captures an exact startup host tick without entering logical updates", () => {
+    let ticks = 0;
+    const masks: number[] = [];
+    const kernel = {
+      initializationComplete: () => ticks >= 4,
+      tick60: (mask: number) => { masks.push(mask); ticks += 1; },
+      readAudio: () => new Int16Array([1, 2, 3]),
+    };
+    expect(playInitializationToHostTick(kernel, 3)).toEqual({
+      hostTicksExecuted: 3,
+      discardedAudioSamples: 9,
+    });
+    expect(masks).toEqual([0, 0, 0]);
+    expect(() => playInitializationToHostTick(kernel, 1)).toThrow(/not inside initialization/);
+  });
+
+  it("rejects startup captures beyond the initialization boundary", () => {
+    let ticks = 0;
+    const kernel = {
+      initializationComplete: () => ticks >= 2,
+      tick60: () => { ticks += 1; },
+      readAudio: () => new Int16Array(),
+    };
+    expect(() => playInitializationToHostTick(kernel, 2)).toThrow(/not inside initialization/);
+    for (const tick of [-1, 1.5, 36_001, Number.NaN]) {
+      expect(() => playInitializationToHostTick(kernel, tick)).toThrow(/host tick/);
+    }
+  });
+
+  it("runs a bounded reachability probe through neutral input only", () => {
+    const masks: number[] = [];
+    expect(playNeutralInputProbe(3, (mask) => masks.push(mask))).toEqual({ updatesExecuted: 3 });
+    expect(masks).toEqual([0, 0, 0]);
+    for (const updates of [0, -1, 1.5, 3_601, Number.NaN]) {
+      expect(() => playNeutralInputProbe(updates, () => undefined)).toThrow(/Neutral input probe/);
+    }
+  });
+
   it("executes every ordinary input update through the selected milestone", () => {
     const masks: number[] = [];
     const result = playReplayToMilestone(replay, "game-complete", (mask) => masks.push(mask), {

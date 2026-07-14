@@ -254,14 +254,25 @@
     "temporalFrame": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["update", "presentationMilliseconds", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"],
+      "required": ["presentationMilliseconds", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"],
       "properties": {
         "update": { "type": "integer", "minimum": 0 },
+        "initializationHostTick": { "type": "integer", "minimum": 0 },
         "presentationMilliseconds": { "type": "integer", "minimum": 0 },
         "sourceScreenshotId": { "$ref": "#/$defs/id" },
         "targetScreenshotId": { "$ref": "#/$defs/id" },
         "sameRuntimeState": { "const": true }
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["update"],
+          "not": { "required": ["initializationHostTick"] }
+        },
+        {
+          "required": ["initializationHostTick"],
+          "not": { "required": ["update"] }
+        }
+      ]
     },
     "temporalComparison": {
       "type": "object",

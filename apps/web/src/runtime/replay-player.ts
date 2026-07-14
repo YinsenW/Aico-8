@@ -19,6 +19,21 @@ export interface ReplayUpdatePlaybackResult {
   readonly totalUpdates: number;
 }
 
+export interface InitializationCaptureKernel {
+  initializationComplete(): boolean;
+  tick60(buttonMask: number): void;
+  readAudio(): Int16Array;
+}
+
+export interface InitializationCaptureResult {
+  readonly hostTicksExecuted: number;
+  readonly discardedAudioSamples: number;
+}
+
+export interface NeutralInputProbeResult {
+  readonly updatesExecuted: number;
+}
+
 export function parseValidationInteger(
   value: string | null,
   label: string,
@@ -49,6 +64,49 @@ export function advancePresentationTime(
     animate(delta);
     remaining -= delta;
   }
+}
+
+/**
+ * Advances `_init()`/`flip()` presentation to one exact host tick without
+ * crossing into ordinary logical updates. This makes source-authored startup
+ * animation review reproducible even though logical replay starts afterwards.
+ */
+export function playInitializationToHostTick(
+  kernel: InitializationCaptureKernel,
+  targetHostTick: number,
+  maximumHostTicks = 36_000,
+): InitializationCaptureResult {
+  if (!Number.isSafeInteger(targetHostTick) || targetHostTick < 0 || targetHostTick > maximumHostTicks) {
+    throw new TypeError(`Initialization host tick must be an integer from 0 to ${maximumHostTicks}`);
+  }
+  if (kernel.initializationComplete()) {
+    throw new TypeError("Initialization capture requires a kernel still executing startup code");
+  }
+  let discardedAudioSamples = 0;
+  for (let hostTick = 0; hostTick < targetHostTick; hostTick += 1) {
+    if (kernel.initializationComplete()) {
+      throw new TypeError(`Initialization completed before requested host tick ${targetHostTick}`);
+    }
+    kernel.tick60(0);
+    discardedAudioSamples += kernel.readAudio().length;
+  }
+  if (kernel.initializationComplete()) {
+    throw new TypeError(`Requested host tick ${targetHostTick} is not inside initialization`);
+  }
+  return { hostTicksExecuted: targetHostTick, discardedAudioSamples };
+}
+
+/** Executes a bounded named reachability probe through ordinary neutral input. */
+export function playNeutralInputProbe(
+  updates: number,
+  logicalUpdate: (buttonMask: number) => void,
+  maximumUpdates = 3_600,
+): NeutralInputProbeResult {
+  if (!Number.isSafeInteger(updates) || updates < 1 || updates > maximumUpdates) {
+    throw new TypeError(`Neutral input probe must execute from 1 through ${maximumUpdates} logical updates`);
+  }
+  for (let update = 0; update < updates; update += 1) logicalUpdate(0);
+  return { updatesExecuted: updates };
 }
 
 function validatedReplay(value: unknown, options: ReplayPlaybackOptions): ReplayV1 {

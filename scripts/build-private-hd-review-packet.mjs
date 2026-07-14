@@ -180,9 +180,9 @@ const temporalSections = browser.temporalComparisons.map((comparison) => `
       <h3>${escapeHtml(comparison.id)} · ${escapeHtml(comparison.sceneId)}</h3>
       <p class="elements">Elements: ${comparison.elementIds.map(escapeHtml).join(", ")}</p>
       <div class="timeline source-row"><strong>SOURCE</strong>${comparison.frames.map((frame) =>
-        figure(frame.sourceScreenshotId, `u${frame.update} · ${frame.presentationMilliseconds} ms`)).join("")}</div>
+        figure(frame.sourceScreenshotId, `${Number.isInteger(frame.initializationHostTick) ? `h${frame.initializationHostTick}` : `u${frame.update}`} · ${frame.presentationMilliseconds} ms`)).join("")}</div>
       <div class="timeline hd-row"><strong>HD</strong>${comparison.frames.map((frame) =>
-        figure(frame.targetScreenshotId, `u${frame.update} · ${frame.presentationMilliseconds} ms`)).join("")}</div>
+        figure(frame.targetScreenshotId, `${Number.isInteger(frame.initializationHostTick) ? `h${frame.initializationHostTick}` : `u${frame.update}`} · ${frame.presentationMilliseconds} ms`)).join("")}</div>
     </section>`).join("");
 const elementSections = elements.map((element) => {
   assert.equal(element.sourceScreenshotIds.length, element.targetScreenshotIds.length,

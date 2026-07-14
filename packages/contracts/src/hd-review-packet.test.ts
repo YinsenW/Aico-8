@@ -110,6 +110,54 @@ describe("HD identity review packet", () => {
     expect(validateHdReviewPacket(packet)).toEqual({ valid: true, errors: [] });
   });
 
+  it("accepts initialization animation frames at exact host-tick boundaries", () => {
+    const mutated: any = structuredClone(packet);
+    mutated.screenshots = [
+      {
+        ...mutated.screenshots[0],
+        id: "source-initialization",
+        sceneId: "scene.initialization",
+        stateBoundary: "host-initialization:tick:40:presentation-ms:0",
+      },
+      {
+        ...mutated.screenshots[1],
+        id: "hd-initialization",
+        sceneId: "scene.initialization",
+        stateBoundary: "host-initialization:tick:40:presentation-ms:0",
+      },
+    ];
+    mutated.elements[0].sourceScreenshotIds = ["source-initialization"];
+    mutated.elements[0].targetScreenshotIds = ["hd-initialization"];
+    mutated.sceneComparisons[0] = {
+      ...mutated.sceneComparisons[0],
+      sceneId: "scene.initialization",
+      sourceScreenshotId: "source-initialization",
+      targetScreenshotId: "hd-initialization",
+    };
+    mutated.temporalComparisons[0] = {
+      ...mutated.temporalComparisons[0],
+      sceneId: "scene.initialization",
+      frames: [{
+        initializationHostTick: 40,
+        presentationMilliseconds: 0,
+        sourceScreenshotId: "source-initialization",
+        targetScreenshotId: "hd-initialization",
+        sameRuntimeState: true,
+      }],
+    };
+    expect(validateHdReviewPacket(mutated)).toEqual({ valid: true, errors: [] });
+  });
+
+  it("rejects temporal frames with both or neither boundary coordinate", () => {
+    const both: any = structuredClone(packet);
+    both.temporalComparisons[0].frames[0].initializationHostTick = 3;
+    expect(validateHdReviewPacket(both).errors.join("\n")).toMatch(/exactly one of update or initializationHostTick/);
+
+    const neither: any = structuredClone(packet);
+    delete neither.temporalComparisons[0].frames[0].update;
+    expect(validateHdReviewPacket(neither).errors.join("\n")).toMatch(/exactly one of update or initializationHostTick/);
+  });
+
   it("rejects cross-state or wrong-mode source/HD pairs", () => {
     const mutated: any = structuredClone(packet);
     mutated.screenshots[1]!.stateBoundary = "canonical-replay:update:4:presentation-ms:0";

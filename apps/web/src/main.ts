@@ -19,6 +19,8 @@ import { ReferenceRenderer } from "./runtime/reference-renderer.js";
 import {
   advancePresentationTime,
   parseValidationInteger,
+  playInitializationToHostTick,
+  playNeutralInputProbe,
   playReplayToMilestone,
   playReplayToUpdate,
 } from "./runtime/replay-player.js";
@@ -428,37 +430,60 @@ try {
     "validation-update",
     10_000_000,
   );
+  const requestedInitializationHostTick = parseValidationInteger(
+    validationParameters.get("validation-host-tick"),
+    "validation-host-tick",
+    36_000,
+  );
+  const requestedNeutralUpdates = parseValidationInteger(
+    validationParameters.get("validation-neutral-updates"),
+    "validation-neutral-updates",
+    3_600,
+  );
   const requestedPresentationMilliseconds = parseValidationInteger(
     validationParameters.get("validation-presentation-ms"),
     "validation-presentation-ms",
     60_000,
   ) ?? 0;
-  if (requestedReplayMilestone && requestedReplayUpdate !== undefined) {
-    throw new Error("Choose either validation-replay or validation-update, not both");
+  const requestedBoundaryCount = Number(Boolean(requestedReplayMilestone))
+    + Number(requestedReplayUpdate !== undefined)
+    + Number(requestedInitializationHostTick !== undefined)
+    + Number(requestedNeutralUpdates !== undefined);
+  if (requestedBoundaryCount > 1) {
+    throw new Error(
+      "Choose one of validation-replay, validation-update, validation-host-tick, or validation-neutral-updates",
+    );
   }
   if (requestedPresentationMilliseconds > 0
-    && !requestedReplayMilestone && requestedReplayUpdate === undefined) {
-    throw new Error("validation-presentation-ms requires a validation replay boundary");
+    && requestedBoundaryCount === 0) {
+    throw new Error("validation-presentation-ms requires a validation boundary");
   }
   let validationReplay: ReplayV1 | undefined;
-  if (requestedReplayMilestone || requestedReplayUpdate !== undefined) {
+  const validationCaptureRequested = requestedBoundaryCount === 1;
+  if (validationCaptureRequested) {
     if (!manifest.researchOnly || !manifest.validationReplay || !manifest.cartSha256) {
       throw new Error("This package does not expose research validation playback");
     }
-    loadingDetail.textContent = requestedReplayMilestone
-      ? `Executing ordinary replay input through ${requestedReplayMilestone}…`
-      : `Executing ordinary replay input through update ${requestedReplayUpdate}…`;
-    validationReplay = await loadValidationReplay(
-      manifestUrl,
-      manifest.validationReplay,
-    );
+    if (requestedInitializationHostTick !== undefined) {
+      loadingDetail.textContent = `Executing source initialization through host tick ${requestedInitializationHostTick}…`;
+    } else if (requestedNeutralUpdates !== undefined) {
+      loadingDetail.textContent = `Executing ${requestedNeutralUpdates} ordinary neutral-input update(s)…`;
+    } else {
+      loadingDetail.textContent = requestedReplayMilestone
+        ? `Executing ordinary replay input through ${requestedReplayMilestone}…`
+        : `Executing ordinary replay input through update ${requestedReplayUpdate}…`;
+      validationReplay = await loadValidationReplay(
+        manifestUrl,
+        manifest.validationReplay,
+      );
+    }
   }
 
   const loadedRuntime = await Aico8Kernel.create(
     import.meta.env.BASE_URL,
     manifestUrl,
     manifest,
-    validationReplay
+    validationCaptureRequested
       ? { initialPersistence: new Uint8Array(256), persistenceWrites: false }
       : undefined,
   );
@@ -499,7 +524,36 @@ try {
     if (description && announcer.textContent !== description) announcer.textContent = description;
   };
 
-  if ((requestedReplayMilestone || requestedReplayUpdate !== undefined)
+  if (requestedInitializationHostTick !== undefined) {
+    const playback = playInitializationToHostTick(loadedRuntime, requestedInitializationHostTick);
+    advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
+    renderCurrentFrame();
+    paused = true;
+    frame.dataset.validationInitializationHostTick = String(playback.hostTicksExecuted);
+    frame.dataset.validationInitializationAudioSamples = String(playback.discardedAudioSamples);
+    frame.dataset.validationPresentationMilliseconds = String(requestedPresentationMilliseconds);
+    validationPlaybackStatus = `Validation initialization · host tick ${playback.hostTicksExecuted}`
+      + (requestedPresentationMilliseconds > 0
+        ? ` · ${requestedPresentationMilliseconds.toLocaleString("en-US")} ms presentation sample`
+        : "");
+  } else if (requestedNeutralUpdates !== undefined) {
+    const initialization = prepareKernelForLogicalReplay(loadedRuntime);
+    const playback = playNeutralInputProbe(requestedNeutralUpdates, (buttonMask) => {
+      loadedRuntime.tickLogicalUpdate(buttonMask);
+      loadedRuntime.readAudio();
+    });
+    advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
+    renderCurrentFrame();
+    paused = true;
+    frame.dataset.validationInitializationHostTicks = String(initialization.hostTicks);
+    frame.dataset.validationInitializationAudioSamples = String(initialization.discardedAudioSamples);
+    frame.dataset.validationNeutralUpdates = String(playback.updatesExecuted);
+    frame.dataset.validationPresentationMilliseconds = String(requestedPresentationMilliseconds);
+    validationPlaybackStatus = `Validation neutral-input probe · ${playback.updatesExecuted} logical update(s)`
+      + (requestedPresentationMilliseconds > 0
+        ? ` · ${requestedPresentationMilliseconds.toLocaleString("en-US")} ms presentation sample`
+        : "");
+  } else if ((requestedReplayMilestone || requestedReplayUpdate !== undefined)
     && validationReplay && manifest.cartSha256) {
     const initialization = prepareKernelForLogicalReplay(loadedRuntime);
     frame.dataset.validationInitializationHostTicks = String(initialization.hostTicks);

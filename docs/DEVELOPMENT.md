@@ -115,6 +115,10 @@ sanitized public attestation.
 Official-runtime selectors remain pending until licensed captures are available.
 Accelerated replay must finish any `flip()`-driven initialization with neutral
 host input, drain its pre-replay PCM, and only then number canonical update zero.
+When startup motion itself needs review, capture its exact host-initialization
+tick; never relabel that tick as a canonical update. A bounded neutral-input probe
+may establish a normally reachable scene absent from the completion replay, but
+it must use ordinary zero input and declare its own boundary lineage.
 
 ## Recovery after interruption or failure
 
