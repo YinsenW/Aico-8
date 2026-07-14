@@ -90,7 +90,7 @@ glyphs require an explicit meaning-preserving modern mapping before HD acceptanc
 Reference text is available only in whole-scene diagnostic mode, never mixed into
 the accepted modern frame. Modern font layout never writes back into Lua-visible state.
 
-Contracts: `API-TEXT-001`, `DATA-TEXT-RUN-001`, `DATA-TYPOGRAPHY-001`,
+Contracts: `API-TEXT-001`, `DATA-TEXT-INVENTORY-001`, `DATA-TEXT-RUN-001`, `DATA-TYPOGRAPHY-001`,
 `DATA-ASSET-PACK-001`, `JOB-TYPOGRAPHY-001`, `JOB-VALIDATE-001`.
 
 ### REQ-WEB-001 — Browser-playable first release

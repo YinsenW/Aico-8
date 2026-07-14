@@ -51,7 +51,18 @@ cannot be composited into an accepted HD frame.
 
 ## Semantic text-run contract
 
-The versioned text-run schema must preserve at least:
+The executable modernization companion is
+`specs/schemas/text-inventory-v1.schema.json` plus
+`packages/contracts/src/typography.ts`. It does not replace the planned kernel
+text-run IR: it inventories every reachable run exactly once and binds its
+P8SCII/Unicode evidence, provenance, routing class, and explicit mapping. A
+review blocker is a mapping; a missing mapping is invalid evidence. Drafts may
+retain blockers, while `complete-for-hd` rejects diagnostic/reference runs and
+allows identity artwork only through a reviewed contour decision.
+For identity artwork, `safe-modern` means a review-approved identity asset; it
+never means that the artwork is eligible for substitution by an ordinary font.
+
+The future versioned text-run schema must preserve at least:
 
 - command/update identity and ordered span identity;
 - original byte range and unmodified P8SCII bytes;
@@ -70,6 +81,10 @@ side effect itself.
 ## Typography manifest
 
 The versioned manifest maps semantic roles to deterministic presentation assets.
+Its executable field contract is
+`specs/schemas/typography-manifest-v1.schema.json` plus the same TypeScript
+validator, which cross-checks all `safe-modern` characters against role and
+bundled-asset coverage.
 Each entry declares:
 
 - role and intended use, such as `display`, `menu`, `dialogue`, `hud-number`,
@@ -97,6 +112,9 @@ and invalidates visual/layout evidence.
 
 The renderer choice is per role and script, not one global font technology.
 MSDF is not required for text whose glyph inventory makes an atlas wasteful.
+Identity wordmarks and source-drawn glyphs may become safe for HD only through a
+reviewed identity-contour mapping. They never enter generic font coverage;
+custom, inline, button, effectful, and ambiguous runs remain `review-required`.
 
 ## Layout and readability
 

@@ -114,6 +114,22 @@ export {
   type HdEvidenceLifecycleValidationResult,
 } from "./hd-evidence-lifecycle.js";
 export {
+  TEXT_CLASSIFICATIONS,
+  TEXT_INVENTORY_SCHEMA_VERSION,
+  TEXT_PROVENANCE_KINDS,
+  TYPOGRAPHY_MANIFEST_SCHEMA_VERSION,
+  TYPOGRAPHY_ROLES,
+  validateTextInventory,
+  validateTypographyContract,
+  validateTypographyManifest,
+  type TextClassification,
+  type TextInventoryV1,
+  type TextProvenanceKind,
+  type TypographyManifestV1,
+  type TypographyRole,
+  type TypographyValidationResult,
+} from "./typography.js";
+export {
   RELEASE_MANIFEST_SCHEMA_VERSION,
   RELEASE_VALIDATION_SCHEMA_VERSION,
   TARGET_PROFILE_SCHEMA_VERSION,

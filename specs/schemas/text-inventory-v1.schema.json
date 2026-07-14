@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/text-inventory-v1.schema.json",
+  "title": "Aico 8 reachable text inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "gameId", "sourceSha256", "runs"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.text-inventory.v1" },
+    "status": { "enum": ["draft", "complete-for-hd"] },
+    "gameId": { "$ref": "#/$defs/id" },
+    "sourceSha256": { "$ref": "#/$defs/sha256" },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/run" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "complete-for-hd" } } },
+      "then": {
+        "properties": {
+          "runs": {
+            "items": {
+              "properties": {
+                "classification": { "const": "safe-modern" },
+                "mapping": {
+                  "properties": { "kind": { "enum": ["bundled-font", "identity-contour"] } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reachable", "contentKind", "role", "classification", "source", "unicode", "provenance", "flags", "mapping"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "reachable": { "const": true },
+        "contentKind": { "enum": ["semantic-text", "identity-wordmark", "source-drawn-glyph", "button-glyph", "inline-glyph"] },
+        "role": { "enum": ["display", "menu", "dialogue", "hud-number", "symbol", "diagnostic", "localized-body"] },
+        "classification": { "enum": ["safe-modern", "reference-only", "review-required"] },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commandId", "update", "byteStart", "bytesHex", "p8sciiEvidenceSha256"],
+          "properties": {
+            "commandId": { "$ref": "#/$defs/id" },
+            "update": { "type": "integer", "minimum": 0 },
+            "byteStart": { "type": "integer", "minimum": 0 },
+            "bytesHex": { "type": "string", "pattern": "^(?:[a-f0-9]{2})+$" },
+            "p8sciiEvidenceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "unicode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "codePoints", "mappingKind", "mappingEvidenceSha256"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1 },
+            "codePoints": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1114111,
+                "not": { "minimum": 55296, "maximum": 57343 }
+              }
+            },
+            "mappingKind": { "enum": ["lossless-declared", "unmapped", "ambiguous"] },
+            "mappingEvidenceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "evidenceSha256"],
+          "properties": {
+            "kind": { "enum": ["source-authored", "state-derived-accessibility", "supplemental-authorized"] },
+            "evidenceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "flags": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["effectful", "customFont", "inlineGlyph", "buttonGlyph", "ambiguousMapping"],
+          "properties": {
+            "effectful": { "type": "boolean" },
+            "customFont": { "type": "boolean" },
+            "inlineGlyph": { "type": "boolean" },
+            "buttonGlyph": { "type": "boolean" },
+            "ambiguousMapping": { "type": "boolean" }
+          }
+        },
+        "mapping": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "role"],
+              "properties": {
+                "kind": { "const": "bundled-font" },
+                "role": { "enum": ["display", "menu", "dialogue", "hud-number", "symbol", "diagnostic", "localized-body"] }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "identityElementId", "contourEvidenceSha256", "reviewDecisionSha256"],
+              "properties": {
+                "kind": { "const": "identity-contour" },
+                "identityElementId": { "$ref": "#/$defs/id" },
+                "contourEvidenceSha256": { "$ref": "#/$defs/sha256" },
+                "reviewDecisionSha256": { "$ref": "#/$defs/sha256" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "correspondenceRegionSha256"],
+              "properties": {
+                "kind": { "const": "diagnostic-reference" },
+                "correspondenceRegionSha256": { "$ref": "#/$defs/sha256" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "reasonCode", "evidenceSha256"],
+              "properties": {
+                "kind": { "const": "review-blocker" },
+                "reasonCode": { "$ref": "#/$defs/id" },
+                "evidenceSha256": { "$ref": "#/$defs/sha256" }
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "contentKind": { "enum": ["identity-wordmark", "source-drawn-glyph"] } } },
+          "then": { "properties": { "mapping": { "properties": { "kind": { "const": "identity-contour" } } } } }
+        }
+      ]
+    }
+  }
+}

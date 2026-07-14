@@ -39,8 +39,9 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-HD-EVIDENCE-LIFECYCLE-001 | Fail-closed progression from source-inventoried offline draft through zero-unmapped packaged capture to a pending human packet, with immutable draft/runtime/capture hashes, browser readiness, source/HD pair counts, fixed review-gate order, and zero acceptance claims | `specs/schemas/hd-evidence-lifecycle-v1.schema.json` and TypeScript validator |
 | DATA-ASSET-PACK-001 | Frozen hashed atlases, fonts, effects, audio, visual grammar, metadata, and licenses | Asset-pack schema |
 | DATA-SEMANTIC-VECTOR-001 | Build-only constrained SVG provenance plus renderer-independent semantic layers, origins, palette tokens, compiled-recipe hashes, and packaged input lineage | `specs/schemas/semantic-vector-set-v1.schema.json`, `scripts/lib/semantic-svg.mjs`, and `apps/web/src/runtime/semantic-vector.ts` |
-| DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Text-run schema |
-| DATA-TYPOGRAPHY-001 | Semantic roles, Unicode mappings, font assets/hashes/licenses, complete coverage, layout, fit, and diagnostic policy | Typography-manifest schema |
+| DATA-TEXT-INVENTORY-001 | Reachable-run modernization inventory with raw P8SCII and Unicode evidence, provenance, role, effect/custom/inline flags, readiness, and explicit font/identity/reference/blocker mapping | `specs/schemas/text-inventory-v1.schema.json` and TypeScript validator |
+| DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Planned text-run schema |
+| DATA-TYPOGRAPHY-001 | Semantic roles, fixed bundled font files/hashes/licenses, complete required-character coverage, deterministic metrics/fit, and zero OS fallback | `specs/schemas/typography-manifest-v1.schema.json` and TypeScript validator |
 | DATA-BATCH-001 | Authorized cart inputs, desired products/targets, policy, immutable IDs, isolated workspaces, bounded parallelism, per-game attempts/evidence/failures, and a derived aggregate state | `specs/schemas/batch-v1.schema.json` and TypeScript validator |
 | DATA-GAME-MODULE-001 | One remake's compatible payload, mappings, assets, saves, provenance, validation references, and runtime constraints | Internal game-module schema |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
@@ -63,7 +64,7 @@ contract exit.
 | JOB-CAPTURE-001 | DATA-WORKSPACE-001, DATA-INPUT-TRACE-001 | DATA-REPLAY-001, DATA-CHECKPOINT-001 | Replay an unchanged cart on a named runtime; official captures additionally require a licensed oracle |
 | JOB-MODEL-001 | Workspace, replay, checkpoints | DATA-HD-MAP-001 draft | Assign semantic roles, identity cues, and complete deterministic mappings |
 | JOB-ASSET-001 | HD map and accepted art direction | DATA-ASSET-PACK-001 | Generate/import and review modern assets |
-| JOB-TYPOGRAPHY-001 | Workspace, text inventory, accepted type direction | DATA-TEXT-RUN-001, DATA-TYPOGRAPHY-001, font assets | Classify P8SCII, subset/build fonts, and prove coherent complete coverage |
+| JOB-TYPOGRAPHY-001 | Workspace, DATA-TEXT-RUN-001, accepted type direction | DATA-TEXT-INVENTORY-001, DATA-TYPOGRAPHY-001, font assets | Classify P8SCII, route identity artwork, subset/build fonts, and prove coherent complete coverage |
 | JOB-INTEGRATE-001 | Workspace, HD map, asset pack | DATA-GAME-MODULE-001 draft | Bind HD presentation without state mutation |
 | JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants plus static and temporal presentation evidence |
 | JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-TARGET-PROFILE-001 | Statically bound target build | Assemble one standalone game or a fixed collection |
