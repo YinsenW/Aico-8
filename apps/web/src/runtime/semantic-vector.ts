@@ -24,6 +24,7 @@ export interface SemanticVectorPrimitive {
   readonly commands: readonly SemanticVectorCommand[];
   readonly fill?: SemanticVectorPaint;
   readonly stroke?: SemanticVectorStroke;
+  readonly composite?: "cut";
 }
 
 export interface SemanticVectorAsset {
@@ -66,6 +67,60 @@ function invoke(graphics: Graphics | GraphicsContext, command: SemanticVectorCom
   }
 }
 
+type InternalShape = {
+  readonly points?: readonly number[];
+  readonly x?: number;
+  readonly y?: number;
+  contains(x: number, y: number): boolean;
+};
+
+type InternalShapePrimitive = {
+  readonly shape: InternalShape;
+  holes?: InternalShapePrimitive[];
+};
+
+type InternalInstruction = {
+  readonly action: string;
+  readonly data: {
+    path?: { readonly shapePath: { readonly shapePrimitives: readonly InternalShapePrimitive[] } };
+    hole?: { readonly shapePath: { readonly shapePrimitives: readonly InternalShapePrimitive[] } };
+  };
+};
+
+/**
+ * Pixi assigns a cut path to the last subpath of a compound fill. Semantic
+ * vectors may contain several disconnected source components, so distribute
+ * every protected counter to the component that actually contains it. This
+ * avoids renderer-dependent SVG winding behaviour and keeps facial details or
+ * glyph counters open even when one primitive contains many components.
+ */
+function cutSemanticVector(graphics: Graphics | GraphicsContext): void {
+  graphics.cut();
+  const context = (graphics instanceof Graphics ? graphics.context : graphics) as unknown as {
+    readonly instructions: InternalInstruction[];
+  };
+  const affected = context.instructions.slice(-2).filter(({ data }) => data.hole);
+  const fill = [...affected].reverse().find(({ action }) => action === "fill");
+  const holes = fill?.data.hole?.shapePath.shapePrimitives;
+  const components = fill?.data.path?.shapePath.shapePrimitives;
+  for (const instruction of affected) delete instruction.data.hole;
+  if (!fill || !holes || !components) throw new Error("Semantic vector cut must immediately follow a filled primitive");
+  for (const hole of holes) {
+    const points = hole.shape.points ?? [];
+    const probes = [
+      ...(hole.shape.x !== undefined && hole.shape.y !== undefined
+        ? [{ x: hole.shape.x, y: hole.shape.y }]
+        : []),
+      ...Array.from({ length: Math.floor(points.length / 2) }, (_, index) => ({
+        x: points[index * 2]!, y: points[index * 2 + 1]!,
+      })),
+    ];
+    const component = components.find(({ shape }) => probes.some(({ x, y }) => shape.contains(x, y)));
+    if (!component) throw new Error("Semantic vector cut is not contained by its preceding fill");
+    component.holes = [...(component.holes ?? []), hole];
+  }
+}
+
 export function drawSemanticVector(
   graphics: Graphics | GraphicsContext,
   asset: SemanticVectorAsset,
@@ -79,6 +134,10 @@ export function drawSemanticVector(
     if (primitive.layerIds.some((id) => exclude.has(id))) continue;
     graphics.beginPath();
     for (const command of primitive.commands) invoke(graphics, command);
+    if (primitive.composite === "cut") {
+      cutSemanticVector(graphics);
+      continue;
+    }
     if (primitive.fill) graphics.fill(resolvedPaint(primitive.fill, palette));
     if (primitive.stroke) {
       graphics.stroke({

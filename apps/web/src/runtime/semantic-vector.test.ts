@@ -32,4 +32,26 @@ describe("semantic vector runtime", () => {
   it("fails closed when a semantic paint token is unresolved", () => {
     expect(() => createSemanticVectorContext(asset, { includeLayerIds: ["body"] })).toThrow(/unresolved/);
   });
+
+  it("cuts protected negative-space primitives out of the preceding fill", () => {
+    const context = createSemanticVectorContext({
+      ...asset,
+      primitives: [
+        { id: "body-shape", layerIds: ["body"], commands: [
+          { op: "circle", values: [20, 20, 16] },
+          { op: "circle", values: [48, 48, 12] },
+        ], fill: { color: 0xffffff, alpha: 1 } },
+        { id: "body-counter", layerIds: ["body"], commands: [{ op: "circle", values: [20, 20, 6] }], composite: "cut" },
+      ],
+    });
+    const instructions = context.instructions as Array<{ action: string; data: {
+      hole?: unknown;
+      path: { shapePath: { shapePrimitives: Array<{ holes?: unknown[] }> } };
+    } }>;
+    expect(instructions).toHaveLength(1);
+    expect(instructions[0]?.action).toBe("fill");
+    expect(instructions[0]?.data.hole).toBeUndefined();
+    expect(instructions[0]?.data.path.shapePath.shapePrimitives[0]?.holes).toHaveLength(1);
+    expect(instructions[0]?.data.path.shapePath.shapePrimitives[1]?.holes).toBeUndefined();
+  });
 });

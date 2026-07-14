@@ -3,7 +3,7 @@
   "subject": {
     "gameId": "dust-bunny-private-research",
     "target": "web-pwa",
-    "visualRuntimeSha256": "8b9a2c84eb91ab6f3792bb12b17ddca7eea90ba39ad0830cb9221893d03d1dbb"
+    "visualRuntimeSha256": "4fe05c056bbf68f3de0c60d1bd08b4f618fe922b84ebb3e427442c33af35ff32"
   },
   "targetProfile": {
     "id": "web-pwa-private-research-v1",
@@ -19,7 +19,7 @@
   },
   "package": {
     "artifactCount": 40,
-    "unpackedBytes": 1778035,
+    "unpackedBytes": 2239906,
     "largestArtifactBytes": 632022
   },
   "runtime": {
@@ -57,7 +57,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "8db655cc2819da827a1e684cb2210181d21cd1d11b2aba1a7d50ace9fc100f40"
+      "screenshotSha256": "d9dfc5c7e077f2f51e2a299899abd7007c6a99622643e58de77b593d4df40281"
     },
     {
       "class": "square-handheld",
@@ -86,7 +86,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "1695d04da910af4376a6717239cc24a6bac35cdd503aca08cc772b189e13e67c"
+      "screenshotSha256": "6f29acae999038d4287fae900b9e36d8e8ecd09ea063477374e7c575ca5cafe0"
     },
     {
       "class": "android-handheld-landscape",
@@ -115,7 +115,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "360c1b24a726f276e7d85f1e4a78e14d1bcc31782d59e4210de58da0ad6ab88f"
+      "screenshotSha256": "7ed6f3bd64b9c9c20efb6b2317651966aec085a2b377958aa055d29984c5bba0"
     },
     {
       "class": "wide-web",
@@ -144,7 +144,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "c5515c4e42bb05ce57dade1d6c44ae708b1cabfd934837c2b9fa77054cc80691"
+      "screenshotSha256": "088146e6c37d893f9ab384bfa808da633e8b4139a8a47d3c0de93caf73c90927"
     }
   ],
   "checks": {

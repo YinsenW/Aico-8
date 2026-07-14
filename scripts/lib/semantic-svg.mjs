@@ -13,6 +13,7 @@ const allowedElements = new Set(["svg", "g", "path", "rect", "circle", "ellipse"
 const commonPaintAttributes = new Set([
   "id", "fill", "fill-opacity", "stroke", "stroke-opacity", "stroke-width",
   "stroke-linecap", "stroke-linejoin", "data-aico8-fill-token", "data-aico8-stroke-token",
+  "data-aico8-composite",
 ]);
 const allowedAttributes = {
   svg: new Set([
@@ -269,13 +270,23 @@ export function compileSemanticSvg(source, sourcePath = "asset.svg") {
     if (elementChildren(element).length > 0) throw new Error(`<${element.tagName}> cannot contain child elements`);
     const fill = paint(element, "fill");
     const stroke = paint(element, "stroke");
-    if (!fill && !stroke) throw new Error(`<${element.tagName}> ${element.getAttribute("id")} must declare fill or stroke`);
+    const composite = element.getAttribute("data-aico8-composite") || undefined;
+    if (composite !== undefined && composite !== "cut") {
+      throw new Error(`<${element.tagName}> ${element.getAttribute("id")} has an unsupported composite operation`);
+    }
+    if (composite && (fill || stroke)) {
+      throw new Error(`<${element.tagName}> ${element.getAttribute("id")} cut composites may not declare paint`);
+    }
+    if (!fill && !stroke && !composite) {
+      throw new Error(`<${element.tagName}> ${element.getAttribute("id")} must declare fill, stroke, or a cut composite`);
+    }
     primitives.push({
       id: element.getAttribute("id"),
       layerIds,
       commands: shapeCommands(element),
       ...(fill ? { fill } : {}),
       ...(stroke ? { stroke } : {}),
+      ...(composite ? { composite } : {}),
     });
   }
   visit(root, []);

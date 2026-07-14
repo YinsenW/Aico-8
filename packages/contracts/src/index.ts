@@ -43,9 +43,13 @@ export {
   type VisualElementKind,
 } from "./hd-identity-map.js";
 export {
+  hdSurfaceQualityErrors,
   roundedSourceContour,
   sourceContourTopology,
+  topologyConstrainedSourceContour,
   traceSourceMaskContours,
+  type ContinuousSourceContour,
+  type HdSurfaceQualityEvidence,
   type MaskPoint,
   type RoundedSourceContour,
   type SourceContourTopology,

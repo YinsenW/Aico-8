@@ -119,6 +119,13 @@ only its linked exits determine acceptance.
   layer's exact mask, topology, and four boundary-edge signatures. Different
   source structures may share renderer code but not one frozen recipe; a broad
   semantic category never proves shape or material-layer equivalence.
+- HD surface lineage is independent of the identity scaffold. It compiles the
+  hashed target SVG, binds real shade/base/highlight primitives, requires a
+  topology-constrained curved base with no line-segment staircase, preserves
+  every source cell centre, and requires at least 2x density-aware edge
+  supersampling. Declared counters/holes bind unpainted cut primitives after the
+  owning base and before highlights; compound fills assign each cut to the
+  containing component. Correct masks with visibly enlarged pixel steps fail.
 - Human rejection invalidates the pending review packet as an acceptance
   candidate. Replacing its visual runtime invalidates every runtime-bound capture,
   technical report, packet, and document; all must be regenerated from the same

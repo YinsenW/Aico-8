@@ -12,6 +12,7 @@ import {
   semanticVectorManifest,
   semanticVectorModuleSource,
 } from "./lib/semantic-svg.mjs";
+import { validateHdSurfaceLineage } from "./lib/hd-surface-lineage.mjs";
 import { validateSourceContourLineage } from "./lib/source-contour-lineage.mjs";
 import { validateSourceVisualStructureLineage } from "./lib/source-visual-structure-lineage.mjs";
 
@@ -75,6 +76,16 @@ const sourceVisualStructureLineages = validationLineageFiles.filter((name) => na
   validateSourceVisualStructureLineage(workspace, JSON.parse(fs.readFileSync(absolutePath, "utf8")));
   return { absolutePath, relativePath: path.join("validation", name) };
 });
+const hdSurfaceLineages = validationLineageFiles.filter((name) => name.endsWith("-hd-surface-lineage.json")).map((name) => {
+  const absolutePath = path.join(validationRoot, name);
+  validateHdSurfaceLineage(workspace, JSON.parse(fs.readFileSync(absolutePath, "utf8")));
+  return { absolutePath, relativePath: path.join("validation", name) };
+});
+const validatedLineages = [
+  ...sourceContourLineages,
+  ...sourceVisualStructureLineages,
+  ...hdSurfaceLineages,
+];
 const semanticVectorSet = compileSemanticSvgDirectory(
   semanticVectorSourceRoot,
   "web-overlay/vector-assets",
@@ -240,7 +251,7 @@ const releaseManifest = {
       sha256: sha256(sourceFile.absolutePath),
       bytes: fs.statSync(sourceFile.absolutePath).size,
     })) : []),
-    ...[...sourceContourLineages, ...sourceVisualStructureLineages].map((lineage) => ({
+    ...validatedLineages.map((lineage) => ({
       path: lineage.relativePath,
       sha256: sha256(lineage.absolutePath),
       bytes: fs.statSync(lineage.absolutePath).size,

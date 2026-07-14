@@ -13,6 +13,7 @@ import { settleCaptureReadiness } from "./runtime/capture-readiness.js";
 import { Aico8Kernel, loadGameManifest } from "./runtime/kernel.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
+import { HD_RENDER_QUALITY } from "./runtime/render-quality.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
 import {
   advancePresentationTime,
@@ -155,9 +156,9 @@ await app.init({
   width: REFERENCE_PROFILE.outputWidth,
   height: REFERENCE_PROFILE.outputHeight,
   preference: "webgl",
-  antialias: true,
-  autoDensity: false,
-  resolution: 1,
+  antialias: HD_RENDER_QUALITY.antialias,
+  autoDensity: HD_RENDER_QUALITY.autoDensity,
+  resolution: HD_RENDER_QUALITY.edgeSupersampleFactor,
   background: "#090b12",
 });
 await document.fonts.load("700 48px Aico Sans");

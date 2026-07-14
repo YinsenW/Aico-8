@@ -26,6 +26,17 @@ test("compiles a semantic SVG into renderer-independent commands and hashes", ()
   assert.match(asset.recipeSha256, /^[a-f0-9]{64}$/);
 });
 
+test("compiles explicit cut composites for protected counters", () => {
+  const withCut = valid.replace(
+    "</g>\n  <g id=\"face\">",
+    "<circle id=\"body-counter\" cx=\"32\" cy=\"32\" r=\"8\" data-aico8-composite=\"cut\"/></g>\n  <g id=\"face\">",
+  );
+  const asset = compileSemanticSvg(withCut, "test-asset.svg");
+  assert.equal(asset.primitives[1].composite, "cut");
+  assert.equal(asset.primitives[1].fill, undefined);
+  assert.equal(asset.primitives[1].stroke, undefined);
+});
+
 test("emits a stable manifest and typed generated module", () => {
   const asset = compileSemanticSvg(valid, "test-asset.svg");
   const set = {

@@ -75,14 +75,14 @@
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 40,
-    "visual_runtime_sha256": "8b9a2c84eb91ab6f3792bb12b17ddca7eea90ba39ad0830cb9221893d03d1dbb",
+    "visual_runtime_sha256": "4fe05c056bbf68f3de0c60d1bd08b4f618fe922b84ebb3e427442c33af35ff32",
     "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
     "two_builds_byte_identical": true
   },
   "release_technical": {
     "target_profile_id": "web-pwa-private-research-v1",
     "target_profile_sha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809",
-    "unpacked_bytes": 1778035,
+    "unpacked_bytes": 2239906,
     "largest_artifact_bytes": 632022,
     "startup_milliseconds": 329.2,
     "sample_frames": 180,
@@ -96,10 +96,10 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "9e921b5b8bf507f460ff7ad5ae8f28fb90ada2c83037f6fe566f2a23457f9d93",
-    "browser_validation_sha256": "c9f817c5cf2b96d99fcde5ac84c165eee7cb577b2071bf19415d156ba56ff0fd",
-    "hd_review_packet_sha256": "f9f3f7bb5873c9b0c4ca9df545075976938755d1e9cacf1b14f6d08bc1d2ba66",
-    "hd_review_document_sha256": "ff9ce5c9db56cd51323d1e78df5074337baee76ecb57b053cf5dcb3c8285cb80",
+    "hd_presentation_audit_sha256": "f94df5edae7f6d55f7fe8256ea452bd464889951a8a86e1f182e22d66ce34f91",
+    "browser_validation_sha256": "9ec9672ab32e4b6413233f28261ade52bdbf2747df343b62310a9a5838a97840",
+    "hd_review_packet_sha256": "608516cad489781948c25e42b2c19279648b4bece1557579e9e969db80017991",
+    "hd_review_document_sha256": "f460614d702357e4366d0299fa83523c8cfd826e9fa1cc722133069bd074991e",
     "hd_review_decision_sha256": null,
     "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
   }

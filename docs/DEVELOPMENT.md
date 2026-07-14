@@ -82,6 +82,15 @@ For indexed tile/sprite art, extract every palette/material layer and boundary
 edge before authoring. Preserve each layer mask and give structurally distinct
 variants distinct recipe IDs; shared labels such as wall, dirt, or collectible
 are classification aids, not permission to substitute one generic primitive.
+After scaffold validation, run the HD surface gate: use topology-constrained
+splines, bind shade/base/highlight primitives to the compiled target, and render
+at fixed 2x edge density. Represent every protected counter/hole as an explicit
+unpainted cut; verify that compound shapes attach it to the containing component
+and that edge treatments never traverse it. First recapture only the highest-risk title, character,
+and material frames for visual preflight. Do not regenerate the complete packet
+until those frames visibly improve line smoothness and internal/material detail;
+this prevents a technically valid but aesthetically failed build from producing
+false-looking completion evidence.
 Only after the human repeats the packet's exact acceptance statement may
 an Agent invoke `scripts/accept-private-hd-review.ts`; that command archives the
 exact pending packet/document and writes one immutable decision. Subsequent

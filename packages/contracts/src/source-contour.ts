@@ -16,6 +16,30 @@ export interface RoundedSourceContour {
   readonly maximumContourDisplacementSourcePixels: number;
 }
 
+export interface ContinuousSourceContour extends RoundedSourceContour {
+  readonly algorithm: "topology-constrained-spline-v1";
+  readonly curveCommandCount: number;
+  /** Positive-winding component contours, safe for edge treatments. */
+  readonly outerPath: string;
+  /** Negative-winding counters/holes, kept out of edge treatments. */
+  readonly negativeSpacePath: string;
+  readonly protectedNegativeSpaceCount: number;
+  readonly sourceCellCentersPreserved: true;
+  readonly smoothingCut: number;
+}
+
+export interface HdSurfaceQualityEvidence {
+  readonly contourAlgorithm: "topology-constrained-spline-v1";
+  readonly sourceCellCentersPreserved: boolean;
+  readonly maximumContourDisplacementSourcePixels: number;
+  readonly curveCommandCount: number;
+  readonly targetPixelsPerSourcePixel: number;
+  readonly edgeSupersampleFactor: number;
+  readonly detailPrimitiveIds: readonly string[];
+  readonly protectedNegativeSpaceCount: number;
+  readonly occludedNegativeSpaceCount: number;
+}
+
 type Edge = { readonly from: MaskPoint; readonly to: MaskPoint; readonly direction: number };
 
 function pointKey(point: MaskPoint): string {
@@ -120,6 +144,89 @@ function format(value: number): string {
   return Number(value.toFixed(4)).toString();
 }
 
+function midpoint(left: MaskPoint, right: MaskPoint): MaskPoint {
+  return { x: (left.x + right.x) / 2, y: (left.y + right.y) / 2 };
+}
+
+function chaikinLoop(points: readonly MaskPoint[], cut: number): MaskPoint[] {
+  const result: MaskPoint[] = [];
+  for (let index = 0; index < points.length; index += 1) {
+    const current = points[index]!;
+    const next = points[(index + 1) % points.length]!;
+    result.push({
+      x: current.x * (1 - cut) + next.x * cut,
+      y: current.y * (1 - cut) + next.y * cut,
+    }, {
+      x: current.x * cut + next.x * (1 - cut),
+      y: current.y * cut + next.y * (1 - cut),
+    });
+  }
+  return result;
+}
+
+function continuousLoopPath(
+  points: readonly MaskPoint[],
+  scale: number,
+  offsetX: number,
+  offsetY: number,
+): string {
+  const scaled = points.map((point) => ({ x: offsetX + point.x * scale, y: offsetY + point.y * scale }));
+  const start = midpoint(scaled[scaled.length - 1]!, scaled[0]!);
+  const commands = [`M ${format(start.x)} ${format(start.y)}`];
+  for (let index = 0; index < scaled.length; index += 1) {
+    const control = scaled[index]!;
+    const end = midpoint(control, scaled[(index + 1) % scaled.length]!);
+    commands.push(`Q ${format(control.x)} ${format(control.y)} ${format(end.x)} ${format(end.y)}`);
+  }
+  commands.push("Z");
+  return commands.join(" ");
+}
+
+function sampledContinuousLoop(points: readonly MaskPoint[], samplesPerCurve = 8): MaskPoint[] {
+  const sampled: MaskPoint[] = [];
+  for (let index = 0; index < points.length; index += 1) {
+    const control = points[index]!;
+    const start = midpoint(points[(index - 1 + points.length) % points.length]!, control);
+    const end = midpoint(control, points[(index + 1) % points.length]!);
+    for (let sample = 0; sample < samplesPerCurve; sample += 1) {
+      const t = sample / samplesPerCurve;
+      const inverse = 1 - t;
+      sampled.push({
+        x: inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
+        y: inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y,
+      });
+    }
+  }
+  return sampled;
+}
+
+function pointInsideLoop(point: MaskPoint, loop: readonly MaskPoint[]): boolean {
+  let inside = false;
+  for (let current = 0, previous = loop.length - 1; current < loop.length; previous = current, current += 1) {
+    const left = loop[current]!;
+    const right = loop[previous]!;
+    if ((left.y > point.y) !== (right.y > point.y)
+      && point.x < (right.x - left.x) * (point.y - left.y) / (right.y - left.y) + left.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function sourceCellCentersMatch(
+  mask: readonly (readonly boolean[])[],
+  loops: readonly (readonly MaskPoint[])[],
+): boolean {
+  for (let y = 0; y < mask.length; y += 1) {
+    for (let x = 0; x < mask[y]!.length; x += 1) {
+      const point = { x: x + 0.5, y: y + 0.5 };
+      const inside = loops.reduce((value, loop) => pointInsideLoop(point, loop) ? !value : value, false);
+      if (inside !== mask[y]![x]) return false;
+    }
+  }
+  return true;
+}
+
 function roundedLoopPath(
   points: readonly MaskPoint[],
   scale: number,
@@ -200,4 +307,100 @@ export function roundedSourceContour(
     topology: sourceContourTopology(mask),
     maximumContourDisplacementSourcePixels: options.radius / options.scale,
   };
+}
+
+/**
+ * Reconstructs a continuous authoring contour from the source occupancy mask.
+ * The source mask remains the identity scaffold, while Chaikin corner cutting
+ * plus quadratic interpolation removes pixel stair-steps. Every source cell
+ * centre is reclassified against the candidate curve; a candidate that changes
+ * even one occupied/empty cell is rejected rather than silently simplified.
+ */
+export function topologyConstrainedSourceContour(
+  mask: readonly (readonly boolean[])[],
+  options: {
+    readonly scale: number;
+    readonly smoothingCut?: number;
+    readonly offsetX?: number;
+    readonly offsetY?: number;
+  },
+): ContinuousSourceContour {
+  if (!Number.isFinite(options.scale) || options.scale <= 0) throw new Error("source contour scale must be positive");
+  const smoothingCut = options.smoothingCut ?? 0.25;
+  if (!Number.isFinite(smoothingCut) || smoothingCut < 0.12 || smoothingCut > 0.3) {
+    throw new Error("source contour smoothingCut must be between 0.12 and 0.3");
+  }
+  const sourceLoops = traceSourceMaskContours(mask);
+  const candidateCuts = [...new Set([
+    smoothingCut,
+    Math.max(0.12, smoothingCut * 0.8),
+    Math.max(0.12, smoothingCut * 0.6),
+    0.12,
+  ].map((value) => Number(value.toFixed(4))))];
+  let acceptedCut: number | undefined;
+  let smoothedLoops: MaskPoint[][] | undefined;
+  for (const candidate of candidateCuts) {
+    const loops = sourceLoops.map((loop) => chaikinLoop(loop, candidate));
+    if (sourceCellCentersMatch(mask, loops.map((loop) => sampledContinuousLoop(loop)))) {
+      acceptedCut = candidate;
+      smoothedLoops = loops;
+      break;
+    }
+  }
+  if (!smoothedLoops || acceptedCut === undefined) {
+    throw new Error("topology-constrained spline changed a source cell centre at every allowed smoothing strength");
+  }
+  const maximumContourDisplacementSourcePixels = 0.25 + acceptedCut / 2;
+  const pathFor = (loops: readonly (readonly MaskPoint[])[]): string => loops.map((loop) => continuousLoopPath(
+    loop,
+    options.scale,
+    options.offsetX ?? 0,
+    options.offsetY ?? 0,
+  )).join(" ");
+  const outerLoops = smoothedLoops.filter((loop) => signedArea(loop) > 0);
+  const negativeSpaceLoops = smoothedLoops.filter((loop) => signedArea(loop) < 0);
+  return {
+    algorithm: "topology-constrained-spline-v1",
+    path: pathFor(smoothedLoops),
+    outerPath: pathFor(outerLoops),
+    negativeSpacePath: pathFor(negativeSpaceLoops),
+    protectedNegativeSpaceCount: negativeSpaceLoops.length,
+    topology: sourceContourTopology(mask),
+    maximumContourDisplacementSourcePixels,
+    curveCommandCount: smoothedLoops.reduce((sum, loop) => sum + loop.length, 0),
+    sourceCellCentersPreserved: true,
+    smoothingCut: acceptedCut,
+  };
+}
+
+export function hdSurfaceQualityErrors(evidence: HdSurfaceQualityEvidence): string[] {
+  const errors: string[] = [];
+  if (evidence.contourAlgorithm !== "topology-constrained-spline-v1") {
+    errors.push("HD surface must use the topology-constrained spline contour");
+  }
+  if (!evidence.sourceCellCentersPreserved) errors.push("HD surface changed a source cell centre");
+  if (!Number.isFinite(evidence.maximumContourDisplacementSourcePixels)
+    || evidence.maximumContourDisplacementSourcePixels < 0.3
+    || evidence.maximumContourDisplacementSourcePixels >= 0.5) {
+    errors.push("HD contour smoothing must be visible but remain below half a source pixel");
+  }
+  if (!Number.isSafeInteger(evidence.curveCommandCount) || evidence.curveCommandCount < 4) {
+    errors.push("HD contour must contain continuous curve commands");
+  }
+  if (!Number.isFinite(evidence.targetPixelsPerSourcePixel) || evidence.targetPixelsPerSourcePixel < 4) {
+    errors.push("HD surface needs at least four target pixels per source pixel");
+  }
+  if (!Number.isSafeInteger(evidence.edgeSupersampleFactor) || evidence.edgeSupersampleFactor < 2) {
+    errors.push("HD surface needs deterministic edge supersampling");
+  }
+  if (new Set(evidence.detailPrimitiveIds).size < 3) {
+    errors.push("HD surface needs distinct shade, base, and highlight primitives");
+  }
+  if (!Number.isSafeInteger(evidence.protectedNegativeSpaceCount) || evidence.protectedNegativeSpaceCount < 0
+    || !Number.isSafeInteger(evidence.occludedNegativeSpaceCount) || evidence.occludedNegativeSpaceCount < 0) {
+    errors.push("HD surface negative-space counts must be non-negative integers");
+  } else if (evidence.occludedNegativeSpaceCount > 0) {
+    errors.push("HD edge treatments may not occlude protected negative space");
+  }
+  return errors;
 }

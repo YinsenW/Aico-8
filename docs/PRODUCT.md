@@ -59,6 +59,7 @@ screen footprint, motion, and gameplay cue while applying one coherent modern
 visual grammar. Modernization may add material, light, detail, and animation
 quality but cannot redesign those identity anchors. Distinctive title lettering, logos, and source-drawn glyphs are artwork rather than interchangeable fonts:
 preserve each glyph contour/counter, component/hole topology, spacing, and line placement from declared source evidence. Edge smoothing stays below half a source pixel; generic-font substitution fails even if readable. Likewise, semantic labels such as wall, dirt, or collectible never authorize collapsing distinct source contours, palette/material layers, boundary connections, or state variants into one generic shape.
+Exact source-cell projection is the identity floor, not the finished HD treatment. Accepted 1024 art must reconstruct a continuous authored form with visibly smooth curves, density-aware antialiasing, and deterministic shade/base/highlight or an explicitly equivalent material treatment. A vector that merely traces enlarged pixel steps, even with correct topology, fails modernization because it provides no meaningful line, surface, or detail-quality gain. Counters, eyes, apertures, and other source-negative details remain protected geometry: surface paint cannot cover them, and a renderer cannot rely on incidental SVG winding behavior to keep them open.
 Runtime output uses frozen, hashed assets and deterministic rules. Accepted HD play may not mix indexed source fragments with modern elements; the exact reference renderer is a separate
 diagnostic mode. Enabling HD must not change compatibility snapshots. Rendered
 copy must be source-authored, state-derived for accessibility, or backed by a
@@ -236,7 +237,6 @@ with zero mixed indexed fragments or reference switches; same-build static and e
 source/HD review; modern bundled text; keyboard/controller/touch operation; and a reproducible private
 Web/PWA test package. The broader matrix remains owned by `EXIT-COMPAT-OFFICIAL`;
 neither result is a formal remake release authorization.
-
 ## Non-goals for the first release
 
 - Mechanical Lua-to-TypeScript translation as the compatibility path.

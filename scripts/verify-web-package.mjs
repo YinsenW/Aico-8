@@ -158,6 +158,20 @@ if (game.semanticVectors) {
     bundledInputsByName.set(asset.sourcePath, { sha256: asset.sourceSha256, bytes: asset.sourceBytes });
   }
 }
+const declaredLineageInputs = release.inputs.filter(({ path: inputPath }) => inputPath.startsWith("validation/"));
+for (const input of declaredLineageInputs) {
+  assert.match(input.path, /^validation\/[a-z0-9][a-z0-9._-]*(?:-contour-lineage|-visual-structure|-hd-surface-lineage)\.json$/,
+    `Unsupported validation lineage input: ${input.path}`);
+  assert.equal(bundledInputsByName.has(input.path), false, `Duplicate release input ${input.path}`);
+  bundledInputsByName.set(input.path, { sha256: input.sha256, bytes: input.bytes });
+}
+if (game.semanticVectors) {
+  assert.ok(declaredLineageInputs.some(({ path: inputPath }) => inputPath.endsWith("-hd-surface-lineage.json")),
+    "Semantic vectors require declared HD surface lineage input");
+  assert.ok(declaredLineageInputs.some(({ path: inputPath }) =>
+    inputPath.endsWith("-contour-lineage.json") || inputPath.endsWith("-visual-structure.json")),
+  "Semantic vectors require declared source-structure lineage input");
+}
 assert.deepEqual(release.inputs.map(({ path: inputPath }) => inputPath).sort(), [...bundledInputsByName.keys()].sort(),
   "Release inputs must enumerate every packaged build input");
 for (const input of release.inputs) {
