@@ -27,12 +27,15 @@ struct aico8_runtime {
     bool loaded = false;
     bool started = false;
     bool initialization_complete = false;
+    uint32_t audio_diagnostic_mask = 0;
+    uint32_t audio_diagnostic_used_flags = 0;
 };
 
 namespace {
 
 bool restart_cart(aico8_runtime *runtime)
 {
+    runtime->audio_diagnostic_used_flags |= p8_audio_diagnostic_flags(runtime->core);
     std::array<uint8_t, kPersistentSize> persistent{};
     for (size_t index = 0; index < persistent.size(); ++index) {
         persistent[index] = p8_core_peek(
@@ -42,6 +45,10 @@ bool restart_cart(aico8_runtime *runtime)
     p8_vm_destroy(runtime->vm);
     runtime->vm = nullptr;
     if (!p8_core_load_rom(runtime->core, runtime->rom.data(), runtime->rom.size())) {
+        runtime->started = false;
+        return false;
+    }
+    if (!p8_audio_set_diagnostic_mask(runtime->core, runtime->audio_diagnostic_mask)) {
         runtime->started = false;
         return false;
     }
@@ -103,6 +110,8 @@ int aico8_load_cart(aico8_runtime *runtime, const uint8_t *rom, size_t rom_size,
     runtime->source.assign(source, source_size);
     runtime->started = false;
     runtime->initialization_complete = false;
+    runtime->audio_diagnostic_mask = 0;
+    runtime->audio_diagnostic_used_flags = 0;
     return runtime->loaded ? 1 : 0;
 }
 
@@ -170,6 +179,21 @@ size_t aico8_read_audio(aico8_runtime *runtime, int16_t *destination,
 uint32_t aico8_audio_capabilities(const aico8_runtime *runtime)
 {
     return runtime ? p8_audio_capabilities(runtime->core) : 0;
+}
+
+int aico8_set_audio_diagnostic_mask(aico8_runtime *runtime, uint32_t mask)
+{
+    if (!runtime || runtime->started || !p8_audio_set_diagnostic_mask(runtime->core, mask)) {
+        return 0;
+    }
+    runtime->audio_diagnostic_mask = mask;
+    return 1;
+}
+
+uint32_t aico8_audio_diagnostic_flags(const aico8_runtime *runtime)
+{
+    return runtime ? runtime->audio_diagnostic_used_flags
+        | p8_audio_diagnostic_flags(runtime->core) : 0;
 }
 
 int aico8_get_audio_channel_status(const aico8_runtime *runtime, unsigned channel,

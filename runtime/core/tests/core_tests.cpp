@@ -12,6 +12,17 @@
 
 namespace {
 
+void write_sfx_note(std::array<uint8_t, P8_ROM_SIZE> &rom, unsigned sfx,
+                    unsigned note, uint8_t key, uint8_t waveform,
+                    uint8_t volume, uint8_t effect, bool custom = false)
+{
+    const size_t address = 0x3200 + sfx * 68 + note * 2;
+    rom[address] = static_cast<uint8_t>((key & 0x3f) | ((waveform & 0x03) << 6));
+    rom[address + 1] = static_cast<uint8_t>(((waveform >> 2) & 0x01)
+        | ((volume & 0x07) << 1) | ((effect & 0x07) << 4)
+        | (custom ? 0x80 : 0));
+}
+
 struct callback_trace {
     int updates = 0;
     int updates60 = 0;
@@ -439,6 +450,14 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     assert(std::any_of(first.begin(), first.end(), [](int16_t sample) { return sample != 0; }));
 
     assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> builtin_non_music{};
+    assert(p8_audio_read(core, builtin_non_music.data(), builtin_non_music.size())
+           == builtin_non_music.size());
+    assert(first == builtin_non_music); // full-volume music and standalone paths share gain
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
     assert(p8_audio_music(core, 0, 0, 0x0f));
     assert(p8_core_host_tick60(core, 1) == 1);
     std::array<int16_t, 367> second{};
@@ -480,8 +499,141 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     rom[0x3201] = static_cast<uint8_t>((7 << 1) | 0x80); // active custom instrument
     assert(p8_core_load_rom(core, rom.data(), rom.size()));
     assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
-    assert(std::strstr(p8_audio_last_error(core), "custom instrument") != nullptr);
+    assert(std::strstr(p8_audio_last_error(core), "diagnostic opt-in") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
     assert(p8_audio_copy_events(core, events.data(), events.size()) == 0);
+    p8_core_destroy(core);
+}
+
+void test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic()
+{
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    // Public synthetic analogue of PICO-8 custom SFX instruments: outer SFX 8
+    // references instrument SFX 1, whose notes use only built-in waveforms.
+    write_sfx_note(rom, 1, 0, 24, 5, 7, 1);
+    write_sfx_note(rom, 1, 1, 28, 5, 4, 1);
+    rom[0x3200 + 1 * 68 + 64] = 1;
+    rom[0x3200 + 1 * 68 + 65] = 2;
+    write_sfx_note(rom, 8, 0, 33, 1, 7, 0, true);
+    write_sfx_note(rom, 8, 1, 33, 1, 7, 5, true);
+    rom[0x3200 + 8 * 68 + 64] = 1;
+    rom[0x3200 + 8 * 68 + 65] = 1;
+
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "diagnostic opt-in") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(!p8_audio_set_diagnostic_mask(core, 0x80000000u));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == 0);
+    assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT);
+    assert((p8_audio_capabilities(core) & P8_AUDIO_CAP_CUSTOM_INSTRUMENTS) == 0);
+    std::array<p8_audio_event, 8> events{};
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 2);
+    assert(events[0].kind == P8_AUDIO_EVENT_DIAGNOSTIC_CUSTOM_AUDIO);
+    assert(events[0].sfx == 8 && events[0].channel == 0);
+    assert(events[1].kind == P8_AUDIO_EVENT_CHANNEL_START);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> first{};
+    assert(p8_audio_read(core, first.data(), first.size()) == first.size());
+    assert(std::any_of(first.begin(), first.end(), [](int16_t sample) { return sample != 0; }));
+    assert(!p8_audio_set_diagnostic_mask(core, 0)); // mode is immutable after execution begins
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> second{};
+    assert(p8_audio_read(core, second.data(), second.size()) == second.size());
+    assert(first == second);
+
+    // A 64-byte custom waveform uses a separate explicit diagnostic bit. The
+    // two same-key outer notes intentionally continue phase rather than
+    // retriggering; this is a deterministic assumption, not conformance proof.
+    std::array<uint8_t, P8_ROM_SIZE> waveform_rom{};
+    for (unsigned index = 0; index < 64; ++index) {
+        waveform_rom[0x3200 + index] = static_cast<uint8_t>(static_cast<int>(index) - 32);
+    }
+    waveform_rom[0x3200 + 64] = 1;
+    waveform_rom[0x3200 + 65] = 0;
+    waveform_rom[0x3200 + 66] = 0x80;
+    waveform_rom[0x3200 + 67] = 0;
+    write_sfx_note(waveform_rom, 8, 0, 33, 0, 7, 0, true);
+    write_sfx_note(waveform_rom, 8, 1, 33, 0, 7, 0, true);
+    waveform_rom[0x3200 + 8 * 68 + 64] = 1;
+    waveform_rom[0x3200 + 8 * 68 + 65] = 1;
+    assert(p8_core_load_rom(core, waveform_rom.data(), waveform_rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> waveform_samples{};
+    assert(p8_audio_read(core, waveform_samples.data(), waveform_samples.size())
+           == waveform_samples.size());
+    assert(std::any_of(waveform_samples.begin(), waveform_samples.end(),
+                       [](int16_t sample) { return sample != 0; }));
+    assert(waveform_samples[0] == -1984); // shared non-music gain applies after custom rendering
+    assert(waveform_samples[0] != waveform_samples[183]);
+    assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM);
+    assert((p8_audio_capabilities(core) & P8_AUDIO_CAP_CUSTOM_WAVEFORMS) == 0);
+
+    waveform_rom[0x3100] = 8;
+    waveform_rom[0x3101] = 0x40;
+    waveform_rom[0x3102] = 0x40;
+    waveform_rom[0x3103] = 0x40;
+    assert(p8_core_load_rom(core, waveform_rom.data(), waveform_rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM));
+    assert(p8_audio_music(core, 0, 0, 0x01));
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> waveform_music_samples{};
+    assert(p8_audio_read(core, waveform_music_samples.data(), waveform_music_samples.size())
+           == waveform_music_samples.size());
+    assert(waveform_music_samples == waveform_samples);
+
+    // Unsupported structure stays fail-closed even after diagnostic opt-in.
+    const std::array<uint8_t, P8_ROM_SIZE> valid_instrument_rom = rom;
+    rom[0x3200 + 1 * 68 + 1] |= 0x80; // nested custom reference
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "recursion") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 0);
+
+    rom = valid_instrument_rom;
+    rom[0x3200 + 1 * 68 + 64] = 3; // referenced noiz filter
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "filters") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    rom = valid_instrument_rom;
+    rom[0x3200 + 8 * 68 + 1] |= 1u << 4; // unsupported outer slide effect
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "custom note effect") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    rom = valid_instrument_rom;
+    write_sfx_note(rom, 1, 0, 63, 5, 7, 0);
+    write_sfx_note(rom, 8, 0, 63, 1, 7, 0, true);
+    write_sfx_note(rom, 8, 1, 63, 1, 7, 0, true);
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "transposition") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    waveform_rom[0x3200 + 67] = 1; // reserved custom-waveform metadata
+    assert(p8_core_load_rom(core, waveform_rom.data(), waveform_rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "metadata") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
     p8_core_destroy(core);
 }
 
@@ -500,6 +652,7 @@ int main()
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
     test_audio_is_deterministic_and_rejects_unqualified_features();
+    test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic();
     std::puts("p8 core tests: ok");
     return 0;
 }

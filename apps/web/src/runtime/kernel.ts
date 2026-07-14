@@ -38,6 +38,20 @@ export const KernelAudioCapability = {
   customWaveforms: 1 << 6,
 } as const;
 
+export const KernelAudioDiagnostic = {
+  customInstrument: 1 << 0,
+  customWaveform: 1 << 1,
+} as const;
+
+export function normalizeAudioDiagnosticMask(mask: number | undefined): number {
+  const value = mask ?? 0;
+  const allowed = KernelAudioDiagnostic.customInstrument | KernelAudioDiagnostic.customWaveform;
+  if (!Number.isSafeInteger(value) || value < 0 || (value & ~allowed) !== 0) {
+    throw new Error("Audio diagnostic mask contains unsupported bits");
+  }
+  return value;
+}
+
 export interface KernelAudioChannelStatus {
   readonly sfx: number;
   readonly note: number;
@@ -62,6 +76,8 @@ export interface KernelHostOptions {
   readonly initialPersistence?: Uint8Array;
   /** Defaults to true; validation playback disables external save writes. */
   readonly persistenceWrites?: boolean;
+  /** Explicit research-only opt-in. Qualification and release paths omit it. */
+  readonly diagnosticAudioMask?: number;
 }
 
 export interface ReplayInitializationKernel {
@@ -110,6 +126,8 @@ interface EmscriptenKernel {
   _aico8_audio_available(runtime: number): number;
   _aico8_read_audio(runtime: number, destination: number, capacity: number): number;
   _aico8_audio_capabilities(runtime: number): number;
+  _aico8_set_audio_diagnostic_mask(runtime: number, mask: number): number;
+  _aico8_audio_diagnostic_flags(runtime: number): number;
   _aico8_get_audio_channel_status(runtime: number, channel: number, status: number): number;
   _aico8_copy_audio_events(runtime: number, destination: number, capacity: number): number;
   _aico8_framebuffer(runtime: number): number;
@@ -225,7 +243,7 @@ export class Aico8Kernel {
         fetchBytes(resolveAsset(manifestUrl, manifest.rom)),
         fetchBytes(resolveAsset(manifestUrl, manifest.source)),
       ]);
-      instance.#load(rom, source, options.initialPersistence);
+      instance.#load(rom, source, options);
       return instance;
     } catch (error) {
       instance.destroy();
@@ -244,7 +262,7 @@ export class Aico8Kernel {
     }
   }
 
-  #load(rom: Uint8Array, source: Uint8Array, initialPersistence?: Uint8Array): void {
+  #load(rom: Uint8Array, source: Uint8Array, options: KernelHostOptions): void {
     this.#withHeapBytes(rom, (romPointer) => {
       this.#withHeapBytes(source, (sourcePointer) => {
         if (!this.#module._aico8_load_cart(this.#runtime, romPointer, rom.length, sourcePointer, source.length)) {
@@ -253,8 +271,14 @@ export class Aico8Kernel {
       });
     });
 
-    let stored: Uint8Array<ArrayBufferLike> = initialPersistence?.slice() ?? new Uint8Array();
-    if (!initialPersistence) {
+    const diagnosticMask = normalizeAudioDiagnosticMask(options.diagnosticAudioMask);
+    if (diagnosticMask !== 0
+      && !this.#module._aico8_set_audio_diagnostic_mask(this.#runtime, diagnosticMask)) {
+      throw new Error("Unable to select audio diagnostic mode before execution");
+    }
+
+    let stored: Uint8Array<ArrayBufferLike> = options.initialPersistence?.slice() ?? new Uint8Array();
+    if (!options.initialPersistence) {
       try {
         stored = decodeStoredPersistence(localStorage.getItem(this.manifest.persistenceKey));
       } catch {
@@ -315,6 +339,10 @@ export class Aico8Kernel {
 
   audioCapabilities(): number {
     return this.#module._aico8_audio_capabilities(this.#runtime) >>> 0;
+  }
+
+  audioDiagnosticFlags(): number {
+    return this.#module._aico8_audio_diagnostic_flags(this.#runtime) >>> 0;
   }
 
   audioChannelStatus(channel: number): KernelAudioChannelStatus | undefined {

@@ -1,11 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { assertQualificationBoundaryMilestones } from "./qualification-boundary.mjs";
+import {
+  assertCanonicalExecutionFacts,
+  assertNoDiagnosticAudioUse,
+  assertQualificationBoundaryMilestones,
+} from "./qualification-boundary.mjs";
 
 const replay = (milestones, requiredMilestoneIds = milestones.map(({ id }) => id)) => ({
   milestones,
   requiredMilestoneIds,
+});
+
+test("qualification rejects sticky unqualified-audio execution facts", () => {
+  assert.doesNotThrow(() => assertNoDiagnosticAudioUse(0));
+  assert.throws(() => assertNoDiagnosticAudioUse(1), /cannot accept execution/);
+  assert.throws(() => assertNoDiagnosticAudioUse(2), /cannot accept execution/);
+  assert.doesNotThrow(() => assertCanonicalExecutionFacts({ audioDiagnosticFlags: 0 }));
+  assert.throws(() => assertCanonicalExecutionFacts({}), /audio diagnostic flags/,
+    "a caller cannot forget to record the sticky execution fact");
+  assert.throws(() => assertCanonicalExecutionFacts(undefined), /must be an object/);
 });
 
 test("keeps the legacy course contract for real ordered levels", () => {

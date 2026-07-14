@@ -8,6 +8,9 @@ const { default: createKernel } = await import(kernelUrl.href);
 const kernel = await createKernel();
 
 const source = new Uint8Array(await readFile(new URL("./fixtures/synthetic_cart.lua", import.meta.url)));
+const customAudioSource = new Uint8Array(await readFile(
+  new URL("./fixtures/custom_audio_cart.lua", import.meta.url),
+));
 const rom = new Uint8Array(0x8000);
 rom[4] = 0x21;
 rom[0x2000] = 1;
@@ -169,6 +172,7 @@ try {
       kernel._free(audioPointer);
     }
     appendU32(checkpoint, kernel._aico8_audio_capabilities(runtime));
+    appendU32(checkpoint, kernel._aico8_audio_diagnostic_flags(runtime));
     const audioStatusPointer = kernel._malloc(20);
     const audioEventsPointer = kernel._malloc(16 * 32);
     try {
@@ -217,6 +221,80 @@ try {
 const nativeCheckpoint = execFileSync("./build/vm_tests", ["--checkpoint"], { encoding: "utf8" }).trim();
 assert.match(nativeCheckpoint, /^[0-9a-f]+$/);
 assert.equal(wasmCheckpoint, nativeCheckpoint, "native and Wasm checkpoints differ");
+
+const blockedCustomRuntime = kernel._aico8_create();
+assert.notEqual(blockedCustomRuntime, 0);
+const blockedCustomRomPointer = copyToHeap(new Uint8Array(0x8000));
+const blockedCustomSourcePointer = copyToHeap(customAudioSource);
+try {
+  assert.equal(kernel._aico8_load_cart(blockedCustomRuntime, blockedCustomRomPointer, 0x8000,
+    blockedCustomSourcePointer, customAudioSource.length), 1);
+  assert.equal(kernel._aico8_start(blockedCustomRuntime), 0,
+    "custom audio must remain fail-closed without explicit diagnostic opt-in");
+  assert.match(kernel.UTF8ToString(kernel._aico8_last_error(blockedCustomRuntime)),
+    /diagnostic opt-in/);
+  assert.equal(kernel._aico8_audio_diagnostic_flags(blockedCustomRuntime), 0);
+} finally {
+  kernel._aico8_destroy(blockedCustomRuntime);
+  kernel._free(blockedCustomSourcePointer);
+  kernel._free(blockedCustomRomPointer);
+}
+
+const customRuntime = kernel._aico8_create();
+assert.notEqual(customRuntime, 0);
+const customRomPointer = copyToHeap(new Uint8Array(0x8000));
+const customSourcePointer = copyToHeap(customAudioSource);
+try {
+  assert.equal(kernel._aico8_load_cart(customRuntime, customRomPointer, 0x8000,
+    customSourcePointer, customAudioSource.length), 1);
+  assert.equal(kernel._aico8_set_audio_diagnostic_mask(customRuntime, 4), 0,
+    "Wasm must reject unknown diagnostic bits");
+  assert.equal(kernel._aico8_set_audio_diagnostic_mask(customRuntime, 1), 1);
+  assert.equal(kernel._aico8_start(customRuntime), 1);
+  assert.equal(kernel._aico8_set_audio_diagnostic_mask(customRuntime, 0), 0,
+    "Wasm diagnostic policy is immutable after execution starts");
+  assert.equal(kernel._aico8_tick60(customRuntime, 0), 1);
+  const customCheckpoint = [];
+  const customAudioCount = kernel._aico8_audio_available(customRuntime);
+  const customAudioPointer = kernel._malloc(Math.max(2, customAudioCount * 2));
+  const customEventsPointer = kernel._malloc(8 * 32);
+  try {
+    assert.equal(customAudioCount, 367);
+    assert.equal(kernel._aico8_read_audio(customRuntime, customAudioPointer, customAudioCount),
+      customAudioCount);
+    appendU32(customCheckpoint, customAudioCount);
+    customCheckpoint.push(...kernel.HEAPU8.slice(customAudioPointer,
+      customAudioPointer + customAudioCount * 2));
+    appendU32(customCheckpoint, kernel._aico8_audio_capabilities(customRuntime));
+    appendU32(customCheckpoint, kernel._aico8_audio_diagnostic_flags(customRuntime));
+    const customEventCount = kernel._aico8_copy_audio_events(customRuntime, customEventsPointer, 8);
+    appendU32(customCheckpoint, customEventCount);
+    customCheckpoint.push(...kernel.HEAPU8.slice(customEventsPointer,
+      customEventsPointer + customEventCount * 32));
+    assert.equal(kernel._aico8_audio_diagnostic_flags(customRuntime), 1);
+    assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(customEventsPointer + 12, true), 7,
+      "the first event must make diagnostic custom-audio use durable");
+  } finally {
+    kernel._free(customEventsPointer);
+    kernel._free(customAudioPointer);
+  }
+  const nativeCustomCheckpoint = execFileSync("./build/vm_tests", ["--custom-audio-checkpoint"], {
+    encoding: "utf8",
+  }).trim();
+  assert.equal(Buffer.from(customCheckpoint).toString("hex"), nativeCustomCheckpoint,
+    "native and Wasm custom-audio diagnostic checkpoints differ");
+  const firstRestartTick = kernel._aico8_tick60(customRuntime, 1 << 4);
+  const secondRestartTick = kernel._aico8_tick60(customRuntime, 1 << 4);
+  assert.notEqual(firstRestartTick, -1);
+  assert.notEqual(secondRestartTick, -1,
+    "run() must preserve the explicit diagnostic policy across the same loaded cart");
+  assert.equal(kernel._aico8_audio_diagnostic_flags(customRuntime), 1,
+    "diagnostic use remains sticky across run() restart");
+} finally {
+  kernel._aico8_destroy(customRuntime);
+  kernel._free(customSourcePointer);
+  kernel._free(customRomPointer);
+}
 
 const errorRuntime = kernel._aico8_create();
 assert.notEqual(errorRuntime, 0);

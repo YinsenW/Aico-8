@@ -38,6 +38,18 @@ constexpr std::array<uint32_t, 64> kPhaseIncrement = {
     323577341, 342818251, 363203285, 384800477, 407681904, 431923931, 457607465, 484818220,
 };
 
+constexpr int kDiagnosticMinimumPitch = -24;
+constexpr int kDiagnosticMaximumPitch = 87;
+
+uint32_t phase_increment_for_pitch(int pitch)
+{
+    if (pitch < 0) return kPhaseIncrement[static_cast<size_t>(pitch + 24)] / 4;
+    if (pitch < static_cast<int>(kPhaseIncrement.size())) {
+        return kPhaseIncrement[static_cast<size_t>(pitch)];
+    }
+    return kPhaseIncrement[static_cast<size_t>(pitch - 24)] * 4;
+}
+
 struct note_data {
     uint8_t key = 0;
     uint8_t waveform = 0;
@@ -76,12 +88,16 @@ void append_event(p8_audio_state &state, uint64_t sample, int kind, int channel,
 
 void stop_channel(p8_audio_state &state, unsigned index, uint64_t sample)
 {
-    p8_audio_playback &playback = state.channels[index].playback;
+    p8_audio_channel &channel = state.channels[index];
+    p8_audio_playback &playback = channel.playback;
     if (playback.sfx < 0) return;
     append_event(state, sample, P8_AUDIO_EVENT_CHANNEL_STOP,
                  static_cast<int>(index), playback.sfx, current_note(playback),
                  state.music.pattern);
     playback.sfx = -1;
+    channel.custom_playback.sfx = -1;
+    channel.custom_outer_note = -1;
+    channel.custom_outer_was_custom = false;
 }
 
 void clear_error(p8_audio_state &state)
@@ -127,6 +143,84 @@ uint8_t sfx_loop_end(const p8_core *core, int sfx)
     return p8_core_peek(core, sfx_address(sfx, 67));
 }
 
+bool sfx_is_custom_waveform(const p8_core *core, int sfx)
+{
+    return sfx >= 0 && sfx < 8 && (sfx_loop_start(core, sfx) & 0x80) != 0;
+}
+
+uint32_t diagnostic_flags_for_sfx(const p8_core *core, int sfx)
+{
+    for (unsigned note = 0; note < 32; ++note) {
+        const note_data data = read_note(core, sfx, note);
+        if (data.volume == 0 || !data.custom) continue;
+        return sfx_is_custom_waveform(core, data.waveform)
+            ? P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM
+            : P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT;
+    }
+    return 0;
+}
+
+bool validate_custom_reference(p8_core *core, int owner_sfx, int reference,
+                               const std::array<bool, 64> &outer_keys)
+{
+    p8_audio_state &state = p8_core_audio_state(core);
+    if ((p8_core_peek(core, sfx_address(reference, 64)) & 0xfe) != 0) {
+        set_error(state, "sfx %d custom reference uses unsupported filters", owner_sfx);
+        return false;
+    }
+    if (sfx_is_custom_waveform(core, reference)) {
+        const uint8_t bass = p8_core_peek(core, sfx_address(reference, 65));
+        const uint8_t mode = p8_core_peek(core, sfx_address(reference, 66));
+        const uint8_t reserved = p8_core_peek(core, sfx_address(reference, 67));
+        if ((bass & 0xfe) != 0 || mode != 0x80 || reserved != 0) {
+            set_error(state, "sfx %d custom waveform metadata is outside the diagnostic subset", owner_sfx);
+            return false;
+        }
+        return true;
+    }
+
+    const uint8_t loop_start = sfx_loop_start(core, reference);
+    const uint8_t loop_end = sfx_loop_end(core, reference);
+    if (loop_start > 32 || loop_end > 32) {
+        set_error(state, "sfx %d custom instrument loop is outside the diagnostic subset", owner_sfx);
+        return false;
+    }
+    for (unsigned index = 0; index < 32; ++index) {
+        const note_data inner = read_note(core, reference, index);
+        if (inner.volume == 0) continue;
+        if (inner.custom) {
+            set_error(state, "sfx %d custom instrument recursion is unsupported", owner_sfx);
+            return false;
+        }
+        if (inner.effect > 5) {
+            set_error(state, "sfx %d custom instrument effect is outside the diagnostic subset", owner_sfx);
+            return false;
+        }
+        for (unsigned outer_key = 0; outer_key < outer_keys.size(); ++outer_key) {
+            if (!outer_keys[outer_key]) continue;
+            const int transposed = static_cast<int>(inner.key)
+                + static_cast<int>(outer_key) - 24;
+            if (transposed < kDiagnosticMinimumPitch
+                || transposed > kDiagnosticMaximumPitch) {
+                set_error(state, "sfx %d custom instrument transposition is out of range", owner_sfx);
+                return false;
+            }
+            if (inner.effect == 1) {
+                const int previous_key = index == 0
+                    ? 24 : static_cast<int>(read_note(core, reference, index - 1).key);
+                const int previous_transposed = previous_key
+                    + static_cast<int>(outer_key) - 24;
+                if (previous_transposed < kDiagnosticMinimumPitch
+                    || previous_transposed > kDiagnosticMaximumPitch) {
+                    set_error(state, "sfx %d custom instrument slide origin is out of range", owner_sfx);
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 bool validate_sfx(p8_core *core, int sfx)
 {
     p8_audio_state &state = p8_core_audio_state(core);
@@ -135,13 +229,38 @@ bool validate_sfx(p8_core *core, int sfx)
         set_error(state, "sfx %d uses filters that are not yet conformance-qualified", sfx);
         return false;
     }
+    int custom_reference = -1;
+    bool has_builtin_note = false;
+    std::array<bool, 64> outer_keys{};
     for (unsigned note = 0; note < 32; ++note) {
         const note_data data = read_note(core, sfx, note);
-        constexpr uint32_t custom_capabilities = P8_AUDIO_CAP_CUSTOM_INSTRUMENTS
-            | P8_AUDIO_CAP_CUSTOM_WAVEFORMS;
-        if ((kCapabilities & custom_capabilities) != custom_capabilities
-            && data.volume != 0 && data.custom) {
-            set_error(state, "sfx %d uses a custom instrument that is not yet conformance-qualified", sfx);
+        if (data.volume == 0) continue;
+        if (!data.custom) {
+            has_builtin_note = true;
+            continue;
+        }
+        if (data.effect != 0 && data.effect != 4 && data.effect != 5) {
+            set_error(state, "sfx %d custom note effect is outside the diagnostic subset", sfx);
+            return false;
+        }
+        if (custom_reference < 0) custom_reference = data.waveform;
+        else if (custom_reference != data.waveform) {
+            set_error(state, "sfx %d changes custom references inside one sound", sfx);
+            return false;
+        }
+        outer_keys[data.key] = true;
+    }
+    if (custom_reference >= 0) {
+        if (has_builtin_note) {
+            set_error(state, "sfx %d mixes custom and built-in notes outside the diagnostic subset", sfx);
+            return false;
+        }
+        if (!validate_custom_reference(core, sfx, custom_reference, outer_keys)) return false;
+        const uint32_t required = sfx_is_custom_waveform(core, custom_reference)
+            ? P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM
+            : P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT;
+        if ((state.diagnostic_allow_mask & required) == 0) {
+            set_error(state, "sfx %d requires explicit unqualified custom-audio diagnostic opt-in", sfx);
             return false;
         }
     }
@@ -182,7 +301,7 @@ void stop_music_channels(p8_audio_state &state)
     }
 }
 
-void launch_sfx(p8_audio_state &state, unsigned index, int sfx, unsigned offset,
+void launch_sfx(p8_core *core, p8_audio_state &state, unsigned index, int sfx, unsigned offset,
                 unsigned length, bool is_music)
 {
     p8_audio_channel &channel = state.channels[index];
@@ -192,8 +311,21 @@ void launch_sfx(p8_audio_state &state, unsigned index, int sfx, unsigned offset,
     channel.playback.length = length;
     channel.playback.can_loop = true;
     channel.playback.is_music = is_music;
-    channel.phase = 0;
-    channel.secondary_phase = 0;
+    channel.oscillator = {};
+    channel.custom_playback = {};
+    channel.custom_playback.sfx = -1;
+    channel.custom_oscillator = {};
+    channel.custom_outer_note = -1;
+    channel.custom_outer_key = 24;
+    channel.custom_outer_volume = 0;
+    channel.custom_outer_was_custom = false;
+    const uint32_t diagnostic_flags = diagnostic_flags_for_sfx(core, sfx);
+    if (diagnostic_flags != 0) {
+        state.diagnostic_used_flags |= diagnostic_flags;
+        append_event(state, state.sample_clock, P8_AUDIO_EVENT_DIAGNOSTIC_CUSTOM_AUDIO,
+                     static_cast<int>(index), sfx, current_note(channel.playback),
+                     state.music.pattern);
+    }
     append_event(state, state.sample_clock, P8_AUDIO_EVENT_CHANNEL_START,
                  static_cast<int>(index), sfx, current_note(channel.playback),
                  state.music.pattern);
@@ -258,7 +390,7 @@ bool set_music_pattern(p8_core *core, int pattern)
         if (song_channel_silent(value)) continue;
         const int sfx = value & 0x3f;
         p8_audio_channel &channel = state.channels[index];
-        if (channel.playback.sfx < 0) launch_sfx(state, index, sfx, 0, 0, true);
+        if (channel.playback.sfx < 0) launch_sfx(core, state, index, sfx, 0, 0, true);
         else channel.deferred_music_sfx = static_cast<int16_t>(sfx);
     }
     return true;
@@ -280,36 +412,36 @@ int32_t tilted(uint32_t phase)
     return 16384 - static_cast<int32_t>((static_cast<uint64_t>(phase - peak) * 32768) / (std::numeric_limits<uint32_t>::max() - peak + 1ull));
 }
 
-int32_t waveform(p8_audio_channel &channel, uint8_t instrument, uint32_t increment)
+int32_t waveform(p8_audio_oscillator &oscillator, uint8_t instrument, uint32_t increment)
 {
-    const uint32_t previous = channel.phase;
-    channel.phase += increment;
-    channel.secondary_phase += static_cast<uint32_t>((static_cast<uint64_t>(increment) * 109) / 110);
+    const uint32_t previous = oscillator.phase;
+    oscillator.phase += increment;
+    oscillator.secondary_phase += static_cast<uint32_t>((static_cast<uint64_t>(increment) * 109) / 110);
     switch (instrument) {
-    case 0: return triangle(channel.phase);
-    case 1: return tilted(channel.phase);
-    case 2: return static_cast<int16_t>(channel.phase >> 16) / 2;
-    case 3: return channel.phase < 0x80000000u ? 8192 : -8192;
-    case 4: return channel.phase < 0x51000000u ? 8192 : -8192;
-    case 5: return std::clamp(triangle(channel.phase) + triangle(channel.phase * 3u) / 2,
+    case 0: return triangle(oscillator.phase);
+    case 1: return tilted(oscillator.phase);
+    case 2: return static_cast<int16_t>(oscillator.phase >> 16) / 2;
+    case 3: return oscillator.phase < 0x80000000u ? 8192 : -8192;
+    case 4: return oscillator.phase < 0x51000000u ? 8192 : -8192;
+    case 5: return std::clamp(triangle(oscillator.phase) + triangle(oscillator.phase * 3u) / 2,
                               -16384, 16384);
     case 6:
-        if (channel.phase < previous) {
-            uint32_t value = channel.noise;
+        if (oscillator.phase < previous) {
+            uint32_t value = oscillator.noise;
             value ^= value << 13;
             value ^= value >> 17;
             value ^= value << 5;
-            channel.noise = value;
-            channel.held_noise = static_cast<int16_t>(value >> 16) / 2;
+            oscillator.noise = value;
+            oscillator.held_noise = static_cast<int16_t>(value >> 16) / 2;
         }
-        return channel.held_noise;
-    case 7: return (triangle(channel.phase) + triangle(channel.secondary_phase)) / 2;
+        return oscillator.held_noise;
+    case 7: return (triangle(oscillator.phase) + triangle(oscillator.secondary_phase)) / 2;
     default: return 0;
     }
 }
 
 uint32_t effect_increment(const p8_core *core, const p8_audio_playback &playback,
-                          unsigned note_index, note_data &note)
+                          unsigned note_index, note_data &note, int transpose = 0)
 {
     const uint32_t fraction = static_cast<uint32_t>(playback.position);
     if (note.effect == 6 || note.effect == 7) {
@@ -319,9 +451,10 @@ uint32_t effect_increment(const p8_core *core, const p8_audio_playback &playback
         const unsigned offset = static_cast<unsigned>((static_cast<uint64_t>(fraction) * steps) >> 32) & 3u;
         note = read_note(core, playback.sfx, (note_index & ~3u) | offset);
     }
-    uint32_t increment = kPhaseIncrement[note.key];
+    uint32_t increment = phase_increment_for_pitch(static_cast<int>(note.key) + transpose);
     if (note.effect == 1) {
-        const uint32_t previous = kPhaseIncrement[playback.previous_key];
+        const uint32_t previous = phase_increment_for_pitch(
+            static_cast<int>(playback.previous_key) + transpose);
         const int64_t difference = static_cast<int64_t>(increment) - previous;
         increment = static_cast<uint32_t>(static_cast<int64_t>(previous)
             + ((difference * fraction) >> 32));
@@ -354,6 +487,106 @@ int32_t effect_volume(const p8_audio_playback &playback, const note_data &note)
             * (std::numeric_limits<uint32_t>::max() - fraction)) >> 32);
     }
     return volume;
+}
+
+void start_custom_instrument(p8_audio_channel &channel, int reference)
+{
+    channel.custom_playback = {};
+    channel.custom_playback.sfx = static_cast<int16_t>(reference);
+    channel.custom_playback.can_loop = true;
+    channel.custom_oscillator = {};
+}
+
+void sync_custom_note(const p8_core *core, p8_audio_channel &channel,
+                      unsigned outer_note_index, const note_data &outer)
+{
+    if (channel.custom_outer_note == static_cast<int16_t>(outer_note_index)) return;
+    const bool active_custom = outer.custom && outer.volume != 0;
+    const bool retrigger = active_custom
+        && (!channel.custom_outer_was_custom || channel.custom_outer_volume == 0
+            || channel.custom_outer_key != outer.key);
+    channel.custom_outer_note = static_cast<int16_t>(outer_note_index);
+    channel.custom_outer_key = outer.key;
+    channel.custom_outer_volume = outer.volume;
+    channel.custom_outer_was_custom = active_custom;
+    if (!active_custom) {
+        channel.custom_playback.sfx = -1;
+        return;
+    }
+    if (retrigger) {
+        channel.custom_oscillator = {};
+        if (sfx_is_custom_waveform(core, outer.waveform)) {
+            channel.custom_playback.sfx = -1;
+        } else {
+            start_custom_instrument(channel, outer.waveform);
+        }
+    }
+}
+
+void advance_custom_instrument(const p8_core *core, p8_audio_playback &playback)
+{
+    if (playback.sfx < 0) return;
+    const unsigned speed = sfx_speed(core, playback.sfx);
+    const uint64_t step = kOneNote / (183u * speed);
+    playback.position += step;
+    playback.elapsed += step;
+    unsigned next_note = static_cast<unsigned>(playback.position >> 32);
+    const unsigned loop_start = sfx_loop_start(core, playback.sfx);
+    const unsigned loop_end = sfx_loop_end(core, playback.sfx);
+    if (loop_end > loop_start && next_note >= loop_end) {
+        const uint64_t loop_size = static_cast<uint64_t>(loop_end - loop_start) << 32;
+        playback.position = (static_cast<uint64_t>(loop_start) << 32)
+            + (playback.position - (static_cast<uint64_t>(loop_start) << 32)) % loop_size;
+        return;
+    }
+    unsigned end = 32;
+    if (loop_end == 0 && loop_start > 0) end = loop_start;
+    if (next_note >= end) playback.sfx = -1;
+}
+
+int32_t render_custom_note(const p8_core *core, p8_audio_channel &channel,
+                           const p8_audio_playback &outer_playback,
+                           const note_data &outer)
+{
+    if (outer.volume == 0) {
+        advance_custom_instrument(core, channel.custom_playback);
+        return 0;
+    }
+    if (sfx_is_custom_waveform(core, outer.waveform)) {
+        uint32_t increment = phase_increment_for_pitch(outer.key);
+        if ((p8_core_peek(core, sfx_address(outer.waveform, 65)) & 0x01) != 0) {
+            increment /= 2;
+        }
+        channel.custom_oscillator.phase += increment;
+        const unsigned sample_index = channel.custom_oscillator.phase >> 26;
+        const int32_t raw = static_cast<int8_t>(
+            p8_core_peek(core, sfx_address(outer.waveform, sample_index)));
+        const int32_t volume = effect_volume(outer_playback, outer);
+        return static_cast<int32_t>((static_cast<int64_t>(raw * 128) * volume) >> 15);
+    }
+
+    p8_audio_playback &inner_playback = channel.custom_playback;
+    if (inner_playback.sfx < 0) return 0;
+    const unsigned inner_note_index = static_cast<unsigned>(inner_playback.position >> 32);
+    if (inner_note_index >= 32) {
+        inner_playback.sfx = -1;
+        return 0;
+    }
+    note_data inner = read_note(core, inner_playback.sfx, inner_note_index);
+    int32_t sample = 0;
+    if (inner.volume != 0) {
+        const int transpose = static_cast<int>(outer.key) - 24;
+        const uint32_t increment = effect_increment(
+            core, inner_playback, inner_note_index, inner, transpose);
+        const int32_t inner_volume = effect_volume(inner_playback, inner);
+        const int32_t outer_volume = effect_volume(outer_playback, outer);
+        sample = static_cast<int32_t>((static_cast<int64_t>(
+            waveform(channel.custom_oscillator, inner.waveform, increment))
+            * inner_volume) >> 15);
+        sample = static_cast<int32_t>((static_cast<int64_t>(sample) * outer_volume) >> 15);
+    }
+    advance_custom_instrument(core, inner_playback);
+    return sample;
 }
 
 void advance_playback(const p8_core *core, p8_audio_state &state, unsigned channel_index,
@@ -402,7 +635,7 @@ int32_t render_channel(p8_core *core, unsigned index)
         const uint64_t divisor = static_cast<uint64_t>(183) * sfx_speed(core, sfx);
         const unsigned offset = static_cast<unsigned>(std::min<uint64_t>(31,
             state.music.elapsed_samples / divisor));
-        launch_sfx(state, index, sfx, offset, 0, true);
+        launch_sfx(core, state, index, sfx, offset, 0, true);
         channel.deferred_music_sfx = -1;
     }
     p8_audio_playback &playback = channel.playback;
@@ -413,16 +646,19 @@ int32_t render_channel(p8_core *core, unsigned index)
         return 0;
     }
     note_data note = read_note(core, playback.sfx, note_index);
+    sync_custom_note(core, channel, note_index, note);
     int32_t sample = 0;
-    if (note.volume != 0) {
+    if (note.custom) {
+        sample = render_custom_note(core, channel, playback, note);
+    } else if (note.volume != 0) {
         const uint32_t increment = effect_increment(core, playback, note_index, note);
         const int32_t volume = effect_volume(playback, note);
-        sample = static_cast<int32_t>((static_cast<int64_t>(waveform(channel, note.waveform, increment))
+        sample = static_cast<int32_t>((static_cast<int64_t>(waveform(channel.oscillator, note.waveform, increment))
             * volume) >> 15);
-        if (playback.is_music) sample = static_cast<int32_t>((static_cast<int64_t>(sample)
-            * state.music.volume) >> 17);
-        else sample /= 2;
     }
+    if (playback.is_music) sample = static_cast<int32_t>((static_cast<int64_t>(sample)
+        * state.music.volume) >> 17);
+    else sample /= 2;
     advance_playback(core, state, index, state.sample_clock + 1);
     return sample;
 }
@@ -554,7 +790,7 @@ int p8_audio_sfx(p8_core *core, int sfx, int channel, int offset, int length)
     if (target.playback.sfx >= 0) {
         stop_channel(state, static_cast<unsigned>(channel), state.sample_clock);
     }
-    launch_sfx(state, static_cast<unsigned>(channel), sfx,
+    launch_sfx(core, state, static_cast<unsigned>(channel), sfx,
                static_cast<unsigned>(std::max(0, offset)),
                static_cast<unsigned>(std::max(0, length)), false);
     return channel;
@@ -628,6 +864,22 @@ size_t p8_audio_read(p8_core *core, int16_t *destination, size_t capacity)
 uint32_t p8_audio_capabilities(const p8_core *core)
 {
     return core ? kCapabilities : 0;
+}
+
+int p8_audio_set_diagnostic_mask(p8_core *core, uint32_t mask)
+{
+    constexpr uint32_t allowed = P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT
+        | P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM;
+    if (!core || (mask & ~allowed) != 0) return 0;
+    p8_audio_state &state = p8_core_audio_state(core);
+    if (state.sample_clock != 0 || state.diagnostic_used_flags != 0) return 0;
+    state.diagnostic_allow_mask = mask;
+    return 1;
+}
+
+uint32_t p8_audio_diagnostic_flags(const p8_core *core)
+{
+    return core ? p8_core_audio_state(core).diagnostic_used_flags : 0;
 }
 
 int p8_audio_get_channel_status(const p8_core *core, unsigned channel,

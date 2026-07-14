@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { prepareKernelForLogicalReplay, type ReplayInitializationKernel } from "./kernel.js";
+import {
+  normalizeAudioDiagnosticMask,
+  prepareKernelForLogicalReplay,
+  type ReplayInitializationKernel,
+} from "./kernel.js";
+
+describe("audio diagnostic opt-in", () => {
+  it("defaults release and qualification hosts to no diagnostic audio", () => {
+    expect(normalizeAudioDiagnosticMask(undefined)).toBe(0);
+    expect(normalizeAudioDiagnosticMask(0)).toBe(0);
+  });
+
+  it("accepts only the two explicit research bits", () => {
+    expect(normalizeAudioDiagnosticMask(1)).toBe(1);
+    expect(normalizeAudioDiagnosticMask(2)).toBe(2);
+    expect(normalizeAudioDiagnosticMask(3)).toBe(3);
+    expect(() => normalizeAudioDiagnosticMask(4)).toThrow(/unsupported bits/);
+    expect(() => normalizeAudioDiagnosticMask(-1)).toThrow(/unsupported bits/);
+  });
+});
 
 class InitializingKernel implements ReplayInitializationKernel {
   ticks = 0;

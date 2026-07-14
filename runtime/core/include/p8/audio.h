@@ -16,7 +16,10 @@ enum {
 };
 
 /* Capability bits are fail-closed. A missing bit means callers must not infer
- * compatible behavior from a diagnostic implementation. */
+ * compatible behavior from a diagnostic implementation. In particular, the
+ * core can deterministically render a structurally bounded custom-instrument
+ * subset while the two custom capability bits remain clear until licensed
+ * official captures qualify the PCM and transition semantics. */
 enum p8_audio_capability {
     P8_AUDIO_CAP_EVENT_LEDGER = 1u << 0,
     P8_AUDIO_CAP_CHANNEL_STATUS = 1u << 1,
@@ -27,6 +30,14 @@ enum p8_audio_capability {
     P8_AUDIO_CAP_CUSTOM_WAVEFORMS = 1u << 6,
 };
 
+/* Diagnostic playback is opt-in and never upgrades a capability bit. The
+ * used flags are sticky for the loaded execution so qualification can reject
+ * and hash any run that crossed an unqualified audio boundary. */
+enum p8_audio_diagnostic_flag {
+    P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT = 1u << 0,
+    P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM = 1u << 1,
+};
+
 enum p8_audio_event_kind {
     P8_AUDIO_EVENT_CHANNEL_START = 1,
     P8_AUDIO_EVENT_CHANNEL_STOP = 2,
@@ -34,6 +45,7 @@ enum p8_audio_event_kind {
     P8_AUDIO_EVENT_NOTE = 4,
     P8_AUDIO_EVENT_MUSIC_PATTERN = 5,
     P8_AUDIO_EVENT_MUSIC_STOP = 6,
+    P8_AUDIO_EVENT_DIAGNOSTIC_CUSTOM_AUDIO = 7,
 };
 
 /* Fixed-width diagnostic ABI. These values describe Aico 8's internal event
@@ -65,6 +77,8 @@ void p8_audio_host_tick60(p8_core *core);
 size_t p8_audio_available(const p8_core *core);
 size_t p8_audio_read(p8_core *core, int16_t *destination, size_t capacity);
 uint32_t p8_audio_capabilities(const p8_core *core);
+int p8_audio_set_diagnostic_mask(p8_core *core, uint32_t mask);
+uint32_t p8_audio_diagnostic_flags(const p8_core *core);
 int p8_audio_get_channel_status(const p8_core *core, unsigned channel,
                                 p8_audio_channel_status *status);
 size_t p8_audio_copy_events(const p8_core *core, p8_audio_event *destination,

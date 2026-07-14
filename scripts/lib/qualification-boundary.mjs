@@ -2,6 +2,19 @@ import assert from "node:assert/strict";
 
 const ID = /^[a-z0-9][a-z0-9._-]{1,127}$/;
 
+export function assertNoDiagnosticAudioUse(flags) {
+  assert.ok(Number.isSafeInteger(flags) && flags >= 0,
+    "audio diagnostic flags must be a non-negative safe integer");
+  assert.equal(flags, 0,
+    "canonical qualification cannot accept execution that used unqualified diagnostic audio");
+}
+
+export function assertCanonicalExecutionFacts(facts) {
+  assert.ok(facts && typeof facts === "object" && !Array.isArray(facts),
+    "canonical execution facts must be an object");
+  assertNoDiagnosticAudioUse(facts.audioDiagnosticFlags);
+}
+
 export function assertQualificationBoundaryMilestones(boundary, replay) {
   assert.ok(boundary && typeof boundary === "object" && !Array.isArray(boundary),
     "qualification boundary must be an object");

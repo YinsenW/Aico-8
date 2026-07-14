@@ -29,6 +29,8 @@ size_t aico8_audio_available(const aico8_runtime *runtime);
 size_t aico8_read_audio(aico8_runtime *runtime, int16_t *destination,
                         size_t capacity);
 uint32_t aico8_audio_capabilities(const aico8_runtime *runtime);
+int aico8_set_audio_diagnostic_mask(aico8_runtime *runtime, uint32_t mask);
+uint32_t aico8_audio_diagnostic_flags(const aico8_runtime *runtime);
 int aico8_get_audio_channel_status(const aico8_runtime *runtime, unsigned channel,
                                    p8_audio_channel_status *status);
 size_t aico8_copy_audio_events(const aico8_runtime *runtime,

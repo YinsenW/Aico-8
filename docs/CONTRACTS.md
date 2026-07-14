@@ -80,6 +80,12 @@ only its linked exits determine acceptance.
 - `specs/display-profiles.json` owns `128 → 1024`, scale `8`, and tile `64` values.
 - The kernel is the only owner of fixed-point, memory, scheduler, raster, input
   repeat, persistence, and reference audio semantics.
+- Custom-instrument and custom-waveform diagnostic playback is disabled unless
+  the host opts in before execution. Opt-in never sets a conformance capability;
+  use sets sticky queryable flags and an event-ledger record. Canonical gameplay
+  evidence must include `execution.audioDiagnosticFlags`, and JOB-VALIDATE-001
+  rejects missing or non-zero values until licensed official captures qualify
+  those semantics.
 - Current-cart `reload(dest,source,len)` copies immutable cart data only from
   `0x0000..0x42ff` into base RAM. The protected code range is rejected, and an
   optional external-cart filename fails closed until a declared host resource

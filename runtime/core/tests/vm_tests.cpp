@@ -3,6 +3,7 @@
 #include "p8/raster.h"
 #include "p8/vm.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstring>
@@ -18,9 +19,9 @@ namespace {
 
 constexpr uint16_t kPersistentBase = 0x5e00;
 
-std::string read_fixture()
+std::string read_fixture(const char *name = "synthetic_cart.lua")
 {
-    std::ifstream input("tests/fixtures/synthetic_cart.lua", std::ios::binary);
+    std::ifstream input(std::string("tests/fixtures/") + name, std::ios::binary);
     assert(input);
     return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
 }
@@ -73,6 +74,7 @@ std::vector<uint8_t> canonical_checkpoint(p8_core *core)
         append_u16(checkpoint, static_cast<uint16_t>(audio[index]));
     }
     append_u32(checkpoint, p8_audio_capabilities(core));
+    append_u32(checkpoint, p8_audio_diagnostic_flags(core));
     p8_audio_channel_status channel{};
     assert(p8_audio_get_channel_status(core, 0, &channel));
     append_u32(checkpoint, static_cast<uint32_t>(channel.sfx));
@@ -96,6 +98,50 @@ std::vector<uint8_t> canonical_checkpoint(p8_core *core)
     for (size_t index = 0; index < 256; ++index) {
         append_byte(checkpoint, p8_core_peek(core, static_cast<uint16_t>(kPersistentBase + index)));
     }
+    return checkpoint;
+}
+
+std::vector<uint8_t> test_custom_audio_fixture_is_explicit_and_hashable()
+{
+    const std::string source = read_fixture("custom_audio_cart.lua");
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source.data(), source.size(), "@custom-audio-fixture"));
+    assert(p8_vm_call(vm, "_init"));
+    assert(p8_core_host_tick60(core, 1) == 1);
+
+    std::vector<uint8_t> checkpoint;
+    std::array<int16_t, 367> audio{};
+    const size_t count = p8_audio_read(core, audio.data(), audio.size());
+    append_u32(checkpoint, static_cast<uint32_t>(count));
+    for (size_t index = 0; index < count; ++index) {
+        append_u16(checkpoint, static_cast<uint16_t>(audio[index]));
+    }
+    append_u32(checkpoint, p8_audio_capabilities(core));
+    append_u32(checkpoint, p8_audio_diagnostic_flags(core));
+    std::array<p8_audio_event, 8> events{};
+    const size_t event_count = p8_audio_copy_events(core, events.data(), events.size());
+    append_u32(checkpoint, static_cast<uint32_t>(event_count));
+    for (size_t index = 0; index < event_count; ++index) {
+        append_u32(checkpoint, events[index].sequence);
+        append_u32(checkpoint, events[index].sample_low);
+        append_u32(checkpoint, events[index].sample_high);
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].kind));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].channel));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].sfx));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].note));
+        append_u32(checkpoint, static_cast<uint32_t>(events[index].music_pattern));
+    }
+    assert(count == audio.size());
+    assert(std::any_of(audio.begin(), audio.end(), [](int16_t sample) { return sample != 0; }));
+    assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT);
+    assert(event_count >= 2 && events[0].kind == P8_AUDIO_EVENT_DIAGNOSTIC_CUSTOM_AUDIO);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
     return checkpoint;
 }
 
@@ -632,6 +678,8 @@ function _init() observed=stat(46) end
 int main(int argc, char **argv)
 {
     const std::vector<uint8_t> checkpoint = test_synthetic_cart_updates_raster_and_semantic_stream();
+    const std::vector<uint8_t> custom_audio_checkpoint =
+        test_custom_audio_fixture_is_explicit_and_hashable();
     test_pico_button_glyph_constants_map_to_all_six_buttons();
     test_unicode_source_glyphs_execute_as_p8scii_byte_strings();
     test_holdframe_defers_presentation_until_the_next_host_frame();
@@ -641,8 +689,11 @@ int main(int argc, char **argv)
     test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_routes_fail_closed_until_official_tick_history_is_qualified();
-    if (argc == 2 && std::string(argv[1]) == "--checkpoint") {
-        for (uint8_t byte : checkpoint) std::printf("%02x", byte);
+    if (argc == 2 && (std::string(argv[1]) == "--checkpoint"
+                       || std::string(argv[1]) == "--custom-audio-checkpoint")) {
+        const std::vector<uint8_t> &selected = std::string(argv[1]) == "--checkpoint"
+            ? checkpoint : custom_audio_checkpoint;
+        for (uint8_t byte : selected) std::printf("%02x", byte);
         std::putchar('\n');
     } else {
         std::puts("p8 VM tests: ok");

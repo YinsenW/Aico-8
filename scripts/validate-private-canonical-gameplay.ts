@@ -9,7 +9,10 @@ import {
   assertInputTraceProvenance,
   inputTraceSha256,
 } from "./lib/input-trace-provenance.mjs";
-import { assertQualificationBoundaryMilestones } from "./lib/qualification-boundary.mjs";
+import {
+  assertCanonicalExecutionFacts,
+  assertQualificationBoundaryMilestones,
+} from "./lib/qualification-boundary.mjs";
 
 type DifferentialReport = {
   schemaVersion: string;
@@ -21,6 +24,7 @@ type DifferentialReport = {
     playerZeroMaskSha256: string;
     authority: string;
   };
+  execution: { audioDiagnosticFlags: number };
   differential: {
     boundary: { kind: string; required: number; completed: number; milestoneIds?: string[] };
     strokes: number;
@@ -126,6 +130,7 @@ assert.equal(report.replay.sha256, sha256(replayText));
 assert.equal(report.canonicalInput.logicalUpdates, replay.trace.totalUpdates);
 assert.equal(report.canonicalInput.authority,
   "fixed-ordinary-button-masks-replayed-from-clean-state-without-control-hooks");
+assertCanonicalExecutionFacts(report.execution);
 assert.ok(replay.trace.totalUpdates <= 10_000_000, "private canonical trace exceeds the validation memory budget");
 const masks: number[] = [];
 for (const span of replay.trace.spans) {
@@ -192,6 +197,7 @@ const attestation = {
     host_input_surfaces: Object.keys(inputProjection.surfaces).length,
     host_input_mask_mismatches: Object.values(inputProjection.surfaces)
       .reduce((total, surface) => total + surface.mismatches, 0),
+    audio_diagnostic_flags: report.execution.audioDiagnosticFlags,
   },
   canonicality: replay.canonicality,
   private_artifact_sha256: {

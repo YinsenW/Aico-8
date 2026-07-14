@@ -18,13 +18,23 @@ struct p8_audio_playback {
     bool is_music = false;
 };
 
-struct p8_audio_channel {
-    p8_audio_playback playback{};
-    int16_t deferred_music_sfx = -1;
+struct p8_audio_oscillator {
     uint32_t phase = 0;
     uint32_t secondary_phase = 0;
     uint32_t noise = 0x6d2b79f5u;
     int16_t held_noise = 0;
+};
+
+struct p8_audio_channel {
+    p8_audio_playback playback{};
+    int16_t deferred_music_sfx = -1;
+    p8_audio_oscillator oscillator{};
+    p8_audio_playback custom_playback{};
+    p8_audio_oscillator custom_oscillator{};
+    int16_t custom_outer_note = -1;
+    uint8_t custom_outer_key = 24;
+    uint8_t custom_outer_volume = 0;
+    bool custom_outer_was_custom = false;
 };
 
 struct p8_audio_music_state {
@@ -49,6 +59,8 @@ struct p8_audio_state {
     unsigned sample_remainder = 0;
     uint64_t sample_clock = 0;
     uint32_t next_event_sequence = 1;
+    uint32_t diagnostic_allow_mask = 0;
+    uint32_t diagnostic_used_flags = 0;
     std::array<p8_audio_event, kEventCapacity> events{};
     size_t event_read = 0;
     size_t event_count = 0;
