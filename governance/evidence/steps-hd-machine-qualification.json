@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "subject": "steps-private-research complete Web/PWA and HD machine qualification",
+  "status": "machine-complete-ordered-human-review-pending-zero-credit",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "observations": {
+    "canonical_updates": 1781,
+    "canonical_input_spans": 711,
+    "state_checkpoints": 33,
+    "required_progression_boundaries": 13,
+    "completed_progression_boundaries": 13,
+    "ending_reached": true,
+    "ordinary_restart_reached": true,
+    "mutation_regressions_rejected": 3,
+    "audio_diagnostic_flags": 0,
+    "host_input_surfaces": 3,
+    "host_input_mask_mismatches": 0,
+    "source_relative_elements": 28,
+    "mapped_elements": 28,
+    "unmapped_elements": 0,
+    "hd_invariance_updates": 1781,
+    "hd_invariance_checkpoints": 33,
+    "hd_invariance_audio_samples": 1308667,
+    "same_state_source_hd_pairs": 17,
+    "browser_screenshots": 34,
+    "temporal_sequences": 4,
+    "minimum_touch_target_css_pixels": 44,
+    "pwa_contract_complete": true,
+    "human_principle_gates_passed": 0
+  },
+  "private_artifact_sha256": {
+    "replay_v1": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "differential": "511a284206b0f670c8d06057208b26daee3ac8fc1a223930ffeffbf0d52c2f80",
+    "input_projection": "d68276f931d33db90c8777cc9603e5484195beead0f847ac4c76990919447b75",
+    "input_trace_provenance": "527b476c2272eb67f762a0ec9f3c803e7d0dd636766a9dd39e0c274b52d3f859",
+    "hd_invariance": "90b589384129713cff411d33badbf6b45a071bceca2f1ac382fd251351f1f794",
+    "hd_lifecycle": "16464d3336bababae51c913ecd9fd5cbd8273743571585bf0d04c084b88b2997",
+    "browser_validation": "da7492e301cf84df939f8850d98fbf6ff018cdfbe33568fc9c4ceff217dc1ba8",
+    "review_packet": "ec68eb1d85078eb9525eec5491116af5585f3a48c7699dfcbff3a0af81cc93ee",
+    "web_lifecycle": "9caecdc95198379084ff49c7fe16e2bd38f28f9ae725aa9ba6049a73618d00f9",
+    "release_manifest": "70415daaa9d38bba59339fe1a8f7430d64bd7a93b7f867c6d483415a4004358d"
+  },
+  "limitations": [
+    "The three ordered human gates—spirit fidelity, quality leap, and aesthetic evolution—remain pending; Steps contributes zero accepted-game credit until all three pass in order.",
+    "The in-app browser exercised the production visible-control pointer path and the separately verified touch projection; no physical capacitive touchscreen was claimed.",
+    "Licensed official PICO-8 runtime capture remains the independent compatibility oracle, and publication rights remain unresolved."
+  ],
+  "verification": {
+    "private_workspace": "workspaces/202_steps",
+    "machine_verifiers": [
+      "validation/verify-canonical-gameplay.ts",
+      "validation/verify-hd-runtime.ts",
+      "validation/build-web-lifecycle-evidence.mjs",
+      "scripts/verify-private-hd-review-packet.ts",
+      "scripts/verify-web-package.mjs"
+    ],
+    "human_review_packet": "evidence/identity-review-packet.html"
+  }
+}

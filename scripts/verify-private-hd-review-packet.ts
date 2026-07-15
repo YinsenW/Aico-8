@@ -8,6 +8,7 @@ import {
   HD_REVIEW_PRINCIPLE_GATES,
   validateHdReviewPacket,
 } from "../packages/contracts/src/hd-review-packet.ts";
+import { normalizeHdReviewScreenshot } from "./lib/review-screenshot.mjs";
 import { validateHdReviewDecision } from "../packages/contracts/src/hd-review-decision.ts";
 
 const arguments_ = new Map<string, string>();
@@ -61,7 +62,10 @@ for (const element of packet.elements) {
 
 const browserScreenshots = new Map(browser.screenshots.map((screenshot: any) => [screenshot.id, screenshot]));
 for (const screenshot of packet.screenshots) {
-  assert.deepEqual(screenshot, browserScreenshots.get(screenshot.id), `${screenshot.id}: browser screenshot metadata`);
+  const browserScreenshot = browserScreenshots.get(screenshot.id) as any;
+  assert.ok(browserScreenshot, `${screenshot.id}: browser screenshot metadata`);
+  assert.deepEqual(screenshot, normalizeHdReviewScreenshot(browserScreenshot),
+    `${screenshot.id}: browser screenshot metadata`);
   const file = path.resolve(workspace, screenshot.path);
   assert.ok(file.startsWith(`${workspace}${path.sep}`), `${screenshot.id}: unsafe screenshot path`);
   assert.equal(sha256(file), screenshot.sha256, `${screenshot.id}: screenshot bytes`);

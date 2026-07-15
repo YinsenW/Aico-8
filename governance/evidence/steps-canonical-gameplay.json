@@ -11,7 +11,7 @@
     "boundary_kind": "checkpoint",
     "required_boundaries": 13,
     "completed_boundaries": 13,
-    "ordinary_input_logical_updates": 1761,
+    "ordinary_input_logical_updates": 1781,
     "input_spans": 711,
     "strokes": 353,
     "state_checkpoints": 33,
@@ -32,14 +32,14 @@
     "wallClockAcceleration": true
   },
   "private_artifact_sha256": {
-    "replay_v1": "00e6de05b56df85f4b12992c80aa24f79ae815431ab5fb9f7d820ac1f115e12b",
-    "differential": "1f61b543e687ff039092f87432985d110b7f4aa4f810fc95942b5e6e21ccc279",
-    "input_projection": "1d730168b40b4c43a6dfbed0042df9e438d226ab9ab3fe6827420c583934ad27",
-    "input_trace_provenance": "85aa0f1db59851a159638d0ba8f654a8fcb7c682ce34d0ff549a24f6858eaf36"
+    "replay_v1": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "differential": "511a284206b0f670c8d06057208b26daee3ac8fc1a223930ffeffbf0d52c2f80",
+    "input_projection": "d68276f931d33db90c8777cc9603e5484195beead0f847ac4c76990919447b75",
+    "input_trace_provenance": "527b476c2272eb67f762a0ec9f3c803e7d0dd636766a9dd39e0c274b52d3f859"
   },
   "limitations": [
     "Canonical gameplay passed only against the unchanged shared Wasm runtime; licensed official-runtime compatibility evidence remains separate.",
-    "HD rendering, human identity/visual review, publication rights, and any formal release remain unverified and unauthorized."
+    "HD, Web/PWA, browser, touch-target, and fixed-font machine gates now pass in the separate Steps machine-qualification record; ordered human identity/visual review remains pending and formal release remains unauthorized."
   ],
   "selector": "TEST-QUALIFICATION-GAMEPLAY-PRIVATE"
 }

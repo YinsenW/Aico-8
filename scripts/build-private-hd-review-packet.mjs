@@ -7,6 +7,7 @@ import {
   HD_REVIEW_PACKET_SCHEMA_VERSION,
   HD_REVIEW_PRINCIPLE_GATES,
 } from "../packages/contracts/src/hd-review-packet.ts";
+import { normalizeHdReviewScreenshot } from "./lib/review-screenshot.mjs";
 
 const arguments_ = new Map();
 for (let index = 2; index < process.argv.length; index += 2) {
@@ -84,7 +85,7 @@ for (const comparison of browser.temporalComparisons) {
     screenshotIds.add(frame.targetScreenshotId);
   }
 }
-const screenshots = browser.screenshots.filter(({ id }) => screenshotIds.has(id));
+const screenshots = browser.screenshots.filter(({ id }) => screenshotIds.has(id)).map(normalizeHdReviewScreenshot);
 assert.equal(screenshots.length, screenshotIds.size, "Review packet references an unknown screenshot");
 for (const screenshot of screenshots) {
   const file = path.join(workspace, screenshot.path);
