@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "subject": "steps-private-research v10 HD presentation rejection",
+  "status": "rejected-no-substantive-hd-redraw",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "technical_observations": {
+    "canonical_updates": 1781,
+    "required_progression_boundaries": 13,
+    "completed_progression_boundaries": 13,
+    "ending_and_restart_reached": true,
+    "hd_state_invariance_passed": true,
+    "same_state_source_hd_pairs": 17,
+    "browser_screenshots": 34,
+    "source_relative_elements_mapped": 28,
+    "web_pwa_lifecycle_passed": true
+  },
+  "visual_rejection": {
+    "review_stage": "spirit-fidelity-and-quality-leap-precondition",
+    "verdict": "failed",
+    "root_cause": "The renderer rebuilt every indexed source cell as a locally rounded 8x8 cell and joined only orthogonal neighbours. This preserved the pixel grid itself instead of reconstructing continuous authored forms.",
+    "observed_failures": [
+      "The main menu target is visually indistinguishable from an enlarged source framebuffer and contains no substantive redraw, material, curve, or detail uplift.",
+      "The large white circular form at canonical update 1694 retains clearly visible staircase edges in the HD target.",
+      "Source PRINT pixels remain in the generic framebuffer path, so typography can remain pixel-block output instead of the fixed modern text route."
+    ],
+    "invalidated_claims": [
+      "machine-complete-human-review-pending",
+      "quality-leap-ready",
+      "substantive-HD-redraw"
+    ]
+  },
+  "required_systemic_fix": [
+    "Replace per-cell rounded unions with semantic-element or connected-region reconstruction into continuous target-resolution contours.",
+    "Protect component count, holes, apertures, and source identity by topology checks plus downsample comparison rather than by preserving every pixel stair step.",
+    "Route visible PRINT commands through the fixed font system and exclude their indexed glyph pixels from the generic surface renderer.",
+    "Add an explicit visual-uplift rejection test for staircase density, target-resolution curves, material layers, and unchanged source/HD edge profiles."
+  ],
+  "private_artifact_sha256": {
+    "replay_v1": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "rejected_visual_runtime": "1e04f16876b2245a705b69ac67b4196b395ae8690c2a98ede61027aad8d811bf",
+    "browser_validation": "da7492e301cf84df939f8850d98fbf6ff018cdfbe33568fc9c4ceff217dc1ba8",
+    "review_packet": "ec68eb1d85078eb9525eec5491116af5585f3a48c7699dfcbff3a0af81cc93ee"
+  },
+  "credit": {
+    "accepted_game_credit": 0,
+    "machine_complete_credit": 0
+  }
+}
