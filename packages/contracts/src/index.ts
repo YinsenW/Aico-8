@@ -164,6 +164,17 @@ export {
   type SupervisedTransferValidationResult,
 } from "./supervised-transfer.js";
 export {
+  REQUIRED_FORBIDDEN_CLAIMS,
+  REQUIRED_REVIEW_CRITERIA,
+  SUPERVISED_REVIEW_PROPOSAL_SCHEMA_VERSION,
+  assertSupervisedReviewProposal,
+  validateSupervisedReviewProposal,
+  type SupervisedReviewEvidenceV1,
+  type SupervisedReviewItemV1,
+  type SupervisedReviewProposalV1,
+  type SupervisedReviewProposalValidationResult,
+} from "./supervised-review-proposal.js";
+export {
   TRANSFER_FINDING_CLASSIFICATIONS,
   TRANSFER_FINDINGS_SCHEMA_VERSION,
   assertTransferFindings,

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   applySupervisedHumanDecision,
+  assertSupervisedReviewProposal,
   submitSupervisedProposal,
   validateSupervisedTransfer,
   verifyHumanStopDecision,
@@ -15,6 +16,7 @@ import {
   type HumanStopDecisionV1,
   type SupervisedTransferStopId,
   type SupervisedTransferV1,
+  type SupervisedReviewProposalV1,
 } from "../packages/contracts/src/index.ts";
 
 const TRUST_STORE_SCHEMA_VERSION = "aico8.human-decision-trust-store.v1" as const;
@@ -221,11 +223,36 @@ async function verifyLedgerArtifacts(
   const decisionDigests = new Set<string>();
   const proposalNonces = new Set<string>();
   for (const stop of ledger.stops) {
-    for (const attempt of stop.attempts) {
+    for (const [attemptIndex, attempt] of stop.attempts.entries()) {
       const proposalBytes = await readArtifact(root, attempt.proposal.path, "supervised proposal");
       if (sha256(proposalBytes) !== attempt.proposal.sha256) {
         throw new Error(`Supervised proposal bytes changed after submission: ${attempt.proposal.path}`);
       }
+      const proposalValue = parseJson(proposalBytes, `supervised proposal ${attempt.proposal.path}`);
+      assertSupervisedReviewProposal(proposalValue);
+      const proposal = proposalValue as SupervisedReviewProposalV1;
+      const previousAttempt = stop.attempts[attemptIndex - 1];
+      const expectedProposal = {
+        jobId: ledger.jobId,
+        gameId: ledger.gameId,
+        transferInstanceId: ledger.transferInstanceId,
+        sourceIdentitySha256: ledger.sourceIdentitySha256,
+        targetProfileSha256: ledger.targetProfileSha256,
+        authorityProfileSha256: ledger.authority.profileSha256,
+        stopId: stop.id,
+        attempt: attempt.attempt,
+        upstreamDecisionSha256: attempt.proposal.upstreamDecisionSha256,
+        previousProposalSha256: previousAttempt?.proposal.sha256 ?? null,
+        previousRevisionDecisionSha256: previousAttempt?.decision?.outcome === "revision-requested"
+          ? previousAttempt.decision.sha256
+          : null,
+      } as const;
+      for (const [key, expectedValue] of Object.entries(expectedProposal)) {
+        if (proposal[key as keyof SupervisedReviewProposalV1] !== expectedValue) {
+          throw new Error(`Stored supervised proposal ${key} does not match its ledger attempt`);
+        }
+      }
+      await verifyProposalEvidence(proposal, root);
       if (attempt.proposal.upstreamDecisionSha256 !== upstreamDecisionSha256) {
         throw new Error(`Supervised proposal has stale upstream decision lineage: ${attempt.proposal.path}`);
       }
@@ -406,6 +433,48 @@ function proposalAlreadySubmitted(
     proposal.path === relativePath && proposal.sha256 === digest) ?? false;
 }
 
+function assertProposalMatchesLedger(
+  proposal: SupervisedReviewProposalV1,
+  ledger: SupervisedTransferV1,
+  stopId: SupervisedTransferStopId,
+): void {
+  const stop = ledger.stops.find(({ id }) => id === stopId);
+  if (!stop) throw new Error(`Supervised proposal names unknown stop ${stopId}`);
+  const previousAttempt = stop.attempts.at(-1);
+  const upstreamDecisionSha256 = stop.order === 1
+    ? null
+    : ledger.stops[stop.order - 2]!.attempts.at(-1)?.decision?.sha256 ?? null;
+  const expected = {
+    jobId: ledger.jobId,
+    gameId: ledger.gameId,
+    transferInstanceId: ledger.transferInstanceId,
+    sourceIdentitySha256: ledger.sourceIdentitySha256,
+    targetProfileSha256: ledger.targetProfileSha256,
+    authorityProfileSha256: ledger.authority.profileSha256,
+    stopId,
+    attempt: stop.attempts.length + 1,
+    upstreamDecisionSha256,
+    previousProposalSha256: previousAttempt?.proposal.sha256 ?? null,
+    previousRevisionDecisionSha256: previousAttempt?.decision?.outcome === "revision-requested"
+      ? previousAttempt.decision.sha256
+      : null,
+  } as const;
+  for (const [key, value] of Object.entries(expected)) {
+    if (proposal[key as keyof SupervisedReviewProposalV1] !== value) {
+      throw new Error(`Supervised proposal ${key} does not match the current ledger`);
+    }
+  }
+}
+
+async function verifyProposalEvidence(proposal: SupervisedReviewProposalV1, root: string): Promise<void> {
+  for (const evidence of proposal.evidence) {
+    const bytes = await readArtifact(root, evidence.path, `proposal evidence ${evidence.id}`);
+    if (sha256(bytes) !== evidence.sha256) {
+      throw new Error(`Proposal evidence ${evidence.id} bytes do not match its declared SHA-256`);
+    }
+  }
+}
+
 export async function runSupervisedTransferJob(options: SupervisedTransferJobOptions): Promise<SupervisedTransferV1> {
   const manifestPath = path.resolve(options.manifestPath);
   const ledgerPath = await canonicalLedgerPath(options.ledgerPath);
@@ -439,8 +508,13 @@ export async function runSupervisedTransferJob(options: SupervisedTransferJobOpt
         throw new Error("submit requires stop and proposal, and does not accept decision");
       }
       const proposalBytes = await readArtifact(root, options.proposalPath, "supervised proposal");
+      const proposalValue = parseJson(proposalBytes, "supervised proposal");
+      assertSupervisedReviewProposal(proposalValue);
+      const proposal = proposalValue as SupervisedReviewProposalV1;
+      await verifyProposalEvidence(proposal, root);
       const digest = sha256(proposalBytes);
       if (proposalAlreadySubmitted(ledger, options.stopId, options.proposalPath, digest)) return ledger;
+      assertProposalMatchesLedger(proposal, ledger, options.stopId);
       const updated = submitSupervisedProposal(ledger, {
         stopId: options.stopId,
         path: options.proposalPath,

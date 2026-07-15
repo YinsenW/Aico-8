@@ -121,6 +121,16 @@ describe("release contracts", () => {
     expect(result.errors.join("\n")).toMatch(/safeAreaContract must pass/);
   });
 
+  it.each([
+    { width: 900, height: 900 },
+    { width: 1024, height: 900 },
+  ])("rejects a non-1024 square-handheld viewport: $width x $height", (viewport) => {
+    const mutated = structuredClone(targetProfile);
+    mutated.layoutProfiles[1]!.viewport = viewport;
+    expect(validateTargetProfile(mutated).errors.join("\n"))
+      .toMatch(/viewport must equal 1024x1024 for square-handheld/);
+  });
+
   it("rejects inconsistent release measurements and unsafe artifacts", () => {
     const mutated = structuredClone(releaseManifest);
     mutated.measurements.unpacked_bytes = 111;

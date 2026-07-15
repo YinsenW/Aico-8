@@ -139,7 +139,7 @@ h1 {
   position: relative;
   width: min(
     100%,
-    calc(100dvh - 210px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
+    calc(100dvh - 212px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
     1024px
   );
   min-width: 280px;

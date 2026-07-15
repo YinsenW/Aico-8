@@ -12,7 +12,7 @@
     "build:private-web": "node scripts/build-private-web.mjs",
     "check": "pnpm --recursive --if-present check",
     "test": "pnpm --recursive --if-present test",
-    "verify": "pnpm verify:governance && pnpm verify:public && pnpm verify:rust && make -C runtime/core test && make -C runtime/core wasm-test && pnpm verify:web",
+    "verify": "pnpm verify:governance && pnpm verify:public && pnpm verify:rust && make -C runtime/core test && make -C runtime/core wasm-test && pnpm verify:web && pnpm verify:skill",
     "verify:governance": "node scripts/verify-governance.mjs",
     "verify:public": "node scripts/verify-public-repository.mjs",
     "verify:rust": "node scripts/verify-rust-boundary.mjs",
@@ -21,7 +21,8 @@
     "verify:typography": "pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts",
     "verify:replay": "pnpm --filter @aico8/contracts exec vitest run src/replay.test.ts",
     "verify:batch": "pnpm --filter @aico8/contracts exec vitest run src/batch.test.ts src/batch-job.test.ts",
-    "verify:supervised-transfer": "pnpm --filter @aico8/contracts exec vitest run src/human-stop-request.test.ts src/human-stop-request-job.test.ts src/supervised-transfer.test.ts src/supervised-transfer-job.test.ts src/transfer-findings.test.ts",
+    "verify:supervised-transfer": "pnpm --filter @aico8/contracts exec vitest run src/human-stop-request.test.ts src/human-stop-request-job.test.ts src/supervised-review-proposal.test.ts src/supervised-transfer.test.ts src/supervised-transfer-job.test.ts src/transfer-findings.test.ts",
+    "verify:skill": "node --test scripts/verify-skill-package.test.mjs && node scripts/verify-skill-package.mjs",
     "export:human-stop-request": "tsx scripts/export-human-stop-request.ts",
     "verify:game-module": "pnpm --filter @aico8/contracts exec vitest run src/game-module.test.ts src/assembly.test.ts src/assembly-job.test.ts",
     "verify:qualification-plan": "node --test scripts/build-private-qualification-plan.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/qualification-plan.test.ts",
@@ -30,7 +31,7 @@
     "verify:qualification-private": "make -C runtime/core wasm && node scripts/validate-private-qualification.mjs",
     "verify:qualification-gameplay-private": "make -C runtime/core wasm && node --experimental-strip-types scripts/validate-private-canonical-gameplay.ts",
     "verify:web-package": "node scripts/verify-web-package.mjs",
-    "verify:web": "node --test scripts/lib/canonical-gameplay-attestation.test.mjs scripts/lib/capture-readiness-evidence.test.mjs scripts/lib/hd-surface-lineage.test.mjs scripts/lib/input-trace-provenance.test.mjs scripts/lib/qualification-boundary.test.mjs scripts/lib/release-identities.test.mjs scripts/lib/review-screenshot.test.mjs scripts/lib/semantic-svg.test.mjs scripts/lib/source-contour-lineage.test.mjs scripts/lib/source-visual-structure-lineage.test.mjs scripts/lib/viewport-evidence.test.mjs && pnpm check && pnpm test && pnpm build"
+    "verify:web": "node --test apps/web/service-worker.test.mjs scripts/lib/canonical-gameplay-attestation.test.mjs scripts/lib/capture-readiness-evidence.test.mjs scripts/lib/hd-surface-lineage.test.mjs scripts/lib/input-trace-provenance.test.mjs scripts/lib/package-path.test.mjs scripts/lib/qualification-boundary.test.mjs scripts/lib/release-identities.test.mjs scripts/lib/review-screenshot.test.mjs scripts/lib/semantic-svg.test.mjs scripts/lib/source-contour-lineage.test.mjs scripts/lib/source-visual-structure-lineage.test.mjs scripts/lib/viewport-evidence.test.mjs && pnpm check && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@xmldom/xmldom": "0.8.13",

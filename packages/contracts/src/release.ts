@@ -147,6 +147,10 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
         exactKeys(viewport, ["width", "height"], [], `${itemPath}.viewport`, errors);
         integer(viewport.width, `${itemPath}.viewport.width`, errors, 1);
         integer(viewport.height, `${itemPath}.viewport.height`, errors, 1);
+        if (item.class === "square-handheld"
+          && (viewport.width !== 1024 || viewport.height !== 1024)) {
+          errors.push(`${itemPath}.viewport must equal 1024x1024 for square-handheld`);
+        }
       }
       integer(item.minGameFrameCssPixels, `${itemPath}.minGameFrameCssPixels`, errors, 1);
       integer(item.minTouchTargetCssPixels, `${itemPath}.minTouchTargetCssPixels`, errors, 1);

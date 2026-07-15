@@ -1,3 +1,5 @@
+import { resolvePackageAssetUrl, resolvePackageChildAssetUrl } from "./package-url.js";
+
 export interface GameManifest {
   readonly formatVersion: 1;
   readonly id: string;
@@ -179,10 +181,6 @@ function encodeStoredBytes(value: Uint8Array): string {
   return Array.from(value, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function resolveAsset(manifestUrl: URL, relative: string): URL {
-  return new URL(relative, manifestUrl);
-}
-
 async function fetchBytes(url: URL): Promise<Uint8Array> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Unable to load ${url.pathname} (${response.status})`);
@@ -234,7 +232,7 @@ export class Aico8Kernel {
     manifest: GameManifest,
     options: KernelHostOptions = {},
   ): Promise<Aico8Kernel> {
-    const kernelUrl = new URL("kernel/aico8-kernel.js", packageBaseUrl);
+    const kernelUrl = resolvePackageAssetUrl(packageBaseUrl, "kernel/aico8-kernel.js");
     const imported = await import(/* @vite-ignore */ kernelUrl.href) as KernelModule;
     const module = await imported.default();
     const runtime = module._aico8_create();
@@ -243,8 +241,8 @@ export class Aico8Kernel {
     const instance = new Aico8Kernel(module, runtime, manifest, options);
     try {
       const [rom, source] = await Promise.all([
-        fetchBytes(resolveAsset(manifestUrl, manifest.rom)),
-        fetchBytes(resolveAsset(manifestUrl, manifest.source)),
+        fetchBytes(resolvePackageChildAssetUrl(packageBaseUrl, manifestUrl, manifest.rom)),
+        fetchBytes(resolvePackageChildAssetUrl(packageBaseUrl, manifestUrl, manifest.source)),
       ]);
       instance.#load(rom, source, options);
       return instance;

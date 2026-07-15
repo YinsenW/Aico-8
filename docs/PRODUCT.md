@@ -186,7 +186,7 @@ Solvers are optional diagnostics. A contributed trace must match unchanged-cart
 state; mismatches require a root-cause class, general invariant, regression and
 mutation test, never a per-level exception.
 
-Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-HUMAN-STOP-REQUEST-001`, `DATA-HUMAN-STOP-DECISION-001`, `DATA-SUPERVISED-TRANSFER-001`, `DATA-TRANSFER-FINDINGS-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`, `JOB-SUPERVISED-TRANSFER-001`.
+Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-HUMAN-STOP-REQUEST-001`, `DATA-HUMAN-STOP-DECISION-001`, `DATA-SUPERVISED-TRANSFER-001`, `DATA-TRANSFER-FINDINGS-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`, `JOB-SUPERVISED-TRANSFER-001`.
 
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 
@@ -222,11 +222,11 @@ Create the final Skill only after the reference and supervised transfer trial
 stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for
 human approval of semantics, art direction, representative gameplay, and final
 scope, and cannot self-accept or self-release. Runtime and policy stay in software.
-
-Contracts: all `JOB-*` pipeline contracts, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
-
+An explicit user-channel decision may advance a local interactive research
+session, but portable CI or remote-agent acceptance requires the detached signed
+decision path. Neither mode grants publication rights.
+Contracts: all `JOB-*` pipeline contracts, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
 ## Private Dust Bunny acceptance boundary
-
 The detailed behavioral reference, input replay, captures, and cart-specific
 tests live only in the private research archive. Trial completion requires
 one continuous or provenance-linked canonical replay that completes all 30

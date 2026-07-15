@@ -52,18 +52,17 @@ pnpm verify:replay
 pnpm verify:game-module
 pnpm verify:batch
 pnpm verify:supervised-transfer
+pnpm verify:skill
 make -C runtime/core test
 make -C runtime/core wasm-test
 pnpm verify:web
 pnpm verify:private-remake
 ```
 
-Private-archive selectors strengthen local evidence but never masquerade as
-public CI or enter the clean public repository history.
-`pnpm verify:batch` validates rolling lanes and the filesystem Job: it rejects shared
-identities, concurrent writers, invalid timeouts/lanes, evidence-free acceptance,
-and hidden partial failure. Only accepted module IDs enter assembly.
-`pnpm verify:supervised-transfer` validates four ordered human pauses, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, source-relative art rules presented as universal mappings, and reusable claims without shared regression evidence.
+Private selectors strengthen local evidence but never masquerade as public CI.
+`pnpm verify:batch` rejects shared identities, concurrent writers, invalid lanes,
+evidence-free acceptance, and hidden partial failure before assembly.
+`pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.
 The host keeps the reviewer private key outside the Agent workspace; the runner consumes only the pinned public trust profile and detached signed decision.
 `pnpm verify:typography` validates reachable text routing, fixed bundled-font
 evidence, reviewed identity contours, complete coverage, and zero OS fallback.
@@ -143,8 +142,7 @@ first high-risk art, representative gameplay/motion, and final scope/rights.
 Agents batch deterministic work between pauses. Use representative checkpoints;
 do not solve the full game or regenerate full evidence per edit. A promoted
 artifact needs an ordinary-input route replayed twice before full selectors.
-Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable findings require shared code/tests; source-relative findings remain private-adapter work attached to a human stop.
-
+Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable findings require shared code/tests; source-relative findings remain private-adapter work attached to a human stop. A fresh user message may decide a frozen packet only for that local session; it cannot close a portable ledger, authorize CI/publication, or prove complete coverage. Use detached Ed25519 outside that host, and stop sampling while either decision is pending.
 ## Recovery after interruption or failure
 
 1. Re-read terminal output and `git status`; do not assume an interrupted command
@@ -157,11 +155,11 @@ Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable f
    open item when work must stop; do not mark the requirement verified.
 6. Resume from the first unmet exit condition, not from conversation memory.
 
-After an uncatchable batch/assembly crash, disprove a lock's live owner before manual
-removal and resume; never auto-delete an ambiguous lock or reservation.
-The supervised-transfer runner follows the same lock rule. Re-running an identical proposal or applied decision is a no-op; identity or byte drift fails closed, and no lock is held while awaiting a human.
-It does not establish human authority by itself. Before its ledger can close an exit, an Agent-inaccessible host must pin the accepted manifest/trust profile and preserve a rollback-resistant monotonic ledger head.
-
+After an uncatchable batch crash, disprove a lock's live owner before manual
+removal; never delete an ambiguous lock. The supervised runner uses the same rule,
+idempotently resumes identical bytes, and holds no lock while awaiting a human.
+Portable acceptance requires an Agent-inaccessible host to pin authority and a
+rollback-resistant ledger head; local user-channel decisions remain non-portable.
 ## Diagnosis
 
 - Compatibility mismatch: isolate update number, input trace, RAM/state snapshot,

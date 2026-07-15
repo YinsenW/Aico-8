@@ -8,7 +8,7 @@
     "wasm:build": "make -C ../../runtime/core wasm",
     "wasm:test": "make -C ../../runtime/core wasm-test",
     "check": "tsc -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --exclude service-worker.test.mjs",
     "build": "pnpm wasm:build && vite build"
   },
   "dependencies": {

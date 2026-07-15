@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "subject": "Aico 8 human-guided remake Skill",
+  "status": "implemented-human-gated-portable-host-pending",
+  "recorded_on": "2026-07-16",
+  "basis": {
+    "accepted_reference": "Dust Bunny private research qualification",
+    "supervised_trial": "Steps v19e retained supervised research trial",
+    "trial_review_evidence": "governance/evidence/steps-semantic-v19e-preflight.json",
+    "transfer_findings": "governance/evidence/dust-steps-transfer-findings.json"
+  },
+  "implementation": [
+    "skills/aico8-remake/SKILL.md",
+    "skills/aico8-remake/agents/openai.yaml",
+    "skills/aico8-remake/references/job-catalog.md",
+    "scripts/verify-skill-package.mjs",
+    "packages/contracts/src/supervised-review-proposal.ts",
+    "specs/schemas/supervised-review-proposal-v1.schema.json",
+    "scripts/run-supervised-transfer.ts"
+  ],
+  "verified_properties": [
+    "The Skill contains no runtime, renderer, compatibility, signing, or packaging implementation.",
+    "The four human stops appear in contract order and Agent-created or inferred decisions are forbidden.",
+    "Retained supervised trials are distinct from full-validation authorization and publication rights.",
+    "The Web workflow retains the 1024-square layout and scope-relative PWA requirements.",
+    "Detailed commands route to versioned repository Jobs and selectors.",
+    "A fresh read-only Agent stopped at semantic-intent instead of selecting an ambiguous fixture or inferring approval.",
+    "Every portable stop proposal now binds transfer identity, immediate revision lineage, required criteria, content-addressed evidence, claim limits, and Agent authority limits before submission."
+  ],
+  "selectors": [
+    "pnpm verify:skill",
+    "pnpm verify:supervised-transfer",
+    "pnpm verify:governance"
+  ],
+  "limitations": [
+    "Interactive user approval is session-local and not a portable detached signature.",
+    "A trusted host must still pin authority and preserve a rollback-resistant ledger head before signed CI or remote multi-agent acceptance can be claimed.",
+    "Steps remains a private research/test trial and is not a complete-game or publication-authorized release."
+  ]
+}

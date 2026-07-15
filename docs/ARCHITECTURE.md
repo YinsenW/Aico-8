@@ -2,8 +2,7 @@
 
 ## Product boundary
 
-Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and
-adds a separate HD presentation path that can be enabled incrementally.
+Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and adds a separate HD presentation path.
 
 The product is TypeScript-first. C++ is restricted to a small deterministic
 kernel compiled both natively and to WebAssembly. The reasoning and proof gates
@@ -16,8 +15,9 @@ after multi-game proof, and defer a public external-cart Player and `.aico8`.
 The future Skill is intentionally outside the trust boundary of simulation. It
 may select carts, run analysis, propose mappings, generate assets, and launch
 tests, but only versioned tools and deterministic runtime code decide whether a
-remake is compatible.
-
+remake is compatible. The maintained `skills/aico8-remake/` package is likewise
+outside the authority boundary. A local host user channel supplies bounded human
+pauses; portable acceptance uses detached signatures, and neither grants release.
 ## Delivery topology
 
 - An internal game module contains one remake's compatible payload, HD mapping,
@@ -233,7 +233,7 @@ contracts rather than shared implementation details:
 - semantic text-run and typography-manifest schemas;
 - HD mapping manifest and asset pack;
 - batch, internal game-module, fixed-collection, display, and target profiles;
-- supervised-transfer ledger, unsigned signing requests, signed human stops, and classified reusable versus source-relative transfer findings;
+- stop-specific review proposals, supervised-transfer ledger, unsigned signing requests, signed human stops, and classified reusable versus source-relative transfer findings;
 - target profile, technical validation report, and release manifest.
 These contracts make it possible to improve the AI orchestration without
 silently changing game behavior.

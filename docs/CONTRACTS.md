@@ -42,6 +42,7 @@ Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript 
 | DATA-BATCH-001 | Authorized inputs/targets, timeout, immutable isolated attempts, pre-assembly replay/HD evidence, post-package Web evidence, failures, and derived aggregate state | `specs/schemas/batch-v1.schema.json` and TypeScript validator |
 | DATA-HUMAN-STOP-DECISION-001 | Externally signed human outcome bound to the exact transfer instance, source/profile/authority identities, ordered stop, proposal, upstream decision, and persisted challenge nonce | `specs/schemas/human-stop-decision-v1.schema.json` and `packages/contracts/src/human-stop-decision.ts` |
 | DATA-HUMAN-STOP-REQUEST-001 | Immutable unsigned signing request derived from the exact awaiting-human ledger state, proposal, challenge, allowed outcome/scope choices, and trusted reviewer IDs; Agent signing authority is always false | `specs/schemas/human-stop-request-v1.schema.json` and `packages/contracts/src/human-stop-request.ts` |
+| DATA-SUPERVISED-REVIEW-PROPOSAL-001 | Human-visible stop-specific review object binding immutable transfer identity, immediate revision lineage, content-addressed evidence, required criteria, limitations, forbidden claims, and authority limits | `specs/schemas/supervised-review-proposal-v1.schema.json` and `packages/contracts/src/supervised-review-proposal.ts` |
 | DATA-SUPERVISED-TRANSFER-001 | Fixed four-stop supervised-transfer ledger with immutable job identity, transition-preserved revision attempts, content-addressed proposals/decisions, derived status, and an explicit distinction between retained trial and authorization to run full validation | `specs/schemas/supervised-transfer-v1.schema.json` and `packages/contracts/src/supervised-transfer.ts` |
 | DATA-TRANSFER-FINDINGS-001 | Reference-versus-trial findings classified as compatibility/runtime, reusable presentation, or source-relative semantic/art judgment; reusable claims require shared implementation plus regression evidence, while source-relative decisions remain attached to a named human stop | `specs/schemas/transfer-findings-v1.schema.json` and `packages/contracts/src/transfer-findings.ts` |
 | DATA-GAME-MODULE-001 | One remake's payload, mappings, assets, saves, provenance, runtime constraints, and pre-assembly canonical-replay plus accepted-HD evidence | `specs/schemas/game-module-v1.schema.json` and TypeScript validator |
@@ -51,14 +52,13 @@ Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript 
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, and rights decision | `specs/schemas/release-manifest-v1.schema.json` and TypeScript validator |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
 JSON Schemas are required before a payload becomes a stable public contract. Research manifests without a schema are prototypes and cannot close a stable-contract exit.
-
 ## Pipeline Job graph
 
 | Job ID | Inputs | Outputs | Purpose |
 | --- | --- | --- | --- |
 | JOB-INGEST-001 | DATA-CART-001 | DATA-WORKSPACE-001 | Decode losslessly and record provenance |
 | JOB-BATCH-001 | DATA-BATCH-001 | Isolated per-cart Job invocations and status ledger | `scripts/run-batch.ts` verifies authorized bytes, materializes isolated workspaces, enforces one ledger writer plus declared attempt timeouts, resumes durable attempts, and contains partial failure |
-| JOB-SUPERVISED-TRANSFER-001 | DATA-SUPERVISED-TRANSFER-001, DATA-HUMAN-STOP-DECISION-001, exact proposal artifacts, host-owned reviewer trust profile | Recoverable ledger plus DATA-HUMAN-STOP-REQUEST-001 at each pause | `scripts/run-supervised-transfer.ts` freezes and revalidates ledger state; `scripts/export-human-stop-request.ts` atomically exports the exact unsigned challenge for a trusted host. Neither can sign, accept, release, or turn final-scope authorization into completion |
+| JOB-SUPERVISED-TRANSFER-001 | DATA-SUPERVISED-TRANSFER-001, DATA-SUPERVISED-REVIEW-PROPOSAL-001, DATA-HUMAN-STOP-DECISION-001, host-owned reviewer trust profile | Recoverable ledger plus DATA-HUMAN-STOP-REQUEST-001 at each pause | `scripts/run-supervised-transfer.ts` validates proposal identity, evidence bytes and revision lineage before freezing state; `scripts/export-human-stop-request.ts` exports the exact unsigned challenge. Neither can sign, accept, release, prevent host rollback, or turn authorization into completion |
 | JOB-ANALYZE-001 | DATA-WORKSPACE-001 | Risk/API/semantic analysis | Identify compatibility and remake risks |
 | JOB-CAPTURE-001 | DATA-WORKSPACE-001, DATA-INPUT-TRACE-001 | DATA-REPLAY-001, DATA-CHECKPOINT-001 | Replay an unchanged cart on a named runtime; official captures additionally require a licensed oracle |
 | JOB-MODEL-001 | Workspace, replay, checkpoints | DATA-HD-MAP-001 draft | Assign semantic roles, identity cues, and complete deterministic mappings |
@@ -167,7 +167,8 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
   apply a detached Ed25519 decision from the host-owned trust profile; it may not
   create, infer, edit, or replace that decision. Every resume re-hashes the exact
   proposal and decision bytes and re-verifies the full signed identity/challenge
-  chain. A representative-gameplay approval is not complete-game evidence.
+  chain. A local host may instead supply an explicit session-only user decision;
+  never synthesize its detached signature or claim complete-game evidence.
 - Final scope `retain-supervised-trial` ends only the bounded trial;
   `authorize-full-validation` unlocks the ordinary-input replay, complete HD,
   package, performance, and rights selectors but satisfies none of them. Neither
@@ -245,5 +246,4 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
 - Save keys are namespaced by game-module ID and schema version; collection
   switching resets compatibility state before another module starts.
 - A rights decision is data in DATA-RELEASE-001, never inferred from technical success.
-- Each requirement references contract IDs; the governance verifier rejects
-  missing or orphaned IDs.
+- Each requirement references contract IDs; the governance verifier rejects missing or orphaned IDs.

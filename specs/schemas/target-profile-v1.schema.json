@@ -52,7 +52,26 @@
           },
           "minGameFrameCssPixels": { "type": "integer", "minimum": 1 },
           "minTouchTargetCssPixels": { "type": "integer", "minimum": 1 }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "class": { "const": "square-handheld" } },
+              "required": ["class"]
+            },
+            "then": {
+              "properties": {
+                "viewport": {
+                  "type": "object",
+                  "properties": {
+                    "width": { "const": 1024 },
+                    "height": { "const": 1024 }
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "budgets": {

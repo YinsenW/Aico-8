@@ -16,6 +16,12 @@ import {
   type SupervisedTransferV1,
 } from "./supervised-transfer.js";
 import {
+  REQUIRED_FORBIDDEN_CLAIMS,
+  REQUIRED_REVIEW_CRITERIA,
+  SUPERVISED_REVIEW_PROPOSAL_SCHEMA_VERSION,
+  type SupervisedReviewProposalV1,
+} from "./supervised-review-proposal.js";
+import {
   acquireSupervisedTransferLedgerLock,
   runSupervisedTransferJob,
   type SupervisedTransferJobOptions,
@@ -60,8 +66,8 @@ async function fixture(): Promise<Fixture> {
   const trustStorePath = path.join(root, "host-policy", "trust.json");
   const proposalPath = "proposals/semantic-intent-1.json";
   await fs.mkdir(path.join(artifactRoot, "proposals"), { recursive: true });
+  await fs.mkdir(path.join(artifactRoot, "evidence"), { recursive: true });
   await fs.mkdir(path.dirname(trustStorePath), { recursive: true });
-  await fs.writeFile(path.join(artifactRoot, proposalPath), jsonBytes({ intent: "preserve source semantics" }));
 
   const pair = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
   const spki = await crypto.subtle.exportKey("spki", pair.publicKey);
@@ -86,6 +92,47 @@ async function fixture(): Promise<Fixture> {
     authorityProfileSha256: hash(trustBytes),
     trustedReviewerKeys: [{ keyId: trustKey.keyId, publicKeySha256: trustKey.publicKeySha256 }],
   });
+  const evidencePath = "evidence/semantic-intent.json";
+  const evidenceBytes = jsonBytes({ sourceRoles: ["player", "hazard"], unknowns: ["decorative punctuation"] });
+  await fs.writeFile(path.join(artifactRoot, evidencePath), evidenceBytes);
+  const proposal: SupervisedReviewProposalV1 = {
+    schemaVersion: SUPERVISED_REVIEW_PROPOSAL_SCHEMA_VERSION,
+    proposalId: "semantic-intent.proposal.1",
+    jobId: manifest.jobId,
+    gameId: manifest.gameId,
+    transferInstanceId: manifest.transferInstanceId,
+    sourceIdentitySha256: manifest.sourceIdentitySha256,
+    targetProfileSha256: manifest.targetProfileSha256,
+    authorityProfileSha256: manifest.authority.profileSha256,
+    stopId: "semantic-intent",
+    attempt: 1,
+    upstreamDecisionSha256: null,
+    previousProposalSha256: null,
+    previousRevisionDecisionSha256: null,
+    title: "Review source semantic intent",
+    summary: "Confirm source roles and unknowns before any source-relative art direction is selected.",
+    evidence: [{
+      id: "semantic-inventory",
+      path: evidencePath,
+      sha256: hash(evidenceBytes),
+      description: "Frozen inventory of source roles and unresolved semantic questions.",
+    }],
+    reviewItems: REQUIRED_REVIEW_CRITERIA["semantic-intent"].map((criterionId) => ({
+      criterionId,
+      question: `Does the evidence preserve the bounded ${criterionId} meaning?`,
+      evidenceIds: ["semantic-inventory"],
+    })),
+    limitations: ["No art direction, complete gameplay, rights, or release conclusion is requested."],
+    authorityLimits: {
+      agentMayApprove: false,
+      agentMaySign: false,
+      agentMayAuthorizeFullValidation: false,
+      agentMayRelease: false,
+    },
+    forbiddenClaims: REQUIRED_FORBIDDEN_CLAIMS,
+    scopeDispositionOptions: [],
+  };
+  await fs.writeFile(path.join(artifactRoot, proposalPath), jsonBytes(proposal));
   await fs.writeFile(manifestPath, jsonBytes(manifest));
   return {
     root, artifactRoot, manifestPath, ledgerPath, trustStorePath, proposalPath,
@@ -189,9 +236,30 @@ describe("JOB-SUPERVISED-TRANSFER-001 filesystem runner", () => {
 
     manifest.sourceIdentitySha256 = "a".repeat(64);
     await fs.writeFile(value.manifestPath, jsonBytes(manifest));
-    await fs.writeFile(path.join(value.artifactRoot, value.proposalPath), jsonBytes({ intent: "mutated" }));
+    const proposal = JSON.parse(await fs.readFile(path.join(value.artifactRoot, value.proposalPath), "utf8"));
+    proposal.summary = "Mutated but still structurally valid proposal bytes must not replace submitted evidence.";
+    await fs.writeFile(path.join(value.artifactRoot, value.proposalPath), jsonBytes(proposal));
     await expect(runSupervisedTransferJob(options(value, "init"))).rejects.toThrow(/proposal bytes changed/);
     expect(await fs.readFile(value.ledgerPath)).toEqual(before);
+  });
+
+  it("rejects a proposal whose identity or evidence bytes do not match the frozen transfer", async () => {
+    const identityDrift = await fixture();
+    const identityPath = path.join(identityDrift.artifactRoot, identityDrift.proposalPath);
+    const proposal = JSON.parse(await fs.readFile(identityPath, "utf8"));
+    proposal.targetProfileSha256 = "f".repeat(64);
+    await fs.writeFile(identityPath, jsonBytes(proposal));
+    await expect(submitSemantic(identityDrift)).rejects.toThrow(/targetProfileSha256 does not match/);
+
+    const evidenceDrift = await fixture();
+    const evidenceProposal = JSON.parse(await fs.readFile(
+      path.join(evidenceDrift.artifactRoot, evidenceDrift.proposalPath), "utf8",
+    ));
+    await fs.writeFile(
+      path.join(evidenceDrift.artifactRoot, evidenceProposal.evidence[0].path),
+      jsonBytes({ sourceRoles: ["mutated"] }),
+    );
+    await expect(submitSemantic(evidenceDrift)).rejects.toThrow(/bytes do not match its declared SHA-256/);
   });
 
   it("does not trust a structurally valid handwritten terminal ledger", async () => {

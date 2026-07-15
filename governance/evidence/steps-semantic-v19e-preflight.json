@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "subject": "Steps source-semantic v19e representative preflight",
-  "status": "representative-direction-approved-next-human-gate-pending",
-  "recorded_on": "2026-07-15",
+  "status": "representative-gameplay-approved-retained-supervised-trial",
+  "recorded_on": "2026-07-16",
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
-  "scope": "Five same-state checkpoints, four representative temporal sequences, and an active 1024-square nested-path Web run; this is not complete-game coverage or ordered-gate acceptance.",
+  "scope": "Five same-state checkpoints, four representative temporal sequences, and an active 1024-square nested-path Web run were approved for a retained supervised research trial; this is not complete-game coverage, a detached signed ledger, or release authorization.",
   "systemic_change": [
     "The accepted source-semantic visuals and source-derived visibility compositing are preserved from v19d.",
     "Every packaged HTML, CSS, kernel, font, profile, game-module, and service-worker URL resolves relative to its deployment directory.",
@@ -29,11 +29,19 @@
     "quality_leap_audit": "3ced1acbc83cbba4087dc9df05d9dbc45195124949747e8b4a96a3873005af27",
     "preflight_packet": "48ebd305ffed3ff37adfd45c1d0d53922fd9a21af806326da82e77df51ad0679"
   },
-  "human_direction_feedback": "这次高清化是比较成功的，继续吧",
-  "next_human_gate": "representative-gameplay-motion-and-cue-review",
+  "human_direction_feedback": "已经非常不错了，我批准了，可以了，继续吧",
+  "human_review": {
+    "reviewer_role": "project-owner",
+    "authority_mode": "interactive-user-message",
+    "representative_gameplay": "approved",
+    "final_scope": "retain-supervised-trial",
+    "portable_signature": false,
+    "limitations": "The user-channel decision advances this local human-guided workflow but cannot substitute for a detached signed decision in CI, authorize publication, or prove complete-game review."
+  },
+  "next_human_gate": null,
   "forbidden_claims": [
     "complete-game-reviewed",
-    "ordered-human-gates-passed",
+    "portable-signed-ledger-closed",
     "release-ready",
     "publication-authorized"
   ]

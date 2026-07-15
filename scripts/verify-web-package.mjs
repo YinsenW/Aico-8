@@ -6,13 +6,14 @@ import {
   validationReplaySemanticsSha256,
   visualRuntimeSha256,
 } from "./lib/release-identities.mjs";
+import { assertSafePackageRelativePath, resolvePackageFile } from "./lib/package-path.mjs";
 
 const output = path.resolve(process.argv[2] ?? "");
 assert.ok(process.argv[2], "Usage: node scripts/verify-web-package.mjs <package-directory>");
 assert.ok(fs.statSync(output, { throwIfNoEntry: false })?.isDirectory(), `Missing package: ${output}`);
 
 function readJson(relative) {
-  return JSON.parse(fs.readFileSync(path.join(output, relative), "utf8"));
+  return JSON.parse(fs.readFileSync(resolvePackageFile(output, relative, "JSON artifact path"), "utf8"));
 }
 function sha256(file) {
   return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
@@ -40,13 +41,19 @@ const requiredFiles = [
   "target-profile.json", "release-manifest.json",
 ];
 for (const relative of requiredFiles) {
-  assert.ok(fs.statSync(path.join(output, relative), { throwIfNoEntry: false })?.isFile(), `Missing ${relative}`);
+  assert.ok(fs.statSync(resolvePackageFile(output, relative), { throwIfNoEntry: false })?.isFile(), `Missing ${relative}`);
 }
 
 const pwa = readJson("manifest.webmanifest");
 assert.equal(pwa.display, "standalone");
 assert.equal(pwa.start_url, "./");
 assert.equal(pwa.scope, "./");
+assert.ok(Array.isArray(pwa.icons) && pwa.icons.length >= 2, "PWA manifest needs packaged icons");
+for (const icon of pwa.icons) {
+  assertSafePackageRelativePath(icon.src, "PWA icon path");
+  assert.ok(fs.statSync(resolvePackageFile(output, icon.src), { throwIfNoEntry: false })?.isFile(),
+    `PWA icon path points to missing ${icon.src}`);
+}
 assert.deepEqual(pngDimensions("icon-192.png"), [192, 192]);
 assert.deepEqual(pngDimensions("icon-512.png"), [512, 512]);
 const assetManifest = readJson("asset-manifest.json");
@@ -56,7 +63,8 @@ const builtAssets = new Set(Object.values(assetManifest).flatMap((entry) => [
   ...(entry.assets ?? []),
 ]).filter(Boolean));
 for (const relative of builtAssets) {
-  assert.ok(fs.statSync(path.join(output, relative), { throwIfNoEntry: false })?.isFile(),
+  assertSafePackageRelativePath(relative, "Build asset manifest path");
+  assert.ok(fs.statSync(resolvePackageFile(output, relative), { throwIfNoEntry: false })?.isFile(),
     `Build asset manifest points to missing ${relative}`);
 }
 
@@ -72,7 +80,9 @@ const privateEntries = fs.readdirSync(path.join(output, "private"), { withFileTy
 const moduleDirectories = privateEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 assert.deepEqual(moduleDirectories, [game.id], "Package must contain exactly its selected private game module");
 for (const relative of [game.rom, game.source, game.validationReplay, game.semanticVectors].filter(Boolean)) {
-  assert.ok(fs.statSync(path.join(output, "private", relative), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
+  const packaged = `private/${relative}`;
+  assertSafePackageRelativePath(packaged, "Private game input path");
+  assert.ok(fs.statSync(resolvePackageFile(output, packaged), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
 }
 
 const targetProfile = readJson("target-profile.json");
@@ -94,6 +104,10 @@ for (const profile of targetProfile.layoutProfiles) {
   assert.ok(profile.minGameFrameCssPixels > 0, `${profile.id}: game-frame minimum`);
   assert.ok(profile.minTouchTargetCssPixels >= 44, `${profile.id}: touch-target minimum`);
 }
+const squareHandheld = targetProfile.layoutProfiles.find((profile) => profile.class === "square-handheld");
+assert.ok(squareHandheld, "Target profile must include the priority square-handheld layout");
+assert.deepEqual(squareHandheld.viewport, { width: 1024, height: 1024 },
+  "Priority square-handheld viewport must be exactly 1024x1024");
 
 const release = readJson("release-manifest.json");
 assert.equal(release.schema_version, 1);
@@ -111,8 +125,8 @@ const actualFiles = listFiles(output)
 const declaredFiles = release.artifacts.map((artifact) => artifact.path).sort();
 assert.deepEqual(declaredFiles, [...actualFiles].sort(), "Release manifest must enumerate every artifact exactly once");
 for (const artifact of release.artifacts) {
-  assert.ok(!artifact.path.startsWith("/") && !artifact.path.includes(".."), `Unsafe artifact path: ${artifact.path}`);
-  const file = path.join(output, artifact.path);
+  assertSafePackageRelativePath(artifact.path, "Release artifact path");
+  const file = resolvePackageFile(output, artifact.path);
   assert.equal(fs.statSync(file).size, artifact.bytes, `${artifact.path} byte count`);
   assert.equal(sha256(file), artifact.sha256, `${artifact.path} sha256`);
 }
@@ -175,6 +189,7 @@ if (game.semanticVectors) {
 assert.deepEqual(release.inputs.map(({ path: inputPath }) => inputPath).sort(), [...bundledInputsByName.keys()].sort(),
   "Release inputs must enumerate every packaged build input");
 for (const input of release.inputs) {
+  assertSafePackageRelativePath(input.path, "Release input path");
   const bundledInput = bundledInputsByName.get(input.path);
   assert.ok(bundledInput, `Unknown release input ${input.path}`);
   const expectedBytes = bundledInput.file ? fs.statSync(bundledInput.file).size : bundledInput.bytes;

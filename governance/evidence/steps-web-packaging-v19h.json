@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "subject": "Steps Web/PWA v19h packaging successor",
+  "status": "verified-private-packaging-successor",
+  "recorded_on": "2026-07-16",
+  "rights_scope": "Private research and testing only; this evidence does not authorize publication.",
+  "approved_content_predecessor": "governance/evidence/steps-semantic-v19e-preflight.json",
+  "scope": "Web package containment, offline-shell behavior, exact 1024-square target declaration, and active nested-path layout. No gameplay, semantic-art, or compatibility-state change is claimed.",
+  "input_identity": {
+    "canonical_replay_sha256": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "canonical_replay_semantics_sha256": "c0ac853133d2e4265890e1cca3a723c058e117a06d1d7036ac82be407db0467a",
+    "matches_approved_predecessor": true
+  },
+  "package_identity": {
+    "release_manifest_sha256": "73a2c1de070f3bf575fe6dd71ed951e6f1f58d8e714cae007bf89cb03f13ee19",
+    "visual_runtime_sha256": "8f834f6b6f964ff8dffa6606770519fa9a8ca091f3ebdcd4fc7befbd96a726b6",
+    "target_profile_sha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809",
+    "service_worker_sha256": "ae4b696128175855a689c56964f150eaa9611000b37895533313adb664912014"
+  },
+  "measurements": {
+    "package_files": 39,
+    "checksummed_artifacts": 38,
+    "unpacked_bytes": 1329213,
+    "active_url_shape": "http://127.0.0.1:<port>/<package>/?validation-update=16",
+    "viewport_css_pixels": "1024x1024",
+    "game_frame_css_pixels": "812x812",
+    "canvas_css_pixels": "810x810",
+    "canvas_backing_pixels": "2048x2048",
+    "horizontal_overflow": false,
+    "vertical_overflow": false,
+    "loaded_validation_update": 16
+  },
+  "checks": [
+    "package manifest and every checksummed artifact verified",
+    "nested package assets loaded without escaping the package directory",
+    "service-worker install, offline navigation, failure, traversal, and sibling-cache behavior covered by executable tests",
+    "exact 1024x1024 target profile rejects near-square alternatives",
+    "approved replay bytes and replay semantics are unchanged"
+  ],
+  "human_review": {
+    "content_reapproval_required": false,
+    "reason": "The user-approved semantic presentation and canonical replay are retained; v19h changes only generic package-path, service-worker, target-profile, and player-layout infrastructure."
+  },
+  "forbidden_claims": [
+    "complete-game-reviewed",
+    "portable-signed-ledger-closed",
+    "release-ready",
+    "publication-authorized"
+  ]
+}

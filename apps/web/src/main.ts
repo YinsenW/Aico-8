@@ -12,7 +12,11 @@ import {
 import { InputController } from "./runtime/input.js";
 import { settleCaptureReadiness } from "./runtime/capture-readiness.js";
 import { Aico8Kernel, loadGameManifest, prepareKernelForLogicalReplay } from "./runtime/kernel.js";
-import { resolvePackageAssetUrl, resolvePackageBaseUrl } from "./runtime/package-url.js";
+import {
+  resolvePackageAssetUrl,
+  resolvePackageBaseUrl,
+  resolvePackageChildAssetUrl,
+} from "./runtime/package-url.js";
 import { KernelAudioOutput } from "./runtime/audio-output.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
@@ -224,10 +228,11 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 }
 
 async function loadValidationReplay(
+  packageBaseUrl: URL,
   manifestUrl: URL,
   relative: string,
 ): Promise<ReplayV1> {
-  const response = await fetch(new URL(relative, manifestUrl));
+  const response = await fetch(resolvePackageChildAssetUrl(packageBaseUrl, manifestUrl, relative));
   if (!response.ok) throw new Error(`Unable to load validation replay (${response.status})`);
   const replay: unknown = await response.json();
   assertReplay(replay);
@@ -477,6 +482,7 @@ try {
         ? `Executing ordinary replay input through ${requestedReplayMilestone}…`
         : `Executing ordinary replay input through update ${requestedReplayUpdate}…`;
       validationReplay = await loadValidationReplay(
+        packageBaseUrl,
         manifestUrl,
         manifest.validationReplay,
       );
