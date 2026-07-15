@@ -229,12 +229,12 @@ export class Aico8Kernel {
   }
 
   static async create(
-    baseUrl: string,
+    packageBaseUrl: URL,
     manifestUrl: URL,
     manifest: GameManifest,
     options: KernelHostOptions = {},
   ): Promise<Aico8Kernel> {
-    const kernelUrl = new URL(`${baseUrl}kernel/aico8-kernel.js`, window.location.origin);
+    const kernelUrl = new URL("kernel/aico8-kernel.js", packageBaseUrl);
     const imported = await import(/* @vite-ignore */ kernelUrl.href) as KernelModule;
     const module = await imported.default();
     const runtime = module._aico8_create();

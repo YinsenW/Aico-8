@@ -4,14 +4,11 @@
 
 1. Inspect `git status --short --branch` and existing stacked PRs before editing.
 2. Run `pnpm verify:governance` and read `current_focus` in `governance/project.json`.
-3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item
-   set. Do not invent a parallel status list in a plan, README, PR body, or
-   research note.
+3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item set. Do not invent a parallel status list in a plan, README, PR body, or research note.
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
 
-Through the first complete remake, select only browser Web/PWA work or its direct
-dependencies. Android, Linux, collection, ESP32, and final Skill work remain later.
+Through the first complete remake, select only browser Web/PWA work or its direct dependencies. Android, Linux, collection, ESP32, and final Skill work remain later.
 
 ## Implementation loop
 
@@ -31,10 +28,8 @@ Never repeat full evidence generation for an edit that has not passed its narrow
 checkpoint. Shared-runtime and governance checks may be batched across candidates;
 acceptance state, final evidence, and failure records remain per game.
 
-Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and
-asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses;
-do not add a new Python production service. C++ remains confined to the current
-compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
+Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses; do not add a new Python production service.
+C++ remains confined to the current compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
 
 Implementation never changes a requirement's wording. If product intent must
 change, update the PRD first and update its contract references in the same PR.
@@ -56,6 +51,7 @@ pnpm verify:typography
 pnpm verify:replay
 pnpm verify:game-module
 pnpm verify:batch
+pnpm verify:supervised-transfer
 make -C runtime/core test
 make -C runtime/core wasm-test
 pnpm verify:web
@@ -67,6 +63,8 @@ public CI or enter the clean public repository history.
 `pnpm verify:batch` validates rolling lanes and the filesystem Job: it rejects shared
 identities, concurrent writers, invalid timeouts/lanes, evidence-free acceptance,
 and hidden partial failure. Only accepted module IDs enter assembly.
+`pnpm verify:supervised-transfer` validates the four ordered human pauses and recoverable filesystem runner. It rejects forged/stale decisions, identity or byte drift, repeated challenges, concurrent/ambiguous writers, symlink aliases, and handwritten terminal ledgers.
+The host keeps the reviewer private key outside the Agent workspace; the runner consumes only the pinned public trust profile and detached signed decision.
 `pnpm verify:typography` validates reachable text routing, fixed bundled-font
 evidence, reviewed identity contours, complete coverage, and zero OS fallback.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
@@ -161,6 +159,8 @@ artifact needs an ordinary-input route replayed twice before full selectors.
 
 After an uncatchable batch/assembly crash, disprove a lock's live owner before manual
 removal and resume; never auto-delete an ambiguous lock or reservation.
+The supervised-transfer runner follows the same lock rule. Re-running an identical proposal or applied decision is a no-op; identity or byte drift fails closed, and no lock is held while awaiting a human.
+It does not establish human authority by itself. Before its ledger can close an exit, an Agent-inaccessible host must pin the accepted manifest/trust profile and preserve a rollback-resistant monotonic ledger head.
 
 ## Diagnosis
 

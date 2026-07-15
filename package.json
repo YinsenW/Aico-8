@@ -21,6 +21,7 @@
     "verify:typography": "pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts",
     "verify:replay": "pnpm --filter @aico8/contracts exec vitest run src/replay.test.ts",
     "verify:batch": "pnpm --filter @aico8/contracts exec vitest run src/batch.test.ts src/batch-job.test.ts",
+    "verify:supervised-transfer": "pnpm --filter @aico8/contracts exec vitest run src/supervised-transfer.test.ts src/supervised-transfer-job.test.ts",
     "verify:game-module": "pnpm --filter @aico8/contracts exec vitest run src/game-module.test.ts src/assembly.test.ts src/assembly-job.test.ts",
     "verify:qualification-plan": "node --test scripts/build-private-qualification-plan.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/qualification-plan.test.ts",
     "verify:qualification-plan-private": "node scripts/validate-private-qualification-plan.mjs",

@@ -12,6 +12,7 @@ import {
 import { InputController } from "./runtime/input.js";
 import { settleCaptureReadiness } from "./runtime/capture-readiness.js";
 import { Aico8Kernel, loadGameManifest, prepareKernelForLogicalReplay } from "./runtime/kernel.js";
+import { resolvePackageAssetUrl, resolvePackageBaseUrl } from "./runtime/package-url.js";
 import { KernelAudioOutput } from "./runtime/audio-output.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
@@ -409,9 +410,11 @@ fullscreenButton.addEventListener("click", async () => {
   else await frame.requestFullscreen();
 });
 
+const packageBaseUrl = resolvePackageBaseUrl(import.meta.env.BASE_URL);
+
 try {
-  const manifestUrl = new URL(`${import.meta.env.BASE_URL}private/game.json`, window.location.origin);
-  const targetProfileUrl = new URL(`${import.meta.env.BASE_URL}target-profile.json`, window.location.origin);
+  const manifestUrl = resolvePackageAssetUrl(packageBaseUrl, "private/game.json");
+  const targetProfileUrl = resolvePackageAssetUrl(packageBaseUrl, "target-profile.json");
   const [manifest, targetProfile] = await Promise.all([
     loadGameManifest(manifestUrl),
     loadTargetProfile(targetProfileUrl),
@@ -481,7 +484,7 @@ try {
   }
 
   const loadedRuntime = await Aico8Kernel.create(
-    import.meta.env.BASE_URL,
+    packageBaseUrl,
     manifestUrl,
     manifest,
     validationCaptureRequested
@@ -667,8 +670,8 @@ window.addEventListener("pagehide", () => {
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const registerServiceWorker = (): void => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}service-worker.js`, {
-      scope: import.meta.env.BASE_URL,
+    void navigator.serviceWorker.register(resolvePackageAssetUrl(packageBaseUrl, "service-worker.js"), {
+      scope: packageBaseUrl.href,
     });
   };
   if (document.readyState === "complete") registerServiceWorker();

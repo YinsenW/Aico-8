@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/human-stop-decision-v1.schema.json",
+  "title": "Aico 8 externally authenticated human stop decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "decisionId", "jobId", "gameId", "transferInstanceId", "sourceIdentitySha256",
+    "targetProfileSha256", "authorityProfileSha256", "stopId", "attempt", "proposalSha256",
+    "priorDecisionSha256", "nonce", "outcome", "scopeDisposition", "reviewerKeyId",
+    "signatureAlgorithm", "signature"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.human-stop-decision.v1" },
+    "decisionId": { "$ref": "#/$defs/id" },
+    "jobId": { "$ref": "#/$defs/id" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "transferInstanceId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" },
+    "sourceIdentitySha256": { "$ref": "#/$defs/hash" },
+    "targetProfileSha256": { "$ref": "#/$defs/hash" },
+    "authorityProfileSha256": { "$ref": "#/$defs/hash" },
+    "stopId": { "enum": ["semantic-intent", "art-direction", "representative-gameplay", "final-scope"] },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "proposalSha256": { "$ref": "#/$defs/hash" },
+    "priorDecisionSha256": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" },
+    "outcome": { "enum": ["approved", "revision-requested"] },
+    "scopeDisposition": { "enum": ["retain-supervised-trial", "authorize-full-validation", null] },
+    "reviewerKeyId": { "$ref": "#/$defs/id" },
+    "signatureAlgorithm": { "const": "ed25519" },
+    "signature": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }
+  },
+  "allOf": [{
+    "if": {
+      "properties": { "stopId": { "const": "final-scope" }, "outcome": { "const": "approved" } },
+      "required": ["stopId", "outcome"]
+    },
+    "then": { "properties": { "scopeDisposition": { "enum": ["retain-supervised-trial", "authorize-full-validation"] } } },
+    "else": { "properties": { "scopeDisposition": { "type": "null" } } }
+  }],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

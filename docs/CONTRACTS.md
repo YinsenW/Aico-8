@@ -1,7 +1,6 @@
 # Cross-layer contracts
 
-This document owns API, Job, and durable-data relationships; headers, types, and schemas own fields.
-Status, evidence, selectors, and open work live only in `governance/project.json`.
+This document owns API, Job, and durable-data relationships; headers, types, and schemas own fields. Status, evidence, selectors, and open work live only in `governance/project.json`.
 
 ## API boundaries
 
@@ -19,8 +18,7 @@ Status, evidence, selectors, and open work live only in `governance/project.json
 | API-CLI-001 | Planned TypeScript CLI | Non-interactive execution of every pipeline Job | Agents, CI, maintainers |
 | API-GAME-MODULE-001 | Planned versioned TypeScript boundary | Bind one compatible game, HD presentation, saves, evidence, and provenance without exposing a public cart format | Assembly, Web host, validation, later platform hosts |
 
-Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript
-does not reproduce compatibility semantics; C++ does not choose HD artwork.
+Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript does not reproduce compatibility semantics; C++ does not choose HD artwork.
 
 ## Durable data contracts
 
@@ -43,6 +41,8 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Planned text-run schema |
 | DATA-TYPOGRAPHY-001 | Semantic roles, fixed bundled font files/hashes/licenses, complete required-character coverage, deterministic metrics/fit, and zero OS fallback | `specs/schemas/typography-manifest-v1.schema.json` and TypeScript validator |
 | DATA-BATCH-001 | Authorized inputs/targets, timeout, immutable isolated attempts, pre-assembly replay/HD evidence, post-package Web evidence, failures, and derived aggregate state | `specs/schemas/batch-v1.schema.json` and TypeScript validator |
+| DATA-HUMAN-STOP-DECISION-001 | Externally signed human outcome bound to the exact transfer instance, source/profile/authority identities, ordered stop, proposal, upstream decision, and persisted challenge nonce | `specs/schemas/human-stop-decision-v1.schema.json` and `packages/contracts/src/human-stop-decision.ts` |
+| DATA-SUPERVISED-TRANSFER-001 | Fixed four-stop supervised-transfer ledger with immutable job identity, transition-preserved revision attempts, content-addressed proposals/decisions, derived status, and an explicit distinction between retained trial and authorization to run full validation | `specs/schemas/supervised-transfer-v1.schema.json` and `packages/contracts/src/supervised-transfer.ts` |
 | DATA-GAME-MODULE-001 | One remake's payload, mappings, assets, saves, provenance, runtime constraints, and pre-assembly canonical-replay plus accepted-HD evidence | `specs/schemas/game-module-v1.schema.json` and TypeScript validator |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
 | DATA-TARGET-PROFILE-001 | Browser Web/PWA phone, priority 1024-square-handheld, landscape-handheld, and wide-Web layout classes and minimum game/control dimensions, plus Android WebView, Linux handheld Web, future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
@@ -50,9 +50,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, and rights decision | `specs/schemas/release-manifest-v1.schema.json` and TypeScript validator |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
 
-JSON Schemas are required before a payload becomes a stable public contract.
-Research manifests without a schema are prototypes and cannot close a stable-
-contract exit.
+JSON Schemas are required before a payload becomes a stable public contract. Research manifests without a schema are prototypes and cannot close a stable-contract exit.
 
 ## Pipeline Job graph
 
@@ -60,6 +58,7 @@ contract exit.
 | --- | --- | --- | --- |
 | JOB-INGEST-001 | DATA-CART-001 | DATA-WORKSPACE-001 | Decode losslessly and record provenance |
 | JOB-BATCH-001 | DATA-BATCH-001 | Isolated per-cart Job invocations and status ledger | `scripts/run-batch.ts` verifies authorized bytes, materializes isolated workspaces, enforces one ledger writer plus declared attempt timeouts, resumes durable attempts, and contains partial failure |
+| JOB-SUPERVISED-TRANSFER-001 | DATA-SUPERVISED-TRANSFER-001, DATA-HUMAN-STOP-DECISION-001, exact proposal artifacts, host-owned reviewer trust profile | Recoverable supervised-transfer ledger | `scripts/run-supervised-transfer.ts` is the verification kernel for a trusted host caller: it freezes identity, persists each short transition atomically, revalidates all artifact bytes/signatures on resume, and stops for external decisions without holding a lock; it cannot generate a decision, accept a trial, authorize release, or turn final-scope authorization into completion |
 | JOB-ANALYZE-001 | DATA-WORKSPACE-001 | Risk/API/semantic analysis | Identify compatibility and remake risks |
 | JOB-CAPTURE-001 | DATA-WORKSPACE-001, DATA-INPUT-TRACE-001 | DATA-REPLAY-001, DATA-CHECKPOINT-001 | Replay an unchanged cart on a named runtime; official captures additionally require a licensed oracle |
 | JOB-MODEL-001 | Workspace, replay, checkpoints | DATA-HD-MAP-001 draft | Assign semantic roles, identity cues, and complete deterministic mappings |
@@ -71,9 +70,7 @@ contract exit.
 | JOB-PACKAGE-001 | Validated target build and release profile | DATA-RELEASE-001 plus artifacts | Produce reproducible platform packages |
 | JOB-RELEASE-001 | Artifacts, validation, rights evidence | Publication record | Enforce permission and publish approved builds |
 
-Jobs are idempotent for identical declared inputs, non-interactive in CI, and
-must not obtain undeclared authority. A Job may produce an incomplete report;
-only its linked exits determine acceptance.
+Jobs are idempotent for identical declared inputs, non-interactive in CI, and must not obtain undeclared authority. A Job may produce an incomplete report; only its linked exits determine acceptance.
 
 ## Cross-document invariants
 
@@ -165,9 +162,20 @@ only its linked exits determine acceptance.
   candidate. Replacing its visual runtime invalidates every runtime-bound capture,
   technical report, packet, and document; all must be regenerated from the same
   replacement build, and review remains draft until a new explicit decision.
+- Supervised transfer always pauses in this order: semantic intent, art direction,
+  representative gameplay, then final scope. The runner may freeze proposals and
+  apply a detached Ed25519 decision from the host-owned trust profile; it may not
+  create, infer, edit, or replace that decision. Every resume re-hashes the exact
+  proposal and decision bytes and re-verifies the full signed identity/challenge
+  chain. A representative-gameplay approval is not complete-game evidence.
+- Final scope `retain-supervised-trial` ends only the bounded trial;
+  `authorize-full-validation` unlocks the ordinary-input replay, complete HD,
+  package, performance, and rights selectors but satisfies none of them. Neither
+  outcome is a DATA-RELEASE-001 rights decision or publication authority.
 - Cart-specific presentation adapters are injected from ignored private workspaces;
   the Apache source tree owns only the interface, loader, diagnostic reference
   renderer, and validators.
+- A Web package resolves every resource from its deployment base; its service-worker cache and navigation fallback are isolated by registration scope.
 - Original P8SCII execution and `print()` metrics stay in the kernel; modern
   typography consumes results and cannot alter compatibility state.
 - Game modules are internal versioned build inputs. A single or fixed collection
@@ -210,18 +218,9 @@ only its linked exits determine acceptance.
   logical-update boundary or an `_init()/flip()` host-initialization tick. The
   clocks may not be conflated; a startup frame represented as update zero is
   invalid evidence.
-- Source-authored modern visuals are gated by source tokens from the same logical
-  update. Scene membership or a token retained from an earlier frame cannot
-  reveal copy, characters, effects, or cues before the source does.
-- A solver or AI planner may propose DATA-INPUT-TRACE-001 only. Every promoted
-  trace also requires DATA-TRACE-PROVENANCE-001 bound to its exact canonical
-  trace hash. An external action seed is ineligible when its artifact, revision,
-  action hash, explicit reusable license, license evidence, or reviewed reuse
-  decision is absent; `NOASSERTION`, unknown, and unlicensed sources fail closed.
-  JOB-VALIDATE-001
-  must replay each proposed transition on the unchanged cart and compare the
-  declared observable state before JOB-CAPTURE-001 can promote it to
-  DATA-REPLAY-001; model-only success is never evidence.
+- Source-authored modern visuals are gated by source tokens from the same logical update. Scene membership or a token retained from an earlier frame cannot reveal copy, characters, effects, or cues before the source does.
+- A solver or AI planner may propose DATA-INPUT-TRACE-001 only. Every promoted trace also requires DATA-TRACE-PROVENANCE-001 bound to its exact canonical trace hash. An external action seed is ineligible when its artifact, revision, action hash, explicit reusable license, license evidence, or reviewed reuse decision is absent; `NOASSERTION`, unknown, and unlicensed sources fail closed.
+  JOB-VALIDATE-001 must replay each proposed transition on the unchanged cart and compare the declared observable state before JOB-CAPTURE-001 can promote it to DATA-REPLAY-001; model-only success is never evidence.
 - The reusable private gameplay selector runs a workspace-owned verifier, then
   independently validates Replay v1 continuity, clean initial persistence,
   ordinary six-bit masks, ordered boundary/checkpoint coverage, final state, and

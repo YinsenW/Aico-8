@@ -186,7 +186,7 @@ Solvers are optional diagnostics. A contributed trace must match unchanged-cart
 state; mismatches require a root-cause class, general invariant, regression and
 mutation test, never a per-level exception.
 
-Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
+Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-HUMAN-STOP-DECISION-001`, `DATA-SUPERVISED-TRANSFER-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`, `JOB-SUPERVISED-TRANSFER-001`.
 
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 

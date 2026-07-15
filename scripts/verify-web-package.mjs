@@ -211,6 +211,10 @@ assert.match(html, /viewport-fit=cover/, "Web host must opt into notched-screen 
 const packagedCss = actualFiles.filter((file) => file.endsWith(".css"))
   .map((file) => fs.readFileSync(path.join(output, file), "utf8"))
   .join("\n");
+assert.doesNotMatch(html, /\b(?:src|href)=["']\/(?!\/)/,
+  "Web package HTML must use deployment-relative asset URLs");
+assert.doesNotMatch(packagedCss, /url\(\s*["']?\/(?!\/)/,
+  "Web package CSS must use deployment-relative asset URLs");
 for (const edge of ["top", "right", "bottom", "left"]) {
   assert.match(packagedCss, new RegExp(`safe-area-inset-${edge}`),
     `Web host must consume the ${edge} safe-area inset`);
@@ -220,6 +224,10 @@ assert.match(serviceWorker, /aico8-kernel\.wasm/);
 assert.match(serviceWorker, /asset-manifest\.json/);
 assert.match(serviceWorker, /target-profile\.json/,
   "PWA must retain the release target profile for offline validation");
+assert.match(serviceWorker, /scopeRoot = new URL\(self\.registration\.scope\)/,
+  "PWA cache and fallback URLs must be relative to the installed scope");
+assert.match(serviceWorker, /CACHE_PREFIX = `aico8-web-\$\{scopeKey\}-`/,
+  "PWA caches must be isolated by registration scope");
 assert.match(serviceWorker, /event\.request\.mode === "navigate"/,
   "PWA navigation must refresh mutable builds before falling back offline");
 assert.match(serviceWorker, /url\.pathname\.includes\("\/kernel\/"\)/,

@@ -5,7 +5,7 @@
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "runtime": {
     "id": "aico8-core-wasm",
-    "revision": "e7652beb3c72e415cb132f5dab0b4d0db7a7f18cf8c1a2821270ec298eb4f3d9"
+    "revision": "551b8c25a395b355d4087fb064403c3f1347581bfe8fe0b60e32364537a3d5ad"
   },
   "observations": {
     "boundary_kind": "checkpoint",
@@ -32,10 +32,10 @@
     "wallClockAcceleration": true
   },
   "private_artifact_sha256": {
-    "replay_v1": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
-    "differential": "511a284206b0f670c8d06057208b26daee3ac8fc1a223930ffeffbf0d52c2f80",
+    "replay_v1": "eebab45fc6e03d4df33599865340ed0e940e933fabcd8acb33ce1f95c7e72608",
+    "differential": "9f871c1aeae2a4948f6d398698e8ed5401e643d1e38476aefae5ef1e646d88d2",
     "input_projection": "d68276f931d33db90c8777cc9603e5484195beead0f847ac4c76990919447b75",
-    "input_trace_provenance": "527b476c2272eb67f762a0ec9f3c803e7d0dd636766a9dd39e0c274b52d3f859"
+    "input_trace_provenance": "5e0cf76aa01227a7902c99e9760aa905fb52d5bed02774b2f776d2491e87f74f"
   },
   "limitations": [
     "Canonical gameplay passed only against the unchanged shared Wasm runtime; licensed official-runtime compatibility evidence remains separate.",

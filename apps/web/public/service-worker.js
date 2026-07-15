@@ -1,4 +1,6 @@
-const CACHE_PREFIX = "aico8-web-";
+const scopeRoot = new URL(self.registration.scope);
+const scopeKey = encodeURIComponent(scopeRoot.pathname);
+const CACHE_PREFIX = `aico8-web-${scopeKey}-`;
 const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const CORE_ASSETS = [
   "./",
@@ -15,8 +17,8 @@ const CORE_ASSETS = [
 ];
 
 async function cacheBuiltShell(cache) {
-  await cache.addAll(CORE_ASSETS);
-  const manifestResponse = await fetch("./asset-manifest.json", { cache: "no-store" });
+  await cache.addAll(CORE_ASSETS.map((relative) => new URL(relative, scopeRoot)));
+  const manifestResponse = await fetch(new URL("asset-manifest.json", scopeRoot), { cache: "no-store" });
   if (!manifestResponse.ok) throw new Error("Unable to load the Web build asset manifest");
   const manifest = await manifestResponse.json();
   const relativeAssets = new Set();
@@ -27,14 +29,14 @@ async function cacheBuiltShell(cache) {
     }
   }
   await Promise.all([...relativeAssets].map(async (relative) => {
-    const url = new URL(relative, self.registration.scope);
+    const url = new URL(relative, scopeRoot);
     const asset = await fetch(url);
     if (asset.ok) await cache.put(url, asset);
   }));
 }
 
 async function cachePrivateModule(cache) {
-  const manifestUrl = new URL("private/game.json", self.registration.scope);
+  const manifestUrl = new URL("private/game.json", scopeRoot);
   const response = await fetch(manifestUrl, { cache: "no-store" });
   if (!response.ok) return;
   await cache.put(manifestUrl, response.clone());
@@ -69,6 +71,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  if (!url.href.startsWith(scopeRoot.href)) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const mutablePath = event.request.mode === "navigate"
@@ -84,7 +87,7 @@ self.addEventListener("fetch", (event) => {
         return response;
       } catch (error) {
         const fallback = await cache.match(event.request)
-          ?? (event.request.mode === "navigate" ? await cache.match("./") : undefined);
+          ?? (event.request.mode === "navigate" ? await cache.match(scopeRoot) : undefined);
         if (fallback) return fallback;
         throw error;
       }
@@ -97,7 +100,7 @@ self.addEventListener("fetch", (event) => {
       return response;
     } catch (error) {
       if (event.request.mode === "navigate") {
-        const fallback = await cache.match("./");
+        const fallback = await cache.match(scopeRoot);
         if (fallback) return fallback;
       }
       throw error;

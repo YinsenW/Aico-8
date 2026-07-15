@@ -130,6 +130,33 @@ export {
   type QualityLeapVisibilityEffectPolicy,
 } from "./quality-leap-audit.js";
 export {
+  HUMAN_STOP_DECISION_SCHEMA_VERSION,
+  SUPERVISED_TRANSFER_STOP_IDS,
+  humanStopDecisionSigningPayload,
+  validateHumanStopDecision,
+  verifyHumanStopDecision,
+  type FinalScopeDisposition,
+  type HumanDecisionTrustKey,
+  type HumanStopDecisionV1,
+  type HumanStopDecisionValidationResult,
+  type HumanStopDecisionVerificationResult,
+  type HumanStopOutcome,
+  type SupervisedTransferStopId,
+} from "./human-stop-decision.js";
+export {
+  SUPERVISED_TRANSFER_SCHEMA_VERSION,
+  applySupervisedHumanDecision,
+  createSupervisedTransfer,
+  submitSupervisedProposal,
+  validateSupervisedTransfer,
+  type SupervisedDecisionReferenceV1,
+  type SupervisedProposalV1,
+  type SupervisedStopAttemptV1,
+  type SupervisedTransferStatus,
+  type SupervisedTransferV1,
+  type SupervisedTransferValidationResult,
+} from "./supervised-transfer.js";
+export {
   HD_REVIEW_CHECK_NAMES,
   HD_REVIEW_PACKET_SCHEMA_VERSION,
   PENDING_HD_REVIEWER,
