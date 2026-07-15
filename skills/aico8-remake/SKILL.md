@@ -70,6 +70,10 @@ At every stop:
    A fresh user message guides only the current local session: never pass it to
    `apply`, serialize it as a signed decision, close portable acceptance, or
    treat it as publication authority.
+   Portable acceptance additionally requires a verified
+   `DATA-HOST-AUTHORITY-RECEIPT-001` that extends the latest head independently
+   fetched from the protected host. A local receipt or hash chain is not fresh-head
+   evidence and cannot close the portable gate.
 6. On revision, preserve the rejected attempt and regenerate only evidence bound
    to changed inputs.
 

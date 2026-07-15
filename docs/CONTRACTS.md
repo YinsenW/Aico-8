@@ -15,6 +15,7 @@ This document owns API, Job, and durable-data relationships; headers, types, and
 | API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, PCM audio, semantic, map, read-only global/table inspection, pause-menu, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
 | API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, source-timed visibility, completeness, and diagnostic reference mode | PixiJS host and validation UI |
 | API-HOST-001 | Planned host contract | Logical input, persistence, lifecycle, clock, audio, services | Browser Web/PWA, Android WebView, Linux Web shell, future ESP-IDF |
+| API-HUMAN-AUTHORITY-001 | External trusted-host boundary | Register immutable transfers, issue proposal-bound challenges, accept only interactive reviewer decisions, and expose the signed monotonic head | Skill host adapter, supervised runner, protected CI |
 | API-CLI-001 | Planned TypeScript CLI | Non-interactive execution of every pipeline Job | Agents, CI, maintainers |
 | API-GAME-MODULE-001 | Planned versioned TypeScript boundary | Bind one compatible game, HD presentation, saves, evidence, and provenance without exposing a public cart format | Assembly, Web host, validation, later platform hosts |
 
@@ -42,6 +43,8 @@ Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript 
 | DATA-BATCH-001 | Authorized inputs/targets, timeout, immutable isolated attempts, pre-assembly replay/HD evidence, post-package Web evidence, failures, and derived aggregate state | `specs/schemas/batch-v1.schema.json` and TypeScript validator |
 | DATA-HUMAN-STOP-DECISION-001 | Externally signed human outcome bound to the exact transfer instance, source/profile/authority identities, ordered stop, proposal, upstream decision, and persisted challenge nonce | `specs/schemas/human-stop-decision-v1.schema.json` and `packages/contracts/src/human-stop-decision.ts` |
 | DATA-HUMAN-STOP-REQUEST-001 | Immutable unsigned signing request derived from the exact awaiting-human ledger state, proposal, challenge, allowed outcome/scope choices, and trusted reviewer IDs; Agent signing authority is always false | `specs/schemas/human-stop-request-v1.schema.json` and `packages/contracts/src/human-stop-request.ts` |
+| DATA-HOST-AUTHORITY-PROFILE-001 | Pinned external host and receipt key, allowed reviewers, zero Agent mutation authority, transactional monotonic-head mode, and mandatory independent rollback anchor | `specs/schemas/host-authority-profile-v1.schema.json` and `packages/contracts/src/host-authority.ts` |
+| DATA-HOST-AUTHORITY-RECEIPT-001 | Host-signed registration, challenge, or committed-head identity with sequence and previous-head binding; a receipt proves only its bounded transition | `specs/schemas/host-authority-receipt-v1.schema.json` and `packages/contracts/src/host-authority.ts` |
 | DATA-SUPERVISED-REVIEW-PROPOSAL-001 | Human-visible stop-specific review object binding immutable transfer identity, immediate revision lineage, content-addressed evidence, required criteria, limitations, forbidden claims, and authority limits | `specs/schemas/supervised-review-proposal-v1.schema.json` and `packages/contracts/src/supervised-review-proposal.ts` |
 | DATA-SUPERVISED-TRANSFER-001 | Fixed four-stop supervised-transfer ledger with immutable job identity, transition-preserved revision attempts, content-addressed proposals/decisions, derived status, and an explicit distinction between retained trial and authorization to run full validation | `specs/schemas/supervised-transfer-v1.schema.json` and `packages/contracts/src/supervised-transfer.ts` |
 | DATA-TRANSFER-FINDINGS-001 | Reference-versus-trial findings classified as compatibility/runtime, reusable presentation, or source-relative semantic/art judgment; reusable claims require shared implementation plus regression evidence, while source-relative decisions remain attached to a named human stop | `specs/schemas/transfer-findings-v1.schema.json` and `packages/contracts/src/transfer-findings.ts` |
@@ -117,12 +120,9 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
   browser record, replay semantics, visual runtime, elements, checks, and required
   statement. Acceptance promotes every review field together; a later selector
   must reproduce the reviewed draft before it can regenerate accepted evidence.
-- Every image rendered by a pending or accepted review document uses the retained
-  screenshot SHA-256 as the URL cache key for both its inline and full-size link.
-  A fixed path, a missing key, or a key that differs from the verified file bytes
+- Every image rendered by a pending or accepted review document uses the retained screenshot SHA-256 as the URL cache key for both its inline and full-size link. A fixed path, a missing key, or a key that differs from the verified file bytes
   fails the packet even when its JSON metadata is otherwise current.
-- DATA-HD-EVIDENCE-LIFECYCLE-001 separates offline drafts, packaged captures,
-  and pending review packets. Offline artifacts cannot claim runtime, capture,
+- DATA-HD-EVIDENCE-LIFECYCLE-001 separates offline drafts, packaged captures, and pending review packets. Offline artifacts cannot claim runtime, capture,
   browser, or human proof; the lifecycle never embeds acceptance, which remains
   an independent immutable `aico8.hd-review-decision.v1` artifact.
 - HD acceptance is ordered and non-compensatory: DATA-HD-MAP-001 plus replay evidence gate Spirit fidelity; HD surface/asset evidence gates Quality leap; DATA-ASSET-PACK-001 visual grammar plus the whole-frame human decision gate Aesthetic evolution. The pending packet stores all three gates in contract order, and the immutable decision must record `passed` for each; aesthetic polish cannot offset identity, atmosphere, play-feel, or material-quality failure.

@@ -4,9 +4,7 @@
 
 Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and adds a separate HD presentation path.
 
-The product is TypeScript-first. C++ is restricted to a small deterministic
-kernel compiled both natively and to WebAssembly. The reasoning and proof gates
-are recorded in `docs/decisions/0001-language-boundary.md`.
+The product is TypeScript-first. C++ is restricted to a small deterministic kernel compiled natively and to WebAssembly; ADR 0001 owns the reasoning and proof gates.
 
 Delivery is internally modular and externally standalone. ADR 0003 owns the
 decision to ship a statically bound single game first, add fixed collections
@@ -18,6 +16,8 @@ tests, but only versioned tools and deterministic runtime code decide whether a
 remake is compatible. The maintained `skills/aico8-remake/` package is likewise
 outside the authority boundary. A local host user channel supplies bounded human
 pauses; portable acceptance uses detached signatures, and neither grants release.
+The external human-authority host is a separate security domain: repository code verifies its pinned profile and signed monotonic receipts; only the protected deployment owns reviewer authentication, signing, head CAS, and the rollback anchor.
+
 ## Delivery topology
 
 - An internal game module contains one remake's compatible payload, HD mapping,
@@ -233,7 +233,7 @@ contracts rather than shared implementation details:
 - semantic text-run and typography-manifest schemas;
 - HD mapping manifest and asset pack;
 - batch, internal game-module, fixed-collection, display, and target profiles;
-- stop-specific review proposals, supervised-transfer ledger, unsigned signing requests, signed human stops, and classified reusable versus source-relative transfer findings;
+- stop-specific review proposals, supervised-transfer ledger, unsigned signing requests, signed human stops, trusted-host profiles/receipts, and classified reusable versus source-relative transfer findings;
 - target profile, technical validation report, and release manifest.
 These contracts make it possible to improve the AI orchestration without
 silently changing game behavior.

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/host-authority-receipt-v1.schema.json",
+  "title": "Aico 8 trusted human authority receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "receiptId", "kind", "hostProfileSha256", "hostId", "jobId", "gameId", "transferInstanceId", "sourceIdentitySha256", "targetProfileSha256", "manifestSha256", "authorityProfileSha256", "sequence", "previousReceiptSha256", "stopId", "attempt", "proposalSha256", "requestSha256", "decisionSha256", "resultLedgerSha256", "reviewerKeyId", "outcome", "scopeDisposition", "nonce", "signingKeyId", "signatureAlgorithm", "signature"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.host-authority-receipt.v1" },
+    "receiptId": { "$ref": "#/$defs/id" },
+    "kind": { "enum": ["registration", "challenge", "commit-head"] },
+    "hostProfileSha256": { "$ref": "#/$defs/hash" },
+    "hostId": { "$ref": "#/$defs/id" }, "jobId": { "$ref": "#/$defs/id" }, "gameId": { "$ref": "#/$defs/id" },
+    "transferInstanceId": { "$ref": "#/$defs/nonce" },
+    "sourceIdentitySha256": { "$ref": "#/$defs/hash" }, "targetProfileSha256": { "$ref": "#/$defs/hash" },
+    "manifestSha256": { "$ref": "#/$defs/hash" }, "authorityProfileSha256": { "$ref": "#/$defs/hash" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "previousReceiptSha256": { "$ref": "#/$defs/nullableHash" },
+    "stopId": { "oneOf": [{ "enum": ["semantic-intent", "art-direction", "representative-gameplay", "final-scope"] }, { "type": "null" }] },
+    "attempt": { "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] },
+    "proposalSha256": { "$ref": "#/$defs/nullableHash" }, "requestSha256": { "$ref": "#/$defs/nullableHash" },
+    "decisionSha256": { "$ref": "#/$defs/nullableHash" }, "resultLedgerSha256": { "$ref": "#/$defs/nullableHash" },
+    "reviewerKeyId": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+    "outcome": { "oneOf": [{ "enum": ["approved", "revision-requested"] }, { "type": "null" }] },
+    "scopeDisposition": { "oneOf": [{ "enum": ["retain-supervised-trial", "authorize-full-validation"] }, { "type": "null" }] },
+    "nonce": { "oneOf": [{ "$ref": "#/$defs/nonce" }, { "type": "null" }] },
+    "signingKeyId": { "$ref": "#/$defs/id" }, "signatureAlgorithm": { "const": "ed25519" },
+    "signature": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nullableHash": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" }
+  }
+}

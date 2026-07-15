@@ -160,6 +160,8 @@ removal; never delete an ambiguous lock. The supervised runner uses the same rul
 idempotently resumes identical bytes, and holds no lock while awaiting a human.
 Portable acceptance requires an Agent-inaccessible host to pin authority and a
 rollback-resistant ledger head; local user-channel decisions remain non-portable.
+The repository verifies host profiles and signed monotonic receipts; only a protected deployment can prove key isolation, reviewer-only decisions, transactional CAS, and an independent rollback anchor.
+CI must query the host's latest head and never treat a local receipt as freshness proof.
 ## Diagnosis
 
 - Compatibility mismatch: isolate update number, input trace, RAM/state snapshot,
