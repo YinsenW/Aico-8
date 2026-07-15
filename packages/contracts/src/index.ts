@@ -116,6 +116,19 @@ export {
   type SourceVisualTokenKind,
 } from "./hd-presentation-audit.js";
 export {
+  QUALITY_LEAP_AUDIT_SCHEMA_VERSION,
+  assertQualityLeapAudit,
+  validateQualityLeapAudit,
+  type QualityLeapAuditV1,
+  type QualityLeapAuditValidationResult,
+  type QualityLeapContourTreatment,
+  type QualityLeapDimension,
+  type QualityLeapGeometrySource,
+  type QualityLeapRegressionCategory,
+  type QualityLeapRouteV1,
+  type QualityLeapSamplingSource,
+} from "./quality-leap-audit.js";
+export {
   HD_REVIEW_CHECK_NAMES,
   HD_REVIEW_PACKET_SCHEMA_VERSION,
   PENDING_HD_REVIEWER,

@@ -76,7 +76,7 @@ asset regions, and declared source/target ratios must remain within explicit
 tolerances.
 
 Contracts: `API-SEMANTIC-001`, `API-PRESENTATION-001`, `DATA-HD-MAP-001`,
-`DATA-HD-AUDIT-001`, `DATA-ASSET-PACK-001`, `JOB-MODEL-001`, `JOB-ASSET-001`,
+`DATA-HD-AUDIT-001`, `DATA-HD-QUALITY-001`, `DATA-ASSET-PACK-001`, `JOB-MODEL-001`, `JOB-ASSET-001`,
 `JOB-INTEGRATE-001`, `JOB-VALIDATE-001`.
 
 ### REQ-TYPOGRAPHY-001 — Readable standardized text without compatibility drift

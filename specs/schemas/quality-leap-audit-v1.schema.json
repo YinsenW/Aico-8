@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/quality-leap-audit-v1.schema.json",
+  "$comment": "JSON Schema owns closed structural validation. The TypeScript validator additionally owns scene/route references, content-versus-shell coverage, route observation, framebuffer/topology rejection, measurable enrichment, and required accepted regression relationships.",
+  "title": "Aico 8 quality leap audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "gameId", "canonicalReplaySha256", "presentationAuditSha256", "status", "scenes", "routes", "regressions"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.quality-leap-audit.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "canonicalReplaySha256": { "$ref": "#/$defs/hash" },
+    "presentationAuditSha256": { "$ref": "#/$defs/hash" },
+    "status": { "enum": ["draft", "accepted"] },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scene" }
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/route" }
+    },
+    "regressions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/regression" }
+    }
+  },
+  "allOf": [{
+    "if": {
+      "type": "object",
+      "properties": { "status": { "const": "accepted" } },
+      "required": ["status"]
+    },
+    "then": {
+      "type": "object",
+      "properties": {
+        "scenes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "observedContentRouteIds": { "type": "array", "minItems": 1 }
+            }
+          }
+        },
+        "regressions": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "allOf": [
+            { "contains": { "type": "object", "properties": { "category": { "const": "shell-only-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 },
+            { "contains": { "type": "object", "properties": { "category": { "const": "final-framebuffer-topology-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 },
+            { "contains": { "type": "object", "properties": { "category": { "const": "cosmetic-smoothing-only-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 }
+          ]
+        }
+      }
+    }
+  }],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "idList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "observedContentRouteIds"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "observedContentRouteIds": { "$ref": "#/$defs/idList" }
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "role", "sceneIds", "geometrySource", "samplingSource", "contourTreatment", "targetPixelsPerSourcePixel",
+        "edgeSupersampleFactor", "qualityDimensions", "materialLayerCount", "authoredDetailCount", "motionOrEffectTrackCount"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "role": { "enum": ["content", "shell"] },
+        "sceneIds": { "$ref": "#/$defs/nonEmptyIdList" },
+        "geometrySource": { "enum": ["frozen-hd-asset", "semantic-command-reconstruction", "authored-procedural", "final-framebuffer-projection"] },
+        "samplingSource": { "enum": ["element-resource", "semantic-command", "final-framebuffer"] },
+        "contourTreatment": { "enum": ["authored-continuous", "density-aware-raster", "source-cell-topology"] },
+        "targetPixelsPerSourcePixel": { "type": "integer", "minimum": 0 },
+        "edgeSupersampleFactor": { "type": "integer", "minimum": 0 },
+        "qualityDimensions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["continuous-contour", "density-aware-sampling", "material-layers", "internal-detail", "animation", "effects"] }
+        },
+        "materialLayerCount": { "type": "integer", "minimum": 0 },
+        "authoredDetailCount": { "type": "integer", "minimum": 0 },
+        "motionOrEffectTrackCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nonEmptyIdList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "regression": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category", "rejected"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "category": { "enum": ["shell-only-mutation", "final-framebuffer-topology-mutation", "cosmetic-smoothing-only-mutation"] },
+        "rejected": { "const": true }
+      }
+    }
+  }
+}

@@ -1,8 +1,7 @@
 # Cross-layer contracts
 
-This document owns relationships among APIs, pipeline Jobs, and durable data. Headers,
-types, and schemas own fields; status, evidence, selectors, and open work live only in
-`governance/project.json`.
+This document owns API, Job, and durable-data relationships; headers, types, and schemas own fields.
+Status, evidence, selectors, and open work live only in `governance/project.json`.
 
 ## API boundaries
 
@@ -36,6 +35,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-QUALIFICATION-PLAN-001 | Legacy twelve-candidate private-research inventory retained for optional diagnostics and comparative risk sampling; it is not the active release or Skill gate | `specs/schemas/qualification-plan-v1.schema.json` and TypeScript validator |
 | DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, copy provenance/authorization, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
 | DATA-HD-AUDIT-001 | Contextual raw visual tokens, observation runs, identity-map lineage, zero-unmapped/mixed/reference coverage, per-update HD-off/on state comparison, and rejected mutations | `specs/schemas/hd-presentation-audit-v1.schema.json` and TypeScript validator |
+| DATA-HD-QUALITY-001 | Per-scene content render-route coverage separated from host shell, authoritative geometry/sampling provenance, measurable contour plus surface/detail/motion gain, and rejected shell-only/framebuffer-topology/cosmetic-smoothing mutations | `specs/schemas/quality-leap-audit-v1.schema.json` and `packages/contracts/src/quality-leap-audit.ts` |
 | DATA-HD-EVIDENCE-LIFECYCLE-001 | Fail-closed progression from offline draft through packaged capture to a pending human packet, with immutable hashes, browser readiness, fixed gate order, zero acceptance claims, and cross-artifact game/runtime/replay/identity/browser lineage equality | `specs/schemas/hd-evidence-lifecycle-v1.schema.json` and TypeScript validator |
 | DATA-ASSET-PACK-001 | Frozen hashed atlases, fonts, effects, audio, visual grammar, metadata, and licenses | Asset-pack schema |
 | DATA-SEMANTIC-VECTOR-001 | Build-only constrained SVG provenance plus renderer-independent semantic layers, origins, palette tokens, compiled-recipe hashes, and packaged input lineage | `specs/schemas/semantic-vector-set-v1.schema.json`, `scripts/lib/semantic-svg.mjs`, and `apps/web/src/runtime/semantic-vector.ts` |
@@ -66,7 +66,7 @@ contract exit.
 | JOB-ASSET-001 | HD map and accepted art direction | DATA-ASSET-PACK-001 | Generate/import and review modern assets |
 | JOB-TYPOGRAPHY-001 | Workspace, DATA-TEXT-RUN-001, accepted type direction | DATA-TEXT-INVENTORY-001, DATA-TYPOGRAPHY-001, font assets | Classify P8SCII, route identity artwork, subset/build fonts, and prove coherent complete coverage |
 | JOB-INTEGRATE-001 | Workspace, HD map, asset pack | DATA-GAME-MODULE-001 draft | Bind HD presentation without state mutation |
-| JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants plus static and temporal presentation evidence |
+| JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-HD-QUALITY-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants plus static and temporal presentation evidence |
 | JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-TARGET-PROFILE-001 | Statically bound target build | `scripts/assemble-game-module.ts` implements the fail-closed single-game Web boundary; fixed collection remains gated |
 | JOB-PACKAGE-001 | Validated target build and release profile | DATA-RELEASE-001 plus artifacts | Produce reproducible platform packages |
 | JOB-RELEASE-001 | Artifacts, validation, rights evidence | Publication record | Enforce permission and publish approved builds |

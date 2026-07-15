@@ -16,7 +16,7 @@
     "verify:governance": "node scripts/verify-governance.mjs",
     "verify:public": "node scripts/verify-public-repository.mjs",
     "verify:rust": "node scripts/verify-rust-boundary.mjs",
-    "verify:hd-identity": "node --test scripts/accept-private-hd-review.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/hd-identity-map.test.ts src/hd-review-packet.test.ts src/hd-review-decision.test.ts src/hd-evidence-lifecycle.test.ts",
+    "verify:hd-identity": "node --test scripts/accept-private-hd-review.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/hd-identity-map.test.ts src/quality-leap-audit.test.ts src/hd-review-packet.test.ts src/hd-review-decision.test.ts src/hd-evidence-lifecycle.test.ts",
     "verify:hd-presentation": "pnpm --filter @aico8/contracts exec vitest run src/hd-presentation-audit.test.ts",
     "verify:typography": "pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts",
     "verify:replay": "pnpm --filter @aico8/contracts exec vitest run src/replay.test.ts",

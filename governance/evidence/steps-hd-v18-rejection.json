@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "subject": "steps-private-research v18 HD presentation rejection",
+  "status": "rejected-shell-and-framebuffer-topology-only",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "review_stage": "quality-leap",
+  "human_verdict": "failed",
+  "human_observation": "The border changed from a square to a rounded rectangle while the game content inside remained effectively the same enlarged pixel construction.",
+  "root_causes": [
+    "The production renderer derived all target geometry from final 128 by 128 framebuffer connected components instead of source semantic map, sprite, primitive, and text routes.",
+    "The contour helper treated 0.28 as a fraction of each edge rather than an absolute source-pixel displacement, moving a 40-pixel edge endpoint by 11.2 source pixels and rounding source-square frames into capsules.",
+    "Source framebuffer glyph contours remained in the generic geometry pass and fixed-font Text was then drawn again, allowing doubled and blurred typography.",
+    "The map classifier did not filter cells by the source layer mask and sprite flags, so marker tiles and the two ordered map layers could be misclassified as visible content.",
+    "The previous private topology verifier explicitly required final-framebuffer geometry and prohibited semantic scene/tile reconstruction, locking the false-HD approach into the local gate."
+  ],
+  "invalidated_claims": [
+    "pending-human-review",
+    "quality-leap-ready",
+    "substantive-HD-redraw"
+  ],
+  "required_systemic_fix": [
+    "Build content geometry from source-ordered map, sprite, primitive, and PRINT semantics; use the framebuffer only for visibility, read-modify-write effects, and review oracle duties.",
+    "Preserve the exact square composition and source draw order, including flag-7 map, entities, player, flag-0 map, effects, frame, and HUD.",
+    "Require per-scene content render routes and reject shell-only, final-framebuffer-topology, and cosmetic-smoothing-only candidates.",
+    "Require measurable material layers, authored internal detail, or source-timed animation/effect enrichment in addition to continuous contours and density-aware sampling.",
+    "Return Steps to offline draft and regenerate every runtime, capture, packet, and lifecycle artifact before another human review."
+  ],
+  "private_artifact_sha256": {
+    "release_manifest": "ab6bd132dbf1eaf2a9fc6cd95fe195c27d34aafd4eb122ca7687f4bc2177bbbf",
+    "visual_runtime": "6450dabea1ea2c497e9fefa38c60582148a835a1b6236986428c8f86a45eb3cc",
+    "browser_capture_manifest": "05cd7d568ddba12034b3816e2353b91cae1475951b68fb07bcb9a356048dc5d7",
+    "review_packet": "69d2954f83628912fa7366465adf5ed0fd2a8f0f7eb96835ece8ca2da6ceb0ea"
+  },
+  "credit": {
+    "accepted_game_credit": 0,
+    "machine_complete_credit": 0
+  }
+}
