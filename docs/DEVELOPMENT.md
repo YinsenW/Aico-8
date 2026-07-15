@@ -75,8 +75,8 @@ evidence, reviewed identity contours, complete coverage, and zero OS fallback.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
 reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
 level/ending milestones, and broken replay lineage.
-`pnpm verify:qualification-gameplay-private` is the reusable game-2-and-later
-gameplay gate. The ignored workspace supplies `validation/verify-canonical-gameplay.ts`;
+`pnpm verify:qualification-gameplay-private` is the complete-artifact gameplay
+gate, run only after promotion. The workspace supplies `validation/verify-canonical-gameplay.ts`;
 the public runner rebuilds Wasm, executes it twice from clean persistence, validates
 the emitted Replay v1 and differential record, rejects uncovered semantic mutations,
 projects the complete trace through keyboard, controller, and touch with zero
@@ -142,6 +142,13 @@ When startup motion itself needs review, capture its exact host-initialization
 tick; never relabel that tick as a canonical update. A bounded neutral-input probe
 may establish a normally reachable scene absent from the completion replay, but
 it must use ordinary zero input and declare its own boundary lineage.
+
+## Human-supervised conversion loop
+The workflow is not autonomous or universal. Pause for human review of semantics,
+first high-risk art, representative gameplay/motion, and final scope/rights.
+Agents batch deterministic work between pauses. Use representative checkpoints;
+do not solve the full game or regenerate full evidence per edit. A promoted
+artifact needs an ordinary-input route replayed twice before full selectors.
 
 ## Recovery after interruption or failure
 
@@ -226,11 +233,12 @@ promoting failed or unverified modules into assembly.
 ## Safe continuation order
 
 When governance is healthy, continue the active requirement in the manifest.
-For the qualification program the order is Replay v1 contract, Dust Bunny's 30
-canonical level paths, build hardening, corpus risk inventory, then games 2–10
-one at a time through unchanged-cart replay, HD invariance, Web/PWA packaging,
-static plus exact-update temporal manual review, and the independent rights gate. Secondary platform work cannot
-enter this path unless it removes a shared blocker.
+For qualification, keep Replay v1 and Dust Bunny as the accepted reference, then
+run one materially different supervised transfer trial. Iterate representative
+checkpoints through four human pauses and classify compatibility/runtime, reusable
+presentation, and source-relative work. Run full replay, package, temporal, and
+rights gates only if the human promotes it to a complete artifact.
+Secondary platform work cannot enter this path unless it removes a shared blocker.
 
 Before replaying a solver- or Agent-proposed trace, create
 `validation/input-trace-provenance-v1.json` and bind it to the exact canonical

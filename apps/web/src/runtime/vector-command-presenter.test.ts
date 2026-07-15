@@ -21,6 +21,7 @@ const kernel = {
     display: Uint8Array.from({ length: 16 }, (_, color) => color),
   }),
   spriteFlags: () => new Uint8Array(256),
+  framebuffer: () => new Uint8Array(128 * 128),
 } as unknown as Aico8Kernel;
 
 describe("vector command presenter", () => {
@@ -34,6 +35,29 @@ describe("vector command presenter", () => {
     expect(presenter.measurements()).toMatchObject({
       sourcePrimitiveCount: 1,
       continuousPrimitiveCount: 1,
+      spriteSurfaceCount: 0,
+      indexedCellQuadCount: 0,
+    });
+  });
+
+  it("collapses dense pset read-modify-write output into final-frame surfaces", () => {
+    const framebuffer = new Uint8Array(128 * 128);
+    const commands = Array.from({ length: 64 }, (_, index) => {
+      const x = index % 8;
+      const y = Math.floor(index / 8);
+      framebuffer[y * 128 + x] = x < 4 ? 0 : 7;
+      return command(2, [x, y, x < 4 ? 0 : 7]);
+    });
+    const maskedKernel = {
+      ...kernel,
+      framebuffer: () => framebuffer,
+    } as unknown as Aico8Kernel;
+    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    presenter.render(new Graphics(), maskedKernel, commands, () => {});
+
+    expect(presenter.measurements()).toMatchObject({
+      sourcePrimitiveCount: 64,
+      continuousPrimitiveCount: 2,
       spriteSurfaceCount: 0,
       indexedCellQuadCount: 0,
     });

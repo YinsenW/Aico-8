@@ -173,7 +173,6 @@ The detailed mapping is defined in `specs/display-1024.md` and
   derived assets, and board adapters, with no browser or JavaScript requirement.
 
 ### 9. Validation and release
-
 - Canonical replays execute every original logical update on unchanged cart
   bytes and accept PICO-8 button masks plus source-authored `menuitem()` callbacks
   through the host boundary. Each action is ordered at an exact update and checked against the live registration and keep-open
@@ -197,17 +196,18 @@ The detailed mapping is defined in `specs/display-1024.md` and
   sampling, and visible touch-button mappings. Every surface must emit one
   identical six-bit mask at the original update rate for every logical update;
   a real browser touch path independently proves the visible controls are wired.
-- Search-only shadow models are untrusted accelerators. Their transition order
+- Search-only shadow models are optional untrusted accelerators. Their transition order
   and state must be differentially checked against the unchanged cart for every
   candidate step before capture; mismatch handling fixes the semantic class and
   adds invariant, regression, and mutation evidence rather than a level branch.
 - Raster checkpoint diffs and semantic-command diffs.
+- For `pget()`/`pset()` effects, the final framebuffer owns visibility and
+  compositing; commands cannot revive overwritten, masked, or absent content.
 - Audio status and rendered waveform comparisons.
 - HD-on/HD-off invariance checks for simulation state.
-- Qualification keeps per-game replay/evidence isolation and counts a game only
-  after every required level, ending, and progression boundary passes. At least
-  ten materially different games must cover the declared risk matrix before the
-  Jobs or final Skill are treated as stable.
+- Qualification is supervised: Dust Bunny is the reference and one different
+  trial records reusable rules, source-relative decisions, and human pauses.
+  Checkpoints support iteration, while promoted artifacts require full progression.
 - Batch qualification uses bounded isolated cart/workspace lanes; blocked siblings
   cannot enter assembly, and aggregate status is derived from per-game evidence.
 - Fresh-clone builds are required for every supported platform profile; Web release validation binds the target-profile hash, complete artifact manifest,

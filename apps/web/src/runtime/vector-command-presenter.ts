@@ -288,7 +288,8 @@ export class VectorCommandPresenter {
     const spriteFlags = kernel.spriteFlags();
 
     graphics.rect(0, 0, 128 * scale, 128 * scale).fill({ color: this.#theme.backgroundColor ?? colorFor(0) });
-    for (const command of commands) {
+    for (let commandIndex = 0; commandIndex < commands.length; commandIndex += 1) {
+      const command = commands[commandIndex]!;
       const args = command.args;
       if (command.opcode === OPCODE.camera) {
         this.#cameraX = args[0] ?? 0;
@@ -344,6 +345,54 @@ export class VectorCommandPresenter {
         continue;
       }
       if (command.opcode === OPCODE.pset) {
+        let batchEnd = commandIndex + 1;
+        while (batchEnd < commands.length && commands[batchEnd]!.opcode === OPCODE.pset) batchEnd += 1;
+        if (batchEnd - commandIndex >= 64) {
+          const touched = new Set<string>();
+          let left = 128;
+          let top = 128;
+          let right = -1;
+          let bottom = -1;
+          for (let index = commandIndex; index < batchEnd; index += 1) {
+            const point = commands[index]!;
+            const logicalX = integer(point.args[0]) - this.#cameraX;
+            const logicalY = integer(point.args[1]) - this.#cameraY;
+            if (logicalX < this.#clip.left || logicalX >= this.#clip.right
+              || logicalY < this.#clip.top || logicalY >= this.#clip.bottom
+              || logicalX < 0 || logicalX >= 128 || logicalY < 0 || logicalY >= 128) continue;
+            touched.add(`${logicalX},${logicalY}`);
+            left = Math.min(left, logicalX);
+            top = Math.min(top, logicalY);
+            right = Math.max(right, logicalX);
+            bottom = Math.max(bottom, logicalY);
+          }
+          if (right >= left && bottom >= top) {
+            const width = right - left + 1;
+            const height = bottom - top + 1;
+            const framebuffer = kernel.framebuffer();
+            const pixels = Uint8Array.from({ length: width * height }, (_, offset) => {
+              const logicalX = left + offset % width;
+              const logicalY = top + Math.floor(offset / width);
+              return framebuffer[logicalY * 128 + logicalX] ?? 0;
+            });
+            const surfaces = surfacesFor(
+              pixels,
+              width,
+              height,
+              new Set<number>(),
+              (localX, localY) => touched.has(`${left + localX},${top + localY}`),
+            );
+            for (const surface of surfaces) {
+              const path = curvedPath(surface.loops, left * scale, top * scale, scale, scale,
+                false, false, width, height, this.#theme.contourRounding ?? 0.18);
+              graphics.path(path).fill({ color: colorFor(surface.color) });
+              continuousPrimitiveCount += 1;
+            }
+          }
+          sourcePrimitiveCount += batchEnd - commandIndex;
+          commandIndex = batchEnd - 1;
+          continue;
+        }
         graphics.circle(x(args[0]) + scale / 2, y(args[1]) + scale / 2, scale / 2).fill({ color: colorFor(integer(args[2], 6)) });
         sourcePrimitiveCount += 1;
         continuousPrimitiveCount += 1;

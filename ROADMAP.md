@@ -11,7 +11,7 @@ focus, Exits, evidence, selectors, and open work. Never infer completion here.
 | M3 Original Web playability | REQ-WEB-001, REQ-REMAKE-001 | Private Dust Bunny playable in its original-compatible presentation |
 | M4 Complete HD private trial | REQ-HD-001, REQ-TYPOGRAPHY-001, REQ-INPUT-001, REQ-REMAKE-001 | Complete modern graphics, text, audio, input, and saves |
 | M5 Standalone Web/PWA | REQ-WEB-001, REQ-DELIVERY-001, REQ-RELEASE-001 | Reproducible private single-game Web package |
-| M6 Ten-game qualification | REQ-QUALIFICATION-001, REQ-BATCH-001, REQ-DELIVERY-001 | Canonical full-game proof across ten Web remakes |
+| M6 Supervised transfer qualification | REQ-QUALIFICATION-001, REQ-BATCH-001 | One accepted reference plus one materially different human-supervised transfer trial; batch remains deferred |
 | M7 Handheld Web hosts | REQ-PLATFORM-001 | Android APK/AAB, then Linux handheld Web compatibility |
 | M8 Future embedded research | REQ-EMBEDDED-001 | Optional constrained ESP32-P4 game firmware |
 | M9 Thin Skill/Player decision | REQ-SKILL-001 | Proven Jobs gain a Skill; Player remains independently gated |
@@ -58,14 +58,14 @@ focus, Exits, evidence, selectors, and open work. Never infer completion here.
 - `WP-M5-3`: run full-game browser automation and manual visual/audio/input review on every layout class owned by the Web target profile; bind active-browser overflow, clipping, game/control bounds, fonts, safe areas, screenshots, and the visual-runtime identity while keeping publication permission independent.
 - Acceptance: `EXIT-WEB-PWA`, `EXIT-DELIVERY-SINGLE`, and `EXIT-REMAKE-PACKAGE` pass for the private artifact; formal `EXIT-RELEASE-TECHNICAL` and `EXIT-RELEASE-RIGHTS` remain independent.
 
-## M6 — Ten-game canonical qualification and collection
+## M6 — Human-supervised transfer qualification
 
 - `WP-M6-1`: freeze Replay v1 schema/validator and prove contiguous real-input, unchanged-cart, no-hook/no-skip rules with public positive and negative fixtures.
 - `WP-M6-2`: solve and replay Dust Bunny levels 1–30, ending, persistence, and restart on the unchanged private cart; first prove every shadow-model transition by unchanged-cart differential plus mutation regression, then compare HD off/on and repackage only after the trace passes.
-- `WP-M6-3`: inventory the authorized corpus and select twelve candidates for ten slots spanning 30/60 Hz, platforming, RNG/entities, audio, text/P8SCII, advanced raster, memory/persistence, timing/touch, and large-code/progression risks.
-- `WP-M6-4`: process candidates independently until ten games pass every required level/ending, Web/PWA package, state invariance, rights record, and manual review; failures retain evidence but never count.
-- `WP-M6-5`: prove batch partial failure, then assemble qualified modules with runtime reset, save/license isolation, failure containment, and budgets.
-- Acceptance: `EXIT-QUALIFICATION-REPLAY`, `EXIT-QUALIFICATION-SOLVER-DIFFERENTIAL`, `EXIT-QUALIFICATION-DUST`, `EXIT-QUALIFICATION-SUITE`, `EXIT-QUALIFICATION-DIVERSITY`, `EXIT-BATCH-ISOLATION`, `EXIT-BATCH-PARTIAL`, and `EXIT-DELIVERY-COLLECTION` pass; `.aico8` remains unfrozen.
+- `WP-M6-3`: use Steps as a materially different supervised transfer trial. A human reviews source semantics, visual identity and art direction, representative gameplay, and final scope; the Agent records each decision and fixes reusable causes instead of inventing a universal mapping.
+- `WP-M6-4`: classify every finding as compatibility/runtime, reusable presentation, or game-specific semantic/art direction. Add shared regression tests only for the first two classes and preserve explicit human pauses for the third.
+- `WP-M6-5`: require a complete ordinary-input route only if Steps or a later candidate is promoted to a complete artifact. The route may be human-recorded; automation replays and verifies it deterministically. The former twelve-candidate plan remains optional diagnostic inventory, not a milestone gate.
+- Acceptance: `EXIT-QUALIFICATION-REPLAY`, `EXIT-QUALIFICATION-SOLVER-DIFFERENTIAL`, `EXIT-QUALIFICATION-DUST`, `EXIT-QUALIFICATION-SUITE`, and `EXIT-QUALIFICATION-DIVERSITY` pass. Batch, collection, and `.aico8` remain separately deferred.
 
 ## M7 — Android and Linux handheld hosts
 
@@ -83,6 +83,6 @@ focus, Exits, evidence, selectors, and open work. Never infer completion here.
 ## M9 — Thin Skill and possible Player
 
 - `WP-M9-1`: package a thin Skill that accepts one/list/directory inputs, invokes versioned Jobs, reads machine evidence, retries bounded failures, and pauses for art/legal/release judgment.
-- `WP-M9-2`: validate the Skill against all ten qualified games without moving runtime, codec, validation, or policy logic into prompts.
-- `WP-M9-3`: consider a public `.aico8`/Player ADR only if the ten-game compatibility, migration, signing/security, installed-host, and product-demand reversal gate passes.
+- `WP-M9-2`: validate the Skill against the Dust Bunny reference record and Steps supervised-transfer record. It must visibly pause for source semantics, first high-risk art direction, representative gameplay, and final completion/release scope without moving runtime, codec, validation, or policy logic into prompts.
+- `WP-M9-3`: consider a public `.aico8`/Player ADR only after a separate product-demand, migration, signing/security, and installed-host decision.
 - Acceptance: `EXIT-SKILL-RELEASES` and `EXIT-SKILL-PACKAGE` pass; absence of Player evidence keeps the Player deferred rather than blocking the Skill.

@@ -169,22 +169,22 @@ Contracts: `DATA-HD-MAP-001`, `DATA-HD-AUDIT-001`, `DATA-ASSET-PACK-001`, `DATA-
 `DATA-GAME-MODULE-001`, `DATA-TARGET-PROFILE-001`, `JOB-INTEGRATE-001`,
 `JOB-VALIDATE-001`, `JOB-ASSEMBLE-001`, `JOB-PACKAGE-001`.
 
-### REQ-QUALIFICATION-001 — Ten-game canonical qualification
+### REQ-QUALIFICATION-001 — Human-supervised reference and transfer qualification
 
-Qualify the shared Web-first conversion path on at least ten authorized,
-materially different, finite games. Each game must replay every required level,
-ending, and progression boundary on an unchanged cart using real logical button
-input plus only source-authored `menuitem()` callbacks invoked through the normal
-host pause-menu boundary, retaining per-game evidence, rights isolation, and a
-declared risk matrix. Instrumented reachability, direct Lua calls, and undeclared host actions are diagnostic only
-and cannot count a game toward ten.
+Qualify an explicitly human-in-the-loop Web-first remake workflow. Dust Bunny is
+the accepted reference and one materially different game is the supervised
+transfer trial. Separate reusable runtime/evidence rules from source-relative
+semantic and art decisions; do not claim a universal autonomous converter. A
+human may classify ambiguous elements, approve identity and art direction,
+record ordinary-input checkpoints, and decide whether to promote a candidate to
+a complete artifact. Automation preserves deterministic compatibility, no-skip
+replay, HD invariance, evidence/rights isolation, and declared human pauses.
+Representative checkpoints support iteration. Full unchanged-cart progression is
+required only for a promoted complete artifact and may be human-recorded.
 
-Any faster shadow model used to search for inputs is non-authoritative. Before a
-candidate can enter canonical replay, every modeled transition it exercises must
-match the unchanged cart after the same input for declared state fields. A found
-semantic mismatch requires a root-cause category, a general invariant, a
-regression fixture, and a mutation check that proves the test detects the faulty
-rule; level-specific solver exceptions cannot satisfy qualification.
+Solvers are optional diagnostics. A contributed trace must match unchanged-cart
+state; mismatches require a root-cause class, general invariant, regression and
+mutation test, never a per-level exception.
 
 Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
 
@@ -217,12 +217,11 @@ publish any generated remake.
 
 Contracts: `DATA-GOVERNANCE-001`, `DATA-RELEASE-001`.
 
-### REQ-SKILL-001 — Thin orchestration after proven releases
-
-Create the final Skill only after at least ten games pass canonical end-to-end
-qualification and the reusable Jobs are stable. It invokes versioned Jobs and
-contracts; runtime, codecs, validation, packaging, and publication policy remain
-maintained software in this repository.
+### REQ-SKILL-001 — Human-guided orchestration after supervised transfer
+Create the final Skill only after the reference and supervised transfer trial
+stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for
+human approval of semantics, art direction, representative gameplay, and final
+scope, and cannot self-accept or self-release. Runtime and policy stay in software.
 
 Contracts: all `JOB-*` pipeline contracts and `DATA-GOVERNANCE-001`.
 
@@ -244,6 +243,7 @@ neither result is a formal remake release authorization.
 - Requiring Android packaging, Linux-device work, or ESP32 hardware before the
   first browser Web/PWA build.
 - Building Windows, macOS, or iOS packages under the current roadmap.
-- Publishing a dynamic Player or stable `.aico8` format before at least ten
-  canonically qualified, materially different games prove the module boundary.
+- Publishing a dynamic Player or stable `.aico8` format before a separate
+  product, security, migration, and installed-host decision proves the need and
+  module boundary.
 - Creating the final Skill before the workflow is stable and repeatedly verified.

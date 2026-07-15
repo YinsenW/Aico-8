@@ -33,7 +33,7 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-TRACE-PROVENANCE-001 | Exact trace hash, derivation kind, generator identity, and explicit licensed provenance for every contributing external action seed | `specs/schemas/input-trace-provenance-v1.schema.json` and `scripts/lib/input-trace-provenance.mjs` |
 | DATA-REPLAY-001 | Cart/runtime identity, canonicality declaration, input trace, milestones, and ordered checkpoints | `specs/schemas/replay-v1.schema.json` and TypeScript validator |
 | DATA-CHECKPOINT-001 | RAM/raster/audio/semantic hashes at named updates | Validation schema |
-| DATA-QUALIFICATION-PLAN-001 | Exactly twelve private-research candidates, finite source boundaries, pinned compiler status, ordered priority, independent qualification evidence, and selected/qualified risk coverage for the ten-game gate | `specs/schemas/qualification-plan-v1.schema.json` and TypeScript validator |
+| DATA-QUALIFICATION-PLAN-001 | Legacy twelve-candidate private-research inventory retained for optional diagnostics and comparative risk sampling; it is not the active release or Skill gate | `specs/schemas/qualification-plan-v1.schema.json` and TypeScript validator |
 | DATA-HD-MAP-001 | Source identity anchors, required-part traceability, measurable source/target proportions, copy provenance/authorization, allowed modernization dimensions, deterministic frozen render recipe, review, and complete canonical coverage | `specs/schemas/hd-identity-map-v1.schema.json` and TypeScript validator |
 | DATA-HD-AUDIT-001 | Contextual raw visual tokens, observation runs, identity-map lineage, zero-unmapped/mixed/reference coverage, per-update HD-off/on state comparison, and rejected mutations | `specs/schemas/hd-presentation-audit-v1.schema.json` and TypeScript validator |
 | DATA-HD-EVIDENCE-LIFECYCLE-001 | Fail-closed progression from source-inventoried offline draft through zero-unmapped packaged capture to a pending human packet, with immutable draft/runtime/capture hashes, browser readiness, source/HD pair counts, fixed review-gate order, and zero acceptance claims | `specs/schemas/hd-evidence-lifecycle-v1.schema.json` and TypeScript validator |
@@ -232,13 +232,16 @@ only its linked exits determine acceptance.
   sequential courses/levels may use ordered `level-complete` ordinals; every
   other boundary kind binds the exact ordered Replay v1 milestone IDs and may
   not be relabeled as synthetic levels merely to satisfy a shared validator.
-- Qualification counts at least ten materially different finite games only after
-  each independently proves every required level, ending, and progression
-  boundary; diagnostic reachability or a collection launch never counts.
-- DATA-QUALIFICATION-PLAN-001 locks candidate identity and derives risk coverage
-  from per-game declarations. Selection, compilation, source-confirmed finiteness,
-  or diagnostic boot cannot populate qualified coverage; that requires canonical
-  replay, accepted HD decision, and reproducible Web-package hashes for the game.
+- Qualification uses an accepted reference remake and one materially different
+  human-supervised transfer trial. The trial records which rules are reusable and
+  which decisions remain source-relative; it must not claim universal coverage.
+  Representative checkpoints may support iterative review, but do not prove game
+  completion. A candidate promoted to a complete artifact must independently prove
+  every declared level, ending, and progression boundary through ordinary input,
+  accepted HD review, and reproducible Web-package hashes. The ordinary-input
+  route may be recorded by a human and replayed deterministically.
+- DATA-QUALIFICATION-PLAN-001 keeps the former fixed-corpus inventory for optional
+  diagnostics; selection, boot, solver progress, or collection grants no claim.
 - Save keys are namespaced by game-module ID and schema version; collection
   switching resets compatibility state before another module starts.
 - A rights decision is data in DATA-RELEASE-001, never inferred from technical success.
