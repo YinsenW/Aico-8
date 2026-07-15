@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aico8.dev/schemas/quality-leap-audit-v1.schema.json",
-  "$comment": "JSON Schema owns closed structural validation. The TypeScript validator additionally owns scene/route references, content-versus-shell coverage, route observation, framebuffer/topology rejection, measurable enrichment, and required accepted regression relationships.",
+  "$comment": "JSON Schema owns closed structural validation. The TypeScript validator additionally owns scene/route references, content-versus-shell coverage, route observation, framebuffer/topology rejection, source-visibility compositing, measurable enrichment, and required accepted regression relationships.",
   "title": "Aico 8 quality leap audit v1",
   "type": "object",
   "additionalProperties": false,
@@ -47,12 +47,13 @@
         },
         "regressions": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 3,
+          "minItems": 4,
+          "maxItems": 4,
           "allOf": [
             { "contains": { "type": "object", "properties": { "category": { "const": "shell-only-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 },
             { "contains": { "type": "object", "properties": { "category": { "const": "final-framebuffer-topology-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 },
-            { "contains": { "type": "object", "properties": { "category": { "const": "cosmetic-smoothing-only-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 }
+            { "contains": { "type": "object", "properties": { "category": { "const": "cosmetic-smoothing-only-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 },
+            { "contains": { "type": "object", "properties": { "category": { "const": "source-visibility-effect-bypass-mutation" } }, "required": ["category"] }, "minContains": 1, "maxContains": 1 }
           ]
         }
       }
@@ -80,7 +81,8 @@
       "additionalProperties": false,
       "required": [
         "id", "role", "sceneIds", "geometrySource", "samplingSource", "contourTreatment", "targetPixelsPerSourcePixel",
-        "edgeSupersampleFactor", "qualityDimensions", "materialLayerCount", "authoredDetailCount", "motionOrEffectTrackCount"
+        "visibilityEffectPolicy", "visibilityEffectComposited", "edgeSupersampleFactor", "qualityDimensions", "materialLayerCount",
+        "authoredDetailCount", "motionOrEffectTrackCount"
       ],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
@@ -89,6 +91,8 @@
         "geometrySource": { "enum": ["frozen-hd-asset", "semantic-command-reconstruction", "authored-procedural", "final-framebuffer-projection"] },
         "samplingSource": { "enum": ["element-resource", "semantic-command", "final-framebuffer"] },
         "contourTreatment": { "enum": ["authored-continuous", "density-aware-raster", "source-cell-topology"] },
+        "visibilityEffectPolicy": { "enum": ["not-applicable", "semantic-command", "final-framebuffer-visibility-oracle"] },
+        "visibilityEffectComposited": { "type": "boolean" },
         "targetPixelsPerSourcePixel": { "type": "integer", "minimum": 0 },
         "edgeSupersampleFactor": { "type": "integer", "minimum": 0 },
         "qualityDimensions": {
@@ -114,7 +118,7 @@
       "required": ["id", "category", "rejected"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "category": { "enum": ["shell-only-mutation", "final-framebuffer-topology-mutation", "cosmetic-smoothing-only-mutation"] },
+        "category": { "enum": ["shell-only-mutation", "final-framebuffer-topology-mutation", "cosmetic-smoothing-only-mutation", "source-visibility-effect-bypass-mutation"] },
         "rejected": { "const": true }
       }
     }

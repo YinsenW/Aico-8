@@ -127,6 +127,7 @@ export {
   type QualityLeapRegressionCategory,
   type QualityLeapRouteV1,
   type QualityLeapSamplingSource,
+  type QualityLeapVisibilityEffectPolicy,
 } from "./quality-leap-audit.js";
 export {
   HD_REVIEW_CHECK_NAMES,

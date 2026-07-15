@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "subject": "steps-private-research v19c source visibility rejection",
+  "status": "rejected-source-visibility-effect-bypass",
+  "recorded_on": "2026-07-15",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "review_stage": "representative-machine-preflight",
+  "human_direction_credit_retained": true,
+  "observation": "At the update 594 dark-room checkpoint, the source framebuffer AND mask hid the map while the HD content route still displayed the full reconstructed map and hazards.",
+  "root_cause": "The semantic renderer correctly replaced final-framebuffer geometry but treated the source visibility effect as cosmetic overlay polish instead of compositing authority over the finished HD content route.",
+  "invalidated_claims": [
+    "v19c-artifact-ready-for-next-human-gate",
+    "source-visibility-effects-complete"
+  ],
+  "required_systemic_fix": [
+    "Derive visibility-effect applicability from source command/effect evidence rather than adapter self-report.",
+    "Mask or clip the finished semantic content route with the source visibility effect while keeping the final framebuffer restricted to visibility-oracle duties.",
+    "Reject every accepted quality-leap audit that bypasses an applicable source visibility effect.",
+    "Prove the rejection with a mutation that disables visibility compositing."
+  ],
+  "private_artifact_sha256": {
+    "release_manifest": "84fa914aa3fe0fb54706be14986b06b3688f3ba34c9aa06e64c077362e277cc6",
+    "visual_runtime": "86829cda10d80663a7e5cdd46ac276d16082407083d0b23d6e386e5d294eaa35",
+    "representative_preflight_packet": "e79ceb6ca60b19e183342612fc3237173fe62ec4dc32f3d983c5bc25e856b7ba"
+  },
+  "credit": {
+    "approved_art_direction": 1,
+    "accepted_candidate_artifact": 0,
+    "accepted_game_credit": 0
+  }
+}

@@ -29,6 +29,8 @@ function acceptedAudit(): any {
       geometrySource: "semantic-command-reconstruction",
       samplingSource: "semantic-command",
       contourTreatment: "authored-continuous",
+      visibilityEffectPolicy: "semantic-command",
+      visibilityEffectComposited: true,
       targetPixelsPerSourcePixel: 8,
       edgeSupersampleFactor: 2,
       qualityDimensions: ["continuous-contour", "material-layers", "internal-detail"],
@@ -42,6 +44,8 @@ function acceptedAudit(): any {
       geometrySource: "authored-procedural",
       samplingSource: "element-resource",
       contourTreatment: "authored-continuous",
+      visibilityEffectPolicy: "not-applicable",
+      visibilityEffectComposited: false,
       targetPixelsPerSourcePixel: 8,
       edgeSupersampleFactor: 2,
       qualityDimensions: ["continuous-contour"],
@@ -51,7 +55,9 @@ function acceptedAudit(): any {
     }],
     regressions: [{ id: "reject-shell-only", category: "shell-only-mutation", rejected: true }, {
       id: "reject-framebuffer-topology", category: "final-framebuffer-topology-mutation", rejected: true,
-    }, { id: "reject-cosmetic-smoothing", category: "cosmetic-smoothing-only-mutation", rejected: true }],
+    }, { id: "reject-cosmetic-smoothing", category: "cosmetic-smoothing-only-mutation", rejected: true }, {
+      id: "reject-visibility-bypass", category: "source-visibility-effect-bypass-mutation", rejected: true,
+    }],
   };
 }
 
@@ -100,7 +106,34 @@ describe("quality leap audit", () => {
       .toMatch(/cosmetic smoothing only/);
   });
 
-  it("keeps incomplete quality evidence draft-only and requires all three rejected mutations", () => {
+  it("rejects content that bypasses a source visibility effect", () => {
+    const value = acceptedAudit();
+    value.routes[0].visibilityEffectComposited = false;
+    expect(validateSchema(value), JSON.stringify(validateSchema.errors)).toBe(true);
+    expect(validateQualityLeapAudit(value).errors.join("\n"))
+      .toMatch(/source visibility effect is not composited/);
+  });
+
+  it("allows the final framebuffer only as a visibility oracle", () => {
+    const value = acceptedAudit();
+    value.routes[0].visibilityEffectPolicy = "final-framebuffer-visibility-oracle";
+    expect(validateSchema(value), JSON.stringify(validateSchema.errors)).toBe(true);
+    expect(validateQualityLeapAudit(value)).toEqual({ ok: true, errors: [] });
+
+    value.routes[0].geometrySource = "final-framebuffer-projection";
+    expect(validateQualityLeapAudit(value).errors.join("\n"))
+      .toMatch(/must not derive from the final framebuffer/);
+  });
+
+  it("allows a content route with no source visibility effect", () => {
+    const value = acceptedAudit();
+    value.routes[0].visibilityEffectPolicy = "not-applicable";
+    value.routes[0].visibilityEffectComposited = false;
+    expect(validateSchema(value), JSON.stringify(validateSchema.errors)).toBe(true);
+    expect(validateQualityLeapAudit(value)).toEqual({ ok: true, errors: [] });
+  });
+
+  it("keeps incomplete quality evidence draft-only and requires all four rejected mutations", () => {
     const draft = acceptedAudit();
     draft.status = "draft";
     draft.scenes[0].observedContentRouteIds = [];
@@ -112,7 +145,7 @@ describe("quality leap audit", () => {
     accepted.regressions.pop();
     expect(validateSchema(accepted)).toBe(false);
     expect(validateQualityLeapAudit(accepted).errors.join("\n"))
-      .toMatch(/must include rejected cosmetic-smoothing-only-mutation/);
+      .toMatch(/must include rejected source-visibility-effect-bypass-mutation/);
   });
 
   it("reports malformed accepted routes without throwing from cross-field checks", () => {

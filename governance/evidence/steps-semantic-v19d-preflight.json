@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "subject": "Steps source-semantic v19d representative preflight",
+  "status": "machine-preflight-passed-human-ordered-gates-pending",
+  "recorded_on": "2026-07-15",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "scope": "Five same-state representative checkpoints only; this is not complete-game coverage or human acceptance.",
+  "systemic_change": [
+    "The source-semantic content route is composited under the source-derived darkness/light visibility mask.",
+    "The final framebuffer remains a visibility oracle and is not used as HD geometry or sampling.",
+    "A visibility-bypass mutation is now a required rejected quality-leap regression."
+  ],
+  "representative_updates": [1, 8, 16, 594, 785],
+  "private_artifact_sha256": {
+    "release_manifest": "a86f1c817f70c2dd5355368cea6e57d230fa8283e8e4641bf28882bf12a7a851",
+    "visual_runtime": "6cb4044140aa18f934761e1bd8e2516438fd5cabd7dae33a87dd48a25d20e08b",
+    "canonical_replay": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "presentation_audit": "fef49e9f94fb949ba05d45c3923e138b3f56c2200ffad17a6e75420ded625562",
+    "quality_leap_audit": "9ed9ea470e712f70cc7873b80e8766204f7bb298661394ccfc55adbb3d41544d",
+    "preflight_packet": "3d9547351531e2f49ab84f9265bbb1619cb00b852e8414944364a35e6fe8f841"
+  },
+  "next_human_gate": "representative-gameplay-motion-and-cue-review",
+  "forbidden_claims": [
+    "complete-game-reviewed",
+    "ordered-human-gates-passed",
+    "release-ready",
+    "publication-authorized"
+  ]
+}

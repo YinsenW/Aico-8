@@ -7,6 +7,10 @@ export type QualityLeapGeometrySource =
   | "final-framebuffer-projection";
 export type QualityLeapSamplingSource = "element-resource" | "semantic-command" | "final-framebuffer";
 export type QualityLeapContourTreatment = "authored-continuous" | "density-aware-raster" | "source-cell-topology";
+export type QualityLeapVisibilityEffectPolicy =
+  | "not-applicable"
+  | "semantic-command"
+  | "final-framebuffer-visibility-oracle";
 export type QualityLeapDimension =
   | "continuous-contour"
   | "density-aware-sampling"
@@ -17,7 +21,8 @@ export type QualityLeapDimension =
 export type QualityLeapRegressionCategory =
   | "shell-only-mutation"
   | "final-framebuffer-topology-mutation"
-  | "cosmetic-smoothing-only-mutation";
+  | "cosmetic-smoothing-only-mutation"
+  | "source-visibility-effect-bypass-mutation";
 
 export interface QualityLeapRouteV1 {
   readonly id: string;
@@ -26,6 +31,8 @@ export interface QualityLeapRouteV1 {
   readonly geometrySource: QualityLeapGeometrySource;
   readonly samplingSource: QualityLeapSamplingSource;
   readonly contourTreatment: QualityLeapContourTreatment;
+  readonly visibilityEffectPolicy: QualityLeapVisibilityEffectPolicy;
+  readonly visibilityEffectComposited: boolean;
   readonly targetPixelsPerSourcePixel: number;
   readonly edgeSupersampleFactor: number;
   readonly qualityDimensions: readonly QualityLeapDimension[];
@@ -67,11 +74,15 @@ const SAMPLING_SOURCES = new Set<QualityLeapSamplingSource>(["element-resource",
 const CONTOUR_TREATMENTS = new Set<QualityLeapContourTreatment>([
   "authored-continuous", "density-aware-raster", "source-cell-topology",
 ]);
+const VISIBILITY_EFFECT_POLICIES = new Set<QualityLeapVisibilityEffectPolicy>([
+  "not-applicable", "semantic-command", "final-framebuffer-visibility-oracle",
+]);
 const QUALITY_DIMENSIONS = new Set<QualityLeapDimension>([
   "continuous-contour", "density-aware-sampling", "material-layers", "internal-detail", "animation", "effects",
 ]);
 const REQUIRED_REGRESSIONS = new Set<QualityLeapRegressionCategory>([
   "shell-only-mutation", "final-framebuffer-topology-mutation", "cosmetic-smoothing-only-mutation",
+  "source-visibility-effect-bypass-mutation",
 ]);
 
 function record(value: unknown): value is UnknownRecord {
@@ -122,6 +133,9 @@ function qualityRouteErrors(route: UnknownRecord, path: string, errors: string[]
   if (route.contourTreatment === "source-cell-topology") {
     errors.push(`${path} content contour must not preserve per-pixel source-cell topology as the finished surface`);
   }
+  if (route.visibilityEffectPolicy !== "not-applicable" && route.visibilityEffectComposited !== true) {
+    errors.push(`${path} source visibility effect is not composited into the finished content route`);
+  }
   if (typeof route.targetPixelsPerSourcePixel !== "number" || route.targetPixelsPerSourcePixel < 4) {
     errors.push(`${path} needs at least four target pixels per source pixel`);
   }
@@ -158,7 +172,8 @@ export function validateQualityLeapAudit(value: unknown): QualityLeapAuditValida
     if (!record(routeValue)) { errors.push(`${path} must be an object`); return; }
     exactKeys(routeValue, [
       "id", "role", "sceneIds", "geometrySource", "samplingSource", "contourTreatment", "targetPixelsPerSourcePixel",
-      "edgeSupersampleFactor", "qualityDimensions", "materialLayerCount", "authoredDetailCount", "motionOrEffectTrackCount",
+      "visibilityEffectPolicy", "visibilityEffectComposited", "edgeSupersampleFactor", "qualityDimensions", "materialLayerCount",
+      "authoredDetailCount", "motionOrEffectTrackCount",
     ], path, errors);
     if (id(routeValue.id, `${path}.id`, errors)) {
       if (routes.has(routeValue.id)) errors.push(`${path}.id must be unique`);
@@ -169,6 +184,10 @@ export function validateQualityLeapAudit(value: unknown): QualityLeapAuditValida
     if (!GEOMETRY_SOURCES.has(routeValue.geometrySource as QualityLeapGeometrySource)) errors.push(`${path}.geometrySource is unsupported`);
     if (!SAMPLING_SOURCES.has(routeValue.samplingSource as QualityLeapSamplingSource)) errors.push(`${path}.samplingSource is unsupported`);
     if (!CONTOUR_TREATMENTS.has(routeValue.contourTreatment as QualityLeapContourTreatment)) errors.push(`${path}.contourTreatment is unsupported`);
+    if (!VISIBILITY_EFFECT_POLICIES.has(routeValue.visibilityEffectPolicy as QualityLeapVisibilityEffectPolicy)) {
+      errors.push(`${path}.visibilityEffectPolicy is unsupported`);
+    }
+    if (typeof routeValue.visibilityEffectComposited !== "boolean") errors.push(`${path}.visibilityEffectComposited must be boolean`);
     for (const key of ["targetPixelsPerSourcePixel", "edgeSupersampleFactor", "materialLayerCount", "authoredDetailCount", "motionOrEffectTrackCount"] as const) {
       nonNegativeInteger(routeValue[key], `${path}.${key}`, errors);
     }
