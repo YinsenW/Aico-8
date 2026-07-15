@@ -3,18 +3,15 @@
 ## Bootstrap and select work
 
 1. Inspect `git status --short --branch` and existing stacked PRs before editing.
-2. Run `pnpm verify:governance` and read `current_focus` in
-   `governance/project.json`.
+2. Run `pnpm verify:governance` and read `current_focus` in `governance/project.json`.
 3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item
    set. Do not invent a parallel status list in a plan, README, PR body, or
    research note.
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
 
-Through the first complete remake, select only browser Web/PWA work or a
-compatibility, contract, asset, typography, input, or packaging dependency that
-directly blocks Web. Android packaging, Linux handheld profiles, collections,
-ESP32, and the final Skill remain later work.
+Through the first complete remake, select only browser Web/PWA work or its direct
+dependencies. Android, Linux, collection, ESP32, and final Skill work remain later.
 
 ## Implementation loop
 
@@ -57,6 +54,7 @@ pnpm verify:hd-identity
 pnpm verify:hd-presentation
 pnpm verify:typography
 pnpm verify:replay
+pnpm verify:game-module
 pnpm verify:batch
 make -C runtime/core test
 make -C runtime/core wasm-test
@@ -66,10 +64,9 @@ pnpm verify:private-remake
 
 Private-archive selectors strengthen local evidence but never masquerade as
 public CI or enter the clean public repository history.
-`pnpm verify:batch` validates the public rolling-lane contract. It rejects shared
-workspace/cart identities, excess active lanes, acceptance without independent
-replay/HD/Web evidence, and aggregate status that hides partial failure. The
-batch ledger coordinates work; it cannot promote a game beyond its own gates.
+`pnpm verify:batch` validates rolling lanes and the filesystem Job: it rejects shared
+identities, concurrent writers, invalid timeouts/lanes, evidence-free acceptance,
+and hidden partial failure. Only accepted module IDs enter assembly.
 `pnpm verify:typography` validates reachable text routing, fixed bundled-font
 evidence, reviewed identity contours, complete coverage, and zero OS fallback.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
@@ -161,6 +158,9 @@ artifact needs an ordinary-input route replayed twice before full selectors.
 5. Compare `current_focus` and open items with the actual worktree. Add a bounded
    open item when work must stop; do not mark the requirement verified.
 6. Resume from the first unmet exit condition, not from conversation memory.
+
+After an uncatchable batch/assembly crash, disprove a lock's live owner before manual
+removal and resume; never auto-delete an ambiguous lock or reservation.
 
 ## Diagnosis
 

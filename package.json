@@ -20,7 +20,8 @@
     "verify:hd-presentation": "pnpm --filter @aico8/contracts exec vitest run src/hd-presentation-audit.test.ts",
     "verify:typography": "pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts",
     "verify:replay": "pnpm --filter @aico8/contracts exec vitest run src/replay.test.ts",
-    "verify:batch": "pnpm --filter @aico8/contracts exec vitest run src/batch.test.ts",
+    "verify:batch": "pnpm --filter @aico8/contracts exec vitest run src/batch.test.ts src/batch-job.test.ts",
+    "verify:game-module": "pnpm --filter @aico8/contracts exec vitest run src/game-module.test.ts src/assembly.test.ts src/assembly-job.test.ts",
     "verify:qualification-plan": "node --test scripts/build-private-qualification-plan.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/qualification-plan.test.ts",
     "verify:qualification-plan-private": "node scripts/validate-private-qualification-plan.mjs",
     "verify:private-remake": "node scripts/validate-private-remake.mjs",
@@ -30,6 +31,8 @@
     "verify:web": "node --test scripts/lib/canonical-gameplay-attestation.test.mjs scripts/lib/capture-readiness-evidence.test.mjs scripts/lib/hd-surface-lineage.test.mjs scripts/lib/input-trace-provenance.test.mjs scripts/lib/qualification-boundary.test.mjs scripts/lib/release-identities.test.mjs scripts/lib/review-screenshot.test.mjs scripts/lib/semantic-svg.test.mjs scripts/lib/source-contour-lineage.test.mjs scripts/lib/source-visual-structure-lineage.test.mjs scripts/lib/viewport-evidence.test.mjs && pnpm check && pnpm test && pnpm build"
   },
   "devDependencies": {
-    "@xmldom/xmldom": "0.8.13"
+    "@xmldom/xmldom": "0.8.13",
+    "ajv": "8.17.1",
+    "tsx": "4.20.6"
   }
 }

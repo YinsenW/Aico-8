@@ -1,8 +1,8 @@
 # Cross-layer contracts
 
-This document owns relationships among APIs, pipeline Jobs, and durable data.
-Headers, TypeScript types, and schemas own field-level definitions. Status,
-evidence, selectors, and open work live only in `governance/project.json`.
+This document owns relationships among APIs, pipeline Jobs, and durable data. Headers,
+types, and schemas own fields; status, evidence, selectors, and open work live only in
+`governance/project.json`.
 
 ## API boundaries
 
@@ -42,8 +42,8 @@ does not reproduce compatibility semantics; C++ does not choose HD artwork.
 | DATA-TEXT-INVENTORY-001 | Reachable-run modernization inventory with raw P8SCII and Unicode evidence, provenance, role, effect/custom/inline flags, readiness, and explicit font/identity/reference/blocker mapping | `specs/schemas/text-inventory-v1.schema.json` and TypeScript validator |
 | DATA-TEXT-RUN-001 | Raw bytes, resolved spans, original anchors/metrics/state, side-effect boundaries, and modernization eligibility | Planned text-run schema |
 | DATA-TYPOGRAPHY-001 | Semantic roles, fixed bundled font files/hashes/licenses, complete required-character coverage, deterministic metrics/fit, and zero OS fallback | `specs/schemas/typography-manifest-v1.schema.json` and TypeScript validator |
-| DATA-BATCH-001 | Authorized cart inputs, desired products/targets, policy, immutable IDs, isolated workspaces, bounded parallelism, per-game attempts/evidence/failures, and a derived aggregate state | `specs/schemas/batch-v1.schema.json` and TypeScript validator |
-| DATA-GAME-MODULE-001 | One remake's compatible payload, mappings, assets, saves, provenance, validation references, and runtime constraints | Internal game-module schema |
+| DATA-BATCH-001 | Authorized inputs/targets, timeout, immutable isolated attempts, pre-assembly replay/HD evidence, post-package Web evidence, failures, and derived aggregate state | `specs/schemas/batch-v1.schema.json` and TypeScript validator |
+| DATA-GAME-MODULE-001 | One remake's payload, mappings, assets, saves, provenance, runtime constraints, and pre-assembly canonical-replay plus accepted-HD evidence | `specs/schemas/game-module-v1.schema.json` and TypeScript validator |
 | DATA-COLLECTION-001 | Ordered validated module IDs, launcher metadata, save isolation, licenses, and target constraints | Fixed-collection schema |
 | DATA-TARGET-PROFILE-001 | Browser Web/PWA phone, priority 1024-square-handheld, landscape-handheld, and wide-Web layout classes and minimum game/control dimensions, plus Android WebView, Linux handheld Web, future embedded capabilities, budgets, packaging mode, and signing policy | `specs/schemas/target-profile-v1.schema.json` and TypeScript validator |
 | DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, immutable human decision lineage, measured release budgets, and active-browser layout measurements/screenshots for every target profile | `specs/schemas/hd-review-packet-v1.schema.json`, `specs/schemas/hd-review-decision-v1.schema.json`, `specs/schemas/release-validation-v1.schema.json`, and domain validators |
@@ -59,7 +59,7 @@ contract exit.
 | Job ID | Inputs | Outputs | Purpose |
 | --- | --- | --- | --- |
 | JOB-INGEST-001 | DATA-CART-001 | DATA-WORKSPACE-001 | Decode losslessly and record provenance |
-| JOB-BATCH-001 | DATA-BATCH-001 | Isolated per-cart Job invocations and status ledger | Fan out without sharing mutable workspaces or acceptance state |
+| JOB-BATCH-001 | DATA-BATCH-001 | Isolated per-cart Job invocations and status ledger | `scripts/run-batch.ts` verifies authorized bytes, materializes isolated workspaces, enforces one ledger writer plus declared attempt timeouts, resumes durable attempts, and contains partial failure |
 | JOB-ANALYZE-001 | DATA-WORKSPACE-001 | Risk/API/semantic analysis | Identify compatibility and remake risks |
 | JOB-CAPTURE-001 | DATA-WORKSPACE-001, DATA-INPUT-TRACE-001 | DATA-REPLAY-001, DATA-CHECKPOINT-001 | Replay an unchanged cart on a named runtime; official captures additionally require a licensed oracle |
 | JOB-MODEL-001 | Workspace, replay, checkpoints | DATA-HD-MAP-001 draft | Assign semantic roles, identity cues, and complete deterministic mappings |
@@ -67,7 +67,7 @@ contract exit.
 | JOB-TYPOGRAPHY-001 | Workspace, DATA-TEXT-RUN-001, accepted type direction | DATA-TEXT-INVENTORY-001, DATA-TYPOGRAPHY-001, font assets | Classify P8SCII, route identity artwork, subset/build fonts, and prove coherent complete coverage |
 | JOB-INTEGRATE-001 | Workspace, HD map, asset pack | DATA-GAME-MODULE-001 draft | Bind HD presentation without state mutation |
 | JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants plus static and temporal presentation evidence |
-| JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-TARGET-PROFILE-001 | Statically bound target build | Assemble one standalone game or a fixed collection |
+| JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-TARGET-PROFILE-001 | Statically bound target build | `scripts/assemble-game-module.ts` implements the fail-closed single-game Web boundary; fixed collection remains gated |
 | JOB-PACKAGE-001 | Validated target build and release profile | DATA-RELEASE-001 plus artifacts | Produce reproducible platform packages |
 | JOB-RELEASE-001 | Artifacts, validation, rights evidence | Publication record | Enforce permission and publish approved builds |
 

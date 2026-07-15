@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "aico8.game-module.v1",
+  "moduleId": "synthetic-orbit",
+  "status": "validated",
+  "unexpected": true,
+  "metadata": { "title": "Synthetic Orbit", "author": "Aico 8 fixtures" },
+  "payload": {
+    "rom": { "path": "../private/source.rom", "sha256": "not-a-hash" },
+    "sourceCode": { "path": "payload/code.p8.lua", "sha256": "2222222222222222222222222222222222222222222222222222222222222222" },
+    "presentationModule": { "path": "presentation/synthetic-orbit.ts", "sha256": "3333333333333333333333333333333333333333333333333333333333333333" }
+  },
+  "mappings": {
+    "hdIdentityMap": { "path": "mappings/hd-identity-map.json", "sha256": "4444444444444444444444444444444444444444444444444444444444444444" },
+    "assetPack": { "path": "assets/asset-pack.json", "sha256": "5555555555555555555555555555555555555555555555555555555555555555" },
+    "typographyManifest": { "path": "typography/manifest.json", "sha256": "6666666666666666666666666666666666666666666666666666666666666666" }
+  },
+  "save": {
+    "namespace": "another-game:aico8.game-module.v1",
+    "persistentBytes": 257,
+    "resetCompatibilityStateOnActivate": false
+  },
+  "provenance": {
+    "sourceCartSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "workspaceManifestSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "rightsProfile": "synthetic-public-fixture"
+  },
+  "runtime": {
+    "dependencies": [
+      { "id": "aico8-web-runtime", "version": "1.0", "manifestSha256": "bad" },
+      { "id": "aico8-web-runtime", "version": "1.0.0", "manifestSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }
+    ],
+    "targetBindings": [
+      { "target": "android", "targetProfileId": "android", "targetProfileSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }
+    ]
+  },
+  "validation": {
+    "status": "passed",
+    "evidence": [
+      { "kind": "canonical-replay", "path": "../evidence/replay.json", "sha256": "invalid" },
+      { "kind": "canonical-replay", "path": "evidence/replay.json", "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" }
+    ]
+  }
+}
