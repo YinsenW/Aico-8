@@ -28,6 +28,10 @@ enum p8_audio_capability {
     P8_AUDIO_CAP_FILTERS = 1u << 4,
     P8_AUDIO_CAP_CUSTOM_INSTRUMENTS = 1u << 5,
     P8_AUDIO_CAP_CUSTOM_WAVEFORMS = 1u << 6,
+    /* The manual-defined current music-pattern value exposed by stat(54) and
+     * its legacy stat(24) alias. This does not promote the remaining
+     * stat(46..56) tick-history family. */
+    P8_AUDIO_CAP_CURRENT_MUSIC_PATTERN = 1u << 7,
 };
 
 /* Diagnostic playback is opt-in and never upgrades a capability bit. The
@@ -83,7 +87,8 @@ int p8_audio_get_channel_status(const p8_core *core, unsigned channel,
                                 p8_audio_channel_status *status);
 size_t p8_audio_copy_events(const p8_core *core, p8_audio_event *destination,
                             size_t capacity);
-/* stat(57) reports the actual music-active state. stat(46..56) returns zero,
+/* stat(24)/stat(54) report the current music pattern and stat(57) reports the
+ * actual music-active state. The other stat(46..56) selectors return zero,
  * without writing value, while licensed tick-history semantics remain
  * unqualified. */
 int p8_audio_stat(const p8_core *core, unsigned selector, int32_t *value);

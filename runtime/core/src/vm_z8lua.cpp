@@ -1101,6 +1101,7 @@ int api_stat(lua_State *state)
         }
         lua_pushnumber(state, 0);
         return 1;
+    case 24: // Legacy alias of stat(54): currently playing music pattern.
     case 46:
     case 47:
     case 48:

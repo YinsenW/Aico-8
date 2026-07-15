@@ -16,7 +16,8 @@ constexpr uint16_t kSfxBase = 0x3200;
 constexpr unsigned kSfxSize = 68;
 constexpr uint64_t kOneNote = uint64_t{1} << 32;
 constexpr uint32_t kCapabilities = P8_AUDIO_CAP_EVENT_LEDGER
-    | P8_AUDIO_CAP_CHANNEL_STATUS | P8_AUDIO_CAP_STAT_57;
+    | P8_AUDIO_CAP_CHANNEL_STATUS | P8_AUDIO_CAP_STAT_57
+    | P8_AUDIO_CAP_CURRENT_MUSIC_PATTERN;
 static_assert((kCapabilities & (P8_AUDIO_CAP_STAT_46_56 | P8_AUDIO_CAP_FILTERS
                                 | P8_AUDIO_CAP_CUSTOM_INSTRUMENTS
                                 | P8_AUDIO_CAP_CUSTOM_WAVEFORMS)) == 0,
@@ -918,7 +919,13 @@ size_t p8_audio_copy_events(const p8_core *core, p8_audio_event *destination,
 
 int p8_audio_stat(const p8_core *core, unsigned selector, int32_t *value)
 {
-    if (!core || !value || selector < 46 || selector > 57) return 0;
+    if (!core || !value) return 0;
+    if ((selector == 24 || selector == 54)
+        && (kCapabilities & P8_AUDIO_CAP_CURRENT_MUSIC_PATTERN) != 0) {
+        *value = p8_core_audio_state(core).music.pattern;
+        return 1;
+    }
+    if (selector < 46 || selector > 57) return 0;
     if (selector == 57 && (kCapabilities & P8_AUDIO_CAP_STAT_57) != 0) {
         *value = p8_core_audio_state(core).music.pattern >= 0 ? 1 : 0;
         return 1;

@@ -413,6 +413,7 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     assert((capabilities & P8_AUDIO_CAP_EVENT_LEDGER) != 0);
     assert((capabilities & P8_AUDIO_CAP_CHANNEL_STATUS) != 0);
     assert((capabilities & P8_AUDIO_CAP_STAT_57) != 0);
+    assert((capabilities & P8_AUDIO_CAP_CURRENT_MUSIC_PATTERN) != 0);
     assert((capabilities & P8_AUDIO_CAP_STAT_46_56) == 0);
     assert((capabilities & P8_AUDIO_CAP_FILTERS) == 0);
     assert((capabilities & P8_AUDIO_CAP_CUSTOM_INSTRUMENTS) == 0);
@@ -420,10 +421,15 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     int32_t music_active = -1;
     assert(p8_audio_stat(core, 57, &music_active));
     assert(music_active == 0);
+    int32_t current_pattern = 123;
+    assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == -1);
+    assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == -1);
     assert(p8_audio_music(core, 0, 0, 0x0f));
     assert(p8_audio_stat(core, 57, &music_active));
     assert(music_active == 1);
     assert(p8_audio_current_music(core) == 0);
+    assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == 0);
+    assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == 0);
     assert(p8_audio_current_sfx(core, 0) == 0);
     p8_audio_channel_status status{};
     assert(p8_audio_get_channel_status(core, 0, &status));
@@ -489,6 +495,8 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     assert(p8_audio_stat(core, 57, &music_active) && music_active == 1);
     assert(p8_audio_music(core, -1, 0, 0x0f));
     assert(p8_audio_stat(core, 57, &music_active) && music_active == 0);
+    assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == -1);
+    assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == -1);
 
     rom[0x3240] = 3; // editor flag plus noiz filter
     assert(p8_core_load_rom(core, rom.data(), rom.size()));

@@ -80,6 +80,9 @@ only its linked exits determine acceptance.
 - `specs/display-profiles.json` owns `128 → 1024`, scale `8`, and tile `64` values.
 - The kernel is the only owner of fixed-point, memory, scheduler, raster, input
   repeat, persistence, and reference audio semantics.
+- The kernel exposes the manual-defined current music-pattern value through
+  `stat(54)` and legacy alias `stat(24)`. This narrow capability does not imply
+  licensed-official qualification of the remaining audio tick-history selectors.
 - Custom-instrument and custom-waveform diagnostic playback is disabled unless
   the host opts in before execution. Opt-in never sets a conformance capability;
   use sets sticky queryable flags and an event-ledger record. Canonical gameplay

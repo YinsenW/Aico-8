@@ -633,14 +633,20 @@ function _draw() drawn+=1 end
     p8_core_destroy(core);
 }
 
-void test_audio_stat_routes_fail_closed_until_official_tick_history_is_qualified()
+void test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed()
 {
     constexpr char music_state_source[] = R"p8lua(
 function _init()
+ pattern_before_legacy=stat(24)
+ pattern_before_current=stat(54)
  before=stat(57)
  music(0)
+ pattern_during_legacy=stat(24)
+ pattern_during_current=stat(54)
  during=stat(57)
  music(-1)
+ pattern_after_legacy=stat(24)
+ pattern_after_current=stat(54)
  after=stat(57)
 end
 )p8lua";
@@ -653,6 +659,13 @@ end
                              "@audio-music-state"));
     assert(p8_vm_call(vm, "_init"));
     int value = -1;
+    int32_t raw = 0;
+    assert(p8_vm_get_global_raw(vm, "pattern_before_legacy", &raw) && raw == -65536);
+    assert(p8_vm_get_global_raw(vm, "pattern_before_current", &raw) && raw == -65536);
+    assert(p8_vm_get_global_raw(vm, "pattern_during_legacy", &raw) && raw == 0);
+    assert(p8_vm_get_global_raw(vm, "pattern_during_current", &raw) && raw == 0);
+    assert(p8_vm_get_global_raw(vm, "pattern_after_legacy", &raw) && raw == -65536);
+    assert(p8_vm_get_global_raw(vm, "pattern_after_current", &raw) && raw == -65536);
     assert(p8_vm_get_global_boolean(vm, "before", &value) && value == 0);
     assert(p8_vm_get_global_boolean(vm, "during", &value) && value == 1);
     assert(p8_vm_get_global_boolean(vm, "after", &value) && value == 0);
@@ -688,7 +701,7 @@ int main(int argc, char **argv)
     test_palette_transparency_diagnostics_and_deterministic_time();
     test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
     test_update_error_is_sticky_and_draw_is_skipped();
-    test_audio_stat_routes_fail_closed_until_official_tick_history_is_qualified();
+    test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"
                        || std::string(argv[1]) == "--custom-audio-checkpoint")) {
         const std::vector<uint8_t> &selected = std::string(argv[1]) == "--checkpoint"

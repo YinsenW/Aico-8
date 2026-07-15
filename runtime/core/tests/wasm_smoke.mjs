@@ -348,7 +348,9 @@ try {
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(
-  "function _init() before=stat(57) music(0) during=stat(57) music(-1) after=stat(57) end\n",
+  "function _init() pattern_before=stat(24) before=stat(57) music(0) "
+  + "pattern_legacy=stat(24) pattern_current=stat(54) during=stat(57) "
+  + "music(-1) pattern_after=stat(54) after=stat(57) end\n",
 );
 const audioStatSourcePointer = copyToHeap(audioStatSource);
 const audioStatRomPointer = copyToHeap(new Uint8Array(0x8000));
@@ -360,12 +362,29 @@ try {
   const beforePointer = copyToHeap(new TextEncoder().encode("before\0"));
   const duringPointer = copyToHeap(new TextEncoder().encode("during\0"));
   const afterPointer = copyToHeap(new TextEncoder().encode("after\0"));
+  const patternBeforePointer = copyToHeap(new TextEncoder().encode("pattern_before\0"));
+  const patternLegacyPointer = copyToHeap(new TextEncoder().encode("pattern_legacy\0"));
+  const patternCurrentPointer = copyToHeap(new TextEncoder().encode("pattern_current\0"));
+  const patternAfterPointer = copyToHeap(new TextEncoder().encode("pattern_after\0"));
   try {
     for (const [namePointer, expected] of [[beforePointer, 0], [duringPointer, 1], [afterPointer, 0]]) {
       assert.equal(kernel._aico8_get_global_boolean(audioStatRuntime, namePointer, valuePointer), 1);
       assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), expected);
     }
+    for (const [namePointer, expected] of [
+      [patternBeforePointer, -65536],
+      [patternLegacyPointer, 0],
+      [patternCurrentPointer, 0],
+      [patternAfterPointer, -65536],
+    ]) {
+      assert.equal(kernel._aico8_get_global_raw(audioStatRuntime, namePointer, valuePointer), 1);
+      assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), expected);
+    }
   } finally {
+    kernel._free(patternAfterPointer);
+    kernel._free(patternCurrentPointer);
+    kernel._free(patternLegacyPointer);
+    kernel._free(patternBeforePointer);
     kernel._free(afterPointer);
     kernel._free(duringPointer);
     kernel._free(beforePointer);
@@ -386,7 +405,7 @@ try {
   assert.equal(kernel._aico8_load_cart(tickHistoryRuntime, tickHistoryRomPointer, 0x8000,
     tickHistorySourcePointer, tickHistorySource.length), 1);
   assert.equal(kernel._aico8_start(tickHistoryRuntime), 0,
-    "unqualified stat(46..56) must remain fail-closed in Wasm");
+    "unqualified tick-history selectors must remain fail-closed in Wasm");
   assert.match(kernel.UTF8ToString(kernel._aico8_last_error(tickHistoryRuntime)),
     /audio selector 46 is not conformance-qualified/);
 } finally {

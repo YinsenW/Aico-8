@@ -15,6 +15,8 @@ Implemented and tested so far:
 - eight six-button controllers, combined two-player masks, and latched `btnp` repeat;
 - fixed 30/60 Hz callbacks driven by a 60 Hz host clock;
 - deterministic four-channel base-waveform/effect synthesis and 22,050 Hz PCM output;
+- manual-defined current music-pattern queries through `stat(54)` and the legacy
+  `stat(24)` alias, kept separate from the unqualified tick-history family;
 - a stable semantic draw-command envelope for later graphics APIs;
 - packed 4-bit screen/sprite pixels with GFX and screen remapping;
 - draw palette, sprite transparency, camera, clipping, and `cls` state;
@@ -33,7 +35,7 @@ Cart-specific adapters and replays are retained in the private research archive.
 The public test command uses only project-owned synthetic fixtures.
 
 This is not yet a complete emulator. Text, textured lines, custom audio
-instruments, audio filters/status, durable persistence, and host services remain
+instruments, audio filters/remaining status, durable persistence, and host services remain
 subsequent slices. Current raster/audio behavior, input-repeat details, mapping
 conflicts, fixed-point conversion, and primitive edge pixels remain provisional
 until the same probes are captured from a licensed official PICO-8 runtime. The
