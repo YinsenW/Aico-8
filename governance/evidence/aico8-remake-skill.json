@@ -16,6 +16,9 @@
     "scripts/verify-skill-package.mjs",
     "packages/contracts/src/supervised-review-proposal.ts",
     "packages/contracts/src/host-authority.ts",
+    "apps/human-authority-host/src/api.ts",
+    "apps/human-authority-host/src/service.ts",
+    "apps/human-authority-host/src/ports.ts",
     "specs/schemas/supervised-review-proposal-v1.schema.json",
     "specs/schemas/host-authority-profile-v1.schema.json",
     "specs/schemas/host-authority-receipt-v1.schema.json",
@@ -29,7 +32,8 @@
     "Detailed commands route to versioned repository Jobs and selectors.",
     "A fresh read-only Agent stopped at semantic-intent instead of selecting an ambiguous fixture or inferring approval.",
     "Every portable stop proposal now binds transfer identity, immediate revision lineage, required criteria, content-addressed evidence, claim limits, and Agent authority limits before submission.",
-    "Pinned host profiles deny all Agent mutation authority, while signed receipts bind registration, challenge, and committed monotonic-head transitions to the independently fetched prior head."
+    "Pinned host profiles deny all Agent mutation authority, while signed receipts bind registration, challenge, and committed monotonic-head transitions to the independently fetched prior head.",
+    "The provider-neutral host core injects authenticated actors outside request JSON, enforces conditional ETag heads, and passes reviewer-only, concurrent CAS, idempotency, crash-window recovery, signature, and rollback-detection tests."
   ],
   "selectors": [
     "pnpm verify:skill",
@@ -38,7 +42,7 @@
   ],
   "limitations": [
     "Interactive user approval is session-local and not a portable detached signature.",
-    "The host contracts are implemented, but a separately protected deployment must still prove key isolation, reviewer-only decisions, transactional head CAS, CI fresh-head queries, and an independent rollback anchor before portable acceptance can be claimed.",
+    "The host contracts and provider-neutral transaction/API core are implemented, but a separately protected deployment must still prove real identity/key isolation, production storage and WORM adapters, and CI fresh-head queries before portable acceptance can be claimed.",
     "Steps remains a private research/test trial and is not a complete-game or publication-authorized release."
   ]
 }
