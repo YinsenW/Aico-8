@@ -233,8 +233,8 @@ contracts rather than shared implementation details:
 - semantic text-run and typography-manifest schemas;
 - HD mapping manifest and asset pack;
 - batch, internal game-module, fixed-collection, display, and target profiles;
+- supervised-transfer ledger, unsigned signing requests, signed human stops, and classified reusable versus source-relative transfer findings;
 - target profile, technical validation report, and release manifest.
-
 These contracts make it possible to improve the AI orchestration without
 silently changing game behavior.
 

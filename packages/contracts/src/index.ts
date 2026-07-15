@@ -144,6 +144,13 @@ export {
   type SupervisedTransferStopId,
 } from "./human-stop-decision.js";
 export {
+  HUMAN_STOP_REQUEST_SCHEMA_VERSION,
+  createHumanStopRequest,
+  validateHumanStopRequest,
+  type HumanStopRequestV1,
+  type HumanStopRequestValidationResult,
+} from "./human-stop-request.js";
+export {
   SUPERVISED_TRANSFER_SCHEMA_VERSION,
   applySupervisedHumanDecision,
   createSupervisedTransfer,
@@ -156,6 +163,17 @@ export {
   type SupervisedTransferV1,
   type SupervisedTransferValidationResult,
 } from "./supervised-transfer.js";
+export {
+  TRANSFER_FINDING_CLASSIFICATIONS,
+  TRANSFER_FINDINGS_SCHEMA_VERSION,
+  assertTransferFindings,
+  validateTransferFindings,
+  type TransferFindingClassification,
+  type TransferFindingV1,
+  type TransferFindingsStatus,
+  type TransferFindingsV1,
+  type TransferFindingsValidationResult,
+} from "./transfer-findings.js";
 export {
   HD_REVIEW_CHECK_NAMES,
   HD_REVIEW_PACKET_SCHEMA_VERSION,

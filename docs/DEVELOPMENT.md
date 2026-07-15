@@ -63,7 +63,7 @@ public CI or enter the clean public repository history.
 `pnpm verify:batch` validates rolling lanes and the filesystem Job: it rejects shared
 identities, concurrent writers, invalid timeouts/lanes, evidence-free acceptance,
 and hidden partial failure. Only accepted module IDs enter assembly.
-`pnpm verify:supervised-transfer` validates the four ordered human pauses and recoverable filesystem runner. It rejects forged/stale decisions, identity or byte drift, repeated challenges, concurrent/ambiguous writers, symlink aliases, and handwritten terminal ledgers.
+`pnpm verify:supervised-transfer` validates four ordered human pauses, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, source-relative art rules presented as universal mappings, and reusable claims without shared regression evidence.
 The host keeps the reviewer private key outside the Agent workspace; the runner consumes only the pinned public trust profile and detached signed decision.
 `pnpm verify:typography` validates reachable text routing, fixed bundled-font
 evidence, reviewed identity contours, complete coverage, and zero OS fallback.
@@ -137,13 +137,13 @@ When startup motion itself needs review, capture its exact host-initialization
 tick; never relabel that tick as a canonical update. A bounded neutral-input probe
 may establish a normally reachable scene absent from the completion replay, but
 it must use ordinary zero input and declare its own boundary lineage.
-
 ## Human-supervised conversion loop
 The workflow is not autonomous or universal. Pause for human review of semantics,
 first high-risk art, representative gameplay/motion, and final scope/rights.
 Agents batch deterministic work between pauses. Use representative checkpoints;
 do not solve the full game or regenerate full evidence per edit. A promoted
 artifact needs an ordinary-input route replayed twice before full selectors.
+Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable findings require shared code/tests; source-relative findings remain private-adapter work attached to a human stop.
 
 ## Recovery after interruption or failure
 
