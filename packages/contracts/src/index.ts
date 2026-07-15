@@ -107,12 +107,14 @@ export {
   HD_EVIDENCE_LIFECYCLE_STATES,
   assertHdEvidenceLifecycle,
   validateHdEvidenceLifecycle,
+  validateHdEvidenceReviewLineage,
   type HdEvidenceArtifactClass,
   type HdEvidenceGateState,
   type HdEvidenceGateVerdict,
   type HdEvidenceLifecycleState,
   type HdEvidenceLifecycleV1,
   type HdEvidenceLifecycleValidationResult,
+  type HdEvidenceReviewLineageValidationResult,
 } from "./hd-evidence-lifecycle.js";
 export {
   TEXT_CLASSIFICATIONS,

@@ -1,4 +1,8 @@
-import { HD_REVIEW_PRINCIPLE_GATES, PENDING_HD_REVIEWER } from "./hd-review-packet.ts";
+import {
+  HD_REVIEW_PRINCIPLE_GATES,
+  PENDING_HD_REVIEWER,
+  validateHdReviewPacket,
+} from "./hd-review-packet.ts";
 
 export const HD_EVIDENCE_LIFECYCLE_SCHEMA_VERSION = "aico8.hd-evidence-lifecycle.v1" as const;
 
@@ -77,6 +81,11 @@ export interface HdEvidenceLifecycleV1 {
 }
 
 export interface HdEvidenceLifecycleValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+}
+
+export interface HdEvidenceReviewLineageValidationResult {
   readonly valid: boolean;
   readonly errors: readonly string[];
 }
@@ -340,4 +349,40 @@ export function validateHdEvidenceLifecycle(value: unknown): HdEvidenceLifecycle
 export function assertHdEvidenceLifecycle(value: unknown): asserts value is HdEvidenceLifecycleV1 {
   const result = validateHdEvidenceLifecycle(value);
   if (!result.valid) throw new Error(`Invalid HD evidence lifecycle: ${result.errors.join("; ")}`);
+}
+
+export function validateHdEvidenceReviewLineage(
+  lifecycleValue: unknown,
+  packetValue: unknown,
+): HdEvidenceReviewLineageValidationResult {
+  const errors: string[] = [];
+  const lifecycleResult = validateHdEvidenceLifecycle(lifecycleValue);
+  const packetResult = validateHdReviewPacket(packetValue);
+  if (!lifecycleResult.valid) {
+    errors.push(...lifecycleResult.errors.map((error) => `lifecycle: ${error}`));
+  }
+  if (!packetResult.valid) {
+    errors.push(...packetResult.errors.map((error) => `reviewPacket: ${error}`));
+  }
+  if (errors.length > 0) return { valid: false, errors };
+
+  const lifecycle = lifecycleValue as HdEvidenceLifecycleV1;
+  const packet = packetValue as JsonRecord;
+  if (lifecycle.artifactClass !== "human-review-packet"
+    || lifecycle.runtime === null || lifecycle.browser === null || lifecycle.humanReview === null) {
+    errors.push("Lifecycle must be a pending human-review packet before lineage validation");
+    return { valid: false, errors };
+  }
+
+  const identities = [
+    ["gameId", lifecycle.gameId, packet.gameId],
+    ["visualRuntimeSha256", lifecycle.runtime.visualRuntimeSha256, packet.visualRuntimeSha256],
+    ["replaySemanticsSha256", lifecycle.runtime.replaySemanticsSha256, packet.replaySemanticsSha256],
+    ["identityMapSha256", lifecycle.runtime.identityMapSha256, packet.identityMapSha256],
+    ["browserEvidenceSha256", lifecycle.browser.browserEvidenceSha256, packet.browserEvidenceSha256],
+  ] as const;
+  for (const [name, expected, actual] of identities) {
+    if (actual !== expected) errors.push(`Review packet ${name} must match lifecycle lineage`);
+  }
+  return { valid: errors.length === 0, errors };
 }

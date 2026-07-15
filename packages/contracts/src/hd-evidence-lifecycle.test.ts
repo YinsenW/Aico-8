@@ -7,7 +7,9 @@ import {
   HD_EVIDENCE_LIFECYCLE_SCHEMA_VERSION,
   HD_EVIDENCE_LIFECYCLE_STATES,
   validateHdEvidenceLifecycle,
+  validateHdEvidenceReviewLineage,
 } from "./hd-evidence-lifecycle.js";
+import { HD_REVIEW_PRINCIPLE_GATES } from "./hd-review-packet.js";
 
 const hash = "a".repeat(64);
 const initialGates = () => [
@@ -77,6 +79,83 @@ const humanPacket = (): any => ({
       status: "pending-human-side-by-side-review",
     },
   },
+});
+
+const reviewPacket = (): any => ({
+  schemaVersion: "aico8.hd-review-packet.v1",
+  gameId: "steps-private-research",
+  visualRuntimeSha256: hash,
+  replaySemanticsSha256: hash,
+  identityMapSha256: hash,
+  browserEvidenceSha256: hash,
+  status: "pending-human-side-by-side-review",
+  reviewer: "pending-human-side-by-side-review",
+  acceptanceStatement: "I reviewed every declared source-relative element in this build.",
+  principleGates: HD_REVIEW_PRINCIPLE_GATES.map((gate) => ({ ...gate, verdict: "pending" })),
+  reviewDecision: null,
+  elements: [{
+    id: "character.test",
+    kind: "character",
+    semanticRole: "source-relative test character",
+    sourceScreenshotIds: ["source-gameplay"],
+    targetScreenshotIds: ["hd-gameplay"],
+    criteria: {
+      silhouetteTraits: ["compact source silhouette"],
+      requiredParts: ["source-defined parts"],
+      proportionChecks: ["footprint: 1 → 1, maximum delta 0.1"],
+      compositionChecks: ["frame region: source [0.25,0.25,0.5,0.5] → HD [0.25,0.25,0.5,0.5], maximum edge delta 0.05"],
+      contourChecks: [],
+      faceAndExpressionTraits: ["source expression"],
+      colorHierarchy: ["light over dark"],
+      motionCues: ["source timing"],
+      gameplayCues: ["occupancy remains legible"],
+      forbiddenTransformations: ["removing a declared source part"],
+      allowedModernization: ["material"],
+    },
+    review: {
+      reviewer: "pending-human-side-by-side-review",
+      silhouettePassed: false,
+      requiredPartsPassed: false,
+      proportionsPassed: false,
+      contoursPassed: false,
+      expressionPassed: false,
+      colorHierarchyPassed: false,
+      motionPassed: false,
+      gameplayCuesPassed: false,
+      visualGrammarPassed: false,
+    },
+  }],
+  sceneComparisons: [{
+    id: "gameplay",
+    sceneId: "scene.gameplay",
+    sourceScreenshotId: "source-gameplay",
+    targetScreenshotId: "hd-gameplay",
+    sameRuntimeState: true,
+  }],
+  temporalComparisons: [{
+    id: "character-motion",
+    sceneId: "scene.gameplay",
+    elementIds: ["character.test"],
+    frames: [{
+      update: 3,
+      presentationMilliseconds: 0,
+      sourceScreenshotId: "source-gameplay",
+      targetScreenshotId: "hd-gameplay",
+      sameRuntimeState: true,
+    }],
+  }],
+  screenshots: ["reference", "hd"].map((presentationMode) => ({
+    id: `${presentationMode === "reference" ? "source" : "hd"}-gameplay`,
+    path: `browser/${presentationMode}-gameplay.jpg`,
+    sha256: hash,
+    width: 1024,
+    height: 1024,
+    presentationMode,
+    sceneId: "scene.gameplay",
+    stateBoundary: "canonical-replay:update:3:presentation-ms:0",
+    visualRuntimeSha256: hash,
+  })),
+  document: { path: "evidence/identity-review-packet.html", sha256: hash },
 });
 
 describe("HD evidence lifecycle", () => {
@@ -190,6 +269,27 @@ describe("HD evidence lifecycle", () => {
     const value = offlineDraft();
     value.safety.runtimeModelCalls = true;
     expect(validateHdEvidenceLifecycle(value).errors.join("\n")).toMatch(/runtimeModelCalls/);
+  });
+
+  it("binds a pending review packet to the same lifecycle build", () => {
+    expect(validateHdEvidenceReviewLineage(humanPacket(), reviewPacket()))
+      .toEqual({ valid: true, errors: [] });
+
+    for (const field of [
+      "visualRuntimeSha256", "replaySemanticsSha256", "identityMapSha256", "browserEvidenceSha256",
+    ]) {
+      const stale = reviewPacket();
+      stale[field] = "b".repeat(64);
+      if (field === "visualRuntimeSha256") {
+        stale.screenshots.forEach((screenshot: any) => { screenshot.visualRuntimeSha256 = stale[field]; });
+      }
+      expect(validateHdEvidenceReviewLineage(humanPacket(), stale).errors.join("\n"))
+        .toContain(`Review packet ${field} must match lifecycle lineage`);
+    }
+    const wrongGame = reviewPacket();
+    wrongGame.gameId = "stale-build";
+    expect(validateHdEvidenceReviewLineage(humanPacket(), wrongGame).errors.join("\n"))
+      .toContain("Review packet gameId must match lifecycle lineage");
   });
 
   it("keeps the JSON Schema synchronized with lifecycle classes, states, and gate order", () => {
