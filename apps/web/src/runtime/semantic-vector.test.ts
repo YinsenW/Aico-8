@@ -33,6 +33,17 @@ describe("semantic vector runtime", () => {
     expect(() => createSemanticVectorContext(asset, { includeLayerIds: ["body"] })).toThrow(/unresolved/);
   });
 
+  it("can remove sub-pixel decoration without changing the owning semantic layer", () => {
+    const context = createSemanticVectorContext(asset, {
+      excludePrimitiveIds: ["detail-shape"],
+      palette: { segment: 0xffeee6 },
+    });
+    expect(context.bounds.x).toBe(4);
+    expect(context.bounds.y).toBe(4);
+    expect(context.bounds.width).toBe(56);
+    expect(context.bounds.height).toBe(56);
+  });
+
   it("cuts protected negative-space primitives out of the preceding fill", () => {
     const context = createSemanticVectorContext({
       ...asset,

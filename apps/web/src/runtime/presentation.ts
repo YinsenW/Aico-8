@@ -9,6 +9,7 @@ export interface PresentationDiagnostics {
   readonly unmappedSourceTokenIds: readonly string[];
   readonly mixedIndexedFragments: number;
   readonly diagnosticReferenceSwitches: number;
+  readonly presentationMeasurements?: Readonly<Record<string, string | number>>;
 }
 
 export interface SourceAuthoredCopyContract {

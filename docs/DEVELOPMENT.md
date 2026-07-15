@@ -22,9 +22,17 @@ ESP32, and the final Skill remain later work.
 2. Change code behind the owning API or data contract.
 3. Preserve the separate compatibility reference path; never introduce mixed
    indexed fragments into accepted HD presentation.
-4. Run the narrow selector, then every selector attached to the affected exit.
-5. Record exact implementation/evidence paths and remaining work in the manifest.
-6. Run governance verification and inspect the diff for ownership or terminology drift.
+4. During editing, run only the narrow selector and one or two high-risk checkpoints.
+5. Promote a visual candidate only after title/menu, representative gameplay, and
+   ending checkpoints pass; then batch its complete static/temporal evidence.
+6. At a frozen game handoff, run every selector attached to the affected exit,
+   complete replay, package, viewport/input, governance, and release checks.
+7. Record exact implementation/evidence paths and remaining work in the manifest.
+8. Run governance verification and inspect the diff for ownership or terminology drift.
+
+Never repeat full evidence generation for an edit that has not passed its narrow
+checkpoint. Shared-runtime and governance checks may be batched across candidates;
+acceptance state, final evidence, and failure records remain per game.
 
 Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and
 asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses;

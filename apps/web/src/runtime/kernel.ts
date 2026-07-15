@@ -137,6 +137,9 @@ interface EmscriptenKernel {
   _aico8_draw_payload(runtime: number): number;
   _aico8_draw_payload_size(runtime: number): number;
   _aico8_copy_map_region(runtime: number, cellX: number, cellY: number, width: number, height: number, destination: number, capacity: number): number;
+  _aico8_copy_sprite_region(runtime: number, pixelX: number, pixelY: number, width: number, height: number, destination: number, capacity: number): number;
+  _aico8_copy_sprite_flags(runtime: number, firstSprite: number, count: number, destination: number, capacity: number): number;
+  _aico8_copy_palette_state(runtime: number, destination: number, capacity: number): number;
   _aico8_get_global_raw(runtime: number, name: number, output: number): number;
   _aico8_get_global_boolean(runtime: number, name: number, output: number): number;
   _aico8_copy_global_string(runtime: number, name: number, destination: number, capacity: number): number;
@@ -437,6 +440,61 @@ export class Aico8Kernel {
       );
       if (copied !== size) throw new Error("Unable to copy the logical map region");
       return this.#module.HEAPU8.slice(pointer, pointer + size);
+    } finally {
+      this.#module._free(pointer);
+    }
+  }
+
+  spriteRegion(pixelX: number, pixelY: number, width: number, height: number): Uint8Array {
+    if (![pixelX, pixelY, width, height].every(Number.isSafeInteger)
+      || pixelX < 0 || pixelY < 0 || width < 0 || height < 0
+      || pixelX + width > 128 || pixelY + height > 128) {
+      throw new Error("Sprite region must be an integer rectangle inside the 128 by 128 sprite sheet");
+    }
+    const size = width * height;
+    const pointer = this.#module._malloc(Math.max(size, 1));
+    if (!pointer) throw new Error("Unable to allocate the sprite snapshot");
+    try {
+      const copied = this.#module._aico8_copy_sprite_region(
+        this.#runtime, pixelX, pixelY, width, height, pointer, size,
+      );
+      if (copied !== size) throw new Error("Unable to copy the sprite region");
+      return this.#module.HEAPU8.slice(pointer, pointer + size);
+    } finally {
+      this.#module._free(pointer);
+    }
+  }
+
+  spriteFlags(firstSprite = 0, count = 256): Uint8Array {
+    if (![firstSprite, count].every(Number.isSafeInteger)
+      || firstSprite < 0 || count < 0 || firstSprite + count > 256) {
+      throw new Error("Sprite flag range must be an integer interval inside 0 through 255");
+    }
+    const pointer = this.#module._malloc(Math.max(count, 1));
+    if (!pointer) throw new Error("Unable to allocate the sprite flag snapshot");
+    try {
+      const copied = this.#module._aico8_copy_sprite_flags(
+        this.#runtime, firstSprite, count, pointer, count,
+      );
+      if (copied !== count) throw new Error("Unable to copy sprite flags");
+      return this.#module.HEAPU8.slice(pointer, pointer + count);
+    } finally {
+      this.#module._free(pointer);
+    }
+  }
+
+  paletteState(): { readonly draw: Uint8Array; readonly display: Uint8Array } {
+    const size = 32;
+    const pointer = this.#module._malloc(size);
+    if (!pointer) throw new Error("Unable to allocate the palette state snapshot");
+    try {
+      if (this.#module._aico8_copy_palette_state(this.#runtime, pointer, size) !== size) {
+        throw new Error("Unable to copy palette state");
+      }
+      return {
+        draw: this.#module.HEAPU8.slice(pointer, pointer + 16),
+        display: this.#module.HEAPU8.slice(pointer + 16, pointer + 32),
+      };
     } finally {
       this.#module._free(pointer);
     }

@@ -45,6 +45,13 @@ size_t aico8_draw_payload_size(const aico8_runtime *runtime);
 size_t aico8_copy_map_region(const aico8_runtime *runtime, int cell_x, int cell_y,
                              int width, int height, uint8_t *destination,
                              size_t capacity);
+size_t aico8_copy_sprite_region(const aico8_runtime *runtime, int pixel_x, int pixel_y,
+                                int width, int height, uint8_t *destination,
+                                size_t capacity);
+size_t aico8_copy_sprite_flags(const aico8_runtime *runtime, int first_sprite,
+                               int count, uint8_t *destination, size_t capacity);
+size_t aico8_copy_palette_state(const aico8_runtime *runtime, uint8_t *destination,
+                                size_t capacity);
 int aico8_get_global_raw(aico8_runtime *runtime, const char *name,
                          int32_t *raw_16_16);
 int aico8_get_global_boolean(aico8_runtime *runtime, const char *name, int *value);

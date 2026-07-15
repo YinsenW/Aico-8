@@ -78,6 +78,20 @@ try {
   const menuLabelPointer = kernel._malloc(17);
   try {
     assert.equal(kernel._aico8_copy_map_region(runtime, 0, 0, 16, 16, mapPointer, 256), 256);
+    const spritePointer = kernel._malloc(64);
+    assert.ok(spritePointer);
+    assert.equal(kernel._aico8_copy_sprite_region(runtime, 0, 0, 8, 8, spritePointer, 64), 64);
+    assert.equal(kernel._aico8_copy_sprite_region(runtime, 127, 127, 2, 2, spritePointer, 64), 0);
+    kernel._free(spritePointer);
+    const flagPointer = kernel._malloc(256);
+    assert.ok(flagPointer);
+    assert.equal(kernel._aico8_copy_sprite_flags(runtime, 0, 256, flagPointer, 256), 256);
+    assert.equal(kernel._aico8_copy_sprite_flags(runtime, 255, 2, flagPointer, 256), 0);
+    kernel._free(flagPointer);
+    const palettePointer = kernel._malloc(32);
+    assert.ok(palettePointer);
+    assert.equal(kernel._aico8_copy_palette_state(runtime, palettePointer, 32), 32);
+    kernel._free(palettePointer);
     assert.equal(kernel.HEAPU8[mapPointer], 1);
     assert.equal(kernel._aico8_get_global_raw(runtime, xNamePointer, valuePointer), 1);
     assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), 7 << 16);

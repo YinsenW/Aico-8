@@ -266,6 +266,53 @@ size_t aico8_copy_map_region(const aico8_runtime *runtime, int cell_x, int cell_
     return required;
 }
 
+size_t aico8_copy_sprite_region(const aico8_runtime *runtime, int pixel_x, int pixel_y,
+                                int width, int height, uint8_t *destination,
+                                size_t capacity)
+{
+    if (!runtime || !runtime->core || !destination || width < 0 || height < 0
+        || pixel_x < 0 || pixel_y < 0 || pixel_x + width > 128
+        || pixel_y + height > 128) {
+        return 0;
+    }
+    const size_t required = static_cast<size_t>(width) * static_cast<size_t>(height);
+    if (capacity < required) return 0;
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            destination[static_cast<size_t>(y) * static_cast<size_t>(width)
+                        + static_cast<size_t>(x)] =
+                p8_gfx_sget(runtime->core, pixel_x + x, pixel_y + y);
+        }
+    }
+    return required;
+}
+
+size_t aico8_copy_sprite_flags(const aico8_runtime *runtime, int first_sprite,
+                               int count, uint8_t *destination, size_t capacity)
+{
+    if (!runtime || !runtime->core || !destination || first_sprite < 0 || count < 0
+        || first_sprite + count > 256 || capacity < static_cast<size_t>(count)) {
+        return 0;
+    }
+    for (int index = 0; index < count; ++index) {
+        destination[index] = p8_core_peek(
+            runtime->core, static_cast<uint16_t>(0x3000 + first_sprite + index));
+    }
+    return static_cast<size_t>(count);
+}
+
+size_t aico8_copy_palette_state(const aico8_runtime *runtime, uint8_t *destination,
+                                size_t capacity)
+{
+    constexpr size_t kPaletteStateSize = 32;
+    if (!runtime || !runtime->core || !destination || capacity < kPaletteStateSize) return 0;
+    for (size_t index = 0; index < kPaletteStateSize; ++index) {
+        destination[index] = p8_core_peek(
+            runtime->core, static_cast<uint16_t>(0x5f00 + index));
+    }
+    return kPaletteStateSize;
+}
+
 int aico8_get_global_raw(aico8_runtime *runtime, const char *name,
                          int32_t *raw_16_16)
 {

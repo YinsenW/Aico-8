@@ -43,6 +43,13 @@ export interface SemanticVectorAsset {
 export interface SemanticVectorRenderOptions {
   readonly includeLayerIds?: readonly string[];
   readonly excludeLayerIds?: readonly string[];
+  /**
+   * Primitive-level filtering is intentionally separate from layer filtering.
+   * It lets a renderer keep the source-authored silhouette while omitting
+   * sub-pixel decorative strokes that become soft at the final device scale.
+   */
+  readonly includePrimitiveIds?: readonly string[];
+  readonly excludePrimitiveIds?: readonly string[];
   readonly palette?: Readonly<Record<string, number>>;
 }
 
@@ -128,10 +135,14 @@ export function drawSemanticVector(
 ): void {
   const include = new Set(options.includeLayerIds ?? []);
   const exclude = new Set(options.excludeLayerIds ?? []);
+  const includePrimitives = new Set(options.includePrimitiveIds ?? []);
+  const excludePrimitives = new Set(options.excludePrimitiveIds ?? []);
   const palette = options.palette ?? {};
   for (const primitive of asset.primitives) {
     if (include.size > 0 && !primitive.layerIds.some((id) => include.has(id))) continue;
     if (primitive.layerIds.some((id) => exclude.has(id))) continue;
+    if (includePrimitives.size > 0 && !includePrimitives.has(primitive.id)) continue;
+    if (excludePrimitives.has(primitive.id)) continue;
     graphics.beginPath();
     for (const command of primitive.commands) invoke(graphics, command);
     if (primitive.composite === "cut") {
