@@ -24,6 +24,7 @@
     "verify:supervised-transfer": "pnpm --filter @aico8/contracts exec vitest run src/human-stop-request.test.ts src/human-stop-request-job.test.ts src/host-authority.test.ts src/supervised-review-proposal.test.ts src/supervised-transfer.test.ts src/supervised-transfer-job.test.ts src/transfer-findings.test.ts && pnpm --filter @aico8/human-authority-host test",
     "verify:skill": "node --test scripts/verify-skill-package.test.mjs && node scripts/verify-skill-package.mjs",
     "export:human-stop-request": "tsx scripts/export-human-stop-request.ts",
+    "probe:human-authority-deployment": "tsx scripts/probe-human-authority-deployment.ts",
     "verify:game-module": "pnpm --filter @aico8/contracts exec vitest run src/game-module.test.ts src/assembly.test.ts src/assembly-job.test.ts",
     "verify:qualification-plan": "node --test scripts/build-private-qualification-plan.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/qualification-plan.test.ts",
     "verify:qualification-plan-private": "node scripts/validate-private-qualification-plan.mjs",

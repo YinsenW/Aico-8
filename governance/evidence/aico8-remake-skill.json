@@ -19,6 +19,8 @@
     "apps/human-authority-host/src/api.ts",
     "apps/human-authority-host/src/service.ts",
     "apps/human-authority-host/src/ports.ts",
+    "apps/human-authority-host/src/deployment-probe.ts",
+    "scripts/probe-human-authority-deployment.ts",
     "specs/schemas/supervised-review-proposal-v1.schema.json",
     "specs/schemas/host-authority-profile-v1.schema.json",
     "specs/schemas/host-authority-receipt-v1.schema.json",
@@ -33,7 +35,8 @@
     "A fresh read-only Agent stopped at semantic-intent instead of selecting an ambiguous fixture or inferring approval.",
     "Every portable stop proposal now binds transfer identity, immediate revision lineage, required criteria, content-addressed evidence, claim limits, and Agent authority limits before submission.",
     "Pinned host profiles deny all Agent mutation authority, while signed receipts bind registration, challenge, and committed monotonic-head transitions to the independently fetched prior head.",
-    "The provider-neutral host core injects authenticated actors outside request JSON, enforces conditional ETag heads, and passes reviewer-only, concurrent CAS, idempotency, crash-window recovery, signature, and rollback-detection tests."
+    "The provider-neutral host core injects authenticated actors outside request JSON, enforces conditional ETag heads, and passes reviewer-only, concurrent CAS, idempotency, crash-window recovery, signature, and rollback-detection tests.",
+    "A remote black-box probe verifies three separated identity channels, signed registration/challenge/decision receipts, stale-head rejection, idempotent retry, and a fresh externally anchored latest head without embedding provider credentials."
   ],
   "selectors": [
     "pnpm verify:skill",
@@ -42,7 +45,7 @@
   ],
   "limitations": [
     "Interactive user approval is session-local and not a portable detached signature.",
-    "The host contracts and provider-neutral transaction/API core are implemented, but a separately protected deployment must still prove real identity/key isolation, production storage and WORM adapters, and CI fresh-head queries before portable acceptance can be claimed.",
+    "The host contracts, provider-neutral core, and remote probe are implemented, but a separately protected deployment must still prove real identity/key isolation plus production crash/WORM policy evidence before portable acceptance can be claimed.",
     "Steps remains a private research/test trial and is not a complete-game or publication-authorized release."
   ]
 }

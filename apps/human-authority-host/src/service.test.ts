@@ -9,6 +9,7 @@ import {
 
 import { InMemoryAuthorityStore, InMemoryRollbackAnchor } from "./in-memory.js";
 import { HumanAuthorityApi } from "./api.js";
+import { AuthorityDeploymentProbeError, probeHumanAuthorityDeployment, type AuthorityProbeRole } from "./deployment-probe.js";
 import {
   AuthorityAnchorPendingError,
   AuthorityConflictError,
@@ -256,5 +257,37 @@ describe("human authority host transaction core", () => {
     const head = await api.handle(new Request(`https://authority.invalid/v1/transfers/${transferInstanceId}/head`), agent);
     expect(head.status).toBe(200);
     expect(head.headers.get("etag")).toBe(challenged.headers.get("etag"));
+  });
+
+  it("runs the same signed authority checks through a remote-style black-box transport", async () => {
+    const api = new HumanAuthorityApi(service);
+    const actors = { administrator, agent, reviewer } as const;
+    const result = await probeHumanAuthorityDeployment({
+      profile,
+      seed: "0123456789abcdef01234567",
+      now: () => "2026-07-16T00:00:00.000Z",
+      transport: {
+        request(role: AuthorityProbeRole, path: string, init?: RequestInit): Promise<Response> {
+          return api.handle(new Request(`https://authority.invalid${path}`, init), actors[role]);
+        },
+      },
+    });
+    expect(result.checks).toHaveLength(8);
+    expect(result.completedAt).toBe("2026-07-16T00:00:00.000Z");
+    expect(result.finalReceiptSha256).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("fails the deployment probe when the remote boundary widens Agent authority", async () => {
+    const api = new HumanAuthorityApi(service);
+    await expect(probeHumanAuthorityDeployment({
+      profile,
+      seed: "89abcdef0123456789abcdef",
+      transport: {
+        request(role: AuthorityProbeRole, path: string, init?: RequestInit): Promise<Response> {
+          const actor = role === "agent" ? administrator : role === "reviewer" ? reviewer : administrator;
+          return api.handle(new Request(`https://authority.invalid${path}`, init), actor);
+        },
+      },
+    })).rejects.toBeInstanceOf(AuthorityDeploymentProbeError);
   });
 });

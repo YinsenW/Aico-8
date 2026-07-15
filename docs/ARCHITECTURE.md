@@ -16,7 +16,7 @@ tests, but only versioned tools and deterministic runtime code decide whether a
 remake is compatible. The maintained `skills/aico8-remake/` package is likewise
 outside the authority boundary. A local host user channel supplies bounded human
 pauses; portable acceptance uses detached signatures, and neither grants release.
-The external human-authority host is a separate security domain. `apps/human-authority-host/` owns its provider-neutral transaction/API core and fault tests; only a protected deployment may supply reviewer authentication, receipt signing, atomic storage, and the independent rollback anchor.
+The external human-authority host is a separate security domain. `apps/human-authority-host/` owns its provider-neutral transaction/API core, fault tests, and signed black-box deployment probe; only a protected deployment may supply reviewer authentication, receipt signing, atomic storage, and the independent rollback anchor.
 
 ## Delivery topology
 
