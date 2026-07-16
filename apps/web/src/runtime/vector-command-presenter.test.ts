@@ -15,6 +15,10 @@ function command(opcode: number, args: readonly number[]): DrawCommand {
   return { opcode, flags: 0, args, payload: new Uint8Array() };
 }
 
+function flaggedCommand(opcode: number, flags: number, args: readonly number[]): DrawCommand {
+  return { opcode, flags, args, payload: new Uint8Array() };
+}
+
 const kernel = {
   paletteState: () => ({
     draw: Uint8Array.from({ length: 16 }, (_, color) => color | (color === 0 ? 0x10 : 0)),
@@ -61,5 +65,19 @@ describe("vector command presenter", () => {
       spriteSurfaceCount: 0,
       indexedCellQuadCount: 0,
     });
+  });
+
+  it("never reinterprets secondary-palette pairs as display-palette entries", () => {
+    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    const graphics = new Graphics();
+    presenter.render(graphics, kernel, [
+      flaggedCommand(15, 3, [12, 0x87, 2]),
+      flaggedCommand(5, 5, [0, 0, 1, 1, 12]),
+    ], () => {});
+
+    const fill = graphics.context.instructions.at(-1) as {
+      readonly data: { readonly style: { readonly color: number } };
+    };
+    expect(fill.data.style.color).toBe(palette[12]);
   });
 });

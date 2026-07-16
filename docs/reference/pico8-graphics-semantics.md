@@ -34,6 +34,11 @@ frames require complete modern coverage rather than mixed indexed fragments.
   produces no drawing.
 - `fillp` is a 4x4, two-colour pattern observed by primitive drawing, with
   transparency, sprite, secondary-palette, and inversion modes.
+- `pal(c0,c1,2)` stores a two-colour pair. With `fillp` flag `.01`, the pair is
+  selected per screen-space pattern bit for `spr`, `sspr`, `map`, and `tline`;
+  flag `.001` applies it globally after the ordinary draw palette. The shared
+  native/Wasm raster owns this behavior; HD commands do not reinterpret
+  secondary pairs as display-palette entries.
 
 ## Memory rules captured from the manual
 
@@ -84,8 +89,8 @@ host consumes the indexed frame; it does not duplicate compatibility raster rule
 ## Deliberately unresolved
 
 Licensed official runtime probes are still required for fixed-point edge rounding;
-exact line/circle/ellipse edge pixels; fill patterns, inversion and secondary
-palettes; extended palettes and out-of-range overrides; upper-memory mapping
+exact line/circle/ellipse edge pixels; embedded colour-argument patterns and
+inversion; extended display palettes and out-of-range overrides; upper-memory mapping
 conflicts; and draw-state byte packing not specified by the public manual.
 
 Those captures become small golden fixtures. Independent emulators may locate
@@ -93,7 +98,7 @@ disagreements, but they are not the compatibility oracle.
 
 ## Next implementation slice
 
-Complete effectful/delayed compatibility text, remaining sprite/map and
-extended-palette modes, then capture licensed official-runtime goldens for
+Complete embedded colour-argument patterns, inversion, remaining sprite/map and
+extended-display-palette modes, then capture licensed official-runtime goldens for
 fixed-point and edge behavior. Keep indexed-frame tests and semantic-command
 output paired so the HD presentation bridge never invents separate semantics.

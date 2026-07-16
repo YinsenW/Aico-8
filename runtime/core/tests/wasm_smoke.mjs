@@ -403,6 +403,34 @@ try {
   kernel._free(textSourcePointer);
 }
 
+const secondaryPaletteRuntime = kernel._aico8_create();
+assert.notEqual(secondaryPaletteRuntime, 0);
+const secondaryPaletteSource = new TextEncoder().encode(
+  "function _init() cls(0) fillp() pal() palt() "
+  + "for i=0,15 do pal(i,i+i*16,2) end pal(12,0x87,2) "
+  + "sset(0,0,12) sset(1,0,12) fillp(32768.25) spr(0,12,0) "
+  + "fillp(32768.125) rectfill(20,0,21,0,12) pal(3,12) rectfill(24,0,25,0,3) end\n",
+);
+const secondaryPaletteSourcePointer = copyToHeap(secondaryPaletteSource);
+const secondaryPaletteRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(secondaryPaletteRuntime,
+    secondaryPaletteRomPointer, 0x8000, secondaryPaletteSourcePointer,
+    secondaryPaletteSource.length), 1);
+  assert.equal(kernel._aico8_start(secondaryPaletteRuntime), 1);
+  const secondaryFrame = kernel._aico8_framebuffer(secondaryPaletteRuntime);
+  assert.deepEqual(Array.from(kernel.HEAPU8.slice(secondaryFrame + 12, secondaryFrame + 14)),
+    [8, 7], "Wasm sprite raster must apply the secondary palette after the draw palette");
+  assert.deepEqual(Array.from(kernel.HEAPU8.slice(secondaryFrame + 20, secondaryFrame + 22)),
+    [8, 7], "Wasm global fill mode must apply the secondary palette to primitives");
+  assert.deepEqual(Array.from(kernel.HEAPU8.slice(secondaryFrame + 24, secondaryFrame + 26)),
+    [8, 7], "Wasm must apply the regular draw palette before the secondary palette");
+} finally {
+  kernel._aico8_destroy(secondaryPaletteRuntime);
+  kernel._free(secondaryPaletteRomPointer);
+  kernel._free(secondaryPaletteSourcePointer);
+}
+
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(

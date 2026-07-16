@@ -395,6 +395,54 @@ void test_raster_sprite_map_palette_and_flip()
     p8_core_destroy(core);
 }
 
+void test_raster_secondary_palette_patterns_sprite_and_global_draws()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_sset(core, 0, 0, 12);
+    p8_gfx_sset(core, 1, 0, 12);
+    p8_gfx_pal_mode(core, 12, 0x87, 2);
+
+    // Pattern bit 15 selects the high secondary colour at x%4 == 0;
+    // the next pixel selects the low colour. Fractional flag .01 applies
+    // the pattern to sprite-family calls.
+    p8_gfx_fillp(core, static_cast<int32_t>(0x80004000u));
+    p8_gfx_spr(core, 0, 12, 0, 1, 1, 0, 0);
+    assert(p8_gfx_pget(core, 12, 0) == 8);
+    assert(p8_gfx_pget(core, 13, 0) == 7);
+
+    p8_gfx_sspr(core, 0, 0, 2, 1, 32, 0, 2, 1, 0, 0);
+    assert(p8_gfx_pget(core, 32, 0) == 8);
+    assert(p8_gfx_pget(core, 33, 0) == 7);
+
+    p8_gfx_sset(core, 8, 0, 12);
+    p8_gfx_sset(core, 9, 0, 12);
+    p8_core_mset(core, 0, 0, 1);
+    p8_gfx_map(core, 0, 0, 36, 0, 1, 1, 0);
+    assert(p8_gfx_pget(core, 36, 0) == 8);
+    assert(p8_gfx_pget(core, 37, 0) == 7);
+    p8_gfx_tline(core, 40, 0, 41, 0, 0, 0, 0x2000, 0, 0, 13);
+    assert(p8_gfx_pget(core, 40, 0) == 8);
+    assert(p8_gfx_pget(core, 41, 0) == 7);
+
+    // Fractional flag .001 applies the same secondary mapping globally.
+    p8_gfx_fillp(core, static_cast<int32_t>(0x80002000u));
+    p8_gfx_rectfill(core, 20, 0, 21, 0, 12);
+    assert(p8_gfx_pget(core, 20, 0) == 8);
+    assert(p8_gfx_pget(core, 21, 0) == 7);
+
+    // The normal draw palette is resolved before the secondary palette.
+    p8_gfx_pal_mode(core, 3, 12, 0);
+    p8_gfx_rectfill(core, 24, 0, 25, 0, 3);
+    assert(p8_gfx_pget(core, 24, 0) == 8);
+    assert(p8_gfx_pget(core, 25, 0) == 7);
+
+    p8_gfx_pal_reset_mode(core, 2);
+    p8_gfx_rectfill(core, 28, 0, 29, 0, 3);
+    assert(p8_gfx_pget(core, 28, 0) == 12);
+    assert(p8_gfx_pget(core, 29, 0) == 12);
+    p8_core_destroy(core);
+}
+
 void test_raster_tline_sampling_precision_masks_layers_and_transparency()
 {
     p8_core *core = p8_core_create();
@@ -713,6 +761,7 @@ int main()
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
+    test_raster_secondary_palette_patterns_sprite_and_global_draws();
     test_raster_tline_sampling_precision_masks_layers_and_transparency();
     test_audio_is_deterministic_and_rejects_unqualified_features();
     test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic();

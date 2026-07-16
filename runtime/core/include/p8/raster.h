@@ -30,7 +30,9 @@ void p8_gfx_clip(p8_core *core, int x, int y, int width, int height,
 void p8_gfx_clip_reset(p8_core *core);
 
 void p8_gfx_pal(p8_core *core, uint8_t source, uint8_t target);
+void p8_gfx_pal_mode(p8_core *core, uint8_t source, uint8_t target, uint8_t palette);
 void p8_gfx_pal_reset(p8_core *core);
+void p8_gfx_pal_reset_mode(p8_core *core, uint8_t palette);
 void p8_gfx_palt(p8_core *core, uint8_t color, int transparent);
 void p8_gfx_palt_reset(p8_core *core);
 int p8_gfx_is_transparent(const p8_core *core, uint8_t color);

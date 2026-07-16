@@ -34,7 +34,7 @@ wasm: $(WASM_OUTPUT)
 wasm-test: wasm $(VM_TEST_BINARY)
 	node tests/wasm_smoke.mjs
 
-$(WASM_OUTPUT): Makefile src/core.cpp src/audio.cpp src/audio_internal.h src/raster.cpp src/text.cpp src/vm_z8lua.cpp src/wasm_api.cpp \
+$(WASM_OUTPUT): Makefile src/core.cpp src/core_internal.h src/audio.cpp src/audio_internal.h src/raster.cpp src/text.cpp src/vm_z8lua.cpp src/wasm_api.cpp \
 		include/p8/audio.h include/p8/core.h include/p8/raster.h include/p8/text.h include/p8/vm.h include/p8/wasm.h $(Z8_WASM_SOURCES)
 	mkdir -p $(WASM_OUTPUT_DIR)
 	em++ -O3 -std=c++17 -Iinclude -I$(Z8_DIR) -x c++ \
@@ -48,13 +48,13 @@ $(WASM_OUTPUT): Makefile src/core.cpp src/audio.cpp src/audio_internal.h src/ras
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(CORE_OBJECT): src/core.cpp src/audio_internal.h include/p8/audio.h include/p8/core.h | $(BUILD_DIR)
+$(CORE_OBJECT): src/core.cpp src/audio_internal.h src/core_internal.h include/p8/audio.h include/p8/core.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(AUDIO_OBJECT): src/audio.cpp src/audio_internal.h include/p8/audio.h include/p8/core.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(RASTER_OBJECT): src/raster.cpp include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
+$(RASTER_OBJECT): src/raster.cpp src/core_internal.h include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(TEXT_OBJECT): src/text.cpp include/p8/text.h include/p8/raster.h include/p8/core.h | $(BUILD_DIR)

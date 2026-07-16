@@ -3,6 +3,7 @@
 #include "p8/raster.h"
 
 #include "audio_internal.h"
+#include "core_internal.h"
 
 #include <algorithm>
 #include <array>
@@ -36,6 +37,7 @@ struct p8_core {
     std::array<uint8_t, P8_MAX_PLAYERS> pending_buttons{};
     std::array<uint8_t, P8_MAX_PLAYERS> buttons{};
     std::array<uint8_t, P8_MAX_PLAYERS> pressed{};
+    std::array<uint8_t, 16> secondary_palette{};
     std::array<std::array<uint32_t, P8_BUTTONS_PER_PLAYER>, P8_MAX_PLAYERS> held_ticks{};
     p8_core_callbacks callbacks{};
     unsigned update_rate = 30;
@@ -110,6 +112,24 @@ struct p8_core {
         return update_rate == 60 ? 2u : 1u;
     }
 };
+
+uint8_t p8_core_secondary_palette_get(const p8_core *core, uint8_t color)
+{
+    return core ? core->secondary_palette[color & 0x0f] : 0;
+}
+
+void p8_core_secondary_palette_set(p8_core *core, uint8_t color, uint8_t pair)
+{
+    if (core) core->secondary_palette[color & 0x0f] = pair;
+}
+
+void p8_core_secondary_palette_reset(p8_core *core)
+{
+    if (!core) return;
+    for (uint8_t color = 0; color < 16; ++color) {
+        core->secondary_palette[color] = static_cast<uint8_t>(color | (color << 4u));
+    }
+}
 
 p8_audio_state &p8_core_audio_state(p8_core *core)
 {

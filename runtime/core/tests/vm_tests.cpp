@@ -718,6 +718,60 @@ function reject_audio_text() print(chr(7).."12",0,0,7) end
     p8_core_destroy(core);
 }
 
+void test_secondary_palette_reaches_sprite_and_global_raster_through_lua()
+{
+    constexpr char source[] = R"p8lua(
+function verify_secondary_palette()
+ cls(0)
+ fillp()
+ pal()
+ palt()
+ for i=0,15 do pal(i,i+i*16,2) end
+ pal(12,0x87,2)
+ sset(0,0,12)
+ sset(1,0,12)
+ fillp(32768.25)
+ spr(0,12,0)
+ sprite_high=pget(12,0)
+ sprite_low=pget(13,0)
+ fillp(32768.125)
+ rectfill(20,0,21,0,12)
+ global_high=pget(20,0)
+ global_low=pget(21,0)
+ pal(3,12)
+ rectfill(24,0,25,0,3)
+ remapped_high=pget(24,0)
+ remapped_low=pget(25,0)
+ pal(2)
+ rectfill(28,0,29,0,3)
+ reset_high=pget(28,0)
+ reset_low=pget(29,0)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, source, sizeof(source) - 1,
+                                   "@secondary-palette"));
+    assert(p8_vm_call(vm, "verify_secondary_palette"));
+    const auto integer_global = [vm](const char *name) {
+        int32_t raw = 0;
+        assert(p8_vm_get_global_raw(vm, name, &raw));
+        return raw >> 16;
+    };
+    assert(integer_global("sprite_high") == 8);
+    assert(integer_global("sprite_low") == 7);
+    assert(integer_global("global_high") == 8);
+    assert(integer_global("global_low") == 7);
+    assert(integer_global("remapped_high") == 8);
+    assert(integer_global("remapped_low") == 7);
+    assert(integer_global("reset_high") == 12);
+    assert(integer_global("reset_low") == 12);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_update_error_is_sticky_and_draw_is_skipped()
 {
     constexpr char source[] = R"p8lua(
@@ -813,6 +867,7 @@ int main(int argc, char **argv)
     test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
     test_tline_api_tracks_precision_and_draws_from_map_samples();
     test_static_p8scii_executes_pixels_metrics_memory_and_custom_fonts();
+    test_secondary_palette_reaches_sprite_and_global_raster_through_lua();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"

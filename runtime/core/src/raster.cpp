@@ -1,5 +1,7 @@
 #include "p8/raster.h"
 
+#include "core_internal.h"
+
 #include <algorithm>
 #include <cstdint>
 
@@ -17,7 +19,7 @@ constexpr uint16_t kCursorY = 0x5f27;
 constexpr uint16_t kCameraX = 0x5f28;
 constexpr uint16_t kCameraY = 0x5f2a;
 constexpr uint16_t kFillPatternLow = 0x5f31;
-constexpr uint16_t kFillPatternTransparency = 0x5f33;
+constexpr uint16_t kFillPatternFlags = 0x5f33;
 constexpr uint16_t kMapSpriteZeroMode = 0x5f36;
 constexpr uint16_t kTlineMaskX = 0x5f38;
 constexpr uint16_t kTlineMaskY = 0x5f39;
@@ -28,6 +30,9 @@ constexpr uint16_t kSpriteFlagsBase = 0x3000;
 constexpr uint16_t kScreenBase = 0x6000;
 constexpr uint8_t kColorMask = 0x0f;
 constexpr uint8_t kTransparentBit = 0x10;
+constexpr uint8_t kFillTransparent = 1u << 0;
+constexpr uint8_t kFillSprites = 1u << 1;
+constexpr uint8_t kFillGlobal = 1u << 2;
 
 int bounded_coordinate(int value)
 {
@@ -117,10 +122,40 @@ void draw_patterned_pixel(p8_core *core, int64_t world_x, int64_t world_y,
     const uint16_t pattern = p8_core_peek16(core, kFillPatternLow);
     const unsigned bit = static_cast<unsigned>((3 - (x & 3)) + (3 - (y & 3)) * 4);
     const bool secondary = (pattern & (1u << bit)) != 0;
-    if (secondary && (p8_core_peek(core, kFillPatternTransparency) & 1u) != 0) return;
-    const uint8_t selected = secondary ? static_cast<uint8_t>(color >> 4)
-                                       : static_cast<uint8_t>(color & kColorMask);
-    raw_set_pixel(core, kScreenBase, x, y, mapped_color(core, selected));
+    const uint8_t flags = p8_core_peek(core, kFillPatternFlags);
+    if (secondary && (flags & kFillTransparent) != 0) return;
+    uint8_t selected = 0;
+    if ((flags & kFillGlobal) != 0) {
+        const uint8_t mapped = mapped_color(core, color);
+        const uint8_t pair = p8_core_secondary_palette_get(core, mapped);
+        selected = secondary ? static_cast<uint8_t>(pair >> 4u)
+                             : static_cast<uint8_t>(pair & kColorMask);
+    } else {
+        selected = mapped_color(core, secondary ? static_cast<uint8_t>(color >> 4u)
+                                                : static_cast<uint8_t>(color & kColorMask));
+    }
+    raw_set_pixel(core, kScreenBase, x, y, selected);
+}
+
+void draw_sprite_pixel(p8_core *core, int64_t world_x, int64_t world_y,
+                       uint8_t source_color)
+{
+    const uint8_t mapped = mapped_color(core, source_color);
+    uint8_t selected = mapped;
+    const uint8_t flags = p8_core_peek(core, kFillPatternFlags);
+    if ((flags & kFillSprites) != 0) {
+        const int64_t screen_x = world_x - signed_word(core, kCameraX);
+        const int64_t screen_y = world_y - signed_word(core, kCameraY);
+        const unsigned bit = static_cast<unsigned>((3 - (screen_x & 3))
+                                                   + (3 - (screen_y & 3)) * 4);
+        const bool secondary = (p8_core_peek16(core, kFillPatternLow)
+                                & (1u << bit)) != 0;
+        if (secondary && (flags & kFillTransparent) != 0) return;
+        const uint8_t pair = p8_core_secondary_palette_get(core, mapped);
+        selected = secondary ? static_cast<uint8_t>(pair >> 4u)
+                             : static_cast<uint8_t>(pair & kColorMask);
+    }
+    draw_mapped_pixel(core, world_x, world_y, selected);
 }
 
 void draw_mapped_span(p8_core *core, int64_t world_x0, int64_t world_x1,
@@ -306,14 +341,26 @@ void p8_gfx_clip_reset(p8_core *core)
 
 void p8_gfx_pal(p8_core *core, uint8_t source, uint8_t target)
 {
+    p8_gfx_pal_mode(core, source, target, 0);
+}
+
+void p8_gfx_pal_mode(p8_core *core, uint8_t source, uint8_t target, uint8_t palette)
+{
     if (!core) {
         return;
     }
-    const uint16_t address =
-        static_cast<uint16_t>(kDrawPalette + (source & kColorMask));
-    const uint8_t transparency = p8_core_peek(core, address) & kTransparentBit;
-    p8_core_poke(core, address,
-                 static_cast<uint8_t>(transparency | (target & kColorMask)));
+    if (palette == 0) {
+        const uint16_t address =
+            static_cast<uint16_t>(kDrawPalette + (source & kColorMask));
+        const uint8_t transparency = p8_core_peek(core, address) & kTransparentBit;
+        p8_core_poke(core, address,
+                     static_cast<uint8_t>(transparency | (target & kColorMask)));
+    } else if (palette == 1) {
+        p8_core_poke(core, static_cast<uint16_t>(kDisplayPalette + (source & kColorMask)),
+                     static_cast<uint8_t>(target & 0x8f));
+    } else if (palette == 2) {
+        p8_core_secondary_palette_set(core, source, target);
+    }
 }
 
 void p8_gfx_pal_reset(p8_core *core)
@@ -325,6 +372,25 @@ void p8_gfx_pal_reset(p8_core *core)
         const uint8_t draw = static_cast<uint8_t>(color | (color == 0 ? kTransparentBit : 0));
         p8_core_poke(core, static_cast<uint16_t>(kDrawPalette + color), draw);
         p8_core_poke(core, static_cast<uint16_t>(kDisplayPalette + color), color);
+    }
+    p8_core_secondary_palette_reset(core);
+}
+
+void p8_gfx_pal_reset_mode(p8_core *core, uint8_t palette)
+{
+    if (!core) return;
+    if (palette == 0) {
+        for (uint8_t color = 0; color <= kColorMask; ++color) {
+            const uint16_t address = static_cast<uint16_t>(kDrawPalette + color);
+            const uint8_t transparency = p8_core_peek(core, address) & kTransparentBit;
+            p8_core_poke(core, address, static_cast<uint8_t>(transparency | color));
+        }
+    } else if (palette == 1) {
+        for (uint8_t color = 0; color <= kColorMask; ++color) {
+            p8_core_poke(core, static_cast<uint16_t>(kDisplayPalette + color), color);
+        }
+    } else if (palette == 2) {
+        p8_core_secondary_palette_reset(core);
     }
 }
 
@@ -362,12 +428,19 @@ int p8_gfx_is_transparent(const p8_core *core, uint8_t color)
 int32_t p8_gfx_fillp(p8_core *core, int32_t raw_pattern)
 {
     if (!core) return 0;
+    const uint8_t previous_flags = p8_core_peek(core, kFillPatternFlags);
     const int32_t previous = static_cast<int32_t>(p8_core_peek16(core, kFillPatternLow)) << 16
-        | ((p8_core_peek(core, kFillPatternTransparency) & 1u) != 0 ? 0x8000 : 0);
+        | ((previous_flags & kFillTransparent) != 0 ? 0x8000 : 0)
+        | ((previous_flags & kFillSprites) != 0 ? 0x4000 : 0)
+        | ((previous_flags & kFillGlobal) != 0 ? 0x2000 : 0);
     const uint16_t pattern = static_cast<uint16_t>(static_cast<uint32_t>(raw_pattern) >> 16);
     p8_core_poke16(core, kFillPatternLow, pattern);
-    p8_core_poke(core, kFillPatternTransparency,
-                 (static_cast<uint32_t>(raw_pattern) & 0x8000u) != 0 ? 1 : 0);
+    const uint32_t raw = static_cast<uint32_t>(raw_pattern);
+    const uint8_t flags = static_cast<uint8_t>(
+        ((raw & 0x8000u) != 0 ? kFillTransparent : 0)
+        | ((raw & 0x4000u) != 0 ? kFillSprites : 0)
+        | ((raw & 0x2000u) != 0 ? kFillGlobal : 0));
+    p8_core_poke(core, kFillPatternFlags, flags);
     return previous;
 }
 
@@ -467,9 +540,8 @@ void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
             const int sample_x = flip_x ? pixel_width - destination_x - 1 : destination_x;
             const uint8_t color = p8_gfx_sget(core, source_x + sample_x, source_y + sample_y);
             if (!p8_gfx_is_transparent(core, color)) {
-                draw_mapped_pixel(core, static_cast<int64_t>(x) + destination_x,
-                                  static_cast<int64_t>(y) + destination_y,
-                                  mapped_color(core, color));
+                draw_sprite_pixel(core, static_cast<int64_t>(x) + destination_x,
+                                  static_cast<int64_t>(y) + destination_y, color);
             }
         }
     }
@@ -495,10 +567,8 @@ void p8_gfx_sspr(p8_core *core, int source_x, int source_y, int source_width,
             const uint8_t color = p8_gfx_sget(core, source_x + sample_x,
                                               source_y + sample_y);
             if (!p8_gfx_is_transparent(core, color)) {
-                draw_mapped_pixel(core,
-                                  static_cast<int64_t>(destination_x) + x,
-                                  static_cast<int64_t>(destination_y) + y,
-                                  mapped_color(core, color));
+                draw_sprite_pixel(core, static_cast<int64_t>(destination_x) + x,
+                                  static_cast<int64_t>(destination_y) + y, color);
             }
         }
     }
@@ -578,7 +648,7 @@ void p8_gfx_tline(p8_core *core, int x0, int y0, int x1, int y1,
                                  + static_cast<int>(sampled_y & 7u);
             const uint8_t color = p8_gfx_sget(core, sprite_x, sprite_y);
             if (!p8_gfx_is_transparent(core, color)) {
-                draw_mapped_pixel(core, x, y, mapped_color(core, color));
+                draw_sprite_pixel(core, x, y, color);
             }
         }
 

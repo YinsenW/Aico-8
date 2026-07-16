@@ -978,9 +978,12 @@ int api_pal(lua_State *state)
     p8_core_emit_draw(vm->core, &command);
     if (lua_gettop(state) == 0) {
         p8_gfx_pal_reset(vm->core);
-    } else if (lua_gettop(state) >= 2 && integer(state, 3, 0) == 0) {
-        p8_gfx_pal(vm->core, static_cast<uint8_t>(integer(state, 1)),
-                   static_cast<uint8_t>(integer(state, 2)));
+    } else if (lua_gettop(state) == 1) {
+        p8_gfx_pal_reset_mode(vm->core, static_cast<uint8_t>(integer(state, 1)));
+    } else if (lua_gettop(state) >= 2) {
+        p8_gfx_pal_mode(vm->core, static_cast<uint8_t>(integer(state, 1)),
+                        static_cast<uint8_t>(integer(state, 2)),
+                        static_cast<uint8_t>(integer(state, 3, 0)));
     }
     return 0;
 }

@@ -318,9 +318,18 @@ export class VectorCommandPresenter {
         if (command.flags === 0) {
           this.#drawPalette = Array.from({ length: 16 }, (_, color) => color);
           this.#displayPalette = Array.from({ length: 16 }, (_, color) => color);
+          this.#transparent = new Set<number>([0]);
+        } else if (command.flags === 1) {
+          const paletteIndex = integer(args[0]);
+          if (paletteIndex === 0) this.#drawPalette = Array.from({ length: 16 }, (_, color) => color);
+          else if (paletteIndex === 1) this.#displayPalette = Array.from({ length: 16 }, (_, color) => color);
         } else if (command.flags >= 2) {
-          const target = integer(args[2]) === 0 ? this.#drawPalette : this.#displayPalette;
-          target[integer(args[0]) & 15] = integer(args[1]) & 15;
+          const paletteIndex = integer(args[2]);
+          if (paletteIndex === 0) this.#drawPalette[integer(args[0]) & 15] = integer(args[1]) & 15;
+          else if (paletteIndex === 1) this.#displayPalette[integer(args[0]) & 15] = integer(args[1]) & 15;
+          // Palette 2 drives fillp's compatibility raster. Until the HD
+          // presenter has an explicit patterned-surface contract, it must not
+          // reinterpret those byte pairs as display-palette entries.
         }
         continue;
       }
