@@ -112,8 +112,8 @@ meaning; otherwise the scene is diagnostic-only and the game cannot pass HD.
 Every rendered copy string additionally declares source-authored, state-derived
 accessibility, or supplemental-authorized provenance; visual polish alone cannot
 authorize new marketing, narrative, instruction, or celebration copy.
-The complete policy is owned by
-`specs/typography.md`.
+The complete policy is owned by `specs/typography.md`. The per-game reachable inventory is a mandatory runtime allow-list bound to exact update/sequence/raw-byte locators, an approved role, and the active source hash.
+A separate audit aggregates replay/probes per frame; accepted HD cannot hide unmatched, blocked, reference-only, review-required, or stale-inventory text.
 
 The first Latin path regenerates `aico8.glyph-metrics.v1` from pinned Atkinson WOFF2 and rejects missing code points. Web hash-verifies all font evidence before installing one no-fallback `FontFace`.
 Original view stays framebuffer-only; HD draws only byte-matched `safe-modern` DATA-TEXT-RUN-001 entries.

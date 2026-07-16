@@ -10,7 +10,7 @@ import {
   type TypographyRoleV1,
 } from "@aico8/contracts";
 
-import type { TextRunV1 } from "./text-run-ir.js";
+import { TextRunEffect, type TextRunV1 } from "./text-run-ir.js";
 
 export const BUNDLED_TYPOGRAPHY_MANIFEST_PATH = "typography/latin-ui-v1.json";
 
@@ -76,7 +76,8 @@ function parseMetrics(value: unknown, asset: TypographyFontAssetV1): GlyphMetric
 }
 
 export function decodeSafeModernTextRun(run: TextRunV1): string {
-  if (run.classification !== "safe-modern" || run.reasonMask !== 0 || run.sideEffectMask !== 0
+  if (run.classification !== "safe-modern" || run.reasonMask !== 0
+    || (run.sideEffectMask & ~TextRunEffect.cursor) !== 0
     || run.unsupportedMask !== 0 || run.customFont.revision !== 0) {
     return fail(`text run ${run.sequence} is not eligible for bundled-font rendering`);
   }

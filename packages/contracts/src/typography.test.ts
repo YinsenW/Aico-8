@@ -21,7 +21,9 @@ const codePoints = (text: string) => [...text].map((character) => character.code
 
 const source = (bytesHex: string) => ({
   commandId: "print-1",
-  update: 1,
+  sequence: 0,
+  updateLow: 1,
+  updateHigh: 0,
   byteStart: 0,
   bytesHex,
   p8sciiEvidenceSha256: hash,

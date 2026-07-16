@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "aico8.private-text-completeness-attestation.v1",
+  "gameId": "dust-bunny",
+  "rightsScope": "private-research-and-testing-only",
+  "sourceSha256": "e51f17df87ae97226a5566a1980f386180a58eb068972b2b7c2348407954fb61",
+  "inventory": {
+    "schemaVersion": "aico8.text-inventory.v1",
+    "status": "complete-for-hd",
+    "sha256": "72c1fed10cb2b665a9d0e267ddecae5212bfb7cf3351eeeb3c8c994e236323b2",
+    "reachableRuns": 1110,
+    "safeModernRuns": 1110,
+    "roles": {
+      "display": 1108,
+      "menu": 2
+    }
+  },
+  "audit": {
+    "schemaVersion": "aico8.text-completeness-audit.v1",
+    "status": "accepted",
+    "sha256": "c32bd05368e14dd995f57a3eec90399e9bcaeec03591e11f16e2ccbda19a476e",
+    "logicalUpdates": 9224,
+    "canonicalReplayUpdates": 9206,
+    "namedProbes": [
+      "persisted-resume-title",
+      "level-one-intro-label"
+    ],
+    "sourceTextRuns": 1110,
+    "approvedTextRuns": 1110,
+    "blockedTextRuns": 0,
+    "mismatchedTextRuns": 0,
+    "unapprovedTextRuns": 0,
+    "failingUpdateIds": []
+  },
+  "rejectedMutations": [
+    "deleted-inventory-mapping",
+    "stale-source-inventory",
+    "text-ir-mismatch"
+  ],
+  "selector": "TEST-TYPE-COMPLETENESS-PRIVATE",
+  "containsPrivateCopy": false
+}

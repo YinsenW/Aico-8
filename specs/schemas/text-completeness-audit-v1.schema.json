@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/text-completeness-audit-v1.schema.json",
+  "title": "Aico 8 HD text completeness audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "gameId", "sourceSha256", "inventorySha256", "inventoryStatus", "totalLogicalUpdates", "observationRuns", "totals", "failingUpdateIds", "regressions"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.text-completeness-audit.v1" },
+    "status": { "enum": ["draft", "accepted"] },
+    "gameId": { "$ref": "#/$defs/id" },
+    "sourceSha256": { "$ref": "#/$defs/sha256" },
+    "inventorySha256": { "$ref": "#/$defs/sha256" },
+    "inventoryStatus": { "enum": ["draft", "complete-for-hd"] },
+    "totalLogicalUpdates": { "type": "integer", "minimum": 1 },
+    "observationRuns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "startUpdate", "endUpdateExclusive"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "kind": { "enum": ["canonical-replay", "reachable-state-probe"] },
+          "startUpdate": { "type": "integer", "minimum": 0 },
+          "endUpdateExclusive": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceTextRuns", "approvedTextRuns", "blockedTextRuns", "mismatchedTextRuns", "unapprovedTextRuns"],
+      "properties": {
+        "sourceTextRuns": { "$ref": "#/$defs/count" },
+        "approvedTextRuns": { "$ref": "#/$defs/count" },
+        "blockedTextRuns": { "$ref": "#/$defs/count" },
+        "mismatchedTextRuns": { "$ref": "#/$defs/count" },
+        "unapprovedTextRuns": { "$ref": "#/$defs/count" }
+      }
+    },
+    "failingUpdateIds": { "type": "array", "uniqueItems": true, "items": { "type": "integer", "minimum": 0 } },
+    "regressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "rejected"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "category": { "enum": ["deleted-inventory-mapping", "stale-source-inventory", "text-ir-mismatch"] },
+          "rejected": { "const": true }
+        }
+      }
+    }
+  },
+  "allOf": [{
+    "if": { "properties": { "status": { "const": "accepted" } } },
+    "then": {
+      "properties": {
+        "inventoryStatus": { "const": "complete-for-hd" },
+        "failingUpdateIds": { "maxItems": 0 },
+        "totals": {
+          "properties": {
+            "blockedTextRuns": { "const": 0 },
+            "mismatchedTextRuns": { "const": 0 },
+            "unapprovedTextRuns": { "const": 0 }
+          }
+        }
+      }
+    }
+  }],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "count": { "type": "integer", "minimum": 0 }
+  }
+}
