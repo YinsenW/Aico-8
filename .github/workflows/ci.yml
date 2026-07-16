@@ -75,6 +75,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify semantic text-run Native/Wasm identity
         run: pnpm verify:text-run
+      - name: Verify deterministic bundled typography
+        run: pnpm verify:typography
       - name: Check, test, and build Web product
         run: pnpm verify:web
       - name: Verify human-guided Skill package

@@ -21,6 +21,7 @@ import { KernelAudioOutput } from "./runtime/audio-output.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { HD_RENDER_QUALITY } from "./runtime/render-quality.js";
+import { loadBundledTypography } from "./runtime/hd-typography.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
 import {
   advancePresentationTime,
@@ -186,7 +187,8 @@ await app.init({
   resolution: HD_RENDER_QUALITY.edgeSupersampleFactor,
   background: "#090b12",
 });
-await document.fonts.load("700 48px Aico Sans");
+const bundledTypography = await loadBundledTypography(new URL("./", document.baseURI));
+const displayFontFamily = bundledTypography.familyFor("display");
 app.canvas.setAttribute("aria-label", "Aico 8 game surface, 1024 by 1024 pixels");
 surface.append(app.canvas);
 
@@ -201,9 +203,9 @@ function showEmptyPlayer(): void {
     text: "AICO 8",
     style: {
       fill: 0xfff1e8,
-      fontFamily: "Aico Sans, ui-rounded, system-ui, sans-serif",
+      fontFamily: displayFontFamily,
       fontSize: 108,
-      fontWeight: "800",
+      fontWeight: "700",
       letterSpacing: 12,
     },
     anchor: 0.5,
@@ -213,7 +215,7 @@ function showEmptyPlayer(): void {
     text: "No private research game is bundled in this public build.",
     style: {
       fill: 0xc2c3c7,
-      fontFamily: "Aico Sans, system-ui, sans-serif",
+      fontFamily: bundledTypography.familyFor("localized-body"),
       fontSize: 30,
     },
     anchor: 0.5,
@@ -568,7 +570,6 @@ try {
     referenceRenderer.render(
       loadedRuntime.framebuffer(),
       loadedRuntime.paletteState().display,
-      commands,
     );
     hdRenderer?.update(loadedRuntime, commands);
     const diagnostics = hdRenderer?.diagnostics?.();

@@ -112,6 +112,16 @@ Font subsetting and atlas generation are reproducible Job outputs. Changing a
 font file, subset, metrics, renderer, or fit policy changes the manifest version
 and invalidates visual/layout evidence.
 
+The public Latin WOFF2 path derives `aico8.glyph-metrics.v1` files directly from
+the pinned font bytes. Each ordered covered code point binds a glyph ID, advance,
+and font-unit bounds; the metrics file hash is part of the typography manifest.
+The Web loader verifies font, metrics, provenance, and license bytes before
+installing the face. Canvas/Pixi styles use only the manifest family name, with
+font synthesis disabled and no comma-separated OS fallback. Layout uses the
+generated unkerned advances as a conservative bound, preserves glyph aspect
+ratio, and may reduce size only to the role minimum or wrap within its declared
+line count; otherwise it fails closed.
+
 ## Rendering matrix
 
 | Content | Default renderer | Reason |
@@ -154,9 +164,11 @@ and product shell. The WOFF2 SHA-256 values are
 `2df4ba17804bc7a36f123127966075d8427bff2df58d0d76820c1130bb1a4150`
 (Regular) and
 `da8fce41a04f8498fbf79076f92d304b12e70c76f71b143c5dcfb6536c93c075`
-(Bold); both are bundled under SIL OFL 1.1. This closes font selection and
-OS-font independence for the first Latin inventory, but not the broader
-P8SCII, layout-golden, localization, or accessibility exits.
+(Bold); both are bundled under SIL OFL 1.1. Generated metrics prove printable
+ASCII coverage for both faces, and fixed layout goldens cover 1024-square, 720,
+and responsive mobile scales. This closes the reusable Latin HD font delivery
+path, but not per-game reachable-run completeness, broader P8SCII, CJK/localized
+coverage, accessibility review, or licensed-official compatibility evidence.
 
 ## Acceptance
 

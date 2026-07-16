@@ -1,5 +1,6 @@
 export const TEXT_INVENTORY_SCHEMA_VERSION = "aico8.text-inventory.v1" as const;
 export const TYPOGRAPHY_MANIFEST_SCHEMA_VERSION = "aico8.typography-manifest.v1" as const;
+export const GLYPH_METRICS_SCHEMA_VERSION = "aico8.glyph-metrics.v1" as const;
 
 export const TEXT_CLASSIFICATIONS = ["safe-modern", "reference-only", "review-required"] as const;
 export const TEXT_PROVENANCE_KINDS = [
@@ -27,8 +28,49 @@ export interface TypographyManifestV1 {
   readonly schemaVersion: typeof TYPOGRAPHY_MANIFEST_SCHEMA_VERSION;
   readonly manifestId: string;
   readonly osFallback: false;
-  readonly assets: readonly unknown[];
-  readonly roles: readonly unknown[];
+  readonly assets: readonly TypographyFontAssetV1[];
+  readonly roles: readonly TypographyRoleV1[];
+}
+
+export interface TypographyFontAssetV1 {
+  readonly id: string;
+  readonly family: string;
+  readonly version: string;
+  readonly face: Readonly<{ weight: number; style: "normal" | "italic" }>;
+  readonly file: Readonly<{ path: string; sha256: string; format: "woff2" | "msdf-atlas" | "sdf-atlas" }>;
+  readonly metrics: Readonly<{ path: string; sha256: string; schemaVersion: typeof GLYPH_METRICS_SCHEMA_VERSION }>;
+  readonly source: Readonly<{ upstreamRevision: string; provenancePath: string; provenanceSha256: string }>;
+  readonly license: Readonly<{ spdx: string; evidencePath: string; evidenceSha256: string }>;
+  readonly coverageCodePoints: readonly number[];
+}
+
+export interface TypographyRoleV1 {
+  readonly role: TypographyRole;
+  readonly renderer: "woff2-canvas" | "msdf" | "sdf";
+  readonly fontAssetIds: readonly string[];
+  readonly requiredCodePoints: readonly number[];
+  readonly metrics: Readonly<{ sizePx: number; weight: number; trackingPx: number; lineHeightPx: number }>;
+  readonly fit: Readonly<{ minSizePx: number; overflow: "wrap" | "ellipsis" | "fail"; maxLines: number }>;
+  readonly osFallback: false;
+}
+
+export interface GlyphMetricV1 {
+  readonly codePoint: number;
+  readonly glyphId: number;
+  readonly advanceWidth: number;
+  readonly bbox: Readonly<{ minX: number; minY: number; maxX: number; maxY: number }>;
+}
+
+export interface GlyphMetricsV1 {
+  readonly schemaVersion: typeof GLYPH_METRICS_SCHEMA_VERSION;
+  readonly fontAssetId: string;
+  readonly fontSha256: string;
+  readonly unitsPerEm: number;
+  readonly ascent: number;
+  readonly descent: number;
+  readonly lineGap: number;
+  readonly coverageCodePoints: readonly number[];
+  readonly glyphs: readonly GlyphMetricV1[];
 }
 
 export interface TypographyValidationResult {
@@ -278,17 +320,26 @@ export function validateTextInventory(value: unknown): TypographyValidationResul
   return { valid: errors.length === 0, errors };
 }
 
-type AssetSummary = { id: string; coverage: Set<number> };
-type RoleSummary = { role: TypographyRole; assets: string[]; required: Set<number> };
+type AssetSummary = { id: string; coverage: Set<number>; weight?: number };
+type RoleSummary = { role: TypographyRole; assets: string[]; required: Set<number>; weight?: number };
 
 function validateAsset(value: unknown, index: number, errors: string[]): AssetSummary | undefined {
   const path = `$.assets[${index}]`;
   const asset = record(value, path, errors);
   if (!asset) return undefined;
-  exactKeys(asset, ["id", "family", "version", "file", "source", "license", "coverageCodePoints"], path, errors);
+  exactKeys(asset, ["id", "family", "version", "face", "file", "metrics", "source", "license", "coverageCodePoints"], path, errors);
   const id = idValue(asset.id, `${path}.id`, errors) ? asset.id : undefined;
   stringValue(asset.family, `${path}.family`, errors);
   stringValue(asset.version, `${path}.version`, errors);
+  const face = record(asset.face, `${path}.face`, errors);
+  let faceWeight: number | undefined;
+  if (face) {
+    exactKeys(face, ["weight", "style"], `${path}.face`, errors);
+    if (!new Set([100, 200, 300, 400, 500, 600, 700, 800, 900]).has(face.weight as number)) {
+      errors.push(`${path}.face.weight must be a supported CSS hundred weight`);
+    } else faceWeight = face.weight as number;
+    if (!new Set(["normal", "italic"]).has(face.style as string)) errors.push(`${path}.face.style is not supported`);
+  }
   const file = record(asset.file, `${path}.file`, errors);
   if (file) {
     exactKeys(file, ["path", "sha256", "format"], `${path}.file`, errors);
@@ -296,10 +347,20 @@ function validateAsset(value: unknown, index: number, errors: string[]): AssetSu
     hashValue(file.sha256, `${path}.file.sha256`, errors);
     if (!new Set(["woff2", "msdf-atlas", "sdf-atlas"]).has(file.format as string)) errors.push(`${path}.file.format is not supported`);
   }
+  const metrics = record(asset.metrics, `${path}.metrics`, errors);
+  if (metrics) {
+    exactKeys(metrics, ["path", "sha256", "schemaVersion"], `${path}.metrics`, errors);
+    safeRelativePath(metrics.path, `${path}.metrics.path`, errors);
+    hashValue(metrics.sha256, `${path}.metrics.sha256`, errors);
+    if (metrics.schemaVersion !== GLYPH_METRICS_SCHEMA_VERSION) {
+      errors.push(`${path}.metrics.schemaVersion must equal ${GLYPH_METRICS_SCHEMA_VERSION}`);
+    }
+  }
   const source = record(asset.source, `${path}.source`, errors);
   if (source) {
-    exactKeys(source, ["upstreamRevision", "provenanceSha256"], `${path}.source`, errors);
+    exactKeys(source, ["upstreamRevision", "provenancePath", "provenanceSha256"], `${path}.source`, errors);
     stringValue(source.upstreamRevision, `${path}.source.upstreamRevision`, errors);
+    safeRelativePath(source.provenancePath, `${path}.source.provenancePath`, errors);
     hashValue(source.provenanceSha256, `${path}.source.provenanceSha256`, errors);
   }
   const license = record(asset.license, `${path}.license`, errors);
@@ -314,7 +375,7 @@ function validateAsset(value: unknown, index: number, errors: string[]): AssetSu
   }
   const coverage = new Set(integerList(asset.coverageCodePoints, `${path}.coverageCodePoints`, errors, true));
   if (coverage.size === 0) errors.push(`${path}.coverageCodePoints must not be empty`);
-  return id ? { id, coverage } : undefined;
+  return id ? { id, coverage, ...(faceWeight === undefined ? {} : { weight: faceWeight }) } : undefined;
 }
 
 function validateRole(value: unknown, index: number, errors: string[]): RoleSummary | undefined {
@@ -328,11 +389,15 @@ function validateRole(value: unknown, index: number, errors: string[]): RoleSumm
   const assets = stringList(roleValue.fontAssetIds, `${path}.fontAssetIds`, errors);
   const required = new Set(integerList(roleValue.requiredCodePoints, `${path}.requiredCodePoints`, errors, true));
   const metrics = record(roleValue.metrics, `${path}.metrics`, errors);
+  let roleWeight: number | undefined;
   if (metrics) {
     exactKeys(metrics, ["sizePx", "weight", "trackingPx", "lineHeightPx"], `${path}.metrics`, errors);
     for (const key of ["sizePx", "weight", "trackingPx", "lineHeightPx"] as const) {
       if (typeof metrics[key] !== "number" || !Number.isFinite(metrics[key])) errors.push(`${path}.metrics.${key} must be finite`);
     }
+    if (!new Set([100, 200, 300, 400, 500, 600, 700, 800, 900]).has(metrics.weight as number)) {
+      errors.push(`${path}.metrics.weight must be a supported CSS hundred weight`);
+    } else roleWeight = metrics.weight as number;
     if ((metrics.sizePx as number) <= 0 || (metrics.lineHeightPx as number) <= 0) errors.push(`${path}.metrics sizes must be positive`);
   }
   const fit = record(roleValue.fit, `${path}.fit`, errors);
@@ -343,7 +408,7 @@ function validateRole(value: unknown, index: number, errors: string[]): RoleSumm
     if (!Number.isSafeInteger(fit.maxLines) || (fit.maxLines as number) < 1) errors.push(`${path}.fit.maxLines must be a positive integer`);
   }
   if (roleValue.osFallback !== false) errors.push(`${path}.osFallback must equal false`);
-  return role ? { role, assets, required } : undefined;
+  return role ? { role, assets, required, ...(roleWeight === undefined ? {} : { weight: roleWeight }) } : undefined;
 }
 
 export function validateTypographyManifest(value: unknown, inventory?: unknown): TypographyValidationResult {
@@ -375,6 +440,9 @@ export function validateTypographyManifest(value: unknown, inventory?: unknown):
         if (!asset) errors.push(`$.roles[${index}] references unknown font asset ${id}`);
         return asset ? [...asset.coverage] : [];
       }));
+      if (summary.weight !== undefined && !summary.assets.some((id) => assets.get(id)?.weight === summary.weight)) {
+        errors.push(`$.roles[${index}] has no bundled face at declared weight ${summary.weight}`);
+      }
       for (const codePoint of summary.required) if (!covered.has(codePoint)) {
         errors.push(`$.roles[${index}] required character U+${codePoint.toString(16).toUpperCase()} is missing from bundled coverage`);
       }
@@ -404,6 +472,56 @@ export function validateTypographyManifest(value: unknown, inventory?: unknown):
           errors.push(`safe-modern character U+${codePoint.toString(16).toUpperCase()} is absent from role ${role} requiredCodePoints`);
         }
       }
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateGlyphMetrics(value: unknown, asset?: TypographyFontAssetV1): TypographyValidationResult {
+  const errors: string[] = [];
+  const root = record(value, "$", errors);
+  if (!root) return { valid: false, errors };
+  exactKeys(root, [
+    "schemaVersion", "fontAssetId", "fontSha256", "unitsPerEm", "ascent", "descent", "lineGap",
+    "coverageCodePoints", "glyphs",
+  ], "$", errors);
+  if (root.schemaVersion !== GLYPH_METRICS_SCHEMA_VERSION) errors.push(`$.schemaVersion must equal ${GLYPH_METRICS_SCHEMA_VERSION}`);
+  idValue(root.fontAssetId, "$.fontAssetId", errors);
+  hashValue(root.fontSha256, "$.fontSha256", errors);
+  for (const key of ["unitsPerEm", "ascent", "descent", "lineGap"] as const) {
+    if (!Number.isFinite(root[key])) errors.push(`$.${key} must be finite`);
+  }
+  if ((root.unitsPerEm as number) <= 0) errors.push("$.unitsPerEm must be positive");
+  const coverage = integerList(root.coverageCodePoints, "$.coverageCodePoints", errors, true);
+  coverage.forEach((codePoint, index) => {
+    if (index > 0 && codePoint <= coverage[index - 1]!) errors.push("$.coverageCodePoints must be strictly ascending");
+  });
+  if (!Array.isArray(root.glyphs)) errors.push("$.glyphs must be an array");
+  else {
+    if (root.glyphs.length !== coverage.length) errors.push("$.glyphs must contain one entry per covered code point");
+    root.glyphs.forEach((value, index) => {
+      const path = `$.glyphs[${index}]`;
+      const glyph = record(value, path, errors);
+      if (!glyph) return;
+      exactKeys(glyph, ["codePoint", "glyphId", "advanceWidth", "bbox"], path, errors);
+      if (glyph.codePoint !== coverage[index]) errors.push(`${path}.codePoint must match ordered coverage`);
+      if (!Number.isSafeInteger(glyph.glyphId) || (glyph.glyphId as number) < 0) errors.push(`${path}.glyphId must be a non-negative integer`);
+      if (!Number.isFinite(glyph.advanceWidth) || (glyph.advanceWidth as number) < 0) errors.push(`${path}.advanceWidth must be non-negative and finite`);
+      const bbox = record(glyph.bbox, `${path}.bbox`, errors);
+      if (bbox) {
+        exactKeys(bbox, ["minX", "minY", "maxX", "maxY"], `${path}.bbox`, errors);
+        for (const key of ["minX", "minY", "maxX", "maxY"] as const) {
+          if (!Number.isFinite(bbox[key])) errors.push(`${path}.bbox.${key} must be finite`);
+        }
+      }
+    });
+  }
+  if (asset) {
+    if (root.fontAssetId !== asset.id) errors.push("$.fontAssetId differs from the manifest asset");
+    if (root.fontSha256 !== asset.file.sha256) errors.push("$.fontSha256 differs from the manifest asset");
+    if (coverage.length !== asset.coverageCodePoints.length
+      || coverage.some((codePoint, index) => codePoint !== asset.coverageCodePoints[index])) {
+      errors.push("$.coverageCodePoints differs from the manifest asset");
     }
   }
   return { valid: errors.length === 0, errors };

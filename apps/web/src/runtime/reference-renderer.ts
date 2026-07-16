@@ -1,11 +1,8 @@
-import { Application, Container, Sprite, Text, Texture } from "pixi.js";
+import { Application, Container, Sprite, Texture } from "pixi.js";
 
 import { REFERENCE_PROFILE } from "@aico8/contracts";
 
-import type { DrawCommand } from "./kernel.js";
 import { pico8FramebufferColor } from "./pico8-palette.js";
-
-const PRINT_OPCODE = 14;
 
 export class ReferenceRenderer {
   readonly #root = new Container();
@@ -13,8 +10,6 @@ export class ReferenceRenderer {
   readonly #context: CanvasRenderingContext2D;
   readonly #image: ImageData;
   readonly #texture: Texture;
-  readonly #textLayer = new Container();
-
   constructor(app: Application) {
     this.#canvas.width = REFERENCE_PROFILE.logicalWidth;
     this.#canvas.height = REFERENCE_PROFILE.logicalHeight;
@@ -28,7 +23,7 @@ export class ReferenceRenderer {
     const sprite = new Sprite(this.#texture);
     sprite.width = REFERENCE_PROFILE.outputWidth;
     sprite.height = REFERENCE_PROFILE.outputHeight;
-    this.#root.addChild(sprite, this.#textLayer);
+    this.#root.addChild(sprite);
     app.stage.addChild(this.#root);
   }
 
@@ -39,7 +34,6 @@ export class ReferenceRenderer {
   render(
     framebuffer: Uint8Array,
     displayPalette: Uint8Array,
-    commands: readonly DrawCommand[],
   ): void {
     const rgba = this.#image.data;
     for (let pixel = 0; pixel < framebuffer.length; pixel += 1) {
@@ -53,22 +47,5 @@ export class ReferenceRenderer {
     this.#context.putImageData(this.#image, 0, 0);
     this.#texture.source.update();
 
-    this.#textLayer.removeChildren().forEach((child) => child.destroy());
-    const decoder = new TextDecoder();
-    for (const command of commands) {
-      if (command.opcode !== PRINT_OPCODE || command.payload.length === 0) continue;
-      const label = new Text({
-        text: decoder.decode(command.payload),
-        style: {
-          fill: pico8FramebufferColor(command.args[2] ?? 6, displayPalette),
-          fontFamily: "Aico Sans, ui-rounded, system-ui, sans-serif",
-          fontSize: 30,
-          fontWeight: "700",
-          letterSpacing: 0.5,
-        },
-      });
-      label.position.set((command.args[0] ?? 0) * 8, (command.args[1] ?? 0) * 8 - 4);
-      this.#textLayer.addChild(label);
-    }
   }
 }

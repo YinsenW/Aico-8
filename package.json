@@ -18,12 +18,13 @@
     "capture:official-probe": "node scripts/capture-official-probe.mjs",
     "import:official-education-probe": "node scripts/import-official-education-probe.mjs",
     "capture:implementation-curved-raster": "tsx scripts/capture-implementation-curved-raster.ts",
+    "build:typography-assets": "node scripts/build-typography-assets.mjs",
     "compare:official-probe": "node scripts/compare-official-probe.mjs",
     "verify:rust": "node scripts/verify-rust-boundary.mjs",
     "verify:rust-spike": "cargo fmt --all -- --check && cargo clippy -p aico8-kernel-spike --all-targets --features z8lua-native -- -D warnings && cargo test -p aico8-kernel-spike --features z8lua-native && node scripts/verify-rust-wasm.ts && cargo rustc -p aico8-kernel-spike --release --target riscv32imafc-unknown-none-elf --lib -- --crate-type rlib",
     "verify:hd-identity": "node --test scripts/accept-private-hd-review.test.mjs && pnpm --filter @aico8/contracts exec vitest run src/hd-identity-map.test.ts src/quality-leap-audit.test.ts src/hd-review-packet.test.ts src/hd-review-decision.test.ts src/hd-evidence-lifecycle.test.ts",
     "verify:hd-presentation": "pnpm --filter @aico8/contracts exec vitest run src/hd-presentation-audit.test.ts",
-    "verify:typography": "pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts",
+    "verify:typography": "node scripts/build-typography-assets.mjs --check && node scripts/verify-font-independence.mjs && pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts && pnpm --filter @aico8/web exec vitest run src/runtime/hd-typography.test.ts src/runtime/vector-command-presenter.test.ts",
     "verify:text-run": "make -C runtime/core wasm-test && pnpm --filter @aico8/web exec vitest run src/runtime/text-run-ir.test.ts && pnpm --filter @aico8/contracts exec vitest run src/typography.test.ts",
     "verify:replay": "pnpm --filter @aico8/contracts exec vitest run src/replay.test.ts",
     "verify:batch": "pnpm --filter @aico8/contracts exec vitest run src/batch.test.ts src/batch-job.test.ts",
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@xmldom/xmldom": "0.8.13",
     "ajv": "8.17.1",
+    "fontkit": "2.0.4",
     "tsx": "4.20.6"
   }
 }

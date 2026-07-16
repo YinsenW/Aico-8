@@ -1,7 +1,9 @@
 import { Graphics, GraphicsPath } from "pixi.js";
 
 import type { Aico8Kernel, DrawCommand } from "./kernel.js";
+import { decodeSafeModernTextRun, textRunMatchesPrintPayload } from "./hd-typography.js";
 import { PICO8_EXTENDED_COLORS, normalizePico8DisplayIndex } from "./pico8-palette.js";
+import type { TextRunV1 } from "./text-run-ir.js";
 
 const OPCODE = {
   cls: 1,
@@ -53,6 +55,8 @@ export interface VectorSemanticTileContext {
 
 export interface VectorCommandText {
   readonly text: string;
+  readonly run: TextRunV1;
+  readonly ordinal: number;
   readonly x: number;
   readonly y: number;
   readonly color: number;
@@ -63,6 +67,9 @@ export interface VectorCommandMeasurements {
   readonly continuousPrimitiveCount: number;
   readonly spriteSurfaceCount: number;
   readonly textCount: number;
+  readonly safeTextCount: number;
+  readonly blockedTextCount: number;
+  readonly mismatchedTextCount: number;
   readonly indexedCellQuadCount: 0;
 }
 
@@ -180,7 +187,6 @@ function curvedPath(
 
 export class VectorCommandPresenter {
   readonly #theme: Required<Pick<VectorCommandTheme, "scale" | "palette">> & VectorCommandTheme;
-  readonly #decoder = new TextDecoder();
   #cameraX = 0;
   #cameraY = 0;
   #drawPalette = Array.from({ length: 16 }, (_, color) => color);
@@ -192,6 +198,9 @@ export class VectorCommandPresenter {
     continuousPrimitiveCount: 0,
     spriteSurfaceCount: 0,
     textCount: 0,
+    safeTextCount: 0,
+    blockedTextCount: 0,
+    mismatchedTextCount: 0,
     indexedCellQuadCount: 0,
   };
 
@@ -223,6 +232,11 @@ export class VectorCommandPresenter {
     let continuousPrimitiveCount = 0;
     let spriteSurfaceCount = 0;
     let textCount = 0;
+    let safeTextCount = 0;
+    let blockedTextCount = 0;
+    let mismatchedTextCount = 0;
+    let textRuns: readonly TextRunV1[] | undefined;
+    let textOrdinal = 0;
     const scale = this.#theme.scale;
     const colorFor = (index: number): number => {
       const draw = this.#drawPalette[index & 15] ?? (index & 15);
@@ -518,12 +532,38 @@ export class VectorCommandPresenter {
         continue;
       }
       if (command.opcode === OPCODE.print && command.payload.length > 0) {
+        textRuns ??= kernel.textRuns();
+        const run = textRuns[textOrdinal];
         const index = integer(args[2], 7) & 15;
-        drawText({ text: this.#decoder.decode(command.payload).replaceAll("\0", ""), x: x(args[0]), y: y(args[1]), color: colorFor(index) });
+        if (!run || !textRunMatchesPrintPayload(run, command.payload)) {
+          blockedTextCount += 1;
+          mismatchedTextCount += 1;
+        } else if (run.classification === "safe-modern") {
+          drawText({
+            text: decodeSafeModernTextRun(run),
+            run,
+            ordinal: textOrdinal,
+            x: x(args[0]),
+            y: y(args[1]),
+            color: colorFor(index),
+          });
+          safeTextCount += 1;
+        } else blockedTextCount += 1;
+        textOrdinal += 1;
         textCount += 1;
         sourcePrimitiveCount += 1;
       }
     }
-    this.#measurements = { sourcePrimitiveCount, continuousPrimitiveCount, spriteSurfaceCount, textCount, indexedCellQuadCount: 0 };
+    if (textRuns && textOrdinal !== textRuns.length) mismatchedTextCount += Math.abs(textRuns.length - textOrdinal);
+    this.#measurements = {
+      sourcePrimitiveCount,
+      continuousPrimitiveCount,
+      spriteSurfaceCount,
+      textCount,
+      safeTextCount,
+      blockedTextCount,
+      mismatchedTextCount,
+      indexedCellQuadCount: 0,
+    };
   }
 }
