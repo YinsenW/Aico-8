@@ -31,8 +31,7 @@ acceptance state, final evidence, and failure records remain per game.
 Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses; do not add a new Python production service.
 C++ remains confined to the current compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
 
-Implementation never changes a requirement's wording. If product intent must
-change, update the PRD first and update its contract references in the same PR.
+Implementation never changes a requirement's wording. If product intent must change, update the PRD first and update its contract references in the same PR.
 Architecture changes require an ADR.
 
 ## Selector catalog
@@ -47,6 +46,7 @@ node --test scripts/lib/official-probe-capture.test.mjs scripts/lib/official-pro
 make -C runtime/core wasm && node --test scripts/capture-implementation-curved-raster.test.mjs
 node --test scripts/smoke-private-cart-native.test.mjs scripts/smoke-private-cart.test.mjs
 pnpm verify:rust
+pnpm verify:rust-spike
 pnpm verify:hd-identity
 pnpm verify:hd-presentation
 pnpm verify:typography

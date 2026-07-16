@@ -23,4 +23,5 @@ captures/official/
 dist/
 coverage/
 node_modules/
+target/
 *.log

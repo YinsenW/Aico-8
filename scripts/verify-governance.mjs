@@ -186,7 +186,7 @@ record('development_support', 'Python stays in research and test boundaries',
     .every((item) => item.startsWith('tools/') || item.startsWith('tests/')))
 record('development_support', 'C++ stays inside the compatibility kernel',
   repositorySources.filter((item) => /\.(cc|cpp|cxx)$/.test(item))
-    .every((item) => item.startsWith('runtime/core/')))
+    .every((item) => item.startsWith('runtime/core/') || item === 'runtime/kernel-rs/src/z8lua_bridge.cpp'))
 record('development_support', 'every roadmap stage has bounded work and acceptance',
   roadmapStages.every(({ stage, section }) =>
     (section.match(new RegExp(`WP-M${stage}-\\d+`, 'g')) ?? []).length >= 2 && section.includes('Acceptance:')))

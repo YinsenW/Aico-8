@@ -19,8 +19,17 @@ function walk(directory) {
 }
 
 walk(root);
-for (const file of [...rustFiles, ...cargoManifests]) {
+for (const file of rustFiles) {
   assert.ok(file.startsWith("runtime/kernel-rs/"), `${file}: Rust is allowed only in the disposable kernel proof boundary`);
+}
+for (const file of cargoManifests) {
+  assert.ok(file === "Cargo.toml" || file.startsWith("runtime/kernel-rs/"),
+    `${file}: Cargo manifests are allowed only for the root proof workspace or its isolated member`);
+}
+if (cargoManifests.includes("Cargo.toml")) {
+  const workspace = fs.readFileSync(path.join(root, "Cargo.toml"), "utf8");
+  assert.match(workspace, /members\s*=\s*\["runtime\/kernel-rs"\]/,
+    "root Cargo workspace may contain only runtime/kernel-rs");
 }
 
 const adr = fs.readFileSync(path.join(root, "docs/decisions/0002-rust-kernel-spike.md"), "utf8");
