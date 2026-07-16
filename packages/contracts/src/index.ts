@@ -215,19 +215,25 @@ export {
   type HdEvidenceReviewLineageValidationResult,
 } from "./hd-evidence-lifecycle.js";
 export {
+  GLYPH_METRICS_SCHEMA_VERSION,
   TEXT_CLASSIFICATIONS,
   TEXT_INVENTORY_SCHEMA_VERSION,
   TEXT_PROVENANCE_KINDS,
   TYPOGRAPHY_MANIFEST_SCHEMA_VERSION,
   TYPOGRAPHY_ROLES,
+  validateGlyphMetrics,
   validateTextInventory,
   validateTypographyContract,
   validateTypographyManifest,
   type TextClassification,
   type TextInventoryV1,
   type TextProvenanceKind,
+  type GlyphMetricV1,
+  type GlyphMetricsV1,
   type TypographyManifestV1,
+  type TypographyFontAssetV1,
   type TypographyRole,
+  type TypographyRoleV1,
   type TypographyValidationResult,
 } from "./typography.js";
 export {

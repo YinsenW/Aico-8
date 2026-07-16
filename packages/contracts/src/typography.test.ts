@@ -4,9 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   TEXT_CLASSIFICATIONS,
+  GLYPH_METRICS_SCHEMA_VERSION,
   TEXT_INVENTORY_SCHEMA_VERSION,
   TEXT_PROVENANCE_KINDS,
   TYPOGRAPHY_MANIFEST_SCHEMA_VERSION,
+  validateGlyphMetrics,
   validateTextInventory,
   validateTypographyContract,
   validateTypographyManifest,
@@ -79,12 +81,22 @@ const atkinsonAsset = (): any => ({
   id: "atkinson-regular",
   family: "Atkinson Hyperlegible",
   version: "1cb311624b2ddf88e9e37873999d165a8cd28b46",
+  face: { weight: 400, style: "normal" },
   file: {
     path: "apps/web/public/fonts/AtkinsonHyperlegible-Regular.woff2",
     sha256: regularHash,
     format: "woff2",
   },
-  source: { upstreamRevision: "1cb311624b2ddf88e9e37873999d165a8cd28b46", provenanceSha256: hash },
+  metrics: {
+    path: "apps/web/public/fonts/AtkinsonHyperlegible-Regular.metrics.json",
+    sha256: hash,
+    schemaVersion: "aico8.glyph-metrics.v1",
+  },
+  source: {
+    upstreamRevision: "1cb311624b2ddf88e9e37873999d165a8cd28b46",
+    provenancePath: "apps/web/public/fonts/AtkinsonHyperlegible-PROVENANCE.txt",
+    provenanceSha256: hash,
+  },
   license: {
     spdx: "OFL-1.1",
     evidencePath: "apps/web/public/fonts/OFL-Atkinson-Hyperlegible.txt",
@@ -138,6 +150,16 @@ describe("typography routing contracts", () => {
     });
   });
 
+  it("validates generated glyph metrics against the pinned public manifest", () => {
+    const publicRoot = new URL("../../../apps/web/public/", import.meta.url);
+    const publicManifest = JSON.parse(readFileSync(new URL("typography/latin-ui-v1.json", publicRoot), "utf8"));
+    expect(validateTypographyManifest(publicManifest)).toEqual({ valid: true, errors: [] });
+    for (const asset of publicManifest.assets) {
+      const metrics = JSON.parse(readFileSync(new URL(asset.metrics.path, publicRoot), "utf8"));
+      expect(validateGlyphMetrics(metrics, asset), asset.id).toEqual({ valid: true, errors: [] });
+    }
+  });
+
   it("rejects a missing safe-modern character", () => {
     const value = manifest();
     value.roles[0].requiredCodePoints = codePoints("begi");
@@ -179,6 +201,12 @@ describe("typography routing contracts", () => {
     value.osFallback = true;
     value.roles[0].osFallback = true;
     expect(validateTypographyManifest(value).errors.join("\n")).toMatch(/osFallback must equal false/);
+  });
+
+  it("rejects a role whose declared weight has no bundled face", () => {
+    const value = manifest();
+    value.roles[0].metrics.weight = 700;
+    expect(validateTypographyManifest(value).errors.join("\n")).toMatch(/no bundled face at declared weight 700/);
   });
 
   it("rejects unknown text provenance", () => {
@@ -224,7 +252,7 @@ describe("typography routing contracts", () => {
     expect(validateTextInventory(value).errors.join("\n")).toMatch(/Unicode scalar value/);
   });
 
-  it("keeps both JSON Schemas synchronized with the executable versions and enums", () => {
+  it("keeps typography JSON Schemas synchronized with executable versions and enums", () => {
     const inventorySchema = JSON.parse(readFileSync(
       new URL("../../../specs/schemas/text-inventory-v1.schema.json", import.meta.url), "utf8",
     ));
@@ -234,11 +262,15 @@ describe("typography routing contracts", () => {
     const textRunSchema = JSON.parse(readFileSync(
       new URL("../../../specs/schemas/text-run-v1.schema.json", import.meta.url), "utf8",
     ));
+    const glyphMetricsSchema = JSON.parse(readFileSync(
+      new URL("../../../specs/schemas/glyph-metrics-v1.schema.json", import.meta.url), "utf8",
+    ));
     expect(inventorySchema.properties.schemaVersion.const).toBe(TEXT_INVENTORY_SCHEMA_VERSION);
     expect(inventorySchema.$defs.run.properties.classification.enum).toEqual(TEXT_CLASSIFICATIONS);
     expect(inventorySchema.$defs.run.properties.provenance.properties.kind.enum).toEqual(TEXT_PROVENANCE_KINDS);
     expect(manifestSchema.properties.schemaVersion.const).toBe(TYPOGRAPHY_MANIFEST_SCHEMA_VERSION);
     expect(manifestSchema.properties.osFallback.const).toBe(false);
+    expect(glyphMetricsSchema.properties.schemaVersion.const).toBe(GLYPH_METRICS_SCHEMA_VERSION);
     expect(textRunSchema.properties.schemaVersion.const).toBe(1);
     expect(textRunSchema.properties.classification.enum).toEqual(TEXT_CLASSIFICATIONS);
     expect(textRunSchema.properties.customFont.properties).toMatchObject({

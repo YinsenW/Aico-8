@@ -37,11 +37,34 @@ const requiredFiles = [
   "index.html", "asset-manifest.json", "manifest.webmanifest", "service-worker.js", "icon-192.png", "icon-512.png",
   "kernel/aico8-kernel.js", "kernel/aico8-kernel.wasm",
   "fonts/AtkinsonHyperlegible-Regular.woff2", "fonts/AtkinsonHyperlegible-Bold.woff2",
-  "fonts/OFL-Atkinson-Hyperlegible.txt", "private/game.json", "PRIVATE-RESEARCH-ONLY.txt",
+  "fonts/AtkinsonHyperlegible-Regular.metrics.json", "fonts/AtkinsonHyperlegible-Bold.metrics.json",
+  "fonts/AtkinsonHyperlegible-PROVENANCE.txt", "fonts/OFL-Atkinson-Hyperlegible.txt",
+  "typography/latin-ui-v1.json", "private/game.json", "PRIVATE-RESEARCH-ONLY.txt",
   "target-profile.json", "release-manifest.json",
 ];
 for (const relative of requiredFiles) {
   assert.ok(fs.statSync(resolvePackageFile(output, relative), { throwIfNoEntry: false })?.isFile(), `Missing ${relative}`);
+}
+
+const typography = readJson("typography/latin-ui-v1.json");
+assert.equal(typography.schemaVersion, "aico8.typography-manifest.v1");
+assert.equal(typography.osFallback, false);
+assert.ok(Array.isArray(typography.assets) && typography.assets.length === 2, "Typography manifest needs two pinned faces");
+for (const asset of typography.assets) {
+  for (const resource of [
+    [asset.file.path, asset.file.sha256],
+    [asset.metrics.path, asset.metrics.sha256],
+    [asset.source.provenancePath, asset.source.provenanceSha256],
+    [asset.license.evidencePath, asset.license.evidenceSha256],
+  ]) {
+    assertSafePackageRelativePath(resource[0], "Typography resource path");
+    const absolute = resolvePackageFile(output, resource[0], "Typography resource path");
+    assert.ok(fs.statSync(absolute, { throwIfNoEntry: false })?.isFile(), `Missing typography resource ${resource[0]}`);
+    assert.equal(sha256(absolute), resource[1], `Typography resource hash mismatch: ${resource[0]}`);
+  }
+}
+for (const role of typography.roles) {
+  assert.equal(role.osFallback, false, `Typography role ${role.role} enables OS fallback`);
 }
 
 const pwa = readJson("manifest.webmanifest");

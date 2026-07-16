@@ -4,7 +4,7 @@ scopeRoot.hash = "";
 if (!scopeRoot.pathname.endsWith("/")) scopeRoot.pathname += "/";
 const scopeKey = encodeURIComponent(scopeRoot.pathname);
 const CACHE_PREFIX = `aico8-web-${scopeKey}-`;
-const CACHE_NAME = `${CACHE_PREFIX}v4`;
+const CACHE_NAME = `${CACHE_PREFIX}v5`;
 const CORE_ASSETS = [
   "./",
   "./asset-manifest.json",
@@ -14,7 +14,11 @@ const CORE_ASSETS = [
   "./icon-512.png",
   "./fonts/AtkinsonHyperlegible-Regular.woff2",
   "./fonts/AtkinsonHyperlegible-Bold.woff2",
+  "./fonts/AtkinsonHyperlegible-Regular.metrics.json",
+  "./fonts/AtkinsonHyperlegible-Bold.metrics.json",
+  "./fonts/AtkinsonHyperlegible-PROVENANCE.txt",
   "./fonts/OFL-Atkinson-Hyperlegible.txt",
+  "./typography/latin-ui-v1.json",
   "./kernel/aico8-kernel.js",
   "./kernel/aico8-kernel.wasm"
 ];

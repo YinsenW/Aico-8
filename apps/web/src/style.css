@@ -2,7 +2,7 @@
   color-scheme: dark;
   background: #06070b;
   color: #fff8f4;
-  font-family: "Aico Sans", Inter, ui-rounded, system-ui, sans-serif;
+  font-family: "Aico Sans";
   font-synthesis: none;
 }
 
@@ -11,15 +11,15 @@
   src: url("/fonts/AtkinsonHyperlegible-Regular.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
   font-family: "Aico Sans";
   src: url("/fonts/AtkinsonHyperlegible-Bold.woff2") format("woff2");
   font-style: normal;
-  font-weight: 700 900;
-  font-display: swap;
+  font-weight: 700;
+  font-display: block;
 }
 
 * {
@@ -95,14 +95,14 @@ button:focus-visible {
   margin: 0 0 5px;
   color: #ff77a8;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.16em;
 }
 
 h1 {
   margin: 0;
   font-size: clamp(24px, 4vw, 40px);
-  font-weight: 820;
+  font-weight: 700;
   letter-spacing: -0.035em;
 }
 
@@ -312,7 +312,7 @@ h1 {
   right: clamp(12px, 2vw, 20px);
   border-radius: 50%;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .up { grid-column: 2; grid-row: 1; }
@@ -333,7 +333,7 @@ h1 {
   height: 62px;
   border-radius: 50%;
   font-size: 18px;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .action.primary {

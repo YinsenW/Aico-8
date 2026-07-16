@@ -29,11 +29,20 @@
     "asset": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "family", "version", "file", "source", "license", "coverageCodePoints"],
+      "required": ["id", "family", "version", "face", "file", "metrics", "source", "license", "coverageCodePoints"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "family": { "type": "string", "minLength": 1 },
         "version": { "type": "string", "minLength": 1 },
+        "face": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["weight", "style"],
+          "properties": {
+            "weight": { "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+            "style": { "enum": ["normal", "italic"] }
+          }
+        },
         "file": {
           "type": "object",
           "additionalProperties": false,
@@ -44,12 +53,23 @@
             "format": { "enum": ["woff2", "msdf-atlas", "sdf-atlas"] }
           }
         },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "schemaVersion"],
+          "properties": {
+            "path": { "$ref": "#/$defs/path" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "schemaVersion": { "const": "aico8.glyph-metrics.v1" }
+          }
+        },
         "source": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["upstreamRevision", "provenanceSha256"],
+          "required": ["upstreamRevision", "provenancePath", "provenanceSha256"],
           "properties": {
             "upstreamRevision": { "type": "string", "minLength": 1 },
+            "provenancePath": { "$ref": "#/$defs/path" },
             "provenanceSha256": { "$ref": "#/$defs/sha256" }
           }
         },
@@ -81,7 +101,7 @@
           "required": ["sizePx", "weight", "trackingPx", "lineHeightPx"],
           "properties": {
             "sizePx": { "type": "number", "exclusiveMinimum": 0 },
-            "weight": { "type": "number" },
+            "weight": { "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900] },
             "trackingPx": { "type": "number" },
             "lineHeightPx": { "type": "number", "exclusiveMinimum": 0 }
           }

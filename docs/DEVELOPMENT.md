@@ -1,7 +1,6 @@
 # Development agent runbook
 
 ## Bootstrap and select work
-
 1. Inspect `git status --short --branch` and existing stacked PRs before editing.
 2. Run `pnpm verify:governance` and read `current_focus` in `governance/project.json`.
 3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item set. Do not invent a parallel status list in a plan, README, PR body, or research note.
@@ -67,8 +66,9 @@ Private selectors strengthen local evidence but never masquerade as public CI.
 evidence-free acceptance, and hidden partial failure before assembly.
 `pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.
 The host keeps the reviewer private key outside the Agent workspace; the runner consumes only the pinned public trust profile and detached signed decision.
-`pnpm verify:typography` validates text routing, font evidence, identity contours,
-coverage, and OS independence; `pnpm verify:text-run` adds byte-identical Native/Wasm runs and fail-closed Web decoding.
+`pnpm verify:typography` validates routing, font evidence, contours, generated
+metrics, fit goldens, resource hashes, and OS independence; regenerate only via
+`pnpm build:typography-assets`. `pnpm verify:text-run` adds Native/Wasm identity.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
 reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
 level/ending milestones, and broken replay lineage.

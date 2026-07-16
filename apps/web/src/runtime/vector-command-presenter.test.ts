@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { Aico8Kernel, DrawCommand } from "./kernel.js";
 import { PICO8_EXTENDED_COLORS } from "./pico8-palette.js";
 import { VectorCommandPresenter } from "./vector-command-presenter.js";
+import type { TextRunV1 } from "./text-run-ir.js";
 
 const palette = [
   0x000000, 0x1d2b53, 0x7e2553, 0x008751,
@@ -20,6 +21,34 @@ function flaggedCommand(opcode: number, flags: number, args: readonly number[]):
   return { opcode, flags, args, payload: new Uint8Array() };
 }
 
+function printCommand(text: string): DrawCommand {
+  return { opcode: 14, flags: 0, args: [2, 3, 7], payload: new TextEncoder().encode(text) };
+}
+
+function textRun(text: string, classification: TextRunV1["classification"] = "safe-modern"): TextRunV1 {
+  return {
+    schemaVersion: 1,
+    sequence: 0,
+    update: { low: 1, high: 0 },
+    classification,
+    reasonMask: classification === "safe-modern" ? 0 : 1,
+    sideEffectMask: 0,
+    unsupportedMask: 0,
+    anchor: [2, 3],
+    cursorIn: [2, 3],
+    cursorOut: [7, 3],
+    rightmostX: 6,
+    diagnosticBounds: { x: 2, y: 3, width: 5, height: 6 },
+    foregroundIn: 7,
+    foregroundOut: 7,
+    printAttributes: 0,
+    customFont: { revision: 0, memoryBase: 0x5600, memorySize: 0x100 },
+    appendNewline: false,
+    spans: [{ byteOffset: 0, byteLength: text.length, kind: "visual", reasonMask: 0, sideEffectMask: 0 }],
+    rawP8scii: Array.from(new TextEncoder().encode(text)),
+  };
+}
+
 const kernel = {
   paletteState: () => ({
     draw: Uint8Array.from({ length: 16 }, (_, color) => color | (color === 0 ? 0x10 : 0)),
@@ -30,6 +59,24 @@ const kernel = {
 } as unknown as Aico8Kernel;
 
 describe("vector command presenter", () => {
+  it("draws only byte-matched safe-modern text runs and reports blocked runs", () => {
+    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    const copies: string[] = [];
+    const safeKernel = { ...kernel, textRuns: () => [textRun("begin")] } as unknown as Aico8Kernel;
+    presenter.render(new Graphics(), safeKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
+    expect(copies).toEqual(["begin"]);
+    expect(presenter.measurements()).toMatchObject({ textCount: 1, safeTextCount: 1, blockedTextCount: 0, mismatchedTextCount: 0 });
+
+    const blockedKernel = { ...kernel, textRuns: () => [textRun("begin", "review-required")] } as unknown as Aico8Kernel;
+    presenter.render(new Graphics(), blockedKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
+    expect(copies).toEqual(["begin"]);
+    expect(presenter.measurements()).toMatchObject({ textCount: 1, safeTextCount: 0, blockedTextCount: 1, mismatchedTextCount: 0 });
+
+    const mismatchKernel = { ...kernel, textRuns: () => [textRun("resume")] } as unknown as Aico8Kernel;
+    presenter.render(new Graphics(), mismatchKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
+    expect(presenter.measurements()).toMatchObject({ blockedTextCount: 1, mismatchedTextCount: 1 });
+  });
+
   it("turns a PICO-8 circle command into one continuous primitive", () => {
     const presenter = new VectorCommandPresenter({ scale: 8, palette });
     const graphics = new Graphics();

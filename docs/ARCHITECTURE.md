@@ -1,7 +1,6 @@
 # Aico 8 architecture
 
 ## Product boundary
-
 Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and adds a separate HD presentation path.
 
 The product is TypeScript-first. C++ is restricted to a small deterministic
@@ -116,8 +115,10 @@ authorize new marketing, narrative, instruction, or celebration copy.
 The complete policy is owned by
 `specs/typography.md`.
 
-### 6. Audio preservation
+The first Latin path regenerates `aico8.glyph-metrics.v1` from pinned Atkinson WOFF2 and rejects missing code points. Web hash-verifies all font evidence before installing one no-fallback `FontFace`.
+Original view stays framebuffer-only; HD draws only byte-matched `safe-modern` DATA-TEXT-RUN-001 entries.
 
+### 6. Audio preservation
 - The kernel remains the reference four-channel synth and handles dynamic pitch,
   speed, waveform, pattern, and memory changes.
 - Static music/SFX may be pre-rendered, preloaded, and substituted only after
@@ -125,7 +126,6 @@ The complete policy is owned by
 - Web assets prefer compact delivery codecs while validation retains lossless
   evidence. Embedded profiles may select synth or compressed samples by budget.
 ### 7. 1024×1024 reference presentation
-
 - Native 1024×1024 output, using 64×64 pixels per logical 8×8 tile.
 - TypeScript/PixiJS implementation; WebGL baseline and optional WebGPU.
 - Vector/responsive UI, modern animation, particles, lighting, accessibility,
