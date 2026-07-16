@@ -23,6 +23,8 @@ constexpr uint16_t kFillPatternLow = 0x5f31;
 constexpr uint16_t kFillPatternFlags = 0x5f33;
 constexpr uint16_t kColorSettingFlags = 0x5f34;
 constexpr uint16_t kMapSpriteZeroMode = 0x5f36;
+constexpr uint16_t kSgetOutOfBoundsValue = 0x5f59;
+constexpr uint16_t kPgetOutOfBoundsValue = 0x5f5b;
 constexpr uint16_t kTlineMaskX = 0x5f38;
 constexpr uint16_t kTlineMaskY = 0x5f39;
 constexpr uint16_t kTlineOffsetX = 0x5f3a;
@@ -302,6 +304,10 @@ void p8_raster_reset(p8_core *core)
 
 uint8_t p8_gfx_pget(const p8_core *core, int x, int y)
 {
+    if (core && (x < 0 || y < 0 || x >= P8_SCREEN_WIDTH || y >= P8_SCREEN_HEIGHT)
+        && (p8_core_peek(core, kMapSpriteZeroMode) & 0x10u) != 0) {
+        return p8_core_peek(core, kPgetOutOfBoundsValue);
+    }
     return raw_pixel(core, kScreenBase, x, y);
 }
 
@@ -312,6 +318,10 @@ void p8_gfx_pset(p8_core *core, int x, int y, uint8_t color)
 
 uint8_t p8_gfx_sget(const p8_core *core, int x, int y)
 {
+    if (core && (x < 0 || y < 0 || x >= P8_SCREEN_WIDTH || y >= P8_SCREEN_HEIGHT)
+        && (p8_core_peek(core, kMapSpriteZeroMode) & 0x10u) != 0) {
+        return p8_core_peek(core, kSgetOutOfBoundsValue);
+    }
     return raw_pixel(core, kGfxBase, x, y);
 }
 
@@ -680,9 +690,10 @@ void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_
     for (int y = 0; y < cell_height; ++y) {
         for (int x = 0; x < cell_width; ++x) {
             const uint8_t sprite = p8_core_mget(core, cell_x + x, cell_y + y);
-            // PICO-8 map cell 0 is empty even when sprite 0 contains visible
-            // pixels. This is a map-level sentinel, not palette transparency.
-            if (sprite == 0) {
+            // Sprite zero is normally the map-level empty sentinel. The shared
+            // 0x5f36 compatibility register can make it drawable without
+            // changing sprite transparency or the stored map cell.
+            if (sprite == 0 && (p8_core_peek(core, kMapSpriteZeroMode) & 0x08u) == 0) {
                 continue;
             }
             const uint8_t flags = p8_core_peek(core,

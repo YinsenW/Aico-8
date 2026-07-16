@@ -461,6 +461,53 @@ try {
   kernel._free(embeddedFillSourcePointer);
 }
 
+const rasterRegisterRuntime = kernel._aico8_create();
+assert.notEqual(rasterRegisterRuntime, 0);
+const rasterRegisterSource = new TextEncoder().encode(`
+function _init()
+ sset(0,0,7) mset(0,0,0) cls(6)
+ map(0,0,0,0,1,1) skipped=pget(0,0)
+ poke(0x5f36,8) map(0,0,0,0,1,1) drawn=pget(0,0)
+ poke(0x5f59,9) poke(0x5f5a,10) poke(0x5f5b,11) poke(0x5f36,0x18)
+ sget_oob=sget(-1,0) mget_oob=mget(-1,0) pget_oob=pget(-1,0)
+ pal(7,143,1)
+end
+`);
+const rasterRegisterSourcePointer = copyToHeap(rasterRegisterSource);
+const rasterRegisterRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(rasterRegisterRuntime, rasterRegisterRomPointer, 0x8000,
+    rasterRegisterSourcePointer, rasterRegisterSource.length), 1);
+  assert.equal(kernel._aico8_start(rasterRegisterRuntime), 1);
+  const valuePointer = kernel._malloc(4);
+  const palettePointer = kernel._malloc(32);
+  const names = Object.fromEntries(["skipped", "drawn", "sget_oob", "mget_oob", "pget_oob"]
+    .map((name) => [name, copyToHeap(new TextEncoder().encode(`${name}\0`))]));
+  try {
+    for (const [name, expected] of Object.entries({
+      skipped: 6,
+      drawn: 7,
+      sget_oob: 9,
+      mget_oob: 10,
+      pget_oob: 11,
+    })) {
+      assert.equal(kernel._aico8_get_global_raw(rasterRegisterRuntime, names[name], valuePointer), 1);
+      assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), expected << 16);
+    }
+    assert.equal(kernel._aico8_copy_palette_state(rasterRegisterRuntime, palettePointer, 32), 32);
+    assert.equal(kernel.HEAPU8[palettePointer + 16 + 7], 143,
+      "Wasm hosts must preserve extended display-palette indices");
+  } finally {
+    for (const pointer of Object.values(names)) kernel._free(pointer);
+    kernel._free(palettePointer);
+    kernel._free(valuePointer);
+  }
+} finally {
+  kernel._aico8_destroy(rasterRegisterRuntime);
+  kernel._free(rasterRegisterRomPointer);
+  kernel._free(rasterRegisterSourcePointer);
+}
+
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(

@@ -102,6 +102,13 @@ void test_map_mapping_and_shared_gfx_alias()
     assert(!p8_core_mset(core, 128, 0, 1));
     assert(p8_core_mget(core, -1, 0) == 0);
 
+    p8_core_poke(core, 0x5f5a, 10);
+    p8_core_poke(core, 0x5f36, 0x10);
+    assert(p8_core_mget(core, -1, 0) == 10);
+    assert(p8_core_mget(core, 0, 0) == 0x20); // in-range reads ignore the override
+    p8_core_poke(core, 0x5f36, 0);
+    assert(p8_core_mget(core, -1, 0) == 0);
+
     p8_core_poke(core, 0x5f56, 0x10);
     p8_core_poke(core, 0x5f57, 0); // 256 cells wide
     p8_core_mset(core, 255, 31, 0x31);
@@ -392,6 +399,28 @@ void test_raster_sprite_map_palette_and_flip()
     p8_core_mset(core, 4, 5, 0);
     p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
     assert(p8_gfx_pget(core, 90, 100) == 6);
+
+    p8_core_poke(core, 0x5f36, 0x08);
+    p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
+    assert(p8_gfx_pget(core, 90, 100) == 7);
+    p8_gfx_palt(core, 7, 1);
+    p8_gfx_cls(core, 6);
+    p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
+    assert(p8_gfx_pget(core, 90, 100) == 6);
+
+    assert(p8_gfx_pget(core, -1, 0) == 0);
+    assert(p8_gfx_sget(core, -1, 0) == 0);
+    p8_core_poke(core, 0x5f59, 9);
+    p8_core_poke(core, 0x5f5b, 11);
+    p8_core_poke(core, 0x5f36, 0x18);
+    assert(p8_gfx_sget(core, -1, 0) == 9);
+    assert(p8_gfx_pget(core, -1, 0) == 11);
+    assert(p8_gfx_sget(core, 0, 0) == 7); // in-range reads ignore the override
+
+    p8_gfx_pal_mode(core, 7, 143, 1);
+    assert(p8_core_peek(core, 0x5f17) == 143);
+    p8_gfx_pal_reset_mode(core, 1);
+    assert(p8_core_peek(core, 0x5f17) == 7);
     p8_core_destroy(core);
 }
 

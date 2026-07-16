@@ -27,7 +27,8 @@ frames require complete modern coverage rather than mixed indexed fragments.
 - The draw palette maps a source colour when new pixels are drawn. The display
   palette changes presentation without changing stored screen indices.
 - `pget` and `sget` return stored screen and sprite-sheet indices. Their normal
-  out-of-range result is zero.
+  out-of-range result is zero; when `0x5f36` bit 4 is enabled, `sget`, `mget`,
+  and `pget` instead return the bytes at `0x5f59`, `0x5f5a`, and `0x5f5b`.
 - `palt` is observed by `spr`, `sspr`, `map`, and `tline`, not by primitive
   plotting. Its default is colour 0 transparent and all other colours opaque.
 - Rectangle corners and line endpoints are inclusive. A negative circle radius
@@ -55,8 +56,9 @@ frames require complete modern coverage rather than mixed indexed fragments.
 - `reload(dest,source,len)` copies the immutable current-cart ROM data region
   `0x0000..0x42ff` into base RAM; the code section at `0x4300` and above is
   protected.
-- `map()` treats cell value `0` as empty and skips it even when sprite `0` has
-  visible pixels; layer filtering applies only to non-zero cells.
+- `map()` normally treats cell value `0` as empty even when sprite `0` has
+  visible pixels. `0x5f36` bit 3 makes sprite `0` drawable; palette
+  transparency and layer filtering still apply on the ordinary sprite path.
 - `tline()` samples map-backed sprite pixels along an inclusive screen line.
   Its default 13-bit coordinate mode advances one sprite pixel per `0.125`
   tile; `tline(16)` switches the sampling coordinates to pixel units. The
@@ -103,11 +105,19 @@ are qualified; semantic text-run emission remains a separate planned boundary.
 The same source targets native, WebAssembly, and ESP-IDF builds. A TypeScript
 host consumes the indexed frame; it does not duplicate compatibility raster rules.
 
+The native, VM, and Wasm paths also retain the map sprite-zero override, the
+three out-of-range read bytes, and display-palette targets `128..143`. The Web
+reference renderer resolves indexed framebuffer pixels through the exported
+display palette, while the HD vector presenter preserves the same extended
+indices instead of truncating them to `0..15`. The RGB table is isolated in one
+TypeScript module so official capture corrections cannot drift between the two
+presenters.
+
 ## Deliberately unresolved
 
 Licensed official runtime probes are still required for fixed-point edge rounding;
 exact line/circle/ellipse and inverted-fill edge pixels; embedded colour-argument
-state persistence; extended display palettes and out-of-range overrides;
+state persistence; exact extended-palette RGB output and override edge behavior;
 upper-memory mapping conflicts; and draw-state byte packing not specified by the
 public manual.
 
@@ -116,8 +126,9 @@ disagreements, but they are not the compatibility oracle.
 
 ## Next implementation slice
 
-Complete remaining sprite/map and extended-display-palette modes, then capture
+Implement the remaining manual drawing primitives (`oval`, `ovalfill`, `rrect`,
+and `rrectfill`) in the shared native/Wasm raster and VM API, then capture
 licensed official-runtime goldens for embedded-state persistence, fixed-point,
-inverted-fill, and other edge behavior. Keep indexed-frame tests and
-semantic-command output paired so the HD presentation bridge never invents
-separate semantics.
+extended-colour output, inverted-fill, and other edge behavior. Keep
+indexed-frame tests and semantic-command output paired so the HD presentation
+bridge never invents separate semantics.

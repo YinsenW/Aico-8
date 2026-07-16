@@ -819,6 +819,40 @@ end
     p8_core_destroy(core);
 }
 
+void test_map_sprite_zero_read_overrides_and_extended_display_palette_reach_lua()
+{
+    constexpr char source[] = R"p8lua(
+function verify_raster_register_modes()
+ sset(0,0,7) mset(0,0,0) cls(6)
+ map(0,0,0,0,1,1) skipped=pget(0,0)
+ poke(0x5f36,8) map(0,0,0,0,1,1) drawn=pget(0,0)
+ poke(0x5f59,9) poke(0x5f5a,10) poke(0x5f5b,11) poke(0x5f36,0x18)
+ sget_oob=sget(-1,0) mget_oob=mget(-1,0) pget_oob=pget(-1,0)
+ pal(7,143,1)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, source, sizeof(source) - 1,
+                                   "@raster-register-modes"));
+    assert(p8_vm_call(vm, "verify_raster_register_modes"));
+    const auto integer_global = [vm](const char *name) {
+        int32_t raw = 0;
+        assert(p8_vm_get_global_raw(vm, name, &raw));
+        return raw >> 16;
+    };
+    assert(integer_global("skipped") == 6);
+    assert(integer_global("drawn") == 7);
+    assert(integer_global("sget_oob") == 9);
+    assert(integer_global("mget_oob") == 10);
+    assert(integer_global("pget_oob") == 11);
+    assert(p8_core_peek(core, 0x5f17) == 143);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_update_error_is_sticky_and_draw_is_skipped()
 {
     constexpr char source[] = R"p8lua(
@@ -916,6 +950,7 @@ int main(int argc, char **argv)
     test_static_p8scii_executes_pixels_metrics_memory_and_custom_fonts();
     test_secondary_palette_reaches_sprite_and_global_raster_through_lua();
     test_embedded_colour_patterns_and_inversion_reach_raster_through_lua();
+    test_map_sprite_zero_read_overrides_and_extended_display_palette_reach_lua();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"

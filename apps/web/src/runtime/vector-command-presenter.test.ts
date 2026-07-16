@@ -2,6 +2,7 @@ import { Graphics } from "pixi.js";
 import { describe, expect, it } from "vitest";
 
 import type { Aico8Kernel, DrawCommand } from "./kernel.js";
+import { PICO8_EXTENDED_COLORS } from "./pico8-palette.js";
 import { VectorCommandPresenter } from "./vector-command-presenter.js";
 
 const palette = [
@@ -79,5 +80,31 @@ describe("vector command presenter", () => {
       readonly data: { readonly style: { readonly color: number } };
     };
     expect(fill.data.style.color).toBe(palette[12]);
+  });
+
+  it("preserves extended display-palette targets from state and PAL commands", () => {
+    const extendedKernel = {
+      ...kernel,
+      paletteState: () => ({
+        draw: Uint8Array.from({ length: 16 }, (_, color) => color | (color === 0 ? 0x10 : 0)),
+        display: Uint8Array.from({ length: 16 }, (_, color) => color === 7 ? 143 : color),
+      }),
+    } as unknown as Aico8Kernel;
+    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    const graphics = new Graphics();
+    presenter.render(graphics, extendedKernel, [command(1, [7])], () => {});
+    let fill = graphics.context.instructions.at(-1) as {
+      readonly data: { readonly style: { readonly color: number } };
+    };
+    expect(fill.data.style.color).toBe(PICO8_EXTENDED_COLORS[15]);
+
+    presenter.render(graphics, kernel, [
+      flaggedCommand(15, 2, [7, 128, 1]),
+      flaggedCommand(5, 5, [0, 0, 1, 1, 7]),
+    ], () => {});
+    fill = graphics.context.instructions.at(-1) as {
+      readonly data: { readonly style: { readonly color: number } };
+    };
+    expect(fill.data.style.color).toBe(PICO8_EXTENDED_COLORS[0]);
   });
 });

@@ -521,7 +521,11 @@ try {
   });
   const renderCurrentFrame = (): void => {
     const commands = loadedRuntime.drawCommands();
-    referenceRenderer.render(loadedRuntime.framebuffer(), commands);
+    referenceRenderer.render(
+      loadedRuntime.framebuffer(),
+      loadedRuntime.paletteState().display,
+      commands,
+    );
     hdRenderer?.update(loadedRuntime, commands);
     const diagnostics = hdRenderer?.diagnostics?.();
     if (diagnostics) {

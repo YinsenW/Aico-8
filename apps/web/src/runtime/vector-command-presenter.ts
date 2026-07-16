@@ -1,6 +1,7 @@
 import { Graphics, GraphicsPath } from "pixi.js";
 
 import type { Aico8Kernel, DrawCommand } from "./kernel.js";
+import { PICO8_EXTENDED_COLORS, normalizePico8DisplayIndex } from "./pico8-palette.js";
 
 const OPCODE = {
   cls: 1,
@@ -30,6 +31,7 @@ type SpriteSurface = { readonly color: number; readonly loops: readonly Loop[] }
 export interface VectorCommandTheme {
   readonly scale: number;
   readonly palette: readonly number[];
+  readonly extendedPalette?: readonly number[];
   readonly backgroundColor?: number;
   readonly contourRounding?: number;
   readonly surfaceShadow?: { readonly color: number; readonly alpha: number; readonly offset: number };
@@ -211,7 +213,7 @@ export class VectorCommandPresenter {
     this.#cameraY = 0;
     const paletteState = kernel.paletteState();
     this.#drawPalette = Array.from(paletteState.draw, (entry) => entry & 15);
-    this.#displayPalette = Array.from(paletteState.display, (entry) => entry & 15);
+    this.#displayPalette = Array.from(paletteState.display, normalizePico8DisplayIndex);
     this.#transparent = new Set(Array.from(paletteState.draw, (entry, color) => ({ entry, color }))
       .filter(({ entry }) => (entry & 0x10) !== 0).map(({ color }) => color));
     this.#clip = { left: 0, top: 0, right: 128, bottom: 128 };
@@ -223,7 +225,9 @@ export class VectorCommandPresenter {
     const colorFor = (index: number): number => {
       const draw = this.#drawPalette[index & 15] ?? (index & 15);
       const display = this.#displayPalette[draw & 15] ?? (draw & 15);
-      return this.#theme.palette[display] ?? 0xffffff;
+      return display >= 128
+        ? (this.#theme.extendedPalette ?? PICO8_EXTENDED_COLORS)[display - 128] ?? 0xffffff
+        : this.#theme.palette[display] ?? 0xffffff;
     };
     const x = (value: number | undefined): number => ((value ?? 0) - this.#cameraX) * scale;
     const y = (value: number | undefined): number => ((value ?? 0) - this.#cameraY) * scale;
@@ -326,7 +330,8 @@ export class VectorCommandPresenter {
         } else if (command.flags >= 2) {
           const paletteIndex = integer(args[2]);
           if (paletteIndex === 0) this.#drawPalette[integer(args[0]) & 15] = integer(args[1]) & 15;
-          else if (paletteIndex === 1) this.#displayPalette[integer(args[0]) & 15] = integer(args[1]) & 15;
+          else if (paletteIndex === 1) this.#displayPalette[integer(args[0]) & 15]
+            = normalizePico8DisplayIndex(integer(args[1]));
           // Palette 2 drives fillp's compatibility raster. Until the HD
           // presenter has an explicit patterned-surface contract, it must not
           // reinterpret those byte pairs as display-palette entries.

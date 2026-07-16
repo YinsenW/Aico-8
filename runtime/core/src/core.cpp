@@ -19,6 +19,8 @@ constexpr uint16_t kScreenMapRegister = 0x5f55;
 constexpr uint16_t kMapMapRegister = 0x5f56;
 constexpr uint16_t kMapWidthRegister = 0x5f57;
 constexpr uint16_t kButtonStateRegister = 0x5f4c;
+constexpr uint16_t kReadOverrideFlags = 0x5f36;
+constexpr uint16_t kMgetOutOfBoundsValue = 0x5f5a;
 constexpr uint16_t kRepeatDelayRegister = 0x5f5c;
 constexpr uint16_t kRepeatIntervalRegister = 0x5f5d;
 constexpr uint8_t kButtonMask = (1u << P8_BUTTONS_PER_PLAYER) - 1u;
@@ -285,7 +287,15 @@ int p8_core_reload(p8_core *core, uint16_t destination, uint16_t source, size_t 
 uint8_t p8_core_mget(const p8_core *core, int x, int y)
 {
     uint16_t address = 0;
-    return core && core->map_address(x, y, address) ? core->ram[address] : 0;
+    if (!core) {
+        return 0;
+    }
+    if (core->map_address(x, y, address)) {
+        return core->ram[address];
+    }
+    return (core->read(kReadOverrideFlags) & 0x10u) != 0
+        ? core->read(kMgetOutOfBoundsValue)
+        : 0;
 }
 
 int p8_core_mset(p8_core *core, int x, int y, uint8_t value)
