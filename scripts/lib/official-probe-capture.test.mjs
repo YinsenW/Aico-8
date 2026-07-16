@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -128,6 +129,54 @@ test('checked-in capture plans match the files emitted by raster and audio probe
   assert.match(audioProbe, /local status_file="audio_status\.csv"/)
   assert.match(audioProbe, /extcmd\("set_filename","p8_audio_runtime"\)/)
   assert.match(audioProbe, /extcmd\("audio_end",1\)/)
+})
+
+test('public CLI smoke exercises isolation, artifact copying, and capture validation end to end', () => {
+  if (process.platform === 'win32') return
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'aico8-official-cli-'))
+  const runtime = path.join(temporary, 'pico8')
+  const cart = path.join(temporary, 'probe.p8')
+  fs.writeFileSync(runtime, [
+    '#!/bin/sh',
+    "printf 'p8probe|edge|ok\\n'",
+    "printf 'update,stat46\\n1,-1\\n' > status.csv",
+    '',
+  ].join('\n'))
+  fs.chmodSync(runtime, 0o755)
+  fs.writeFileSync(cart, 'pico-8 cartridge\nversion 43\n__lua__\n')
+  const captureDirectory = path.join(
+    repositoryRoot,
+    'captures/official',
+    `public-cli-smoke-${process.pid}-${Date.now()}`,
+  )
+  const output = path.join(captureDirectory, 'probe.json')
+  try {
+    const result = spawnSync(process.execPath, [
+      path.join(repositoryRoot, 'scripts/capture-official-probe.mjs'),
+      '--licensed-official-runtime',
+      '--runtime', runtime,
+      '--runtime-version', 'synthetic-cli-smoke',
+      '--cart', cart,
+      '--output', output,
+      '--artifact', 'status.csv',
+    ], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, result.stderr)
+    const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
+    assert.equal(capture.status, 'captured')
+    assert.deepEqual(capture.events, [['edge', 'ok']])
+    assert.deepEqual(capture.attachments.map(({ sourceRelativePath, mediaType }) => ({
+      sourceRelativePath,
+      mediaType,
+    })), [{ sourceRelativePath: 'status.csv', mediaType: 'text/csv' }])
+    assert.deepEqual(validateOfficialProbeCapture(capture), [])
+    assert.deepEqual(validateOfficialProbeArtifactFiles(capture, output), [])
+  } finally {
+    fs.rmSync(captureDirectory, { recursive: true, force: true })
+    fs.rmSync(temporary, { recursive: true, force: true })
+  }
 })
 
 test('rejects unlicensed, failed, tampered, and public capture records', () => {
