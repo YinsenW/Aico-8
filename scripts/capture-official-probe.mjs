@@ -34,7 +34,7 @@ if (!runtime || !runtimeVersion || !cart || !output || !licensed) {
   process.stderr.write('Usage: node scripts/capture-official-probe.mjs '
     + '--licensed-official-runtime --runtime <pico8> --runtime-version <version> '
     + '--cart <probe.p8> --output <captures/official/...json> [--expected <expected.json>] '
-    + '[--artifact <relative.png|relative.wav> ...]\n')
+    + '[--artifact <relative.png|relative.wav|relative.csv> ...]\n')
   process.exit(2)
 }
 if (!isPrivateOfficialCapturePath(root, output)) {

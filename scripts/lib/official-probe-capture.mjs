@@ -40,6 +40,7 @@ function artifactMediaType(relativePath) {
   const extension = path.extname(relativePath).toLowerCase()
   if (extension === '.png') return 'image/png'
   if (extension === '.wav') return 'audio/wav'
+  if (extension === '.csv') return 'text/csv'
   return undefined
 }
 
@@ -61,7 +62,7 @@ export function collectOfficialProbeArtifacts(workingDirectory, specifications, 
     seen.add(relativePath)
     const mediaType = artifactMediaType(relativePath)
     if (!mediaType) {
-      errors.push(`artifact type must be .png or .wav: ${relativePath}`)
+      errors.push(`artifact type must be .png, .wav, or .csv: ${relativePath}`)
       continue
     }
     const source = path.resolve(workingRoot, relativePath)
@@ -153,11 +154,11 @@ export function validateOfficialProbeCapture(capture, expectedEvents) {
     const relativePath = normalizedArtifactPath(attachment?.relativePath)
     const sourceRelativePath = normalizedArtifactPath(attachment?.sourceRelativePath)
     return !relativePath || !sourceRelativePath
-      || !['image/png', 'audio/wav'].includes(attachment.mediaType)
+      || !['image/png', 'audio/wav', 'text/csv'].includes(attachment.mediaType)
       || !Number.isSafeInteger(attachment.bytes) || attachment.bytes < 0
       || typeof attachment.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(attachment.sha256)
   })) {
-    errors.push('attachments must be safe hashed PNG/WAV metadata records')
+    errors.push('attachments must be safe hashed PNG/WAV/CSV metadata records')
   }
   return errors
 }

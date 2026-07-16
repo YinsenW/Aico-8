@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "normative_oracle": {
     "runtime": "Licensed official PICO-8",
     "minimum_version": "0.2.7",
@@ -23,6 +23,8 @@
       "id": "runtime_pcm_and_status",
       "method": "Run probes/audio_status.p8 in the official native runtime. The cart records audio with extcmd(audio_rec/audio_end) and writes status once per _update60 call.",
       "outputs": ["p8_audio_runtime.wav", "audio_status.csv"],
+      "artifact_arguments": ["p8_audio_runtime.wav", "audio_status.csv"],
+      "capture_command": "pnpm capture:official-probe -- --licensed-official-runtime --runtime /path/to/pico8 --runtime-version 0.2.7 --cart tests/conformance/probes/audio_status.p8 --output captures/official/0.2.7/audio_status.json --artifact p8_audio_runtime.wav --artifact audio_status.csv",
       "logical_updates": 150,
       "purpose": [
         "music sequencing and fade",

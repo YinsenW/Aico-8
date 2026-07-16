@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import {
   buildOfficialProbeCapture,
@@ -14,6 +15,7 @@ import {
 } from './official-probe-capture.mjs'
 
 const digest = 'a'.repeat(64)
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 test('parses only ordered p8probe records from mixed official output', () => {
   assert.deepEqual(parseProbeEvents('boot\np8probe|alpha|1\nnoise p8probe|beta|x|y\n'), [
@@ -22,16 +24,17 @@ test('parses only ordered p8probe records from mixed official output', () => {
   ])
 })
 
-test('copies declared PNG/WAV artifacts into a hashed immutable capture bundle', () => {
+test('copies declared PNG/WAV/CSV artifacts into a hashed immutable capture bundle', () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'aico8-official-artifacts-'))
   const working = path.join(temporary, 'working')
   const artifactRoot = path.join(temporary, 'capture.artifacts')
   fs.mkdirSync(path.join(working, 'nested'), { recursive: true })
   fs.writeFileSync(path.join(working, 'screen.png'), Buffer.from([1, 2, 3]))
   fs.writeFileSync(path.join(working, 'nested/audio.wav'), Buffer.from([4, 5]))
+  fs.writeFileSync(path.join(working, 'status.csv'), 'update,stat46\n1,-1\n')
   const collected = collectOfficialProbeArtifacts(
     working,
-    ['screen.png', 'nested/audio.wav'],
+    ['screen.png', 'nested/audio.wav', 'status.csv'],
     artifactRoot,
   )
   assert.deepEqual(collected.errors, [])
@@ -42,6 +45,7 @@ test('copies declared PNG/WAV artifacts into a hashed immutable capture bundle',
   })), [
     { mediaType: 'image/png', bytes: 3, relativePath: 'capture.artifacts/screen.png' },
     { mediaType: 'audio/wav', bytes: 2, relativePath: 'capture.artifacts/nested/audio.wav' },
+    { mediaType: 'text/csv', bytes: 19, relativePath: 'capture.artifacts/status.csv' },
   ])
   const capturePath = path.join(temporary, 'capture.json')
   const capture = buildOfficialProbeCapture({
@@ -74,7 +78,7 @@ test('rejects missing, unsafe, duplicated, and unsupported artifacts', () => {
   assert.deepEqual(collected.errors, [
     'artifact path is unsafe: ../escape.png',
     'declared artifact was not produced as a regular file: missing.wav',
-    'artifact type must be .png or .wav: note.txt',
+    'artifact type must be .png, .wav, or .csv: note.txt',
     'artifact path is duplicated: missing.wav',
   ])
 })
@@ -91,6 +95,39 @@ test('builds a provenance-bound licensed official capture', () => {
     capturedAt: '2026-07-16T00:00:00.000Z',
   })
   assert.deepEqual(validateOfficialProbeCapture(capture, [['edge', '8,0,8']]), [])
+})
+
+test('checked-in capture plans match the files emitted by raster and audio probes', () => {
+  const matrix = JSON.parse(fs.readFileSync(
+    path.join(repositoryRoot, 'tests/conformance/matrix.json'),
+    'utf8',
+  ))
+  const curved = matrix.areas.find(({ id }) => id === 'curved_raster')
+  assert.deepEqual(curved.artifacts, ['curved_raster.png'])
+  assert.match(curved.capture_command, /--artifact curved_raster\.png(?:\s|$)/)
+  const curvedProbe = fs.readFileSync(
+    path.join(repositoryRoot, 'tests/conformance/probes/curved_raster.p8'),
+    'utf8',
+  )
+  assert.match(curvedProbe, /extcmd\("set_filename","curved_raster"\)/)
+  assert.match(curvedProbe, /extcmd\("screen",1,1\)/)
+
+  const audio = JSON.parse(fs.readFileSync(
+    path.join(repositoryRoot, 'tests/conformance/audio_capture_manifest.json'),
+    'utf8',
+  ))
+  const runtimeCapture = audio.captures.find(({ id }) => id === 'runtime_pcm_and_status')
+  assert.deepEqual(runtimeCapture.artifact_arguments, runtimeCapture.outputs)
+  for (const artifact of runtimeCapture.artifact_arguments) {
+    assert.match(runtimeCapture.capture_command, new RegExp(`--artifact ${artifact.replace('.', '\\.')}($|\\s)`))
+  }
+  const audioProbe = fs.readFileSync(
+    path.join(repositoryRoot, 'tests/conformance/probes/audio_status.p8'),
+    'utf8',
+  )
+  assert.match(audioProbe, /local status_file="audio_status\.csv"/)
+  assert.match(audioProbe, /extcmd\("set_filename","p8_audio_runtime"\)/)
+  assert.match(audioProbe, /extcmd\("audio_end",1\)/)
 })
 
 test('rejects unlicensed, failed, tampered, and public capture records', () => {

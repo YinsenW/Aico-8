@@ -62,6 +62,8 @@
       "id": "curved_raster",
       "status": "capture_ready",
       "probe": "probes/curved_raster.p8",
+      "artifacts": ["curved_raster.png"],
+      "capture_command": "pnpm capture:official-probe -- --licensed-official-runtime --runtime /path/to/pico8 --runtime-version 0.2.7 --cart tests/conformance/probes/curved_raster.p8 --output captures/official/0.2.7/curved_raster.json --artifact curved_raster.png",
       "golden_status": "Licensed official PICO-8 capture required; independent runtimes are not normative.",
       "covers": [
         "oval and ovalfill odd/even bounding boxes",

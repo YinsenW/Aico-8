@@ -225,17 +225,20 @@ pnpm capture:official-probe -- \
   --runtime /path/to/pico8 \
   --runtime-version 0.2.7 \
   --cart tests/conformance/probes/curved_raster.p8 \
-  --output captures/official/0.2.7/curved_raster.json
+  --output captures/official/0.2.7/curved_raster.json \
+  --artifact curved_raster.png
 ```
 
 The runner uses the manual-defined `-x` headless switch. Independent emulator
 output is never accepted as an official golden, and capture files remain private.
 The cart runs from an isolated temporary working directory. Every explicitly
-declared PNG/WAV output is copied into an immutable sibling artifact bundle with
+declared PNG/WAV/CSV output is copied into an immutable sibling artifact bundle with
 its media type, byte count, and SHA-256 recorded in capture schema v2; missing,
 duplicated, unsupported, symlinked, traversing, overwritten, or later-tampered
 attachments fail validation. A probe that emits only stdout declares no
 `--artifact` arguments and still records an explicit empty attachment list.
+The curved-raster matrix entry declares its exact command and a raw 128x128 PNG;
+that image is the oracle for display-palette RGB that `pget()` cannot observe.
 
 ### Scheduler
 

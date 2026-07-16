@@ -74,5 +74,19 @@ poke(0x5f5b,11)
 poke(0x5f36,0x18)
 emit("out_of_bounds",tostr(sget(-1,0))..","..tostr(mget(-1,0))..","..tostr(pget(-1,0)))
 
+-- Save one raw 128x128 official-raster sheet. The PNG is required because
+-- pget() cannot observe the RGB selected by the display palette.
+reset()
+cls(1)
+oval(8,8,47,35,8)
+ovalfill(56,8,95,35,10)
+rrect(8,48,40,28,10,11)
+rrectfill(56,48,40,28,10,12)
+pal(7,143,1)
+rrectfill(16,88,96,24,8,7)
+print("extended 143",33,97,0)
+extcmd("set_filename","curved_raster")
+extcmd("screen",1,1)
+
 function _draw()
 end
