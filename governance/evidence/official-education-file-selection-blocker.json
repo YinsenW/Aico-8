@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "aico8.external-gate.v1",
+  "recordedAt": "2026-07-16T20:36:36+08:00",
+  "gateId": "official-education-local-cart-selection",
+  "status": "awaiting-explicit-user-authorization",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "url": "https://www.pico-8-edu.com/",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c"
+  },
+  "publicProbe": {
+    "path": "tests/conformance/probes/curved_raster.p8",
+    "sha256": "6eaa83f80e707695f1032de9e8dd93919d99c5abaf29ba8a4c85e62be543b03a"
+  },
+  "observedBoundary": {
+    "officialRuntimeLoaded": true,
+    "loadCommandEntered": true,
+    "nativeFileChooserReached": true,
+    "fileSelected": false,
+    "bytesTransmitted": false
+  },
+  "reason": "Selecting a local file in the browser is an external upload action and requires explicit user authorization. The public probe was intentionally not selected.",
+  "nextAction": "After explicit authorization, select the exact public probe, capture the official raster bundle, import it with pnpm import:official-education-probe, and run the exact comparator before changing any compatibility exit status.",
+  "claims": {
+    "provesChannelReachability": true,
+    "provesOfficialRasterCompatibility": false,
+    "provesAudioCompatibility": false,
+    "grantsPublicationRights": false
+  }
+}

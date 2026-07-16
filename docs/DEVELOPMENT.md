@@ -24,9 +24,8 @@ Through the first complete remake, select only browser Web/PWA work or its direc
 7. Record exact implementation/evidence paths and remaining work in the manifest.
 8. Run governance verification and inspect the diff for ownership or terminology drift.
 
-Never repeat full evidence generation for an edit that has not passed its narrow
-checkpoint. Shared-runtime and governance checks may be batched across candidates;
-acceptance state, final evidence, and failure records remain per game.
+Never repeat full evidence generation before its narrow checkpoint. Shared-runtime
+checks may be batched; acceptance evidence and failure records remain per game.
 
 Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses; do not add a new Python production service.
 C++ remains confined to the current compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
@@ -50,6 +49,7 @@ pnpm verify:rust-spike
 pnpm verify:hd-identity
 pnpm verify:hd-presentation
 pnpm verify:typography
+pnpm verify:text-run
 pnpm verify:replay
 pnpm verify:game-module
 pnpm verify:batch
@@ -67,8 +67,8 @@ Private selectors strengthen local evidence but never masquerade as public CI.
 evidence-free acceptance, and hidden partial failure before assembly.
 `pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.
 The host keeps the reviewer private key outside the Agent workspace; the runner consumes only the pinned public trust profile and detached signed decision.
-`pnpm verify:typography` validates reachable text routing, fixed bundled-font
-evidence, reviewed identity contours, complete coverage, and zero OS fallback.
+`pnpm verify:typography` validates text routing, font evidence, identity contours,
+coverage, and OS independence; `pnpm verify:text-run` adds byte-identical Native/Wasm runs and fail-closed Web decoding.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
 reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing
 level/ending milestones, and broken replay lineage.

@@ -2,9 +2,13 @@
 
 #include "p8/raster.h"
 
+#include "core_internal.h"
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
+#include <vector>
 
 namespace {
 
@@ -76,8 +80,27 @@ struct text_state {
     bool background_enabled = false;
     bool underline = false;
     bool outline_skip_interior = false;
+    bool has_bounds = false;
+    int min_x = 0;
+    int min_y = 0;
+    int max_draw_x = 0;
+    int max_draw_y = 0;
     uint32_t unsupported = 0;
 };
+
+void include_pixel(text_state &state, int x, int y)
+{
+    if (!state.has_bounds) {
+        state.min_x = state.max_draw_x = x;
+        state.min_y = state.max_draw_y = y;
+        state.has_bounds = true;
+        return;
+    }
+    state.min_x = std::min(state.min_x, x);
+    state.min_y = std::min(state.min_y, y);
+    state.max_draw_x = std::max(state.max_draw_x, x);
+    state.max_draw_y = std::max(state.max_draw_y, y);
+}
 
 std::array<uint8_t, 8> character_rows(const text_state &state, uint8_t character)
 {
@@ -107,8 +130,10 @@ void draw_rows(text_state &state, const std::array<uint8_t, 8> &rows,
                 for (int sx = 0; sx < scale_x; ++sx) {
                     if ((state.mode & mode_stripe) != 0 && (sx != 0 || sy != 0)) continue;
                     if (on || draw_background) {
-                        p8_gfx_text_pixel(state.core, x + source_x * scale_x + sx,
-                                          y + source_y * scale_y + sy,
+                        const int pixel_x = x + source_x * scale_x + sx;
+                        const int pixel_y = y + source_y * scale_y + sy;
+                        include_pixel(state, pixel_x, pixel_y);
+                        p8_gfx_text_pixel(state.core, pixel_x, pixel_y,
                                           on ? foreground : state.background);
                     }
                 }
@@ -174,6 +199,7 @@ int draw_character(text_state &state, uint8_t character,
     state.line_height = std::max(state.line_height, base_height * scale_y + 1);
     if (state.underline) {
         for (int px = -1; px < advance; ++px) {
+            include_pixel(state, state.x + px, state.y + state.line_height);
             p8_gfx_text_pixel(state.core, state.x + px, state.y + state.line_height,
                               state.foreground);
         }
@@ -260,6 +286,267 @@ uint32_t unsupported_controls(const uint8_t *bytes, size_t size)
     return unsupported;
 }
 
+struct text_span {
+    uint32_t offset;
+    uint32_t length;
+    uint32_t kind;
+    uint32_t reasons;
+    uint32_t effects;
+};
+
+struct token_description {
+    size_t length = 1;
+    uint32_t kind = P8_TEXT_SPAN_VISUAL;
+    uint32_t reasons = P8_TEXT_REASON_NONE;
+    uint32_t effects = P8_TEXT_EFFECT_NONE;
+    bool terminates = false;
+};
+
+size_t bounded_token_size(size_t requested, size_t remaining)
+{
+    return std::max<size_t>(1, std::min(requested, remaining));
+}
+
+token_description describe_token(const uint8_t *bytes, size_t size, size_t index)
+{
+    token_description token{};
+    const size_t remaining = size - index;
+    const uint8_t character = bytes[index];
+    if (character == 0) {
+        token.length = remaining;
+        token.kind = P8_TEXT_SPAN_TERMINATOR;
+        token.reasons = P8_TEXT_REASON_VISUAL_CONTROL
+            | P8_TEXT_REASON_AMBIGUOUS_MAPPING;
+        token.terminates = true;
+        return token;
+    }
+    if (character >= 16) {
+        if (character < 32 || character >= 127) {
+            token.reasons = P8_TEXT_REASON_NON_ASCII | P8_TEXT_REASON_AMBIGUOUS_MAPPING;
+        }
+        token.effects = P8_TEXT_EFFECT_CURSOR;
+        return token;
+    }
+
+    token.kind = P8_TEXT_SPAN_CONTROL;
+    token.reasons = P8_TEXT_REASON_VISUAL_CONTROL | P8_TEXT_REASON_SIDE_EFFECT;
+    token.effects = P8_TEXT_EFFECT_CURSOR;
+    if (character == 1) {
+        token.length = bounded_token_size(3, remaining);
+    } else if (character == 2) {
+        token.length = bounded_token_size(2, remaining);
+        token.effects = P8_TEXT_EFFECT_RENDER_STATE;
+    } else if (character >= 3 && character <= 5) {
+        token.length = bounded_token_size(character == 5 ? 3 : 2, remaining);
+    } else if (character == 6) {
+        if (remaining < 2) {
+            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+            token.effects = P8_TEXT_EFFECT_RENDER_STATE;
+            return token;
+        }
+        const uint8_t command = bytes[index + 1];
+        if (command >= '1' && command <= '9') {
+            token.length = 2;
+            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+            token.effects = P8_TEXT_EFFECT_TIMING;
+        } else if (command == 'd') {
+            token.length = bounded_token_size(3, remaining);
+            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+            token.effects = P8_TEXT_EFFECT_TIMING;
+        } else if (command == 'c') {
+            token.length = bounded_token_size(3, remaining);
+            token.effects = P8_TEXT_EFFECT_SCREEN_CLEAR | P8_TEXT_EFFECT_CURSOR;
+        } else if (command == 'j') {
+            token.length = bounded_token_size(4, remaining);
+        } else if (command == 'r' || command == 's') {
+            token.length = bounded_token_size(3, remaining);
+        } else if (command == 'x' || command == 'y' || command == '-') {
+            token.length = bounded_token_size(3, remaining);
+            token.effects = P8_TEXT_EFFECT_RENDER_STATE;
+            if (command == '-' && token.length >= 3 && bytes[index + 2] == 'b') {
+                token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+            }
+        } else if (command == 'o') {
+            token.length = bounded_token_size(5, remaining);
+            token.effects = P8_TEXT_EFFECT_RENDER_STATE;
+        } else if (command == ':' || command == ';' || command == '.' || command == ',') {
+            token.length = bounded_token_size(command == ':' || command == ';' ? 18 : 10,
+                                              remaining);
+            token.kind = P8_TEXT_SPAN_INLINE_GLYPH;
+            token.reasons = P8_TEXT_REASON_INLINE_GLYPH
+                | P8_TEXT_REASON_AMBIGUOUS_MAPPING;
+            token.effects = P8_TEXT_EFFECT_CURSOR;
+        } else if (command == '@') {
+            size_t count = 0;
+            if (remaining >= 10) {
+                for (size_t digit = 6; digit <= 9; ++digit) {
+                    count = (count << 4u)
+                        | hex_nibble(static_cast<char>(bytes[index + digit]));
+                }
+            }
+            token.length = bounded_token_size(10 + count, remaining);
+            token.effects = P8_TEXT_EFFECT_RAM_WRITE;
+        } else if (command == '!') {
+            token.length = remaining;
+            token.effects = P8_TEXT_EFFECT_RAM_WRITE;
+            token.terminates = true;
+        } else if (command == 'g' || command == 'h') {
+            token.length = 2;
+        } else if (command == 'w' || command == 't' || command == '='
+                   || command == 'p' || command == 'i' || command == '#'
+                   || command == 'u') {
+            token.length = 2;
+            token.effects = P8_TEXT_EFFECT_RENDER_STATE;
+        } else {
+            token.length = 2;
+            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+            token.effects = P8_TEXT_EFFECT_RENDER_STATE;
+        }
+    } else if (character == 7) {
+        token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+        token.effects = P8_TEXT_EFFECT_AUDIO;
+    } else if (character == 11) {
+        token.length = bounded_token_size(3, remaining);
+    } else if (character == 12) {
+        token.length = bounded_token_size(2, remaining);
+        token.effects = P8_TEXT_EFFECT_DRAW_COLOR;
+    } else if (character == 14 || character == 15) {
+        token.reasons |= P8_TEXT_REASON_CUSTOM_FONT;
+        token.effects = P8_TEXT_EFFECT_CUSTOM_FONT_STATE | P8_TEXT_EFFECT_RENDER_STATE;
+    }
+    return token;
+}
+
+std::vector<text_span> scan_spans(const uint8_t *bytes, size_t size,
+                                  uint32_t &reasons, uint32_t &effects)
+{
+    std::vector<text_span> spans;
+    for (size_t index = 0; index < size;) {
+        const token_description token = describe_token(bytes, size, index);
+        reasons |= token.reasons;
+        effects |= token.effects;
+        const uint32_t offset = static_cast<uint32_t>(index);
+        const uint32_t length = static_cast<uint32_t>(token.length);
+        if (!spans.empty() && spans.back().offset + spans.back().length == offset
+            && spans.back().kind == token.kind && spans.back().reasons == token.reasons
+            && spans.back().effects == token.effects) {
+            spans.back().length += length;
+        } else {
+            spans.push_back({offset, length, token.kind, token.reasons, token.effects});
+        }
+        index += token.length;
+        if (token.terminates) break;
+    }
+    return spans;
+}
+
+void append_u16(std::vector<uint8_t> &bytes, uint16_t value)
+{
+    bytes.push_back(static_cast<uint8_t>(value));
+    bytes.push_back(static_cast<uint8_t>(value >> 8u));
+}
+
+void append_u32(std::vector<uint8_t> &bytes, uint32_t value)
+{
+    for (unsigned shift = 0; shift < 32; shift += 8) {
+        bytes.push_back(static_cast<uint8_t>(value >> shift));
+    }
+}
+
+void append_i32(std::vector<uint8_t> &bytes, int value)
+{
+    const int64_t bounded = std::max<int64_t>(std::numeric_limits<int32_t>::min(),
+        std::min<int64_t>(std::numeric_limits<int32_t>::max(), value));
+    append_u32(bytes, static_cast<uint32_t>(static_cast<int32_t>(bounded)));
+}
+
+uint32_t custom_font_revision(const p8_core *core)
+{
+    uint32_t hash = 2166136261u;
+    for (uint16_t offset = 0; offset < 256; ++offset) {
+        hash ^= p8_core_peek(core, static_cast<uint16_t>(kCustomFont + offset));
+        hash *= 16777619u;
+    }
+    return hash;
+}
+
+void record_text_ir(p8_core *core, const uint8_t *bytes, size_t size,
+                    int anchor_x, int anchor_y, uint8_t foreground_in,
+                    int append_newline, uint8_t print_attributes,
+                    const p8_text_result &result, const text_state *state)
+{
+    if (size > std::numeric_limits<uint32_t>::max()) return;
+    uint32_t reasons = P8_TEXT_REASON_NONE;
+    uint32_t effects = P8_TEXT_EFFECT_NONE;
+    std::vector<text_span> spans = scan_spans(bytes, size, reasons, effects);
+    if ((print_attributes & 1u) != 0) {
+        reasons |= P8_TEXT_REASON_VISUAL_CONTROL;
+        effects |= P8_TEXT_EFFECT_RENDER_STATE;
+        if ((print_attributes & 0x80u) != 0) {
+            reasons |= P8_TEXT_REASON_CUSTOM_FONT;
+            effects |= P8_TEXT_EFFECT_CUSTOM_FONT_STATE;
+        }
+    }
+    if (append_newline) effects |= P8_TEXT_EFFECT_CURSOR;
+    if (result.unsupported != P8_TEXT_UNSUPPORTED_NONE) {
+        reasons |= P8_TEXT_REASON_UNSUPPORTED;
+    }
+    const uint32_t classification = result.unsupported != P8_TEXT_UNSUPPORTED_NONE
+        ? P8_TEXT_CLASS_REFERENCE_ONLY
+        : reasons == P8_TEXT_REASON_NONE ? P8_TEXT_CLASS_SAFE_MODERN
+                                        : P8_TEXT_CLASS_REVIEW_REQUIRED;
+    constexpr uint16_t header_size = 112;
+    constexpr uint32_t span_size = 20;
+    const uint64_t record_size64 = header_size
+        + static_cast<uint64_t>(spans.size()) * span_size + size;
+    if (record_size64 > std::numeric_limits<uint32_t>::max()
+        || spans.size() > std::numeric_limits<uint16_t>::max()) return;
+    std::vector<uint8_t> record;
+    record.reserve(static_cast<size_t>(record_size64));
+    append_u32(record, static_cast<uint32_t>(record_size64));
+    append_u16(record, header_size);
+    append_u16(record, static_cast<uint16_t>(spans.size()));
+    append_u32(record, p8_core_text_ir_next_sequence(core));
+    const uint64_t update = p8_core_get_update_count(core);
+    append_u32(record, static_cast<uint32_t>(update));
+    append_u32(record, static_cast<uint32_t>(update >> 32u));
+    append_u32(record, classification);
+    append_u32(record, reasons);
+    append_u32(record, effects);
+    append_u32(record, result.unsupported);
+    append_i32(record, anchor_x);
+    append_i32(record, anchor_y);
+    append_i32(record, anchor_x);
+    append_i32(record, anchor_y);
+    append_i32(record, result.cursor_x);
+    append_i32(record, result.cursor_y);
+    append_i32(record, result.rightmost_x);
+    append_i32(record, state && state->has_bounds ? state->min_x : 0);
+    append_i32(record, state && state->has_bounds ? state->min_y : 0);
+    append_i32(record, state && state->has_bounds
+        ? state->max_draw_x - state->min_x + 1 : 0);
+    append_i32(record, state && state->has_bounds
+        ? state->max_draw_y - state->min_y + 1 : 0);
+    append_u32(record, foreground_in & 0x0fu);
+    append_u32(record, result.foreground);
+    append_u32(record, print_attributes);
+    append_u32(record, (reasons & P8_TEXT_REASON_CUSTOM_FONT) != 0
+        ? custom_font_revision(core) : 0);
+    append_u32(record, kCustomFont);
+    append_u32(record, 256);
+    append_u32(record, append_newline ? 1u : 0u);
+    append_u32(record, static_cast<uint32_t>(size));
+    for (const text_span &span : spans) {
+        append_u32(record, span.offset);
+        append_u32(record, span.length);
+        append_u32(record, span.kind);
+        append_u32(record, span.reasons);
+        append_u32(record, span.effects);
+    }
+    if (size != 0) record.insert(record.end(), bytes, bytes + size);
+    p8_core_append_text_ir_record(core, record.data(), record.size());
+}
+
 } // namespace
 
 extern "C" {
@@ -270,13 +557,16 @@ int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
 {
     if (!core || (!bytes && size != 0) || !result) return 0;
     const uint32_t unsupported = unsupported_controls(bytes, size);
+    const uint8_t foreground_in = static_cast<uint8_t>(foreground & 0x0f);
+    const uint8_t defaults = p8_core_peek(core, kPrintAttributes);
     if (unsupported != 0) {
-        *result = {x, x, y, static_cast<uint8_t>(foreground & 0x0f), unsupported};
+        *result = {x, x, y, foreground_in, unsupported};
+        record_text_ir(core, bytes, size, x, y, foreground_in, append_newline,
+                       defaults, *result, nullptr);
         return 1;
     }
     text_state state{core, x, y, x, y, x, y, x, 6, -1, -1, 4, -1,
                      static_cast<uint8_t>(foreground & 0x0f)};
-    const uint8_t defaults = p8_core_peek(core, kPrintAttributes);
     if ((defaults & 1u) != 0) {
         if ((defaults & 0x04u) != 0) state.mode |= mode_wide;
         if ((defaults & 0x08u) != 0) state.mode |= mode_tall;
@@ -456,6 +746,8 @@ int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
     result->cursor_y = state.y;
     result->foreground = state.foreground;
     result->unsupported = state.unsupported;
+    record_text_ir(core, bytes, size, x, y, foreground_in, append_newline,
+                   defaults, *result, &state);
     return 1;
 }
 
