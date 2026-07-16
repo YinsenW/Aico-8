@@ -13,7 +13,8 @@
   },
   "codec": {
     "id": "aico8-typescript-ingest",
-    "version": "0.1.0"
+    "version": "0.1.0",
+    "revisionSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "pico8": {
     "version": 42,

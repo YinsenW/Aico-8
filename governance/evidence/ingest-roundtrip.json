@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "subject": "TypeScript lossless ingest over the authorized private corpus",
+  "status": "verified",
+  "rights_scope": "Project-owner supplied carts; private research and testing only; no publication permission inferred.",
+  "observations": {
+    "total_cart_count": 291,
+    "passed_cart_count": 291,
+    "failed_cart_count": 0,
+    "exact_rom_round_trip": true,
+    "resource_semantics_bound": true,
+    "provenance_bound": true
+  },
+  "codec": {
+    "id": "shrinko8",
+    "version": "1.2.6-7.5bf5727",
+    "revisionSha256": "a0916c356ef4e64b53ea511fa438ca0e9b47f01a943e6e92fa9ba2fe8621898a"
+  },
+  "private_artifact_sha256": {
+    "corpus_report": "f881a675c20e899897249ecf89f1c3c638b26db6f52f718061d7181cc8d851d5",
+    "corpus_identity": "8572ba12afeed23a55fddd001bbff9e085ab97c991320afb4f20a61cb606f13e",
+    "round_trip_result": "a0da029bae861c7270f4d39fc258a355bdb3f9957a0da6249704580b077bb9e8",
+    "rights_evidence": "3c47871678df01b3ce57bcb650de3a66c1783869909a9f402eaf63c2d3f8c2f6"
+  },
+  "selector": "TEST-INGEST-ROUNDTRIP-PRIVATE"
+}

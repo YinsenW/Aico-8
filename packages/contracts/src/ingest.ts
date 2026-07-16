@@ -5,6 +5,7 @@ export type CartFormat = "p8-text" | "p8-png" | "raw-rom";
 export type IngestIntendedUse = "private-research" | "public-synthetic-fixture" | "publication";
 export type ReleasePermissionStatus = "granted" | "denied" | "unknown";
 export type CartSection = "lua" | "gfx" | "gff" | "map" | "sfx" | "music" | "label";
+export type Pico8SectionName = string;
 export type WorkspaceResourceId = CartSection | "shared-map-alias";
 
 export interface IngestFileReferenceV1 {
@@ -50,11 +51,11 @@ export interface CartWorkspaceV1 {
     readonly format: CartFormat;
     readonly sourceSha256: string;
   };
-  readonly codec: { readonly id: string; readonly version: string };
+  readonly codec: { readonly id: string; readonly version: string; readonly revisionSha256: string };
   readonly pico8: {
     readonly version: number;
-    readonly sections: readonly CartSection[];
-    readonly sectionOrder: readonly CartSection[];
+    readonly sections: readonly Pico8SectionName[];
+    readonly sectionOrder: readonly Pico8SectionName[];
   };
   readonly resources: readonly CartWorkspaceResourceV1[];
   readonly aliases: readonly [{
@@ -91,10 +92,10 @@ const HASH = /^[a-f0-9]{64}$/;
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 const SEMVER = /^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z0-9.-]+)?$/;
 const SPDX = /^(?:[A-Za-z0-9][A-Za-z0-9.+-]*|NOASSERTION)$/;
+const SECTION_NAME = /^[a-z0-9_]+$/;
 const FORMATS = new Set<CartFormat>(["p8-text", "p8-png", "raw-rom"]);
 const USES = new Set<IngestIntendedUse>(["private-research", "public-synthetic-fixture", "publication"]);
 const PERMISSIONS = new Set<ReleasePermissionStatus>(["granted", "denied", "unknown"]);
-const SECTIONS: readonly CartSection[] = ["lua", "gfx", "gff", "map", "sfx", "music", "label"];
 const RESOURCE_SECTIONS: Readonly<Record<WorkspaceResourceId, CartSection>> = {
   lua: "lua",
   gfx: "gfx",
@@ -189,11 +190,11 @@ export function validateCartInput(value: unknown): IngestValidationResult {
   return { ok: errors.length === 0, errors };
 }
 
-function validateStringArray(value: unknown, path: string, allowed: ReadonlySet<string>, errors: string[]): string[] {
+function validateSectionArray(value: unknown, path: string, errors: string[]): string[] {
   if (!Array.isArray(value)) { errors.push(`${path} must be an array`); return []; }
   const result: string[] = [];
   value.forEach((item, index) => {
-    if (!validString(item) || !allowed.has(item)) errors.push(`${path}[${index}] is unsupported`);
+    if (!validString(item, SECTION_NAME)) errors.push(`${path}[${index}] must be a valid section name`);
     else if (result.includes(item)) errors.push(`${path}[${index}] must be unique`);
     else result.push(item);
   });
@@ -217,9 +218,10 @@ export function validateCartWorkspace(value: unknown, cartInput?: CartInputV1): 
   }
   if (!object(value.codec)) errors.push("$.codec must be an object");
   else {
-    exactKeys(value.codec, ["id", "version"], "$.codec", errors);
+    exactKeys(value.codec, ["id", "version", "revisionSha256"], "$.codec", errors);
     if (!validString(value.codec.id, ID)) errors.push("$.codec.id must be a valid id");
     if (!validString(value.codec.version, SEMVER)) errors.push("$.codec.version must be semantic version");
+    if (!validString(value.codec.revisionSha256, HASH)) errors.push("$.codec.revisionSha256 must be a sha256");
   }
 
   let sections: string[] = [];
@@ -230,9 +232,8 @@ export function validateCartWorkspace(value: unknown, cartInput?: CartInputV1): 
     if (!Number.isSafeInteger(value.pico8.version) || (value.pico8.version as number) < 0 || (value.pico8.version as number) > 255) {
       errors.push("$.pico8.version must be an integer from 0 through 255");
     }
-    const allowed = new Set<string>(SECTIONS);
-    sections = validateStringArray(value.pico8.sections, "$.pico8.sections", allowed, errors);
-    sectionOrder = validateStringArray(value.pico8.sectionOrder, "$.pico8.sectionOrder", allowed, errors);
+    sections = validateSectionArray(value.pico8.sections, "$.pico8.sections", errors);
+    sectionOrder = validateSectionArray(value.pico8.sectionOrder, "$.pico8.sectionOrder", errors);
     if (sections.length !== sectionOrder.length || sections.some((section) => !sectionOrder.includes(section))) {
       errors.push("$.pico8.sectionOrder must contain exactly the present sections");
     }
@@ -328,10 +329,15 @@ export function validateCartWorkspace(value: unknown, cartInput?: CartInputV1): 
     if (value.input.sourceSha256 !== cartInput.source.sha256) errors.push("$.input.sourceSha256 must equal cart input source hash");
     if (value.provenance.declaredLicenseSpdx !== cartInput.provenance.declaredLicense.spdx) errors.push("$.provenance.declaredLicenseSpdx must equal cart input license");
     if (value.provenance.releasePermissionStatus !== cartInput.provenance.releasePermission.status) errors.push("$.provenance.releasePermissionStatus must equal cart input permission");
-    const evidence = new Set(cartInput.provenance.releasePermission.evidence.map((item) => item.sha256));
-    if (Array.isArray(value.provenance.rightsEvidenceSha256)
-      && value.provenance.rightsEvidenceSha256.some((hash) => !evidence.has(hash as string))) {
-      errors.push("$.provenance.rightsEvidenceSha256 must come from cart input permission evidence");
+    const evidence = new Set([
+      ...cartInput.provenance.declaredLicense.evidence,
+      ...cartInput.provenance.releasePermission.evidence,
+    ].map((item) => item.sha256));
+    if (Array.isArray(value.provenance.rightsEvidenceSha256)) {
+      const actual = new Set(value.provenance.rightsEvidenceSha256 as string[]);
+      if (actual.size !== evidence.size || [...evidence].some((hash) => !actual.has(hash))) {
+        errors.push("$.provenance.rightsEvidenceSha256 must exactly bind cart input provenance evidence");
+      }
     }
   }
   return { ok: errors.length === 0, errors };

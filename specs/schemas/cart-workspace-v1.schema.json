@@ -22,10 +22,11 @@
     "codec": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "version"],
+      "required": ["id", "version", "revisionSha256"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z0-9.-]+)?$" }
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z0-9.-]+)?$" },
+        "revisionSha256": { "$ref": "#/$defs/hash" }
       }
     },
     "pico8": {
@@ -110,7 +111,8 @@
     "format": { "enum": ["p8-text", "p8-png", "raw-rom"] },
     "permission": { "enum": ["granted", "denied", "unknown"] },
     "section": { "enum": ["lua", "gfx", "gff", "map", "sfx", "music", "label"] },
-    "sectionList": { "type": "array", "maxItems": 7, "uniqueItems": true, "items": { "$ref": "#/$defs/section" } },
+    "sectionName": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "sectionList": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sectionName" } },
     "safePath": {
       "type": "string",
       "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)(?:\\.{1,2})(?:/|$))(?!.*//)[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"

@@ -13,6 +13,7 @@ and must never be generated or repaired by the Agent.
 | Purpose | Contract or selector | Command | Boundary |
 | --- | --- | --- | --- |
 | Governance preflight | `TEST-GOV-001` | `pnpm verify:governance` | Run before edits and handoff. |
+| Ingest one authorized cart | `JOB-INGEST-001` | `pnpm ingest:cart -- --manifest <cart-input.json> --output <workspace> --codec-command <pinned-shrinko8> --codec-revision <revision-path> --codec-sha256 <sha256> --codec-version <semver>` | Materialize only an absent/empty private workspace; decoding proves exact ROM equality but grants no publication authority. |
 | Initialize or resume a supervised trial | `JOB-SUPERVISED-TRANSFER-001` | `pnpm exec tsx scripts/run-supervised-transfer.ts init --manifest <job.json> --root <artifact-dir> --ledger <ledger.json> --trust <trust.json>` | The runner validates state; it cannot approve. |
 | Submit a stop proposal | `JOB-SUPERVISED-TRANSFER-001` | `pnpm exec tsx scripts/run-supervised-transfer.ts submit --manifest <job.json> --root <artifact-dir> --ledger <ledger.json> --trust <trust.json> --stop <stop-id> --proposal <relative-path>` | Submit only the next ordered stop. |
 | Export an unsigned review request | `DATA-HUMAN-STOP-REQUEST-001` | `pnpm export:human-stop-request --manifest <job.json> --root <artifact-dir> --ledger <ledger.json> --trust <trust.json> --out <relative-request.json>` | For optional remote review, the reviewer signs outside the Agent. |
