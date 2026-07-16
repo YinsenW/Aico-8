@@ -86,6 +86,13 @@ permission for the HD layer to replay cursor, color, RAM, timing, audio, clear,
 or render-state effects. The ordered span ledger records those effects while the
 compatibility executor remains their sole authority.
 
+Inventory capture uses the exact 64-bit logical update halves, semantic run
+sequence, and raw P8SCII bytes as its runtime locator. An authoring job may turn
+a missing decision into an explicit review blocker, but it cannot guess a font
+role. The HD presenter resolves each `print` against a source-hash-bound
+`complete-for-hd` inventory; a stale source, missing locator, byte mismatch, or
+unapproved run is blocked before drawing.
+
 Effectful controls are never discarded from the compatibility stream. A modern
 run may represent their visual result, but it may not execute or approximate the
 side effect itself.
@@ -177,6 +184,10 @@ coverage, accessibility review, or licensed-official compatibility evidence.
 - Native and Wasm text runs are byte-identical for the same replay.
 - Every reachable run has an accepted modern mapping; HD replays contain zero
   reference-only/review-required runs and zero scene-atomic reference switches.
+- The canonical replay plus named reachable-state probes produce a versioned
+  text-completeness audit whose every frame consumes all source text runs, has
+  zero blockers/mismatches/out-of-inventory runs, and rejects deleted-mapping,
+  stale-source, and text-IR-mismatch mutations.
 - Bundled fonts reproduce from declared inputs and contain all manifest glyphs.
 - Golden layouts pass at 1024, 720, responsive mobile, and supported locales.
 - HD typography on/off leaves compatibility checkpoints byte-identical.

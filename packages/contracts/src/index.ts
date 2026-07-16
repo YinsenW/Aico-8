@@ -116,6 +116,15 @@ export {
   type SourceVisualTokenKind,
 } from "./hd-presentation-audit.js";
 export {
+  TEXT_COMPLETENESS_AUDIT_SCHEMA_VERSION,
+  assertTextCompletenessAudit,
+  buildTextCompletenessAudit,
+  validateTextCompletenessAudit,
+  type HdTextFrameObservationV1,
+  type TextCompletenessAuditV1,
+  type TextCompletenessAuditValidationResult,
+} from "./text-completeness-audit.js";
+export {
   QUALITY_LEAP_AUDIT_SCHEMA_VERSION,
   assertQualityLeapAudit,
   validateQualityLeapAudit,
@@ -226,7 +235,9 @@ export {
   validateTypographyContract,
   validateTypographyManifest,
   type TextClassification,
+  type TextContentKind,
   type TextInventoryV1,
+  type TextInventoryRunV1,
   type TextProvenanceKind,
   type GlyphMetricV1,
   type GlyphMetricsV1,

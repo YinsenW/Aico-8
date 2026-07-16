@@ -60,21 +60,40 @@ const kernel = {
 
 describe("vector command presenter", () => {
   it("draws only byte-matched safe-modern text runs and reports blocked runs", () => {
-    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    const presenter = new VectorCommandPresenter({
+      scale: 8,
+      palette,
+      textApproval: { resolve: (run) => run.classification === "safe-modern" ? { inventoryRunId: "menu-begin", role: "menu" } : undefined },
+    });
     const copies: string[] = [];
     const safeKernel = { ...kernel, textRuns: () => [textRun("begin")] } as unknown as Aico8Kernel;
     presenter.render(new Graphics(), safeKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
     expect(copies).toEqual(["begin"]);
-    expect(presenter.measurements()).toMatchObject({ textCount: 1, safeTextCount: 1, blockedTextCount: 0, mismatchedTextCount: 0 });
+    expect(presenter.measurements()).toMatchObject({ textCount: 1, safeTextCount: 1, blockedTextCount: 0, mismatchedTextCount: 0, unapprovedTextCount: 0 });
 
     const blockedKernel = { ...kernel, textRuns: () => [textRun("begin", "review-required")] } as unknown as Aico8Kernel;
     presenter.render(new Graphics(), blockedKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
     expect(copies).toEqual(["begin"]);
-    expect(presenter.measurements()).toMatchObject({ textCount: 1, safeTextCount: 0, blockedTextCount: 1, mismatchedTextCount: 0 });
+    expect(presenter.measurements()).toMatchObject({ textCount: 1, safeTextCount: 0, blockedTextCount: 1, mismatchedTextCount: 0, unapprovedTextCount: 1 });
 
     const mismatchKernel = { ...kernel, textRuns: () => [textRun("resume")] } as unknown as Aico8Kernel;
     presenter.render(new Graphics(), mismatchKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
-    expect(presenter.measurements()).toMatchObject({ blockedTextCount: 1, mismatchedTextCount: 1 });
+    expect(presenter.measurements()).toMatchObject({ blockedTextCount: 1, mismatchedTextCount: 1, unapprovedTextCount: 1 });
+  });
+
+  it("fails closed when safe text is absent from the complete game inventory", () => {
+    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    const copies: string[] = [];
+    const safeKernel = { ...kernel, textRuns: () => [textRun("begin")] } as unknown as Aico8Kernel;
+    presenter.render(new Graphics(), safeKernel, [printCommand("begin")], (copy) => copies.push(copy.text));
+    expect(copies).toEqual([]);
+    expect(presenter.measurements()).toMatchObject({
+      textCount: 1,
+      safeTextCount: 0,
+      blockedTextCount: 1,
+      mismatchedTextCount: 0,
+      unapprovedTextCount: 1,
+    });
   });
 
   it("turns a PICO-8 circle command into one continuous primitive", () => {

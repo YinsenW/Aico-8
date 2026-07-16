@@ -3,6 +3,7 @@ import { Graphics, GraphicsPath } from "pixi.js";
 import type { Aico8Kernel, DrawCommand } from "./kernel.js";
 import { decodeSafeModernTextRun, textRunMatchesPrintPayload } from "./hd-typography.js";
 import { PICO8_EXTENDED_COLORS, normalizePico8DisplayIndex } from "./pico8-palette.js";
+import type { CompleteHdTextApprovalResolver } from "./text-inventory.js";
 import type { TextRunV1 } from "./text-run-ir.js";
 
 const OPCODE = {
@@ -41,6 +42,7 @@ export interface VectorCommandTheme {
   readonly surfaceShadow?: { readonly color: number; readonly alpha: number; readonly offset: number };
   readonly surfaceHighlight?: { readonly color: number; readonly alpha: number; readonly width: number };
   readonly drawSemanticTile?: (context: VectorSemanticTileContext) => boolean;
+  readonly textApproval?: CompleteHdTextApprovalResolver;
 }
 
 export interface VectorSemanticTileContext {
@@ -57,6 +59,8 @@ export interface VectorCommandText {
   readonly text: string;
   readonly run: TextRunV1;
   readonly ordinal: number;
+  readonly inventoryRunId: string;
+  readonly role: import("@aico8/contracts").TypographyRole;
   readonly x: number;
   readonly y: number;
   readonly color: number;
@@ -70,6 +74,7 @@ export interface VectorCommandMeasurements {
   readonly safeTextCount: number;
   readonly blockedTextCount: number;
   readonly mismatchedTextCount: number;
+  readonly unapprovedTextCount: number;
   readonly indexedCellQuadCount: 0;
 }
 
@@ -201,6 +206,7 @@ export class VectorCommandPresenter {
     safeTextCount: 0,
     blockedTextCount: 0,
     mismatchedTextCount: 0,
+    unapprovedTextCount: 0,
     indexedCellQuadCount: 0,
   };
 
@@ -235,6 +241,7 @@ export class VectorCommandPresenter {
     let safeTextCount = 0;
     let blockedTextCount = 0;
     let mismatchedTextCount = 0;
+    let unapprovedTextCount = 0;
     let textRuns: readonly TextRunV1[] | undefined;
     let textOrdinal = 0;
     const scale = this.#theme.scale;
@@ -538,17 +545,29 @@ export class VectorCommandPresenter {
         if (!run || !textRunMatchesPrintPayload(run, command.payload)) {
           blockedTextCount += 1;
           mismatchedTextCount += 1;
+          unapprovedTextCount += 1;
         } else if (run.classification === "safe-modern") {
-          drawText({
-            text: decodeSafeModernTextRun(run),
-            run,
-            ordinal: textOrdinal,
-            x: x(args[0]),
-            y: y(args[1]),
-            color: colorFor(index),
-          });
-          safeTextCount += 1;
-        } else blockedTextCount += 1;
+          const approval = this.#theme.textApproval?.resolve(run);
+          if (approval) {
+            drawText({
+              text: decodeSafeModernTextRun(run),
+              run,
+              ordinal: textOrdinal,
+              inventoryRunId: approval.inventoryRunId,
+              role: approval.role,
+              x: x(args[0]),
+              y: y(args[1]),
+              color: colorFor(index),
+            });
+            safeTextCount += 1;
+          } else {
+            blockedTextCount += 1;
+            unapprovedTextCount += 1;
+          }
+        } else {
+          blockedTextCount += 1;
+          unapprovedTextCount += 1;
+        }
         textOrdinal += 1;
         textCount += 1;
         sourcePrimitiveCount += 1;
@@ -563,6 +582,7 @@ export class VectorCommandPresenter {
       safeTextCount,
       blockedTextCount,
       mismatchedTextCount,
+      unapprovedTextCount,
       indexedCellQuadCount: 0,
     };
   }

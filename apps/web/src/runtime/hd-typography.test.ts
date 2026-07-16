@@ -4,7 +4,7 @@ import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { loadBundledTypography, type BundledTypography } from "./hd-typography.js";
-import type { TextRunV1 } from "./text-run-ir.js";
+import { TextRunEffect, type TextRunV1 } from "./text-run-ir.js";
 
 const publicRoot = path.resolve(import.meta.dirname, "../../public");
 
@@ -100,5 +100,11 @@ describe("bundled HD typography", () => {
     expect(() => typography.layout(run("begin"), {
       role: "menu", profileScale: 1, box: { width: 8, height: 8 },
     })).toThrow(/does not fit/);
+    expect(() => typography.layout({ ...run("begin"), sideEffectMask: TextRunEffect.cursor }, {
+      role: "menu", profileScale: 1, box: { width: 200, height: 50 },
+    })).not.toThrow();
+    expect(() => typography.layout({ ...run("begin"), sideEffectMask: TextRunEffect.drawColor }, {
+      role: "menu", profileScale: 1, box: { width: 200, height: 50 },
+    })).toThrow(/not eligible/);
   });
 });

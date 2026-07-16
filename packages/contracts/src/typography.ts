@@ -21,7 +21,45 @@ export interface TextInventoryV1 {
   readonly status: "draft" | "complete-for-hd";
   readonly gameId: string;
   readonly sourceSha256: string;
-  readonly runs: readonly unknown[];
+  readonly runs: readonly TextInventoryRunV1[];
+}
+
+export type TextContentKind = "semantic-text" | "identity-wordmark" | "source-drawn-glyph" | "button-glyph" | "inline-glyph";
+
+export interface TextInventoryRunV1 {
+  readonly id: string;
+  readonly reachable: true;
+  readonly contentKind: TextContentKind;
+  readonly role: TypographyRole;
+  readonly classification: TextClassification;
+  readonly source: Readonly<{
+    commandId: string;
+    sequence: number;
+    updateLow: number;
+    updateHigh: number;
+    byteStart: number;
+    bytesHex: string;
+    p8sciiEvidenceSha256: string;
+  }>;
+  readonly unicode: Readonly<{
+    text: string;
+    codePoints: readonly number[];
+    mappingKind: "lossless-declared" | "unmapped" | "ambiguous";
+    mappingEvidenceSha256: string;
+  }>;
+  readonly provenance: Readonly<{ kind: TextProvenanceKind; evidenceSha256: string }>;
+  readonly flags: Readonly<{
+    effectful: boolean;
+    customFont: boolean;
+    inlineGlyph: boolean;
+    buttonGlyph: boolean;
+    ambiguousMapping: boolean;
+  }>;
+  readonly mapping:
+    | Readonly<{ kind: "bundled-font"; role: TypographyRole }>
+    | Readonly<{ kind: "identity-contour"; identityElementId: string; contourEvidenceSha256: string; reviewDecisionSha256: string }>
+    | Readonly<{ kind: "diagnostic-reference"; correspondenceRegionSha256: string }>
+    | Readonly<{ kind: "review-blocker"; reasonCode: string; evidenceSha256: string }>;
 }
 
 export interface TypographyManifestV1 {
@@ -196,10 +234,12 @@ function validateRun(value: unknown, index: number, errors: string[]): RunSummar
 
   const source = record(run.source, `${path}.source`, errors);
   if (source) {
-    exactKeys(source, ["commandId", "update", "byteStart", "bytesHex", "p8sciiEvidenceSha256"], `${path}.source`, errors);
+    exactKeys(source, ["commandId", "sequence", "updateLow", "updateHigh", "byteStart", "bytesHex", "p8sciiEvidenceSha256"], `${path}.source`, errors);
     idValue(source.commandId, `${path}.source.commandId`, errors);
-    for (const key of ["update", "byteStart"] as const) {
-      if (!Number.isSafeInteger(source[key]) || (source[key] as number) < 0) errors.push(`${path}.source.${key} must be a non-negative integer`);
+    for (const key of ["sequence", "updateLow", "updateHigh", "byteStart"] as const) {
+      if (!Number.isSafeInteger(source[key]) || (source[key] as number) < 0 || (source[key] as number) > 0xffffffff) {
+        errors.push(`${path}.source.${key} must be an unsigned 32-bit integer`);
+      }
     }
     if (typeof source.bytesHex !== "string" || !hexPattern.test(source.bytesHex)) errors.push(`${path}.source.bytesHex must contain complete lowercase byte pairs`);
     hashValue(source.p8sciiEvidenceSha256, `${path}.source.p8sciiEvidenceSha256`, errors);
@@ -278,7 +318,9 @@ function validateRun(value: unknown, index: number, errors: string[]): RunSummar
   }
   if (classification === "safe-modern") {
     if (mappingKind !== "lossless-declared") errors.push(`${path} safe-modern requires a lossless declared Unicode mapping`);
-    if (!identityArtwork && mappedKind !== "bundled-font") errors.push(`${path} ordinary safe-modern text must use a bundled-font mapping`);
+    if (!identityArtwork && mappedKind !== "bundled-font" && mappedKind !== "review-blocker") {
+      errors.push(`${path} ordinary safe-modern text must use a bundled-font mapping or explicit review blocker`);
+    }
   } else if (classification === "reference-only" && mappedKind !== "diagnostic-reference") {
     errors.push(`${path} reference-only requires diagnostic-reference mapping`);
   } else if (classification === "review-required" && mappedKind !== "review-blocker" && mappedKind !== "identity-contour") {
