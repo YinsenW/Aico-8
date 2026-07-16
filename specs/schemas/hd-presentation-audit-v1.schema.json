@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/hd-presentation-audit-v1.schema.json",
+  "title": "Aico 8 HD presentation audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "gameId", "canonicalReplayId", "identityMapSha256", "visualGrammarId", "status",
+    "totalLogicalUpdates", "observationRuns", "observedSceneIds", "sourceTokens", "coverage", "invariance", "regressions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.hd-presentation-audit.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "canonicalReplayId": { "$ref": "#/$defs/id" },
+    "identityMapSha256": { "$ref": "#/$defs/sha256" },
+    "visualGrammarId": { "$ref": "#/$defs/id" },
+    "status": { "enum": ["draft", "accepted"] },
+    "totalLogicalUpdates": { "type": "integer", "minimum": 1 },
+    "observationRuns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "startUpdate", "endUpdateExclusive"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "kind": { "enum": ["canonical-replay", "reachable-state-probe"] },
+          "startUpdate": { "type": "integer", "minimum": 0 },
+          "endUpdateExclusive": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "observedSceneIds": { "$ref": "#/$defs/idList" },
+    "sourceTokens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "identityElementId", "observationCount"],
+        "properties": {
+          "id": { "$ref": "#/$defs/tokenId" },
+          "kind": { "enum": ["scene", "tile", "sprite", "draw-command", "text-role", "ui", "unknown"] },
+          "identityElementId": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+          "observationCount": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reachableElementIds", "mappedElementIds", "unmappedSourceTokenIds", "mixedIndexedFragments", "diagnosticReferenceSwitches"],
+      "properties": {
+        "reachableElementIds": { "$ref": "#/$defs/idList" },
+        "mappedElementIds": { "$ref": "#/$defs/idList" },
+        "unmappedSourceTokenIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/tokenId" }
+        },
+        "mixedIndexedFragments": { "type": "integer", "minimum": 0 },
+        "diagnosticReferenceSwitches": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "invariance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "stateHashAlgorithm", "updatesCompared", "mismatchUpdateIds"],
+      "properties": {
+        "mode": { "const": "hd-off-vs-hd-on" },
+        "stateHashAlgorithm": { "const": "sha256" },
+        "updatesCompared": { "type": "integer", "minimum": 1 },
+        "mismatchUpdateIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "regressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "rejected"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "category": { "enum": ["coverage-mutation", "state-mutation", "mixed-presentation-mutation"] },
+          "rejected": { "const": true }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "tokenId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "idList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    }
+  }
+}

@@ -76,8 +76,23 @@ Official manual references:
 - https://www.lexaloffle.com/dl/docs/pico-8_manual.html#EXTCMD
 - https://www.lexaloffle.com/dl/docs/pico-8_manual.html#STAT
 
+The official capture command accepts repeatable `--artifact relative.wav`,
+`--artifact relative.png`, and `--artifact relative.csv` declarations. The
+runtime capture's exact command and required `p8_audio_runtime.wav` plus
+`audio_status.csv` arguments are owned by the capture manifest. Outputs are
+produced in an isolated working directory, copied under the ignored capture bundle, and bound to the
+runtime/cart record by media type, size, and SHA-256. Undeclared filesystem
+output is discarded; missing or mutated declared output fails closed.
+
 Independent runtimes are differential-test subjects only. Their WAV output or
 status traces must not be committed as normative goldens.
+
+`pnpm compare:official-probe` performs the eventual runtime-audio comparison at
+the decoded integer-PCM and normalized CSV-cell boundaries, so RIFF metadata and
+CRLF/LF differences cannot create false failures. Candidate capture generation
+must still come from the production kernel and bind its binary hash; the current
+audio selectors deliberately remain fail-closed, so no candidate or matched
+report is claimed before the licensed status trace defines the missing behavior.
 
 ## Runtime boundary
 
@@ -92,6 +107,17 @@ The compatibility core owns:
 Platform adapters only own the output device, buffering, and sample-rate
 conversion. They may not decide musical timing from browser animation frames,
 mobile callbacks, or display refresh.
+
+The Web adapter exposes its host-only measurements on `#game-frame` as
+`data-audio-*` fields. The evidence includes context/unlock state, browser base
+and output latency when available, pending and discarded sample counts,
+scheduled chunks/samples, accumulated underrun count and duration, excessive
+lead resynchronizations, and current/maximum buffered lead. These measurements
+are diagnostics for device integration; they do not qualify synth semantics or
+replace official PCM/status goldens. Unit fixtures deterministically exercise
+the drop, underrun, and resynchronization paths, while retained device evidence
+must name the browser, operating system, audio device, and interaction used to
+unlock playback.
 
 ## Acceptance order
 

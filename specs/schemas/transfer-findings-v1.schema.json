@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/transfer-findings-v1.schema.json",
+  "title": "Aico 8 supervised transfer findings v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "programId",
+    "referenceGameId",
+    "trialGameId",
+    "status",
+    "supervisedTransferLedgerSha256",
+    "findings",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.transfer-findings.v1" },
+    "programId": { "$ref": "#/$defs/id" },
+    "referenceGameId": { "$ref": "#/$defs/id" },
+    "trialGameId": { "$ref": "#/$defs/id" },
+    "status": { "enum": ["classified-human-stops-open", "project-owner-retained-trial", "supervised-transfer-closed"] },
+    "supervisedTransferLedgerSha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/hash" }
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 8 }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "publicPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+    },
+    "publicPaths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/publicPath" }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "classification",
+        "observation",
+        "resolution",
+        "evidence",
+        "reusableRuleId",
+        "sharedImplementation",
+        "sharedRegressionTests",
+        "humanStopId",
+        "prohibitedGeneralization"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 8 },
+        "classification": {
+          "enum": ["compatibility-runtime", "reusable-presentation", "source-relative-semantic-art"]
+        },
+        "observation": { "type": "string", "minLength": 8 },
+        "resolution": { "type": "string", "minLength": 8 },
+        "evidence": {
+          "allOf": [
+            { "$ref": "#/$defs/publicPaths" },
+            { "type": "array", "minItems": 1 }
+          ]
+        },
+        "reusableRuleId": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/id" }
+          ]
+        },
+        "sharedImplementation": { "$ref": "#/$defs/publicPaths" },
+        "sharedRegressionTests": { "$ref": "#/$defs/publicPaths" },
+        "humanStopId": {
+          "oneOf": [
+            { "type": "null" },
+            { "enum": ["semantic-intent", "art-direction", "representative-gameplay", "final-scope"] }
+          ]
+        },
+        "prohibitedGeneralization": { "type": "string", "minLength": 8 }
+      }
+    }
+  }
+}

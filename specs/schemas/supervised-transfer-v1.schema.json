@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/supervised-transfer-v1.schema.json",
+  "$comment": "The TypeScript validator owns ordered-stop, attempt-history, upstream-decision lineage, and derived-status relationships.",
+  "title": "Aico 8 supervised transfer job v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobId", "gameId", "transferInstanceId", "sourceIdentitySha256", "targetProfileSha256", "status", "authority", "stops"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.supervised-transfer.v1" },
+    "jobId": { "$ref": "#/$defs/id" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "transferInstanceId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" },
+    "sourceIdentitySha256": { "$ref": "#/$defs/hash" },
+    "targetProfileSha256": { "$ref": "#/$defs/hash" },
+    "status": { "enum": ["working", "awaiting-human", "revision-requested", "trial-complete", "full-validation-authorized"] },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileId", "profileSha256", "decisionMode", "agentMayCreateDecision", "agentMayAccept", "agentMayRelease", "trustedReviewerKeys"],
+      "properties": {
+        "profileId": { "$ref": "#/$defs/id" },
+        "profileSha256": { "$ref": "#/$defs/hash" },
+        "decisionMode": { "const": "external-ed25519" },
+        "agentMayCreateDecision": { "const": false },
+        "agentMayAccept": { "const": false },
+        "agentMayRelease": { "const": false },
+        "trustedReviewerKeys": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/trustedKey" } }
+      }
+    },
+    "stops": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/semanticStop" },
+        { "$ref": "#/$defs/artStop" },
+        { "$ref": "#/$defs/gameplayStop" },
+        { "$ref": "#/$defs/scopeStop" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "safePath": { "type": "string", "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$" },
+    "trustedKey": {
+      "type": "object", "additionalProperties": false, "required": ["keyId", "publicKeySha256"],
+      "properties": { "keyId": { "$ref": "#/$defs/id" }, "publicKeySha256": { "$ref": "#/$defs/hash" } }
+    },
+    "proposal": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "upstreamDecisionSha256", "decisionNonce"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "upstreamDecisionSha256": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+        "decisionNonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" }
+      }
+    },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "outcome", "scopeDisposition", "reviewerKeyId"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "outcome": { "enum": ["approved", "revision-requested"] },
+        "scopeDisposition": { "enum": ["retain-supervised-trial", "authorize-full-validation", null] },
+        "reviewerKeyId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "attempt": {
+      "type": "object", "additionalProperties": false, "required": ["attempt", "proposal", "decision"],
+      "properties": {
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "proposal": { "$ref": "#/$defs/proposal" },
+        "decision": { "oneOf": [{ "$ref": "#/$defs/decision" }, { "type": "null" }] }
+      }
+    },
+    "stopBase": {
+      "type": "object", "additionalProperties": false, "required": ["id", "order", "attempts"],
+      "properties": { "id": { "type": "string" }, "order": { "type": "integer" }, "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } } }
+    },
+    "semanticStop": { "allOf": [{ "$ref": "#/$defs/stopBase" }, { "type": "object", "properties": { "id": { "const": "semantic-intent" }, "order": { "const": 1 } } }] },
+    "artStop": { "allOf": [{ "$ref": "#/$defs/stopBase" }, { "type": "object", "properties": { "id": { "const": "art-direction" }, "order": { "const": 2 } } }] },
+    "gameplayStop": { "allOf": [{ "$ref": "#/$defs/stopBase" }, { "type": "object", "properties": { "id": { "const": "representative-gameplay" }, "order": { "const": 3 } } }] },
+    "scopeStop": { "allOf": [{ "$ref": "#/$defs/stopBase" }, { "type": "object", "properties": { "id": { "const": "final-scope" }, "order": { "const": 4 } } }] }
+  }
+}

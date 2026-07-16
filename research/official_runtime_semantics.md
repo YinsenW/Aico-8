@@ -213,6 +213,54 @@ current official runtime and, when a discrepancy appears, consult the changelog 
 
 ## Required conformance tests
 
+Official stdout probes are captured only through the provenance-bound Node
+entry point and only into the ignored `captures/official/` tree. The caller must
+explicitly attest that the executable is a licensed official PICO-8 runtime;
+the capture records runtime/cart hashes, version, host, ordered events, command,
+and exit status. For example:
+
+```sh
+pnpm capture:official-probe -- \
+  --licensed-official-runtime \
+  --runtime /path/to/pico8 \
+  --runtime-version 0.2.7 \
+  --cart tests/conformance/probes/curved_raster.p8 \
+  --output captures/official/0.2.7/curved_raster.json \
+  --artifact curved_raster.png
+```
+
+The runner uses the manual-defined `-x` headless switch. Independent emulator
+output is never accepted as an official golden, and capture files remain private.
+The cart runs from an isolated temporary working directory. Every explicitly
+declared PNG/WAV/CSV output is copied into an immutable sibling artifact bundle with
+its media type, byte count, and SHA-256 recorded in capture schema v2; missing,
+duplicated, unsupported, symlinked, traversing, overwritten, or later-tampered
+attachments fail validation. A probe that emits only stdout declares no
+`--artifact` arguments and still records an explicit empty attachment list.
+The curved-raster matrix entry declares its exact command and a raw 128x128 PNG;
+that image is the oracle for display-palette RGB that `pget()` cannot observe.
+After the licensed capture exists, generate the source-bound production-Wasm
+candidate and compare both records with the matrix-owned commands:
+
+```sh
+pnpm capture:implementation-curved-raster -- \
+  --cart tests/conformance/probes/curved_raster.p8 \
+  --output captures/official/0.2.7/curved_raster-candidate.json
+pnpm compare:official-probe -- \
+  --official captures/official/0.2.7/curved_raster.json \
+  --candidate captures/official/0.2.7/curved_raster-candidate.json \
+  --output captures/official/0.2.7/curved_raster-comparison.json
+```
+
+Candidate records explicitly deny official authority and bind the source-cart
+hash, production Wasm hash, Git revision, command, ordered events, and artifact
+hashes. The comparator validates both records and their on-disk attachments,
+then compares decoded RGBA pixels rather than PNG compression bytes, integer PCM
+samples rather than WAV container metadata, and normalized CSV cells rather than
+line endings. Version 1 permits no tolerance. Matched reports remain private and
+immutable, and do not verify an exit until their licensed oracle provenance and
+coverage are recorded in governance.
+
 ### Scheduler
 
 - 30 Hz and 60 Hz callbacks.

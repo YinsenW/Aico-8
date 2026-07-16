@@ -22,6 +22,35 @@ characters. This is covered by the official-manual expectation probe.
 No license from this runtime grants permission to redistribute any cartridge,
 art, music, or other game content.
 
+## FAKE-08 / tac08 compatibility font table
+
+- FAKE-08 repository: <https://github.com/jtothebell/fake-08>
+- Evaluated FAKE-08 commit: `814991a2571ad3970e386cef48f3b148aa1c27b9`
+- Upstream table attribution: tac08 <https://github.com/0xcafed00d/tac08>
+- License: MIT
+
+`runtime/core/src/text.cpp` stores the 2 KiB compatibility font byte table as
+hex and uses an independently implemented parser/raster path. The upstream MIT
+permission and warranty disclaimer apply to that table.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## Atkinson Hyperlegible
 
 - Repository: <https://github.com/googlefonts/atkinson-hyperlegible>

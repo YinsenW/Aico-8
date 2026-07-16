@@ -1,6 +1,10 @@
 # Aico 8 Skill boundary
 
-The final Skill will be a thin operator for the Aico 8 CLI and manifests. It may:
+The maintained human-guided Skill is [aico8-remake](aico8-remake/SKILL.md).
+It packages the stabilized supervised workflow while keeping all executable
+logic in versioned Jobs.
+
+The Skill is a thin operator for the Aico 8 CLI and manifests. It may:
 
 - accept an authorized cart and desired release targets;
 - run ingest, analysis, capture, modeling, asset, validation, and packaging stages;

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "aico8.target-profile.v1",
+  "id": "web-pwa-private-research-v1",
+  "target": "web-pwa",
+  "outputProfile": "hd-1024-square",
+  "measurementEnvironment": {
+    "class": "local-http-active-browser",
+    "viewport": { "width": 1280, "height": 720 },
+    "warmupFrames": 30,
+    "sampleFrames": 180,
+    "droppedFrameThresholdMilliseconds": 25
+  },
+  "layoutProfiles": [
+    {
+      "id": "phone-portrait-390x844",
+      "class": "phone-portrait",
+      "viewport": { "width": 390, "height": 844 },
+      "minGameFrameCssPixels": 360,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "square-handheld-1024x1024",
+      "class": "square-handheld",
+      "viewport": { "width": 1024, "height": 1024 },
+      "minGameFrameCssPixels": 800,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "android-handheld-landscape-1280x720",
+      "class": "android-handheld-landscape",
+      "viewport": { "width": 1280, "height": 720 },
+      "minGameFrameCssPixels": 500,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "wide-web-1440x900",
+      "class": "wide-web",
+      "viewport": { "width": 1440, "height": 900 },
+      "minGameFrameCssPixels": 680,
+      "minTouchTargetCssPixels": 44
+    }
+  ],
+  "budgets": {
+    "artifactCountMax": 60,
+    "unpackedBytesMax": 3000000,
+    "largestArtifactBytesMax": 750000,
+    "startupMillisecondsMax": 4000,
+    "p95FrameMillisecondsMax": 25,
+    "droppedFrameRatioMax": 0.02
+  }
+}

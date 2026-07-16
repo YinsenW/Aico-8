@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "subject": "Dust Bunny research-only canonical qualification",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "source_execution": "Authorized private workspace; unchanged cart; ordinary PICO-8 button masks only.",
+  "runtime": "Shared C++ z8lua compatibility kernel compiled to WebAssembly",
+  "observations": {
+    "levels_completed": 30,
+    "candidate_transitions": 2455,
+    "continuous_logical_updates": 9206,
+    "input_spans": 4916,
+    "solver_cart_differential": "match",
+    "semantic_mutation_detected": true,
+    "midpoint_resume_level": 16,
+    "persistence_boundaries": 30,
+    "ending_completed_through_endtimer": 140,
+    "post_completion_stored_level": 0,
+    "restart_completed": true,
+    "observed_visual_scenes": 5,
+    "observed_source_tokens": 177
+  },
+  "canonicality": {
+    "cart_mutation": "none",
+    "compatibility_state_mutation": "none",
+    "input_source": "pico8-buttons-only",
+    "logical_update_policy": "execute-all",
+    "test_hooks": false
+  },
+  "private_artifact_sha256": {
+    "canonical_replay_semantics_v1": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
+    "canonical_run_audit": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
+    "solver_differential": "8bf533b9e77d06a4e91fe27d5db9786ac3255e01db9a5f64a0ba5fb303e7e727",
+    "solver_invariants": "d8266636778909c9a86da1415b15ce0b977367b33d297faeea9d906cf918d26b"
+  },
+  "selector": "TEST-QUALIFICATION-PRIVATE"
+}

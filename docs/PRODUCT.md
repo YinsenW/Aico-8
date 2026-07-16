@@ -17,8 +17,9 @@ Current status, exits, evidence, selectors, and unfinished work are owned by
 1. Compatibility state is authoritative; HD presentation is replaceable.
 2. The original cart runs unchanged unless an explicit, reviewed product option
    documents a deliberate behavior change.
-3. Unknown or unsafe semantic replacements fall back to the indexed reference frame.
-4. Web is the first playable target; mobile and embedded reuse versioned contracts.
+3. Unknown or unsafe replacements force whole-scene indexed diagnostic mode and block HD acceptance; reference pixels never mix into a modern frame.
+4. Browser Web/PWA is first; Android and Linux handhelds reuse the same Web host;
+   future ESP32 reuses contracts. A 1024x1024 square handheld is a first-class native-1:1, 8x-scale Web layout.
 5. Audio preserves original composition and synthesis intent by default.
 6. Publication is separate from technical readiness and always passes rights review.
 7. Agents advance the project through tested tools and durable evidence, not
@@ -27,8 +28,8 @@ Current status, exits, evidence, selectors, and unfinished work are owned by
    metrics, control effects, and custom glyph behavior remain compatibility truth.
 9. Runtime and games are internally modular, while public delivery starts with
    statically bound standalone artifacts rather than a general cartridge player.
-10. A multi-cart request fans out into isolated workspaces and acceptance records;
-    one game's success may never hide another game's failure.
+10. A multi-cart request fans out into isolated workspaces and acceptance records; one game's success may never hide another game's failure.
+11. HD work passes three ordered gates: Spirit fidelity is a hard identity-and-experience constraint; Quality leap is a measurable presentation floor; Aesthetic evolution is bounded optimization that may proceed only after both pass.
 
 ## Requirements
 
@@ -46,17 +47,37 @@ Run unchanged cart Lua with compatible fixed-point, RAM/ROM, draw, input, audio,
 persistence, and 30/60 Hz behavior. Native and WebAssembly builds must produce
 identical versioned checkpoints. Licensed official-runtime captures are the oracle.
 
-Contracts: `API-CORE-001`, `API-RASTER-001`, `DATA-REPLAY-001`,
+Contracts: `API-CORE-001`, `API-RASTER-001`, `API-AUDIO-001`, `DATA-REPLAY-001`,
 `DATA-CHECKPOINT-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
 
 ### REQ-HD-001 — Native 1024 presentation without gameplay drift
 
-Render recognized entities, tiles, UI, animation, lighting, and effects at the
-canonical 1024 design resolution while retaining an exact compatibility overlay
-and fallback. Enabling HD must not change compatibility snapshots.
+Render every reachable entity, tile, UI, animation, lighting, and effect at the
+canonical 1024 design resolution. Apply the three gates in order: preserve the original's recognizable soul, identity, atmosphere, and play feel; prove a material resolution, surface, motion, and detail-quality leap; then evolve color, light, composition, and finish only inside those constraints. Preserve each source element's recognizable
+role, silhouette, anatomy/key parts, proportions, face/expression, color hierarchy,
+screen footprint, motion, and gameplay cue while applying one coherent modern
+visual grammar. Modernization may add material, light, detail, and animation
+quality but cannot redesign those identity anchors. Distinctive title lettering, logos, and source-drawn glyphs are artwork rather than interchangeable fonts:
+preserve each glyph contour/counter, component/hole topology, spacing, and line placement from declared source evidence. Edge smoothing stays below half a source pixel; generic-font substitution fails even if readable. Likewise, semantic labels such as wall, dirt, or collectible never authorize collapsing distinct source contours, palette/material layers, boundary connections, or state variants into one generic shape.
+Exact source-cell projection is the identity floor, not the finished HD treatment. Accepted 1024 art must reconstruct a continuous authored form with visibly smooth curves, density-aware antialiasing, and deterministic shade/base/highlight or an explicitly equivalent material treatment. A vector that merely traces enlarged pixel steps, even with correct topology, fails modernization because it provides no meaningful line, surface, or detail-quality gain. Counters, eyes, apertures, and other source-negative details remain protected geometry: surface paint cannot cover them, and a renderer cannot rely on incidental SVG winding behavior to keep them open.
+Runtime output uses frozen, hashed assets and deterministic rules. Accepted HD play may not mix indexed source fragments with modern elements; the exact reference renderer is a separate
+diagnostic mode. Enabling HD must not change compatibility snapshots. Rendered
+copy must be source-authored, state-derived for accessibility, or backed by a
+durable product authorization; unapproved slogans and celebration text fail HD.
+
+“Preserve” is identity preservation, not literal pixel enlargement. Traits are
+declared per element, never as universal rules: for example, a round, cute rabbit
+with two ears and whiskers remains round-faced, cute, two-eared, and whiskered,
+while an originally long-faced character remains long-faced. An unsupported
+face-shape change, missing declared part, changed
+expression, or materially different proportion is a failed remake even if the
+new drawing is technically polished. Required parts map source evidence to target
+asset regions, and declared source/target ratios must remain within explicit
+tolerances.
 
 Contracts: `API-SEMANTIC-001`, `API-PRESENTATION-001`, `DATA-HD-MAP-001`,
-`DATA-ASSET-PACK-001`, `JOB-MODEL-001`, `JOB-ASSET-001`, `JOB-INTEGRATE-001`.
+`DATA-HD-AUDIT-001`, `DATA-HD-QUALITY-001`, `DATA-ASSET-PACK-001`, `JOB-MODEL-001`, `JOB-ASSET-001`,
+`JOB-INTEGRATE-001`, `JOB-VALIDATE-001`.
 
 ### REQ-TYPOGRAPHY-001 — Readable standardized text without compatibility drift
 
@@ -65,10 +86,11 @@ versioned modern fonts at accessible sizes. The compatibility core must still
 execute the original P8SCII byte stream, custom-font memory, cursor behavior,
 side effects, and `print()` metrics. A semantic text run may be modernized only
 when its typography manifest mapping is explicit and safe; inline/custom/unknown
-glyphs retain the indexed reference fallback. Modern font layout never writes
-back into Lua-visible state.
+glyphs require an explicit meaning-preserving modern mapping before HD acceptance.
+Reference text is available only in whole-scene diagnostic mode, never mixed into
+the accepted modern frame. Modern font layout never writes back into Lua-visible state.
 
-Contracts: `API-TEXT-001`, `DATA-TEXT-RUN-001`, `DATA-TYPOGRAPHY-001`,
+Contracts: `API-TEXT-001`, `DATA-TEXT-INVENTORY-001`, `DATA-TEXT-RUN-001`, `DATA-TYPOGRAPHY-001`,
 `DATA-ASSET-PACK-001`, `JOB-TYPOGRAPHY-001`, `JOB-VALIDATE-001`.
 
 ### REQ-WEB-001 — Browser-playable first release
@@ -101,12 +123,14 @@ failure result before any accepted modules are assembled into a collection.
 Contracts: `DATA-BATCH-001`, `DATA-GAME-MODULE-001`, `DATA-COLLECTION-001`,
 `JOB-BATCH-001`, `JOB-ASSEMBLE-001`.
 
-### REQ-PLATFORM-001 — Secondary installed hosts after Web proof
+### REQ-PLATFORM-001 — Shared Web host on Android and Linux handhelds
 
-After the standalone Web/PWA game passes, package the same validated module and
-presentation for Android APK/AAB first, then desktop installers and iOS. Installed
-hosts may add lifecycle, storage, controller, signing, and store adapters but may
-not fork gameplay or delay the first Web release.
+After the standalone browser Web/PWA game passes, package that exact Web host,
+Wasm kernel, presentation, and validated module for Android APK/AAB. Then support
+Linux handhelds through a compatible browser/PWA, adding a thin Web shell only
+when a named device cannot meet lifecycle, controller, storage, or offline needs
+directly. Platform adapters may not fork gameplay. Windows, macOS, and iOS are
+outside the current delivery roadmap.
 
 Contracts: `API-HOST-001`, `API-GAME-MODULE-001`,
 `DATA-TARGET-PROFILE-001`, `DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`,
@@ -125,9 +149,9 @@ Contracts: `API-CORE-001`, `API-HOST-001`, `API-GAME-MODULE-001`,
 
 ### REQ-INPUT-001 — Modern input without feel drift
 
-Support keyboard and controller first, then touch controls mapped to logical
-PICO-8 input sampling. Responsive layout, safe areas, and presentation refresh
-must not change update order or button-repeat behavior.
+Map keyboard, controller, and touch to logical PICO-8 input without changing
+update or repeat behavior. Host menu requests stay outside gameplay; source
+`menuitem` labels, filters, callbacks, and keep-open behavior remain intact.
 
 Contracts: `API-HOST-001`, `DATA-INPUT-TRACE-001`, `JOB-VALIDATE-001`.
 
@@ -135,19 +159,41 @@ Contracts: `API-HOST-001`, `DATA-INPUT-TRACE-001`, `JOB-VALIDATE-001`.
 
 Cover title, all levels, ending, resume/restart persistence, player/body states,
 dirt, walls, particles, text, palette transitions, animation, effects, touch,
-and test packaging while preserving documented original quirks. This is a
-private research/test artifact, not a formal release authorization.
+and test packaging while preserving documented original quirks. Every required
+level and ending must be reached on the unchanged cart through ordinary PICO-8
+button input; test hooks, state edits, level skips, and omitted logical updates
+cannot prove completion. This is a private research/test artifact, not a formal
+release authorization.
 
-Contracts: `DATA-HD-MAP-001`, `DATA-ASSET-PACK-001`, `DATA-REPLAY-001`,
+Contracts: `DATA-HD-MAP-001`, `DATA-HD-AUDIT-001`, `DATA-ASSET-PACK-001`, `DATA-REPLAY-001`,
 `DATA-GAME-MODULE-001`, `DATA-TARGET-PROFILE-001`, `JOB-INTEGRATE-001`,
 `JOB-VALIDATE-001`, `JOB-ASSEMBLE-001`, `JOB-PACKAGE-001`.
 
+### REQ-QUALIFICATION-001 — Human-supervised reference and transfer qualification
+
+Qualify an explicitly human-in-the-loop Web-first remake workflow. Dust Bunny is
+the accepted reference and one materially different game is the supervised
+transfer trial. Separate reusable runtime/evidence rules from source-relative
+semantic and art decisions; do not claim a universal autonomous converter. A
+human may classify ambiguous elements, approve identity and art direction,
+record ordinary-input checkpoints, and decide whether to promote a candidate to
+a complete artifact. Automation preserves deterministic compatibility, no-skip
+replay, HD invariance, evidence/rights isolation, and declared human pauses.
+Representative checkpoints support iteration. Full unchanged-cart progression is
+required only for a promoted complete artifact and may be human-recorded.
+
+Solvers are optional diagnostics. A contributed trace must match unchanged-cart
+state; mismatches require a root-cause class, general invariant, regression and
+mutation test, never a per-level exception.
+
+Contracts: `DATA-QUALIFICATION-PLAN-001`, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-HUMAN-STOP-REQUEST-001`, `DATA-HUMAN-STOP-DECISION-001`, `DATA-SUPERVISED-TRANSFER-001`, `DATA-TRANSFER-FINDINGS-001`, `DATA-INPUT-TRACE-001`, `DATA-TRACE-PROVENANCE-001`, `DATA-REPLAY-001`, `DATA-CHECKPOINT-001`, `DATA-VALIDATION-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`, `JOB-SUPERVISED-TRANSFER-001`.
+
 ### REQ-RELEASE-001 — Permission-aware, reproducible packaging
 
-Generate Web/PWA release artifacts, notices, provenance, validation report,
-checksums, and release metadata. Fixed collections are allowed only after every
-included module passes independently. A build may be technically ready while
-public publication remains blocked by missing permission.
+Generate Web/PWA artifacts, notices, provenance, checksums, and release metadata.
+Each target profile declares measurable package, startup, and frame budgets; a
+same-build report must pass them in its named environment. Collections include
+only independently passing modules; technical readiness never grants publication or bypasses the independent permission and attribution rights gate.
 
 Contracts: `DATA-VALIDATION-001`, `DATA-RELEASE-001`, `JOB-PACKAGE-001`,
 `JOB-RELEASE-001`.
@@ -171,29 +217,31 @@ publish any generated remake.
 
 Contracts: `DATA-GOVERNANCE-001`, `DATA-RELEASE-001`.
 
-### REQ-SKILL-001 — Thin orchestration after proven releases
-
-Create the final Skill only after multiple end-to-end remake and release exercises.
-It invokes versioned Jobs and contracts; runtime, codecs, validation, packaging,
-and publication policy remain maintained software in this repository.
-
-Contracts: all `JOB-*` pipeline contracts and `DATA-GOVERNANCE-001`.
-
+### REQ-SKILL-001 — Human-guided orchestration after supervised transfer
+Create the final Skill only after the reference and supervised transfer trial
+stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for
+human approval of semantics, art direction, representative gameplay, and final
+scope, and cannot self-accept or self-release. Runtime and policy stay in software.
+An explicit project-owner decision bound to the frozen proposal may advance the human-guided research workflow when its decision and scope are recorded in durable evidence. Detached signatures are optional for future remote review, not a prerequisite for local conversion. No approval mode grants publication rights or proves complete-game validation.
+Contracts: all `JOB-*` pipeline contracts, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
 ## Private Dust Bunny acceptance boundary
-
 The detailed behavioral reference, input replay, captures, and cart-specific
 tests live only in the private research archive. Trial completion requires
-unchanged-cart replay, native/Wasm identity for exercised semantics, complete
-content flows, read-only HD presentation with indexed fallback, modern bundled
-text, keyboard/controller/touch operation, and a reproducible private Web/PWA
-test package. The broader official-runtime matrix remains independently owned by
-`EXIT-COMPAT-OFFICIAL`; neither result is a formal remake release authorization.
-
+one continuous or provenance-linked canonical replay that completes all 30
+levels, ending, and restart without cart/state mutation; native/Wasm identity for
+exercised semantics; complete content flows; coherent read-only HD presentation
+with zero mixed indexed fragments or reference switches; same-build static and exact-update temporal
+source/HD review; modern bundled text; keyboard/controller/touch operation; and a reproducible private
+Web/PWA test package. The broader matrix remains owned by `EXIT-COMPAT-OFFICIAL`;
+neither result is a formal remake release authorization.
 ## Non-goals for the first release
 
 - Mechanical Lua-to-TypeScript translation as the compatibility path.
 - Changing puzzles, collision, timing, RNG, or persistence to fit new art.
-- Requiring mobile stores or ESP32 hardware before the first Web/PWA build.
-- Publishing a dynamic Player or stable `.aico8` format before at least three
-  materially different games prove the internal module boundary.
+- Requiring Android packaging, Linux-device work, or ESP32 hardware before the
+  first browser Web/PWA build.
+- Building Windows, macOS, or iOS packages under the current roadmap.
+- Publishing a dynamic Player or stable `.aico8` format before a separate
+  product, security, migration, and installed-host decision proves the need and
+  module boundary.
 - Creating the final Skill before the workflow is stable and repeatedly verified.

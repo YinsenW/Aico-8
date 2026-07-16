@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "aico8.batch.v1",
+  "batchId": "synthetic-three-game",
+  "status": "queued",
+  "policy": {
+    "maxParallel": 2,
+    "maxAttempts": 2,
+    "attemptTimeoutMs": 1000,
+    "failureIsolation": true,
+    "acceptanceRequiresEvidence": true
+  },
+  "games": [
+    {
+      "gameId": "game-accept",
+      "cartSha256": "b3294eb1b1a11b9dc68e1398f79e1ad86868bed740d7d0edeca110645fa31a3b",
+      "input": {
+        "cartPath": "carts/accept.p8",
+        "rightsProfile": "synthetic-public"
+      },
+      "request": {
+        "product": "standalone-web",
+        "targetProfileId": "web-hd-1024-square",
+        "targetProfileSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "workspaceId": "workspace-synthetic-three-game-game-accept-b3294eb1b1a11b9dc68e1398f79e1ad86868bed740d7d0edeca110645fa31a3b",
+      "priority": 1,
+      "state": "queued",
+      "stage": "ingest",
+      "attempt": 0,
+      "attempts": [],
+      "evidence": {}
+    },
+    {
+      "gameId": "game-blocked",
+      "cartSha256": "ca03b9b778fff22612b275d3725fc24bb4098e8e8da499dbc028e38f2f15de97",
+      "input": {
+        "cartPath": "carts/blocked.p8",
+        "rightsProfile": "synthetic-public"
+      },
+      "request": {
+        "product": "standalone-web",
+        "targetProfileId": "web-hd-1024-square",
+        "targetProfileSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "workspaceId": "workspace-synthetic-three-game-game-blocked-ca03b9b778fff22612b275d3725fc24bb4098e8e8da499dbc028e38f2f15de97",
+      "priority": 2,
+      "state": "queued",
+      "stage": "ingest",
+      "attempt": 0,
+      "attempts": [],
+      "evidence": {}
+    },
+    {
+      "gameId": "game-retry",
+      "cartSha256": "62a964d157af68a27b35d78b591397832834213dbe739f6f956e1f1179ca9808",
+      "input": {
+        "cartPath": "carts/retry.p8",
+        "rightsProfile": "synthetic-public"
+      },
+      "request": {
+        "product": "standalone-web",
+        "targetProfileId": "web-hd-1024-square",
+        "targetProfileSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "workspaceId": "workspace-synthetic-three-game-game-retry-62a964d157af68a27b35d78b591397832834213dbe739f6f956e1f1179ca9808",
+      "priority": 3,
+      "state": "queued",
+      "stage": "ingest",
+      "attempt": 0,
+      "attempts": [],
+      "evidence": {}
+    }
+  ]
+}

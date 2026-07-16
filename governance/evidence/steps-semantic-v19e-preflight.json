@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "subject": "Steps source-semantic v19e representative preflight",
+  "status": "representative-gameplay-approved-retained-supervised-trial",
+  "recorded_on": "2026-07-16",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "scope": "Five same-state checkpoints, four representative temporal sequences, and an active 1024-square nested-path Web run were approved for a retained supervised research trial; this is not complete-game coverage or release authorization.",
+  "systemic_change": [
+    "The accepted source-semantic visuals and source-derived visibility compositing are preserved from v19d.",
+    "Every packaged HTML, CSS, kernel, font, profile, game-module, and service-worker URL resolves relative to its deployment directory.",
+    "Service-worker caches and navigation fallbacks are isolated by registration scope so sibling game deployments cannot overwrite one another."
+  ],
+  "representative_updates": [1, 8, 16, 594, 785],
+  "square_active_browser": {
+    "viewport": "1024x1024",
+    "canvas_css": "812x812",
+    "canvas_backing": "2048x2048",
+    "mixed_indexed_fragments": 0,
+    "unmapped_visual_tokens": 0,
+    "diagnostic_reference_switches": 0,
+    "p95_frame_milliseconds": 17.3,
+    "runtime_budget_passed": true
+  },
+  "private_artifact_sha256": {
+    "release_manifest": "182605b080a4785eb4f18f94fb70707970e27daba0cabed1cb507cc09abe84a3",
+    "visual_runtime": "a1752e3e8bfadf92084eb7a908823cbef873c3e7532f61087c0dd9e974c444c7",
+    "canonical_replay": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "presentation_audit": "292d67faa521849e92a9ad17bdb80515484de935dd253acfa491e41f38c4b0b5",
+    "quality_leap_audit": "3ced1acbc83cbba4087dc9df05d9dbc45195124949747e8b4a96a3873005af27",
+    "preflight_packet": "48ebd305ffed3ff37adfd45c1d0d53922fd9a21af806326da82e77df51ad0679"
+  },
+  "human_direction_feedback": "已经非常不错了，我批准了，可以了，继续吧",
+  "human_review": {
+    "reviewer_role": "project-owner",
+    "authority_mode": "interactive-user-message",
+    "representative_gameplay": "approved",
+    "final_scope": "retain-supervised-trial",
+    "detached_signature": false,
+    "limitations": "The recorded project-owner decision closes only this local retained-trial scope; it cannot authorize publication or prove complete-game review."
+  },
+  "next_human_gate": null,
+  "forbidden_claims": [
+    "complete-game-reviewed",
+    "release-ready",
+    "publication-authorized"
+  ]
+}

@@ -3,13 +3,7 @@ import { Application, Container, Sprite, Text, Texture } from "pixi.js";
 import { REFERENCE_PROFILE } from "@aico8/contracts";
 
 import type { DrawCommand } from "./kernel.js";
-
-const PICO8_COLORS = [
-  0x000000, 0x1d2b53, 0x7e2553, 0x008751,
-  0xab5236, 0x5f574f, 0xc2c3c7, 0xfff1e8,
-  0xff004d, 0xffa300, 0xffec27, 0x00e436,
-  0x29adff, 0x83769c, 0xff77a8, 0xffccaa,
-] as const;
+import { pico8FramebufferColor } from "./pico8-palette.js";
 
 const PRINT_OPCODE = 14;
 
@@ -42,10 +36,14 @@ export class ReferenceRenderer {
     this.#root.visible = visible;
   }
 
-  render(framebuffer: Uint8Array, commands: readonly DrawCommand[]): void {
+  render(
+    framebuffer: Uint8Array,
+    displayPalette: Uint8Array,
+    commands: readonly DrawCommand[],
+  ): void {
     const rgba = this.#image.data;
     for (let pixel = 0; pixel < framebuffer.length; pixel += 1) {
-      const color = PICO8_COLORS[(framebuffer[pixel] ?? 0) & 0x0f] ?? 0;
+      const color = pico8FramebufferColor(framebuffer[pixel] ?? 0, displayPalette);
       const offset = pixel * 4;
       rgba[offset] = color >> 16;
       rgba[offset + 1] = (color >> 8) & 0xff;
@@ -62,7 +60,7 @@ export class ReferenceRenderer {
       const label = new Text({
         text: decoder.decode(command.payload),
         style: {
-          fill: PICO8_COLORS[Math.trunc(command.args[2] ?? 6) & 0x0f] ?? 0xc2c3c7,
+          fill: pico8FramebufferColor(command.args[2] ?? 6, displayPalette),
           fontFamily: "Aico Sans, ui-rounded, system-ui, sans-serif",
           fontSize: 30,
           fontWeight: "700",

@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "aico8.release-validation.v1",
+  "subject": {
+    "gameId": "dust-bunny-private-research",
+    "target": "web-pwa",
+    "visualRuntimeSha256": "4fe05c056bbf68f3de0c60d1bd08b4f618fe922b84ebb3e427442c33af35ff32"
+  },
+  "targetProfile": {
+    "id": "web-pwa-private-research-v1",
+    "sha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809"
+  },
+  "environment": {
+    "class": "local-http-active-browser",
+    "userAgentFamily": "Chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "package": {
+    "artifactCount": 40,
+    "unpackedBytes": 2239906,
+    "largestArtifactBytes": 632022
+  },
+  "runtime": {
+    "startupMilliseconds": 329.2,
+    "sampleFrames": 180,
+    "p95FrameMilliseconds": 18.6,
+    "maxFrameMilliseconds": 18.8,
+    "droppedFrameRatio": 0
+  },
+  "layouts": [
+    {
+      "class": "phone-portrait",
+      "id": "phone-portrait-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "document": {
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "gameFrame": {
+        "width": 366,
+        "height": 366
+      },
+      "minimumTouchTarget": {
+        "width": 44,
+        "height": 44
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "d9dfc5c7e077f2f51e2a299899abd7007c6a99622643e58de77b593d4df40281"
+    },
+    {
+      "class": "square-handheld",
+      "id": "square-handheld-1024x1024",
+      "viewport": {
+        "width": 1024,
+        "height": 1024
+      },
+      "document": {
+        "scrollWidth": 1024,
+        "scrollHeight": 1024
+      },
+      "gameFrame": {
+        "width": 814,
+        "height": 814
+      },
+      "minimumTouchTarget": {
+        "width": 50,
+        "height": 50
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "6f29acae999038d4287fae900b9e36d8e8ecd09ea063477374e7c575ca5cafe0"
+    },
+    {
+      "class": "android-handheld-landscape",
+      "id": "android-handheld-landscape-1280x720",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "document": {
+        "scrollWidth": 1280,
+        "scrollHeight": 720
+      },
+      "gameFrame": {
+        "width": 510,
+        "height": 510
+      },
+      "minimumTouchTarget": {
+        "width": 50,
+        "height": 50
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "7ed6f3bd64b9c9c20efb6b2317651966aec085a2b377958aa055d29984c5bba0"
+    },
+    {
+      "class": "wide-web",
+      "id": "wide-web-1440x900",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "document": {
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      "gameFrame": {
+        "width": 690,
+        "height": 690
+      },
+      "minimumTouchTarget": {
+        "width": 50,
+        "height": 50
+      },
+      "checks": {
+        "horizontalOverflowAbsent": true,
+        "verticalOverflowAbsent": true,
+        "textClippingAbsent": true,
+        "controlsInsideGameFrame": true,
+        "fontsLoaded": true,
+        "safeAreaContract": true
+      },
+      "screenshotSha256": "088146e6c37d893f9ab384bfa808da633e8b4139a8a47d3c0de93caf73c90927"
+    }
+  ],
+  "checks": {
+    "manifest": true,
+    "checksums": true,
+    "notices": true,
+    "accessibility": true,
+    "packageBudgets": true,
+    "runtimeBudgets": true,
+    "layoutProfiles": true
+  },
+  "status": "passed"
+}

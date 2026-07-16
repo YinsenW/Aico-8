@@ -2,13 +2,18 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  validationReplaySemanticsSha256,
+  visualRuntimeSha256,
+} from "./lib/release-identities.mjs";
+import { assertSafePackageRelativePath, resolvePackageFile } from "./lib/package-path.mjs";
 
 const output = path.resolve(process.argv[2] ?? "");
 assert.ok(process.argv[2], "Usage: node scripts/verify-web-package.mjs <package-directory>");
 assert.ok(fs.statSync(output, { throwIfNoEntry: false })?.isDirectory(), `Missing package: ${output}`);
 
 function readJson(relative) {
-  return JSON.parse(fs.readFileSync(path.join(output, relative), "utf8"));
+  return JSON.parse(fs.readFileSync(resolvePackageFile(output, relative, "JSON artifact path"), "utf8"));
 }
 function sha256(file) {
   return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
@@ -33,16 +38,22 @@ const requiredFiles = [
   "kernel/aico8-kernel.js", "kernel/aico8-kernel.wasm",
   "fonts/AtkinsonHyperlegible-Regular.woff2", "fonts/AtkinsonHyperlegible-Bold.woff2",
   "fonts/OFL-Atkinson-Hyperlegible.txt", "private/game.json", "PRIVATE-RESEARCH-ONLY.txt",
-  "release-manifest.json",
+  "target-profile.json", "release-manifest.json",
 ];
 for (const relative of requiredFiles) {
-  assert.ok(fs.statSync(path.join(output, relative), { throwIfNoEntry: false })?.isFile(), `Missing ${relative}`);
+  assert.ok(fs.statSync(resolvePackageFile(output, relative), { throwIfNoEntry: false })?.isFile(), `Missing ${relative}`);
 }
 
 const pwa = readJson("manifest.webmanifest");
 assert.equal(pwa.display, "standalone");
 assert.equal(pwa.start_url, "./");
 assert.equal(pwa.scope, "./");
+assert.ok(Array.isArray(pwa.icons) && pwa.icons.length >= 2, "PWA manifest needs packaged icons");
+for (const icon of pwa.icons) {
+  assertSafePackageRelativePath(icon.src, "PWA icon path");
+  assert.ok(fs.statSync(resolvePackageFile(output, icon.src), { throwIfNoEntry: false })?.isFile(),
+    `PWA icon path points to missing ${icon.src}`);
+}
 assert.deepEqual(pngDimensions("icon-192.png"), [192, 192]);
 assert.deepEqual(pngDimensions("icon-512.png"), [512, 512]);
 const assetManifest = readJson("asset-manifest.json");
@@ -52,7 +63,8 @@ const builtAssets = new Set(Object.values(assetManifest).flatMap((entry) => [
   ...(entry.assets ?? []),
 ]).filter(Boolean));
 for (const relative of builtAssets) {
-  assert.ok(fs.statSync(path.join(output, relative), { throwIfNoEntry: false })?.isFile(),
+  assertSafePackageRelativePath(relative, "Build asset manifest path");
+  assert.ok(fs.statSync(resolvePackageFile(output, relative), { throwIfNoEntry: false })?.isFile(),
     `Build asset manifest points to missing ${relative}`);
 }
 
@@ -61,14 +73,41 @@ assert.equal(game.formatVersion, 1);
 assert.equal(game.researchOnly, true);
 assert.match(game.id, /^[a-z0-9][a-z0-9-]*$/);
 assert.match(game.presentation, /^[a-z0-9][a-z0-9-]*$/);
+assert.match(game.cartSha256, /^[a-f0-9]{64}$/);
 assert.ok(game.sourceLicense && game.sourceUrl, "Private package needs source attribution and license");
 
 const privateEntries = fs.readdirSync(path.join(output, "private"), { withFileTypes: true });
 const moduleDirectories = privateEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 assert.deepEqual(moduleDirectories, [game.id], "Package must contain exactly its selected private game module");
-for (const relative of [game.rom, game.source]) {
-  assert.ok(fs.statSync(path.join(output, "private", relative), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
+for (const relative of [game.rom, game.source, game.validationReplay, game.semanticVectors].filter(Boolean)) {
+  const packaged = `private/${relative}`;
+  assertSafePackageRelativePath(packaged, "Private game input path");
+  assert.ok(fs.statSync(resolvePackageFile(output, packaged), { throwIfNoEntry: false })?.isFile(), `Missing game input ${relative}`);
 }
+
+const targetProfile = readJson("target-profile.json");
+assert.equal(targetProfile.schemaVersion, "aico8.target-profile.v1");
+assert.equal(targetProfile.target, "web-pwa");
+assert.equal(targetProfile.outputProfile, "hd-1024-square");
+assert.equal(targetProfile.measurementEnvironment.class, "local-http-active-browser");
+assert.ok(targetProfile.measurementEnvironment.warmupFrames >= 0);
+assert.ok(targetProfile.measurementEnvironment.sampleFrames >= 120);
+assert.ok(targetProfile.measurementEnvironment.droppedFrameThresholdMilliseconds > 0);
+assert.ok(Array.isArray(targetProfile.layoutProfiles) && targetProfile.layoutProfiles.length > 0,
+  "Target profile needs at least one layout profile");
+assert.equal(new Set(targetProfile.layoutProfiles.map((profile) => profile.id)).size,
+  targetProfile.layoutProfiles.length, "Target layout profile ids must be unique");
+assert.equal(new Set(targetProfile.layoutProfiles.map((profile) => profile.class)).size,
+  targetProfile.layoutProfiles.length, "Target layout profile classes must be unique");
+for (const profile of targetProfile.layoutProfiles) {
+  assert.ok(profile.viewport.width > 0 && profile.viewport.height > 0, `${profile.id}: valid viewport`);
+  assert.ok(profile.minGameFrameCssPixels > 0, `${profile.id}: game-frame minimum`);
+  assert.ok(profile.minTouchTargetCssPixels >= 44, `${profile.id}: touch-target minimum`);
+}
+const squareHandheld = targetProfile.layoutProfiles.find((profile) => profile.class === "square-handheld");
+assert.ok(squareHandheld, "Target profile must include the priority square-handheld layout");
+assert.deepEqual(squareHandheld.viewport, { width: 1024, height: 1024 },
+  "Priority square-handheld viewport must be exactly 1024x1024");
 
 const release = readJson("release-manifest.json");
 assert.equal(release.schema_version, 1);
@@ -77,6 +116,8 @@ assert.equal(release.game.id, game.id);
 assert.equal(release.presentation, game.presentation);
 assert.equal(release.rights.sourceLicense, game.sourceLicense);
 assert.equal(release.rights.sourceUrl, game.sourceUrl);
+assert.equal(release.target_profile.id, targetProfile.id);
+assert.equal(release.target_profile.sha256, sha256(path.join(output, "target-profile.json")));
 
 const actualFiles = listFiles(output)
   .filter((relative) => relative !== "release-manifest.json")
@@ -84,19 +125,96 @@ const actualFiles = listFiles(output)
 const declaredFiles = release.artifacts.map((artifact) => artifact.path).sort();
 assert.deepEqual(declaredFiles, [...actualFiles].sort(), "Release manifest must enumerate every artifact exactly once");
 for (const artifact of release.artifacts) {
-  assert.ok(!artifact.path.startsWith("/") && !artifact.path.includes(".."), `Unsafe artifact path: ${artifact.path}`);
-  const file = path.join(output, artifact.path);
+  assertSafePackageRelativePath(artifact.path, "Release artifact path");
+  const file = resolvePackageFile(output, artifact.path);
   assert.equal(fs.statSync(file).size, artifact.bytes, `${artifact.path} byte count`);
   assert.equal(sha256(file), artifact.sha256, `${artifact.path} sha256`);
 }
+const releaseManifestBytes = fs.statSync(path.join(output, "release-manifest.json")).size;
+const unpackedBytes = release.artifacts.reduce((sum, artifact) => sum + artifact.bytes, releaseManifestBytes);
+const largestArtifactBytes = Math.max(releaseManifestBytes, ...release.artifacts.map(({ bytes }) => bytes));
+assert.equal(release.measurements.artifact_count, release.artifacts.length + 1);
+assert.equal(release.measurements.release_manifest_bytes, releaseManifestBytes);
+assert.equal(release.measurements.unpacked_bytes, unpackedBytes);
+assert.equal(release.measurements.largest_artifact_bytes, largestArtifactBytes);
+assert.ok(release.measurements.artifact_count <= targetProfile.budgets.artifactCountMax,
+  "Release artifact count exceeds target budget");
+assert.ok(release.measurements.unpacked_bytes <= targetProfile.budgets.unpackedBytesMax,
+  "Release unpacked bytes exceed target budget");
+assert.ok(release.measurements.largest_artifact_bytes <= targetProfile.budgets.largestArtifactBytesMax,
+  "Release largest artifact exceeds target budget");
+const validationReplayArtifactPath = game.validationReplay ? `private/${game.validationReplay}` : undefined;
+assert.equal(release.identities.visual_runtime_schema, "aico8.visual-runtime-identity.v1");
+assert.equal(
+  release.identities.visual_runtime_sha256,
+  visualRuntimeSha256(release.artifacts, validationReplayArtifactPath),
+  "Visual runtime identity must bind every packaged artifact except validation replay provenance",
+);
 
-const bundledInputs = [
-  path.join(output, "private", game.rom),
-  path.join(output, "private", game.source),
-];
-for (let index = 0; index < release.inputs.length; index += 1) {
-  assert.equal(fs.statSync(bundledInputs[index]).size, release.inputs[index].bytes, `${release.inputs[index].path} input bytes`);
-  assert.equal(sha256(bundledInputs[index]), release.inputs[index].sha256, `${release.inputs[index].path} input sha256`);
+const bundledInputsByName = new Map([
+  ["source.rom", { file: path.join(output, "private", game.rom) }],
+  ["code.p8.lua", { file: path.join(output, "private", game.source) }],
+  ...(game.validationReplay ? [["validation-replay.json", { file: path.join(output, "private", game.validationReplay) }]] : []),
+]);
+if (game.semanticVectors) {
+  const vectors = readJson(path.join("private", game.semanticVectors));
+  assert.equal(vectors.schemaVersion, "aico8.semantic-vector-set.v1");
+  assert.ok(Array.isArray(vectors.assets) && vectors.assets.length > 0, "Semantic vector set must contain assets");
+  for (const asset of vectors.assets) {
+    assert.match(asset.id, /^[a-z0-9][a-z0-9._-]{1,127}$/);
+    assert.match(asset.sourcePath, /^web-overlay\/vector-assets\/[a-z0-9][a-z0-9._-]*\.svg$/);
+    assert.match(asset.sourceSha256, /^[a-f0-9]{64}$/);
+    assert.match(asset.recipeSha256, /^[a-f0-9]{64}$/);
+    assert.ok(Number.isSafeInteger(asset.sourceBytes) && asset.sourceBytes > 0);
+    assert.ok(Array.isArray(asset.requiredLayerIds) && asset.requiredLayerIds.length > 0);
+    assert.ok(Array.isArray(asset.elementIds) && asset.elementIds.length >= asset.requiredLayerIds.length);
+    assert.equal(bundledInputsByName.has(asset.sourcePath), false, `Duplicate release input ${asset.sourcePath}`);
+    bundledInputsByName.set(asset.sourcePath, { sha256: asset.sourceSha256, bytes: asset.sourceBytes });
+  }
+}
+const declaredLineageInputs = release.inputs.filter(({ path: inputPath }) => inputPath.startsWith("validation/"));
+for (const input of declaredLineageInputs) {
+  assert.match(input.path, /^validation\/[a-z0-9][a-z0-9._-]*(?:-contour-lineage|-visual-structure|-hd-surface-lineage)\.json$/,
+    `Unsupported validation lineage input: ${input.path}`);
+  assert.equal(bundledInputsByName.has(input.path), false, `Duplicate release input ${input.path}`);
+  bundledInputsByName.set(input.path, { sha256: input.sha256, bytes: input.bytes });
+}
+if (game.semanticVectors) {
+  assert.ok(declaredLineageInputs.some(({ path: inputPath }) => inputPath.endsWith("-hd-surface-lineage.json")),
+    "Semantic vectors require declared HD surface lineage input");
+  assert.ok(declaredLineageInputs.some(({ path: inputPath }) =>
+    inputPath.endsWith("-contour-lineage.json") || inputPath.endsWith("-visual-structure.json")),
+  "Semantic vectors require declared source-structure lineage input");
+}
+assert.deepEqual(release.inputs.map(({ path: inputPath }) => inputPath).sort(), [...bundledInputsByName.keys()].sort(),
+  "Release inputs must enumerate every packaged build input");
+for (const input of release.inputs) {
+  assertSafePackageRelativePath(input.path, "Release input path");
+  const bundledInput = bundledInputsByName.get(input.path);
+  assert.ok(bundledInput, `Unknown release input ${input.path}`);
+  const expectedBytes = bundledInput.file ? fs.statSync(bundledInput.file).size : bundledInput.bytes;
+  const expectedSha256 = bundledInput.file ? sha256(bundledInput.file) : bundledInput.sha256;
+  assert.equal(expectedBytes, input.bytes, `${input.path} input bytes`);
+  assert.equal(expectedSha256, input.sha256, `${input.path} input sha256`);
+}
+
+if (game.validationReplay) {
+  const replay = readJson(path.join("private", game.validationReplay));
+  assert.equal(replay.schemaVersion, "aico8.replay.v1");
+  assert.equal(replay.cartSha256, game.cartSha256, "Validation replay must bind the packaged cart");
+  assert.equal(replay.canonicality?.testHooks, false);
+  assert.equal(replay.canonicality?.compatibilityStateMutation, "none");
+  assert.equal(replay.canonicality?.logicalUpdatePolicy, "execute-all");
+  assert.equal(release.identities.validation_replay_sha256, sha256(path.join(output, "private", game.validationReplay)));
+  assert.equal(release.identities.validation_replay_semantics_schema, "aico8.validation-replay-semantics.v1");
+  assert.equal(
+    release.identities.validation_replay_semantics_sha256,
+    validationReplaySemanticsSha256(replay),
+    "Replay semantic identity must bind cart, input, milestones, checkpoints, and result",
+  );
+} else {
+  assert.equal("validation_replay_sha256" in release.identities, false);
+  assert.equal("validation_replay_semantics_sha256" in release.identities, false);
 }
 
 const html = fs.readFileSync(path.join(output, "index.html"), "utf8");
@@ -104,9 +222,31 @@ const serviceWorker = fs.readFileSync(path.join(output, "service-worker.js"), "u
 const warning = fs.readFileSync(path.join(output, "PRIVATE-RESEARCH-ONLY.txt"), "utf8");
 assert.match(html, /manifest\.webmanifest/);
 assert.match(html, /id="app"/);
+assert.match(html, /viewport-fit=cover/, "Web host must opt into notched-screen safe-area layout");
+const packagedCss = actualFiles.filter((file) => file.endsWith(".css"))
+  .map((file) => fs.readFileSync(path.join(output, file), "utf8"))
+  .join("\n");
+assert.doesNotMatch(html, /\b(?:src|href)=["']\/(?!\/)/,
+  "Web package HTML must use deployment-relative asset URLs");
+assert.doesNotMatch(packagedCss, /url\(\s*["']?\/(?!\/)/,
+  "Web package CSS must use deployment-relative asset URLs");
+for (const edge of ["top", "right", "bottom", "left"]) {
+  assert.match(packagedCss, new RegExp(`safe-area-inset-${edge}`),
+    `Web host must consume the ${edge} safe-area inset`);
+}
 assert.match(serviceWorker, /private\/game\.json/);
 assert.match(serviceWorker, /aico8-kernel\.wasm/);
 assert.match(serviceWorker, /asset-manifest\.json/);
+assert.match(serviceWorker, /target-profile\.json/,
+  "PWA must retain the release target profile for offline validation");
+assert.match(serviceWorker, /scopeRoot = new URL\(self\.registration\.scope\)/,
+  "PWA cache and fallback URLs must be relative to the installed scope");
+assert.match(serviceWorker, /CACHE_PREFIX = `aico8-web-\$\{scopeKey\}-`/,
+  "PWA caches must be isolated by registration scope");
+assert.match(serviceWorker, /event\.request\.mode === "navigate"/,
+  "PWA navigation must refresh mutable builds before falling back offline");
+assert.match(serviceWorker, /url\.pathname\.includes\("\/kernel\/"\)/,
+  "Unhashed kernel artifacts must refresh before using their offline fallback");
 assert.ok(warning.includes(game.author) && warning.includes(game.sourceLicense) && warning.includes(game.sourceUrl));
 
 for (const relative of actualFiles.filter((file) => /\.(?:html|js|css|json|txt|webmanifest)$/.test(file))) {
@@ -115,4 +255,4 @@ for (const relative of actualFiles.filter((file) => /\.(?:html|js|css|json|txt|w
     `${relative} exposes a local absolute path`);
 }
 
-process.stdout.write(`Web/PWA package verified: ${release.game.title} (${actualFiles.length} artifacts, ${game.presentation})\n`);
+process.stdout.write(`Web/PWA package verified: ${release.game.title} (${release.measurements.artifact_count} package files, ${actualFiles.length} checksummed artifacts, ${game.presentation})\n`);

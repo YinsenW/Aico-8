@@ -1,13 +1,27 @@
 #include "p8/core.h"
+#include "p8/audio.h"
 #include "p8/raster.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <cstdio>
 
 namespace {
+
+void write_sfx_note(std::array<uint8_t, P8_ROM_SIZE> &rom, unsigned sfx,
+                    unsigned note, uint8_t key, uint8_t waveform,
+                    uint8_t volume, uint8_t effect, bool custom = false)
+{
+    const size_t address = 0x3200 + sfx * 68 + note * 2;
+    rom[address] = static_cast<uint8_t>((key & 0x3f) | ((waveform & 0x03) << 6));
+    rom[address + 1] = static_cast<uint8_t>(((waveform >> 2) & 0x01)
+        | ((volume & 0x07) << 1) | ((effect & 0x07) << 4)
+        | (custom ? 0x80 : 0));
+}
 
 struct callback_trace {
     int updates = 0;
@@ -38,6 +52,16 @@ void test_rom_reset_and_memory_alias()
 
     p8_core_poke(core, 0x1000, 0xab);
     assert(p8_core_debug_peek_physical(core, 0x1000) == 0xab);
+    p8_core_poke(core, 0x2000, 0xaa);
+    p8_core_clear_dirty(core);
+    assert(p8_core_reload(core, 0x2000, 0x1000, 2));
+    assert(p8_core_peek(core, 0x2000) == 0x34);
+    assert(p8_core_peek(core, 0x2001) == 0x00);
+    assert(p8_core_is_dirty(core, 0x2000, 2));
+    p8_core_poke(core, 0x2000, 0xbb);
+    assert(!p8_core_reload(core, 0x2000, 0x42ff, 2));
+    assert(p8_core_peek(core, 0x2000) == 0xbb);
+    assert(p8_core_reload(core, 0x2000, 0x4300, 0));
     p8_core_reset(core);
     assert(p8_core_peek(core, 0x1000) == 0x34);
     p8_core_destroy(core);
@@ -76,6 +100,13 @@ void test_map_mapping_and_shared_gfx_alias()
     p8_core_mset(core, 5, 32, 0xa5);
     assert(p8_core_peek(core, 0x1005) == 0xa5);
     assert(!p8_core_mset(core, 128, 0, 1));
+    assert(p8_core_mget(core, -1, 0) == 0);
+
+    p8_core_poke(core, 0x5f5a, 10);
+    p8_core_poke(core, 0x5f36, 0x10);
+    assert(p8_core_mget(core, -1, 0) == 10);
+    assert(p8_core_mget(core, 0, 0) == 0x20); // in-range reads ignore the override
+    p8_core_poke(core, 0x5f36, 0);
     assert(p8_core_mget(core, -1, 0) == 0);
 
     p8_core_poke(core, 0x5f56, 0x10);
@@ -303,6 +334,26 @@ void test_raster_sprite_alias_and_primitives()
            P8_SCREEN_PIXELS);
     assert(frame[50 * P8_SCREEN_WIDTH + 50] == 9);
     assert(p8_gfx_copy_framebuffer_indexed(core, frame.data(), frame.size() - 1) == 0);
+
+    p8_gfx_cls(core, 0);
+    assert(p8_gfx_fillp(core, 0x01370000) == 0);
+    p8_gfx_rectfill(core, 0, 0, 3, 3, 0xe8);
+    const std::array<std::array<uint8_t, 4>, 4> patterned = {{{8, 8, 8, 8},
+                                                               {8, 8, 8, 14},
+                                                               {8, 8, 14, 14},
+                                                               {8, 14, 14, 14}}};
+    for (int y = 0; y < 4; ++y) {
+        for (int x = 0; x < 4; ++x) assert(p8_gfx_pget(core, x, y) == patterned[y][x]);
+    }
+    p8_gfx_cls(core, 3);
+    assert(p8_gfx_fillp(core, 0x5a5a8000) == 0x01370000);
+    p8_gfx_rectfill(core, 0, 0, 3, 0, 11);
+    assert(p8_gfx_pget(core, 0, 0) == 11);
+    assert(p8_gfx_pget(core, 1, 0) == 3);
+    assert(p8_gfx_pget(core, 2, 0) == 11);
+    assert(p8_gfx_pget(core, 3, 0) == 3);
+    assert(p8_gfx_fillp(core, 0) == static_cast<int32_t>(0x5a5a8000u));
+
     p8_core_destroy(core);
 }
 
@@ -340,6 +391,485 @@ void test_raster_sprite_map_palette_and_flip()
     assert(p8_gfx_pget(core, 70, 80) == 0);
     p8_gfx_map(core, 2, 3, 70, 80, 1, 1, 1u << 2);
     assert(p8_gfx_pget(core, 70, 80) == 9);
+
+    // A zero map cell is an empty sentinel, not an instruction to draw sprite
+    // zero. Keep this independent of sprite-zero pixels and palt state.
+    p8_gfx_cls(core, 6);
+    p8_gfx_sset(core, 0, 0, 7);
+    p8_core_mset(core, 4, 5, 0);
+    p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
+    assert(p8_gfx_pget(core, 90, 100) == 6);
+
+    p8_core_poke(core, 0x5f36, 0x08);
+    p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
+    assert(p8_gfx_pget(core, 90, 100) == 7);
+    p8_gfx_palt(core, 7, 1);
+    p8_gfx_cls(core, 6);
+    p8_gfx_map(core, 4, 5, 90, 100, 1, 1, 0);
+    assert(p8_gfx_pget(core, 90, 100) == 6);
+
+    assert(p8_gfx_pget(core, -1, 0) == 0);
+    assert(p8_gfx_sget(core, -1, 0) == 0);
+    p8_core_poke(core, 0x5f59, 9);
+    p8_core_poke(core, 0x5f5b, 11);
+    p8_core_poke(core, 0x5f36, 0x18);
+    assert(p8_gfx_sget(core, -1, 0) == 9);
+    assert(p8_gfx_pget(core, -1, 0) == 11);
+    assert(p8_gfx_sget(core, 0, 0) == 7); // in-range reads ignore the override
+
+    p8_gfx_pal_mode(core, 7, 143, 1);
+    assert(p8_core_peek(core, 0x5f17) == 143);
+    p8_gfx_pal_reset_mode(core, 1);
+    assert(p8_core_peek(core, 0x5f17) == 7);
+    p8_core_destroy(core);
+}
+
+void test_raster_secondary_palette_patterns_sprite_and_global_draws()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_sset(core, 0, 0, 12);
+    p8_gfx_sset(core, 1, 0, 12);
+    p8_gfx_pal_mode(core, 12, 0x87, 2);
+
+    // Pattern bit 15 selects the high secondary colour at x%4 == 0;
+    // the next pixel selects the low colour. Fractional flag .01 applies
+    // the pattern to sprite-family calls.
+    p8_gfx_fillp(core, static_cast<int32_t>(0x80004000u));
+    p8_gfx_spr(core, 0, 12, 0, 1, 1, 0, 0);
+    assert(p8_gfx_pget(core, 12, 0) == 8);
+    assert(p8_gfx_pget(core, 13, 0) == 7);
+
+    p8_gfx_sspr(core, 0, 0, 2, 1, 32, 0, 2, 1, 0, 0);
+    assert(p8_gfx_pget(core, 32, 0) == 8);
+    assert(p8_gfx_pget(core, 33, 0) == 7);
+
+    p8_gfx_sset(core, 8, 0, 12);
+    p8_gfx_sset(core, 9, 0, 12);
+    p8_core_mset(core, 0, 0, 1);
+    p8_gfx_map(core, 0, 0, 36, 0, 1, 1, 0);
+    assert(p8_gfx_pget(core, 36, 0) == 8);
+    assert(p8_gfx_pget(core, 37, 0) == 7);
+    p8_gfx_tline(core, 40, 0, 41, 0, 0, 0, 0x2000, 0, 0, 13);
+    assert(p8_gfx_pget(core, 40, 0) == 8);
+    assert(p8_gfx_pget(core, 41, 0) == 7);
+
+    // Fractional flag .001 applies the same secondary mapping globally.
+    p8_gfx_fillp(core, static_cast<int32_t>(0x80002000u));
+    p8_gfx_rectfill(core, 20, 0, 21, 0, 12);
+    assert(p8_gfx_pget(core, 20, 0) == 8);
+    assert(p8_gfx_pget(core, 21, 0) == 7);
+
+    // The normal draw palette is resolved before the secondary palette.
+    p8_gfx_pal_mode(core, 3, 12, 0);
+    p8_gfx_rectfill(core, 24, 0, 25, 0, 3);
+    assert(p8_gfx_pget(core, 24, 0) == 8);
+    assert(p8_gfx_pget(core, 25, 0) == 7);
+
+    p8_gfx_pal_reset_mode(core, 2);
+    p8_gfx_rectfill(core, 28, 0, 29, 0, 3);
+    assert(p8_gfx_pget(core, 28, 0) == 12);
+    assert(p8_gfx_pget(core, 29, 0) == 12);
+    p8_core_destroy(core);
+}
+
+void test_raster_embedded_colour_patterns_and_inverted_fills()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_cls(core, 0);
+    p8_core_poke(core, 0x5f34, 0x01);
+    const int32_t embedded = static_cast<int32_t>(0x104eabcdu);
+    assert(p8_gfx_apply_color_argument(core, embedded) == 0x4e);
+    assert(p8_core_peek(core, 0x5f31) == 0xcd);
+    assert(p8_core_peek(core, 0x5f32) == 0xab);
+    assert(p8_core_peek(core, 0x5f33) == 0);
+    p8_gfx_rectfill(core, 0, 10, 3, 13, 0x4e);
+    assert(p8_gfx_pget(core, 0, 10) == 4);
+    assert(p8_gfx_pget(core, 1, 10) == 4);
+    assert(p8_gfx_pget(core, 2, 10) == 14);
+    assert(p8_gfx_pget(core, 3, 10) == 14);
+
+    // The embedded mode flags share the same bytes used by fillp(). Inversion
+    // is a one-call request and therefore does not silently mutate 0x5f34.
+    const int32_t embedded_modes = static_cast<int32_t>(0x1f08aaaau);
+    assert(p8_gfx_color_argument_requests_inversion(core, embedded_modes));
+    assert(p8_gfx_apply_color_argument(core, embedded_modes) == 8);
+    assert(p8_core_peek(core, 0x5f33) == 0x07);
+    assert(p8_core_peek(core, 0x5f34) == 0x01);
+
+    p8_gfx_fillp(core, 0);
+    p8_gfx_cls(core, 1);
+    p8_gfx_clip(core, 0, 20, 8, 8, 0);
+    p8_core_poke(core, 0x5f34, 0x02);
+    p8_gfx_circfill(core, 3, 23, 1, 8);
+    assert(p8_gfx_pget(core, 0, 20) == 8);
+    assert(p8_gfx_pget(core, 3, 23) == 1);
+    assert(p8_gfx_pget(core, 3, 22) == 1);
+    assert(p8_gfx_pget(core, 7, 27) == 8);
+    assert(p8_gfx_pget(core, 8, 20) == 1);
+
+    // Rectangle inversion observes camera coordinates while remaining bounded
+    // by the screen-space clip.
+    p8_gfx_cls(core, 2);
+    p8_gfx_clip(core, 10, 10, 4, 4, 0);
+    p8_gfx_camera(core, 5, 6);
+    p8_gfx_rectfill(core, 15, 16, 16, 17, 9);
+    assert(p8_gfx_pget(core, 10, 10) == 2);
+    assert(p8_gfx_pget(core, 11, 11) == 2);
+    assert(p8_gfx_pget(core, 13, 13) == 9);
+    assert(p8_gfx_pget(core, 9, 10) == 2);
+    p8_core_destroy(core);
+}
+
+void test_raster_ellipse_and_rounded_rectangle_primitives()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_cls(core, 0);
+    p8_gfx_oval(core, 10, 10, 14, 12, 8);
+    assert(p8_gfx_pget(core, 12, 10) == 8);
+    assert(p8_gfx_pget(core, 10, 11) == 8);
+    assert(p8_gfx_pget(core, 14, 11) == 8);
+    assert(p8_gfx_pget(core, 12, 12) == 8);
+    assert(p8_gfx_pget(core, 12, 11) == 0);
+
+    p8_gfx_ovalfill(core, 20, 20, 26, 24, 9);
+    assert(p8_gfx_pget(core, 23, 20) == 9);
+    assert(p8_gfx_pget(core, 20, 22) == 9);
+    assert(p8_gfx_pget(core, 23, 22) == 9);
+    assert(p8_gfx_pget(core, 26, 22) == 9);
+
+    p8_gfx_rrectfill(core, 30, 30, 6, 4, 2, 10);
+    assert(p8_gfx_pget(core, 30, 30) == 0);
+    assert(p8_gfx_pget(core, 31, 30) == 10);
+    assert(p8_gfx_pget(core, 34, 30) == 10);
+    assert(p8_gfx_pget(core, 35, 30) == 0);
+    assert(p8_gfx_pget(core, 30, 31) == 10);
+    assert(p8_gfx_pget(core, 35, 32) == 10);
+
+    p8_gfx_rrect(core, 40, 30, 6, 4, 99, 11); // radius clamps to 2
+    assert(p8_gfx_pget(core, 40, 30) == 0);
+    assert(p8_gfx_pget(core, 41, 30) == 11);
+    assert(p8_gfx_pget(core, 40, 31) == 11);
+    assert(p8_gfx_pget(core, 42, 31) == 0);
+    p8_gfx_rrectfill(core, 50, 30, 0, 4, 2, 12);
+    assert(p8_gfx_pget(core, 50, 30) == 0);
+
+    p8_gfx_cls(core, 1);
+    p8_gfx_clip(core, 0, 0, 8, 8, 0);
+    p8_core_poke(core, 0x5f34, 2);
+    p8_gfx_ovalfill(core, 2, 2, 5, 5, 8);
+    assert(p8_gfx_pget(core, 3, 3) == 1);
+    assert(p8_gfx_pget(core, 0, 0) == 8);
+    assert(p8_gfx_pget(core, 8, 0) == 1);
+    p8_gfx_cls(core, 1);
+    p8_gfx_clip(core, 0, 0, 8, 8, 0);
+    p8_gfx_rrectfill(core, 2, 2, 4, 4, 1, 9);
+    assert(p8_gfx_pget(core, 3, 3) == 1);
+    assert(p8_gfx_pget(core, 0, 0) == 9);
+    assert(p8_gfx_pget(core, 8, 0) == 1);
+    p8_core_destroy(core);
+}
+
+void test_raster_tline_sampling_precision_masks_layers_and_transparency()
+{
+    p8_core *core = p8_core_create();
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        p8_gfx_sset(core, 8 + pixel, 0, static_cast<uint8_t>(pixel + 1));
+        p8_gfx_sset(core, 16 + pixel, 0, static_cast<uint8_t>(pixel + 8));
+    }
+    p8_core_mset(core, 0, 0, 1);
+    p8_core_mset(core, 1, 0, 2);
+
+    p8_gfx_tline(core, 0, 30, 7, 30, 0, 0, 0x2000, 0, 0, 13);
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 30) == pixel + 1);
+    }
+
+    p8_core_poke(core, 0x5f38, 1);
+    p8_core_poke(core, 0x5f3a, 1);
+    p8_gfx_tline(core, 0, 31, 7, 31, 0, 0, 0x2000, 0, 0, 13);
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 31) == ((pixel + 8) & 0x0f));
+    }
+
+    p8_core_poke(core, 0x5f38, 0);
+    p8_core_poke(core, 0x5f3a, 0);
+    p8_gfx_tline(core, 0, 32, 7, 32, 0, 0, 0x10000, 0, 0, 16);
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 32) == pixel + 1);
+    }
+
+    p8_core_poke(core, 0x3001, 1u << 2);
+    p8_gfx_cls(core, 6);
+    p8_gfx_tline(core, 0, 33, 0, 33, 0, 0, 0, 0, 1u << 1, 13);
+    assert(p8_gfx_pget(core, 0, 33) == 6);
+    p8_gfx_tline(core, 0, 33, 0, 33, 0, 0, 0, 0, 1u << 2, 13);
+    assert(p8_gfx_pget(core, 0, 33) == 1);
+    p8_gfx_pal(core, 1, 9);
+    p8_gfx_tline(core, 3, 33, 3, 33, 0, 0, 0, 0, 1u << 2, 13);
+    assert(p8_gfx_pget(core, 3, 33) == 9);
+    p8_gfx_pal_reset(core);
+
+    p8_gfx_sset(core, 0, 0, 7);
+    p8_core_mset(core, 0, 0, 0);
+    p8_gfx_tline(core, 1, 33, 1, 33, 0, 0, 0, 0, 0, 13);
+    assert(p8_gfx_pget(core, 1, 33) == 6);
+    p8_core_poke(core, 0x5f36, 0x08);
+    p8_gfx_tline(core, 1, 33, 1, 33, 0, 0, 0, 0, 0, 13);
+    assert(p8_gfx_pget(core, 1, 33) == 7);
+    p8_gfx_palt(core, 7, 1);
+    p8_gfx_tline(core, 2, 33, 2, 33, 0, 0, 0, 0, 0, 13);
+    assert(p8_gfx_pget(core, 2, 33) == 6);
+
+    p8_core_destroy(core);
+}
+
+void test_audio_is_deterministic_and_rejects_unqualified_features()
+{
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    rom[0x3100] = 0x80; // pattern 0 begins a loop and plays sfx 0 on channel 0
+    rom[0x3101] = 0x42;
+    rom[0x3102] = 0x43;
+    rom[0x3103] = 0x44;
+    rom[0x3200] = static_cast<uint8_t>(33 | (3 << 6)); // A, square
+    rom[0x3201] = static_cast<uint8_t>(7 << 1); // full volume, no effect
+    rom[0x3240] = 1; // editor mode only; no filters
+    rom[0x3241] = 2; // speed
+
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    const uint32_t capabilities = p8_audio_capabilities(core);
+    assert((capabilities & P8_AUDIO_CAP_EVENT_LEDGER) != 0);
+    assert((capabilities & P8_AUDIO_CAP_CHANNEL_STATUS) != 0);
+    assert((capabilities & P8_AUDIO_CAP_STAT_57) != 0);
+    assert((capabilities & P8_AUDIO_CAP_CURRENT_MUSIC_PATTERN) != 0);
+    assert((capabilities & P8_AUDIO_CAP_STAT_46_56) == 0);
+    assert((capabilities & P8_AUDIO_CAP_FILTERS) == 0);
+    assert((capabilities & P8_AUDIO_CAP_CUSTOM_INSTRUMENTS) == 0);
+    assert((capabilities & P8_AUDIO_CAP_CUSTOM_WAVEFORMS) == 0);
+    int32_t music_active = -1;
+    assert(p8_audio_stat(core, 57, &music_active));
+    assert(music_active == 0);
+    int32_t current_pattern = 123;
+    assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == -1);
+    assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == -1);
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_audio_stat(core, 57, &music_active));
+    assert(music_active == 1);
+    assert(p8_audio_current_music(core) == 0);
+    assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == 0);
+    assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == 0);
+    assert(p8_audio_current_sfx(core, 0) == 0);
+    p8_audio_channel_status status{};
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == 0 && status.note == 0 && status.is_music == 1);
+    int32_t stat_value = 123;
+    assert(!p8_audio_stat(core, 46, &stat_value));
+    assert(stat_value == 123); // unsupported status must not manufacture a value
+    std::array<p8_audio_event, 8> events{};
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 2);
+    assert(events[0].kind == P8_AUDIO_EVENT_MUSIC_PATTERN);
+    assert(events[0].music_pattern == 0);
+    assert(events[1].kind == P8_AUDIO_EVENT_CHANNEL_START);
+    assert(events[1].channel == 0 && events[1].sfx == 0 && events[1].note == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == 0 && status.note == 1);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 3);
+    assert(events[2].kind == P8_AUDIO_EVENT_NOTE);
+    assert(events[2].sample_low == 367 && events[2].sample_high == 0);
+    assert(events[2].note == 1);
+    assert(p8_audio_available(core) == 367);
+    std::array<int16_t, 367> first{};
+    assert(p8_audio_read(core, first.data(), first.size()) == first.size());
+    assert(std::any_of(first.begin(), first.end(), [](int16_t sample) { return sample != 0; }));
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> builtin_non_music{};
+    assert(p8_audio_read(core, builtin_non_music.data(), builtin_non_music.size())
+           == builtin_non_music.size());
+    assert(first == builtin_non_music); // full-volume music and standalone paths share gain
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> second{};
+    assert(p8_audio_read(core, second.data(), second.size()) == second.size());
+    assert(first == second);
+
+    rom[0x3101] = 0; // the second song channel also references sfx 0
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x01));
+    assert(p8_audio_current_sfx(core, 0) == 0);
+    assert(p8_audio_current_sfx(core, 1) == -1); // channel mask reserves only channel 0
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == 0);
+    assert(p8_audio_sfx(core, -2, 0, 0, 0) == -1);
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == 0 && status.is_releasing == 1);
+    assert(p8_audio_sfx(core, -1, 0, 0, 0) == -1);
+    assert(p8_audio_get_channel_status(core, 0, &status));
+    assert(status.sfx == -1 && status.note == -1);
+    assert(status.is_music == 0 && status.is_releasing == 0);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 3);
+    assert(events[0].kind == P8_AUDIO_EVENT_CHANNEL_START);
+    assert(events[1].kind == P8_AUDIO_EVENT_CHANNEL_RELEASE);
+    assert(events[2].kind == P8_AUDIO_EVENT_CHANNEL_STOP);
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_audio_stat(core, 57, &music_active) && music_active == 1);
+    assert(p8_audio_music(core, -1, 0, 0x0f));
+    assert(p8_audio_stat(core, 57, &music_active) && music_active == 0);
+    assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == -1);
+    assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == -1);
+
+    rom[0x3240] = 3; // editor flag plus noiz filter
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "filters") != nullptr);
+
+    rom[0x3240] = 1;
+    rom[0x3201] = static_cast<uint8_t>((7 << 1) | 0x80); // active custom instrument
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "diagnostic opt-in") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 0);
+    p8_core_destroy(core);
+}
+
+void test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic()
+{
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    // Public synthetic analogue of PICO-8 custom SFX instruments: outer SFX 8
+    // references instrument SFX 1, whose notes use only built-in waveforms.
+    write_sfx_note(rom, 1, 0, 24, 5, 7, 1);
+    write_sfx_note(rom, 1, 1, 28, 5, 4, 1);
+    rom[0x3200 + 1 * 68 + 64] = 1;
+    rom[0x3200 + 1 * 68 + 65] = 2;
+    write_sfx_note(rom, 8, 0, 33, 1, 7, 0, true);
+    write_sfx_note(rom, 8, 1, 33, 1, 7, 5, true);
+    rom[0x3200 + 8 * 68 + 64] = 1;
+    rom[0x3200 + 8 * 68 + 65] = 1;
+
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "diagnostic opt-in") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(!p8_audio_set_diagnostic_mask(core, 0x80000000u));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == 0);
+    assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT);
+    assert((p8_audio_capabilities(core) & P8_AUDIO_CAP_CUSTOM_INSTRUMENTS) == 0);
+    std::array<p8_audio_event, 8> events{};
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 2);
+    assert(events[0].kind == P8_AUDIO_EVENT_DIAGNOSTIC_CUSTOM_AUDIO);
+    assert(events[0].sfx == 8 && events[0].channel == 0);
+    assert(events[1].kind == P8_AUDIO_EVENT_CHANNEL_START);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> first{};
+    assert(p8_audio_read(core, first.data(), first.size()) == first.size());
+    assert(std::any_of(first.begin(), first.end(), [](int16_t sample) { return sample != 0; }));
+    assert(!p8_audio_set_diagnostic_mask(core, 0)); // mode is immutable after execution begins
+
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> second{};
+    assert(p8_audio_read(core, second.data(), second.size()) == second.size());
+    assert(first == second);
+
+    // A 64-byte custom waveform uses a separate explicit diagnostic bit. The
+    // two same-key outer notes intentionally continue phase rather than
+    // retriggering; this is a deterministic assumption, not conformance proof.
+    std::array<uint8_t, P8_ROM_SIZE> waveform_rom{};
+    for (unsigned index = 0; index < 64; ++index) {
+        waveform_rom[0x3200 + index] = static_cast<uint8_t>(static_cast<int>(index) - 32);
+    }
+    waveform_rom[0x3200 + 64] = 1;
+    waveform_rom[0x3200 + 65] = 0;
+    waveform_rom[0x3200 + 66] = 0x80;
+    waveform_rom[0x3200 + 67] = 0;
+    write_sfx_note(waveform_rom, 8, 0, 33, 0, 7, 0, true);
+    write_sfx_note(waveform_rom, 8, 1, 33, 0, 7, 0, true);
+    waveform_rom[0x3200 + 8 * 68 + 64] = 1;
+    waveform_rom[0x3200 + 8 * 68 + 65] = 1;
+    assert(p8_core_load_rom(core, waveform_rom.data(), waveform_rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == 0);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> waveform_samples{};
+    assert(p8_audio_read(core, waveform_samples.data(), waveform_samples.size())
+           == waveform_samples.size());
+    assert(std::any_of(waveform_samples.begin(), waveform_samples.end(),
+                       [](int16_t sample) { return sample != 0; }));
+    assert(waveform_samples[0] == -1984); // shared non-music gain applies after custom rendering
+    assert(waveform_samples[0] != waveform_samples[183]);
+    assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM);
+    assert((p8_audio_capabilities(core) & P8_AUDIO_CAP_CUSTOM_WAVEFORMS) == 0);
+
+    waveform_rom[0x3100] = 8;
+    waveform_rom[0x3101] = 0x40;
+    waveform_rom[0x3102] = 0x40;
+    waveform_rom[0x3103] = 0x40;
+    assert(p8_core_load_rom(core, waveform_rom.data(), waveform_rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM));
+    assert(p8_audio_music(core, 0, 0, 0x01));
+    assert(p8_core_host_tick60(core, 1) == 1);
+    std::array<int16_t, 367> waveform_music_samples{};
+    assert(p8_audio_read(core, waveform_music_samples.data(), waveform_music_samples.size())
+           == waveform_music_samples.size());
+    assert(waveform_music_samples == waveform_samples);
+
+    // Unsupported structure stays fail-closed even after diagnostic opt-in.
+    const std::array<uint8_t, P8_ROM_SIZE> valid_instrument_rom = rom;
+    rom[0x3200 + 1 * 68 + 1] |= 0x80; // nested custom reference
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "recursion") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+    assert(p8_audio_copy_events(core, events.data(), events.size()) == 0);
+
+    rom = valid_instrument_rom;
+    rom[0x3200 + 1 * 68 + 64] = 3; // referenced noiz filter
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "filters") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    rom = valid_instrument_rom;
+    rom[0x3200 + 8 * 68 + 1] |= 1u << 4; // unsupported outer slide effect
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "custom note effect") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    rom = valid_instrument_rom;
+    write_sfx_note(rom, 1, 0, 63, 5, 7, 0);
+    write_sfx_note(rom, 8, 0, 63, 1, 7, 0, true);
+    write_sfx_note(rom, 8, 1, 63, 1, 7, 0, true);
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "transposition") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
+
+    waveform_rom[0x3200 + 67] = 1; // reserved custom-waveform metadata
+    assert(p8_core_load_rom(core, waveform_rom.data(), waveform_rom.size()));
+    assert(p8_audio_set_diagnostic_mask(core, P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM));
+    assert(p8_audio_sfx(core, 8, 0, 0, 0) == -1);
+    assert(std::strstr(p8_audio_last_error(core), "metadata") != nullptr);
+    assert(p8_audio_diagnostic_flags(core) == 0);
     p8_core_destroy(core);
 }
 
@@ -357,6 +887,12 @@ int main()
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
+    test_raster_secondary_palette_patterns_sprite_and_global_draws();
+    test_raster_embedded_colour_patterns_and_inverted_fills();
+    test_raster_ellipse_and_rounded_rectangle_primitives();
+    test_raster_tline_sampling_precision_masks_layers_and_transparency();
+    test_audio_is_deterministic_and_rejects_unqualified_features();
+    test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic();
     std::puts("p8 core tests: ok");
     return 0;
 }

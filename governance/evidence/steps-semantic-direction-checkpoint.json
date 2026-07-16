@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "subject": "Steps semantic HD direction checkpoint",
+  "status": "representative-hd-direction-approved",
+  "recorded_on": "2026-07-15",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "human_statement": "这次高清化是比较成功的，继续吧",
+  "approved_scope": [
+    "Replace final-framebuffer topology projection with source-semantic content reconstruction.",
+    "Preserve the square source composition while modernizing continuous contours, materials, internal detail, and fixed-font text.",
+    "Proceed from representative direction review to same-state gameplay, motion, and cue review."
+  ],
+  "not_approved": [
+    "complete-game visual coverage",
+    "all three ordered human gates",
+    "release readiness",
+    "publication rights",
+    "universal autonomous conversion"
+  ],
+  "private_candidate_lineage": {
+    "release_manifest_sha256": "84fa914aa3fe0fb54706be14986b06b3688f3ba34c9aa06e64c077362e277cc6",
+    "visual_runtime_sha256": "86829cda10d80663a7e5cdd46ac276d16082407083d0b23d6e386e5d294eaa35",
+    "canonical_replay_sha256": "fcb02073e550ab2cdd1a78f5e75bd5f25ea6c763474811793e9bbe9e4c71576d",
+    "representative_pair_count": 5,
+    "private_preflight_packet_sha256": "e79ceb6ca60b19e183342612fc3237173fe62ec4dc32f3d983c5bc25e856b7ba"
+  },
+  "candidate_artifact_outcome": "The direction credit remains valid, but deeper representative preflight rejected v19c because its HD content route bypassed a source visibility effect. Successor v19d is a separate machine-qualified candidate pending human review.",
+  "next_human_gate": "representative-gameplay-motion-and-cue-review",
+  "qualification_credit": {
+    "accepted_game_credit": 0,
+    "supervised_transfer_direction_credit": 1
+  }
+}

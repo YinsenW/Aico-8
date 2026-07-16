@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "subject": "zen-garden-mowerman-private-research unchanged-cart canonical gameplay",
+  "status": "canonical-gameplay-passed-game-qualification-still-open",
+  "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
+  "runtime": {
+    "id": "aico8-core-wasm",
+    "revision": "e7652beb3c72e415cb132f5dab0b4d0db7a7f18cf8c1a2821270ec298eb4f3d9"
+  },
+  "observations": {
+    "boundary_kind": "level",
+    "required_boundaries": 5,
+    "completed_boundaries": 5,
+    "ordinary_input_logical_updates": 30690,
+    "input_spans": 615,
+    "strokes": 96,
+    "state_checkpoints": 17,
+    "mutation_regressions_rejected": 2,
+    "ending_reached": true,
+    "progression_complete": true,
+    "host_input_surfaces": 3,
+    "host_input_mask_mismatches": 0,
+    "audio_diagnostic_flags": 0
+  },
+  "canonicality": {
+    "mode": "canonical-real-input",
+    "cartMutation": "none",
+    "compatibilityStateMutation": "none",
+    "inputSource": "pico8-buttons-only",
+    "logicalUpdatePolicy": "execute-all",
+    "testHooks": false,
+    "wallClockAcceleration": true
+  },
+  "private_artifact_sha256": {
+    "replay_v1": "f9a95982c58ca80788698480a299c1f4e8c9d76553c43de326cdb3ad90fb37c9",
+    "differential": "6006fcbcd6d26cdc004cf06f3b262db37264fffc60298ab18ccb480398aa22c9",
+    "input_projection": "137dc94080c9fe9ee6374ac1b20a299b7c5507e1de905126c3748d9fb63266ca",
+    "input_trace_provenance": "af3c5a7c21a64fd1a6f15ed7255ef4198d584b8a8772579a43ba1220b06c07f2"
+  },
+  "limitations": [
+    "The source defines five independent menu-selected victories and no aggregate campaign ending; the standard ending milestone names the fifth required victory, while game-complete names the verified final return to the live menu.",
+    "The strict Replay v1 trace serializes the ordinary six-button masks; the six real source-authored pause-menu invocations remain bound by the extended replay, runner revision, and checkpoint hashes.",
+    "This is private research evidence, not official-runtime compatibility, HD review, human acceptance, or publication authorization."
+  ],
+  "selector": "TEST-QUALIFICATION-GAMEPLAY-PRIVATE"
+}

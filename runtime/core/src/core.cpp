@@ -1,5 +1,9 @@
 #include "p8/core.h"
+#include "p8/audio.h"
 #include "p8/raster.h"
+
+#include "audio_internal.h"
+#include "core_internal.h"
 
 #include <algorithm>
 #include <array>
@@ -15,6 +19,8 @@ constexpr uint16_t kScreenMapRegister = 0x5f55;
 constexpr uint16_t kMapMapRegister = 0x5f56;
 constexpr uint16_t kMapWidthRegister = 0x5f57;
 constexpr uint16_t kButtonStateRegister = 0x5f4c;
+constexpr uint16_t kReadOverrideFlags = 0x5f36;
+constexpr uint16_t kMgetOutOfBoundsValue = 0x5f5a;
 constexpr uint16_t kRepeatDelayRegister = 0x5f5c;
 constexpr uint16_t kRepeatIntervalRegister = 0x5f5d;
 constexpr uint8_t kButtonMask = (1u << P8_BUTTONS_PER_PLAYER) - 1u;
@@ -33,6 +39,7 @@ struct p8_core {
     std::array<uint8_t, P8_MAX_PLAYERS> pending_buttons{};
     std::array<uint8_t, P8_MAX_PLAYERS> buttons{};
     std::array<uint8_t, P8_MAX_PLAYERS> pressed{};
+    std::array<uint8_t, 16> secondary_palette{};
     std::array<std::array<uint32_t, P8_BUTTONS_PER_PLAYER>, P8_MAX_PLAYERS> held_ticks{};
     p8_core_callbacks callbacks{};
     unsigned update_rate = 30;
@@ -41,6 +48,7 @@ struct p8_core {
     uint32_t draw_sequence = 0;
     std::vector<p8_draw_command> draw_commands;
     std::vector<uint8_t> draw_payload;
+    p8_audio_state audio{};
 
     uint16_t translate(uint16_t address) const
     {
@@ -107,6 +115,34 @@ struct p8_core {
     }
 };
 
+uint8_t p8_core_secondary_palette_get(const p8_core *core, uint8_t color)
+{
+    return core ? core->secondary_palette[color & 0x0f] : 0;
+}
+
+void p8_core_secondary_palette_set(p8_core *core, uint8_t color, uint8_t pair)
+{
+    if (core) core->secondary_palette[color & 0x0f] = pair;
+}
+
+void p8_core_secondary_palette_reset(p8_core *core)
+{
+    if (!core) return;
+    for (uint8_t color = 0; color < 16; ++color) {
+        core->secondary_palette[color] = static_cast<uint8_t>(color | (color << 4u));
+    }
+}
+
+p8_audio_state &p8_core_audio_state(p8_core *core)
+{
+    return core->audio;
+}
+
+const p8_audio_state &p8_core_audio_state(const p8_core *core)
+{
+    return core->audio;
+}
+
 extern "C" {
 
 p8_core *p8_core_create(void)
@@ -162,6 +198,7 @@ void p8_core_reset(p8_core *core)
     core->draw_sequence = 0;
     core->draw_commands.clear();
     core->draw_payload.clear();
+    p8_audio_reset(core);
 }
 
 uint8_t p8_core_peek(const p8_core *core, uint16_t address)
@@ -229,10 +266,36 @@ void p8_core_memcpy(p8_core *core, uint16_t destination, uint16_t source, size_t
     }
 }
 
+int p8_core_reload(p8_core *core, uint16_t destination, uint16_t source, size_t length)
+{
+    if (!core) {
+        return 0;
+    }
+    if (length == 0) {
+        return 1;
+    }
+    if (source >= P8_CART_DATA_SIZE
+        || length > static_cast<size_t>(P8_CART_DATA_SIZE - source)) {
+        return 0;
+    }
+    for (size_t offset = 0; offset < length; ++offset) {
+        p8_core_poke(core, add_wrapped(destination, offset), core->rom[source + offset]);
+    }
+    return 1;
+}
+
 uint8_t p8_core_mget(const p8_core *core, int x, int y)
 {
     uint16_t address = 0;
-    return core && core->map_address(x, y, address) ? core->ram[address] : 0;
+    if (!core) {
+        return 0;
+    }
+    if (core->map_address(x, y, address)) {
+        return core->ram[address];
+    }
+    return (core->read(kReadOverrideFlags) & 0x10u) != 0
+        ? core->read(kMgetOutOfBoundsValue)
+        : 0;
 }
 
 int p8_core_mset(p8_core *core, int x, int y, uint8_t value)
@@ -389,6 +452,7 @@ int p8_core_host_tick60(p8_core *core, int allow_draw)
     if (core->update_rate == 30) {
         core->host_phase ^= 1u;
         if (core->host_phase == 0) {
+            p8_audio_host_tick60(core);
             return 0;
         }
     }
@@ -403,6 +467,7 @@ int p8_core_host_tick60(p8_core *core, int allow_draw)
     if (allow_draw && core->callbacks.draw) {
         core->callbacks.draw(core->callbacks.userdata);
     }
+    p8_audio_host_tick60(core);
     return 1;
 }
 

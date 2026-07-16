@@ -1,0 +1,68 @@
+import { describe, expect, it } from "vitest";
+
+import { createSemanticVectorContext, type SemanticVectorAsset } from "./semantic-vector.js";
+
+const hash = "a".repeat(64);
+const asset: SemanticVectorAsset = {
+  schemaVersion: "aico8.semantic-vector-source.v1",
+  id: "test-vector",
+  sourceSha256: hash,
+  sourceBytes: 1,
+  recipeSha256: hash,
+  viewBox: [0, 0, 64, 64],
+  origin: [32, 32],
+  requiredLayerIds: ["body", "detail"],
+  elementIds: ["body", "body-shape", "detail", "detail-shape"],
+  primitives: [
+    { id: "body-shape", layerIds: ["body"], commands: [{ op: "circle", values: [32, 32, 28] }], fill: { token: "segment", alpha: 1 } },
+    { id: "detail-shape", layerIds: ["detail"], commands: [{ op: "rect", values: [0, 0, 8, 8] }], fill: { color: 0xff0000, alpha: 1 } },
+  ],
+};
+
+describe("semantic vector runtime", () => {
+  it("compiles selected layers and palette tokens into a reusable context", () => {
+    const context = createSemanticVectorContext(asset, {
+      includeLayerIds: ["body"],
+      palette: { segment: 0xffeee6 },
+    });
+    expect(context.bounds.width).toBe(56);
+    expect(context.bounds.height).toBe(56);
+  });
+
+  it("fails closed when a semantic paint token is unresolved", () => {
+    expect(() => createSemanticVectorContext(asset, { includeLayerIds: ["body"] })).toThrow(/unresolved/);
+  });
+
+  it("can remove sub-pixel decoration without changing the owning semantic layer", () => {
+    const context = createSemanticVectorContext(asset, {
+      excludePrimitiveIds: ["detail-shape"],
+      palette: { segment: 0xffeee6 },
+    });
+    expect(context.bounds.x).toBe(4);
+    expect(context.bounds.y).toBe(4);
+    expect(context.bounds.width).toBe(56);
+    expect(context.bounds.height).toBe(56);
+  });
+
+  it("cuts protected negative-space primitives out of the preceding fill", () => {
+    const context = createSemanticVectorContext({
+      ...asset,
+      primitives: [
+        { id: "body-shape", layerIds: ["body"], commands: [
+          { op: "circle", values: [20, 20, 16] },
+          { op: "circle", values: [48, 48, 12] },
+        ], fill: { color: 0xffffff, alpha: 1 } },
+        { id: "body-counter", layerIds: ["body"], commands: [{ op: "circle", values: [20, 20, 6] }], composite: "cut" },
+      ],
+    });
+    const instructions = context.instructions as Array<{ action: string; data: {
+      hole?: unknown;
+      path: { shapePath: { shapePrimitives: Array<{ holes?: unknown[] }> } };
+    } }>;
+    expect(instructions).toHaveLength(1);
+    expect(instructions[0]?.action).toBe("fill");
+    expect(instructions[0]?.data.hole).toBeUndefined();
+    expect(instructions[0]?.data.path.shapePath.shapePrimitives[0]?.holes).toHaveLength(1);
+    expect(instructions[0]?.data.path.shapePath.shapePrimitives[1]?.holes).toBeUndefined();
+  });
+});

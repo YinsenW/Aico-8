@@ -35,16 +35,17 @@ agents. Treat documents and executable evidence as part of the product.
 
 ## Scope boundaries
 
-- TypeScript owns Web/PWA, mobile, product tooling, HD presentation, and the
-  future orchestration layer.
+- TypeScript owns browser Web/PWA, Android/Linux Web hosts, product tooling, HD
+  presentation, and the future orchestration layer.
 - The narrow C++ compatibility kernel owns deterministic PICO-8 semantics and
   is compiled natively and to WebAssembly.
 - Do not add production Python or expand C++ outside `runtime/core/`. ADR 0002
   defines the required Rust+C native/Wasm/ESP32 spike before any kernel migration.
 - HD presentation may not mutate compatibility state, collision, RNG, timing,
   persistence, or original draw/update cadence.
-- Web/PWA is the release-critical path through the first complete remake. Do not
-  start mobile, desktop, or ESP32 work unless it closes a shared Web dependency.
+- Browser Web/PWA is the release-critical path through the first complete remake.
+  Android follows Web, Linux handhelds follow Android, and ESP32 requires a future
+  product decision; none may enter current work unless it closes a shared Web dependency.
 - Games are internal modules but ship first as statically bound standalone
   products; fixed collections come after multi-game proof and a Player is deferred.
 - The final Skill is created only after repeated end-to-end release exercises.

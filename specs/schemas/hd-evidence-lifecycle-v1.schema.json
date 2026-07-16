@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/hd-evidence-lifecycle-v1.schema.json",
+  "title": "Aico 8 HD evidence lifecycle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "gameId",
+    "artifactClass",
+    "lifecycleState",
+    "orderedGates",
+    "draft",
+    "safety",
+    "runtime",
+    "capture",
+    "browser",
+    "humanReview"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.hd-evidence-lifecycle.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "artifactClass": {
+      "enum": ["offline-hd-draft", "packaged-capture", "human-review-packet"]
+    },
+    "lifecycleState": {
+      "enum": ["offline-hd-draft", "pending-packaged-capture", "pending-human-review"]
+    },
+    "orderedGates": { "$ref": "#/$defs/orderedGates" },
+    "draft": { "$ref": "#/$defs/draft" },
+    "safety": { "$ref": "#/$defs/safety" },
+    "runtime": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/runtime" }]
+    },
+    "capture": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/capture" }]
+    },
+    "browser": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/browser" }]
+    },
+    "humanReview": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/humanReview" }]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "artifactClass": { "const": "offline-hd-draft" } } },
+      "then": {
+        "properties": {
+          "lifecycleState": { "enum": ["offline-hd-draft", "pending-packaged-capture"] },
+          "runtime": { "type": "null" },
+          "capture": { "type": "null" },
+          "browser": { "type": "null" },
+          "humanReview": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "artifactClass": { "const": "packaged-capture" } } },
+      "then": {
+        "properties": {
+          "lifecycleState": { "const": "pending-human-review" },
+          "runtime": { "$ref": "#/$defs/runtime" },
+          "capture": { "$ref": "#/$defs/capture" },
+          "browser": { "$ref": "#/$defs/browser" },
+          "humanReview": { "type": "null" },
+          "draft": { "$ref": "#/$defs/promotableDraft" },
+          "safety": { "$ref": "#/$defs/promotableSafety" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "artifactClass": { "const": "human-review-packet" } } },
+      "then": {
+        "properties": {
+          "lifecycleState": { "const": "pending-human-review" },
+          "runtime": { "$ref": "#/$defs/runtime" },
+          "capture": { "$ref": "#/$defs/capture" },
+          "browser": { "$ref": "#/$defs/browser" },
+          "humanReview": { "$ref": "#/$defs/humanReview" },
+          "draft": { "$ref": "#/$defs/promotableDraft" },
+          "safety": { "$ref": "#/$defs/promotableSafety" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "lifecycleState": { "const": "pending-packaged-capture" } } },
+      "then": {
+        "properties": {
+          "artifactClass": { "const": "offline-hd-draft" },
+          "draft": { "$ref": "#/$defs/promotableDraft" },
+          "safety": { "$ref": "#/$defs/promotableSafety" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*//).+$"
+    },
+    "orderedGates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "order", "verdict"],
+          "properties": {
+            "id": { "const": "spirit-fidelity" },
+            "order": { "const": 1 },
+            "verdict": { "const": "pending" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "order", "verdict"],
+          "properties": {
+            "id": { "const": "quality-leap" },
+            "order": { "const": 2 },
+            "verdict": { "const": "blocked-by-prior-gate" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "order", "verdict"],
+          "properties": {
+            "id": { "const": "aesthetic-evolution" },
+            "order": { "const": 3 },
+            "verdict": { "const": "blocked-by-prior-gate" }
+          }
+        }
+      ]
+    },
+    "glyphVerified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "sha256"],
+      "properties": {
+        "status": { "const": "verified" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceVisualInventorySha256",
+        "identityMapSha256",
+        "assetDraftSha256",
+        "reachableElementCount",
+        "mappedElementCount",
+        "unmappedElementCount"
+      ],
+      "properties": {
+        "sourceVisualInventorySha256": { "$ref": "#/$defs/sha256" },
+        "identityMapSha256": { "$ref": "#/$defs/sha256" },
+        "assetDraftSha256": { "$ref": "#/$defs/sha256" },
+        "reachableElementCount": { "type": "integer", "minimum": 1 },
+        "mappedElementCount": { "type": "integer", "minimum": 0 },
+        "unmappedElementCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "promotableDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceVisualInventorySha256",
+        "identityMapSha256",
+        "assetDraftSha256",
+        "reachableElementCount",
+        "mappedElementCount",
+        "unmappedElementCount"
+      ],
+      "properties": {
+        "sourceVisualInventorySha256": { "$ref": "#/$defs/sha256" },
+        "identityMapSha256": { "$ref": "#/$defs/sha256" },
+        "assetDraftSha256": { "$ref": "#/$defs/sha256" },
+        "reachableElementCount": { "type": "integer", "minimum": 1 },
+        "mappedElementCount": { "type": "integer", "minimum": 1 },
+        "unmappedElementCount": { "const": 0 }
+      }
+    },
+    "glyphBlocked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "sha256"],
+      "properties": {
+        "status": { "const": "blocked-unverified" },
+        "sha256": { "type": "null" }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["glyphEvidence", "mixedIndexedFragments", "indexedPixelFallback", "runtimeModelCalls"],
+      "properties": {
+        "glyphEvidence": {
+          "oneOf": [{ "$ref": "#/$defs/glyphVerified" }, { "$ref": "#/$defs/glyphBlocked" }]
+        },
+        "mixedIndexedFragments": { "const": 0 },
+        "indexedPixelFallback": { "const": false },
+        "runtimeModelCalls": { "const": false }
+      }
+    },
+    "promotableSafety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["glyphEvidence", "mixedIndexedFragments", "indexedPixelFallback", "runtimeModelCalls"],
+      "properties": {
+        "glyphEvidence": { "$ref": "#/$defs/glyphVerified" },
+        "mixedIndexedFragments": { "const": 0 },
+        "indexedPixelFallback": { "const": false },
+        "runtimeModelCalls": { "const": false }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visualRuntimeSha256", "replaySemanticsSha256", "identityMapSha256"],
+      "properties": {
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" },
+        "replaySemanticsSha256": { "$ref": "#/$defs/sha256" },
+        "identityMapSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capturedArtifactSha256", "screenshotSetSha256", "sameStateSourceHdPairs"],
+      "properties": {
+        "capturedArtifactSha256": { "$ref": "#/$defs/sha256" },
+        "screenshotSetSha256": { "$ref": "#/$defs/sha256" },
+        "sameStateSourceHdPairs": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["browserEvidenceSha256", "environmentSha256", "readiness"],
+      "properties": {
+        "browserEvidenceSha256": { "$ref": "#/$defs/sha256" },
+        "environmentSha256": { "$ref": "#/$defs/sha256" },
+        "readiness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "overlayExcluded", "consecutivePresentedFrames", "modeSceneBoundaryViewportBound"],
+          "properties": {
+            "status": { "const": "ready" },
+            "overlayExcluded": { "const": true },
+            "consecutivePresentedFrames": { "type": "integer", "minimum": 2 },
+            "modeSceneBoundaryViewportBound": { "const": true }
+          }
+        }
+      }
+    },
+    "humanReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewPacket"],
+      "properties": {
+        "reviewPacket": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "status"],
+          "properties": {
+            "path": { "$ref": "#/$defs/safeRelativePath" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "status": { "const": "pending-human-side-by-side-review" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/hd-review-packet-v1.schema.json",
+  "title": "Aico 8 HD identity review packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "gameId", "visualRuntimeSha256", "replaySemanticsSha256",
+    "identityMapSha256", "browserEvidenceSha256", "status", "reviewer",
+    "acceptanceStatement", "principleGates", "reviewDecision", "elements", "sceneComparisons",
+    "temporalComparisons", "screenshots", "document"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.hd-review-packet.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "visualRuntimeSha256": { "$ref": "#/$defs/sha256" },
+    "replaySemanticsSha256": { "$ref": "#/$defs/sha256" },
+    "identityMapSha256": { "$ref": "#/$defs/sha256" },
+    "browserEvidenceSha256": { "$ref": "#/$defs/sha256" },
+    "status": { "enum": ["pending-human-side-by-side-review", "accepted"] },
+    "reviewer": { "$ref": "#/$defs/nonEmptyString" },
+    "acceptanceStatement": { "$ref": "#/$defs/nonEmptyString" },
+    "principleGates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "$ref": "#/$defs/spiritFidelityGate" },
+        { "$ref": "#/$defs/qualityLeapGate" },
+        { "$ref": "#/$defs/aestheticEvolutionGate" }
+      ]
+    },
+    "reviewDecision": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/reviewDecisionRef" }
+      ]
+    },
+    "elements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/element" }
+    },
+    "sceneComparisons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sceneComparison" }
+    },
+    "temporalComparisons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/temporalComparison" }
+    },
+    "screenshots": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/screenshot" }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "pending-human-side-by-side-review" } } },
+      "then": {
+        "properties": {
+          "reviewDecision": { "type": "null" },
+          "principleGates": {
+            "contains": { "type": "object", "required": ["verdict"], "properties": { "verdict": { "const": "pending" } } },
+            "minContains": 3,
+            "maxContains": 3
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "accepted" } } },
+      "then": {
+        "properties": {
+          "reviewDecision": { "$ref": "#/$defs/reviewDecisionRef" },
+          "principleGates": {
+            "contains": { "type": "object", "required": ["verdict"], "properties": { "verdict": { "const": "passed" } } },
+            "minContains": 3,
+            "maxContains": 3
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonEmptyString": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*\/$).+$"
+    },
+    "principleGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "order", "label", "dimensions", "verdict"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "order": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "dimensions": { "$ref": "#/$defs/stringList" },
+        "verdict": { "enum": ["pending", "passed"] }
+      }
+    },
+    "spiritFidelityGate": {
+      "allOf": [
+        { "$ref": "#/$defs/principleGate" },
+        { "properties": { "id": { "const": "spirit-fidelity" }, "order": { "const": 1 }, "label": { "const": "神似还原 / Spirit fidelity" }, "dimensions": { "const": ["source-relative identity and recognizable character", "scene atmosphere and emotional tone", "motion, gameplay cues, and play feel"] } } }
+      ]
+    },
+    "qualityLeapGate": {
+      "allOf": [
+        { "$ref": "#/$defs/principleGate" },
+        { "properties": { "id": { "const": "quality-leap" }, "order": { "const": 2 }, "label": { "const": "画质跃升 / Quality leap" }, "dimensions": { "const": ["resolution and density-aware sampling", "continuous contours and readable internal detail", "materials, animation, and effects beyond enlarged pixels"] } } }
+      ]
+    },
+    "aestheticEvolutionGate": {
+      "allOf": [
+        { "$ref": "#/$defs/principleGate" },
+        { "properties": { "id": { "const": "aesthetic-evolution" }, "order": { "const": 3 }, "label": { "const": "审美进化 / Aesthetic evolution" }, "dimensions": { "const": ["coherent modern color and lighting", "composition, hierarchy, and finish", "one visual grammar without source-identity redesign"] } } }
+      ]
+    },
+    "reviewDecisionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "idList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "stringList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewer", "silhouettePassed", "requiredPartsPassed", "proportionsPassed", "contoursPassed",
+        "expressionPassed", "colorHierarchyPassed", "motionPassed", "gameplayCuesPassed",
+        "visualGrammarPassed"
+      ],
+      "properties": {
+        "reviewer": { "$ref": "#/$defs/nonEmptyString" },
+        "silhouettePassed": { "type": "boolean" },
+        "requiredPartsPassed": { "type": "boolean" },
+        "proportionsPassed": { "type": "boolean" },
+        "contoursPassed": { "type": "boolean" },
+        "expressionPassed": { "type": "boolean" },
+        "colorHierarchyPassed": { "type": "boolean" },
+        "motionPassed": { "type": "boolean" },
+        "gameplayCuesPassed": { "type": "boolean" },
+        "visualGrammarPassed": { "type": "boolean" }
+      }
+    },
+    "criteria": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "silhouetteTraits", "requiredParts", "proportionChecks", "compositionChecks", "contourChecks", "faceAndExpressionTraits",
+        "colorHierarchy", "motionCues", "gameplayCues", "forbiddenTransformations",
+        "allowedModernization"
+      ],
+      "properties": {
+        "silhouetteTraits": { "$ref": "#/$defs/stringList" },
+        "requiredParts": { "$ref": "#/$defs/stringList" },
+        "proportionChecks": { "$ref": "#/$defs/stringList" },
+        "compositionChecks": { "$ref": "#/$defs/stringList" },
+        "contourChecks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "faceAndExpressionTraits": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "colorHierarchy": { "$ref": "#/$defs/stringList" },
+        "motionCues": { "$ref": "#/$defs/stringList" },
+        "gameplayCues": { "$ref": "#/$defs/stringList" },
+        "forbiddenTransformations": { "$ref": "#/$defs/stringList" },
+        "allowedModernization": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    },
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "semanticRole", "sourceScreenshotIds", "targetScreenshotIds", "criteria", "review"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["character", "environment", "ui", "effect", "text"] },
+        "semanticRole": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceScreenshotIds": { "$ref": "#/$defs/idList" },
+        "targetScreenshotIds": { "$ref": "#/$defs/idList" },
+        "criteria": { "$ref": "#/$defs/criteria" },
+        "review": { "$ref": "#/$defs/review" }
+      }
+    },
+    "screenshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256", "width", "height", "presentationMode", "sceneId", "stateBoundary", "visualRuntimeSha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "presentationMode": { "enum": ["reference", "hd"] },
+        "sceneId": { "$ref": "#/$defs/id" },
+        "stateBoundary": { "$ref": "#/$defs/nonEmptyString" },
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "sceneComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sceneId", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sceneId": { "$ref": "#/$defs/id" },
+        "sourceScreenshotId": { "$ref": "#/$defs/id" },
+        "targetScreenshotId": { "$ref": "#/$defs/id" },
+        "sameRuntimeState": { "const": true }
+      }
+    },
+    "temporalFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["presentationMilliseconds", "sourceScreenshotId", "targetScreenshotId", "sameRuntimeState"],
+      "properties": {
+        "update": { "type": "integer", "minimum": 0 },
+        "initializationHostTick": { "type": "integer", "minimum": 0 },
+        "presentationMilliseconds": { "type": "integer", "minimum": 0 },
+        "sourceScreenshotId": { "$ref": "#/$defs/id" },
+        "targetScreenshotId": { "$ref": "#/$defs/id" },
+        "sameRuntimeState": { "const": true }
+      },
+      "oneOf": [
+        {
+          "required": ["update"],
+          "not": { "required": ["initializationHostTick"] }
+        },
+        {
+          "required": ["initializationHostTick"],
+          "not": { "required": ["update"] }
+        }
+      ]
+    },
+    "temporalComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sceneId", "elementIds", "frames"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sceneId": { "$ref": "#/$defs/id" },
+        "elementIds": { "$ref": "#/$defs/idList" },
+        "frames": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/temporalFrame" }
+        }
+      }
+    }
+  }
+}

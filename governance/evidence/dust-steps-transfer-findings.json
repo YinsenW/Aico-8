@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "aico8.transfer-findings.v1",
+  "programId": "dust-steps-supervised-transfer",
+  "referenceGameId": "dust-bunny-research",
+  "trialGameId": "steps-private-research",
+  "status": "project-owner-retained-trial",
+  "supervisedTransferLedgerSha256": null,
+  "findings": [
+    {
+      "id": "unchanged-cart-replay-authority",
+      "title": "Compatibility stays authoritative and presentation stays observational",
+      "classification": "compatibility-runtime",
+      "observation": "Dust Bunny and Steps use different progression structures and art, but both require one unchanged-cart logical-update trace and identical HD-off versus HD-on compatibility state.",
+      "resolution": "Reuse Replay v1, the shared Wasm compatibility identity, complete logical-update execution, input projection, and state invariance without adding a game-specific simulation fork.",
+      "evidence": [
+        "governance/evidence/dust-bunny-canonical-qualification.json",
+        "governance/evidence/steps-canonical-gameplay.json"
+      ],
+      "reusableRuleId": "unchanged-cart-replay-authority",
+      "sharedImplementation": [
+        "apps/web/src/runtime/replay-player.ts",
+        "runtime/core/src/wasm_api.cpp",
+        "scripts/validate-private-canonical-gameplay.ts"
+      ],
+      "sharedRegressionTests": [
+        "apps/web/src/runtime/replay-player.test.ts",
+        "runtime/core/tests/wasm_smoke.mjs",
+        "scripts/lib/canonical-gameplay-attestation.test.mjs"
+      ],
+      "humanStopId": null,
+      "prohibitedGeneralization": "Do not encode a Steps checkpoint, coordinate, saved path, or Dust Bunny level rule in the compatibility kernel."
+    },
+    {
+      "id": "source-visibility-compositing",
+      "title": "Source visibility effects govern the finished semantic content route",
+      "classification": "reusable-presentation",
+      "observation": "Steps v19c reconstructed recognizable HD geometry but incorrectly displayed it through a source-authored darkness mask that hid the original map.",
+      "resolution": "Derive visibility applicability from source evidence, composite the finished semantic route under that mask, keep the framebuffer as visibility oracle rather than HD geometry, and reject a bypass mutation.",
+      "evidence": [
+        "governance/evidence/steps-hd-v19c-visibility-rejection.json",
+        "governance/evidence/steps-semantic-v19d-preflight.json"
+      ],
+      "reusableRuleId": "source-visibility-compositing",
+      "sharedImplementation": [
+        "apps/web/src/runtime/presentation.ts",
+        "packages/contracts/src/quality-leap-audit.ts"
+      ],
+      "sharedRegressionTests": [
+        "apps/web/src/runtime/presentation.test.ts",
+        "packages/contracts/src/quality-leap-audit.test.ts"
+      ],
+      "humanStopId": null,
+      "prohibitedGeneralization": "Do not assume a semantic redraw may ignore masking, palette, clipping, camera, or other source-authored visibility authority."
+    },
+    {
+      "id": "deployment-base-and-cache-isolation",
+      "title": "Each Web game package owns a relative deployment base and cache scope",
+      "classification": "reusable-presentation",
+      "observation": "A Web-first game must remain playable when hosted below an arbitrary path, and sibling game packages must not overwrite one another's service-worker cache or navigation fallback.",
+      "resolution": "Resolve every package resource relative to the package base, derive service-worker navigation from registration scope, and include scope identity in the cache namespace.",
+      "evidence": [
+        "governance/evidence/steps-semantic-v19e-preflight.json"
+      ],
+      "reusableRuleId": "deployment-base-and-cache-isolation",
+      "sharedImplementation": [
+        "apps/web/public/service-worker.js",
+        "apps/web/src/runtime/package-url.ts",
+        "scripts/verify-web-package.mjs"
+      ],
+      "sharedRegressionTests": [
+        "apps/web/src/runtime/package-url.test.ts",
+        "scripts/verify-web-package.mjs"
+      ],
+      "humanStopId": null,
+      "prohibitedGeneralization": "Do not infer successful nested deployment or cache isolation from a root-hosted development server."
+    },
+    {
+      "id": "identity-scaffold-before-surface-quality",
+      "title": "Identity lineage and visible quality leap are separate mandatory gates",
+      "classification": "reusable-presentation",
+      "observation": "Across Dust Bunny and early Steps attempts, a correct coarse silhouette could still look like enlarged pixels, lose internal detail, blur a wordmark, or collapse distinct material layers.",
+      "resolution": "First bind source contour, topology, protected counters, material masks, and structural variants; then independently require continuous surfaces, shade/base/highlight detail, and density-aware supersampling.",
+      "evidence": [
+        "governance/evidence/dust-bunny-hd-presentation.json",
+        "governance/evidence/steps-semantic-v19d-preflight.json"
+      ],
+      "reusableRuleId": "identity-scaffold-before-surface-quality",
+      "sharedImplementation": [
+        "packages/contracts/src/source-contour.ts",
+        "packages/contracts/src/source-visual-structure.ts",
+        "scripts/lib/hd-surface-lineage.mjs"
+      ],
+      "sharedRegressionTests": [
+        "packages/contracts/src/source-contour.test.ts",
+        "packages/contracts/src/source-visual-structure.test.ts",
+        "scripts/lib/hd-surface-lineage.test.mjs"
+      ],
+      "humanStopId": null,
+      "prohibitedGeneralization": "Do not treat a matching bounding box, rounded rectangle, nearest-neighbour enlargement, or generic smoothing filter as an HD redraw."
+    },
+    {
+      "id": "identity-lettering-versus-semantic-text",
+      "title": "Source-drawn identity lettering and ordinary text take different routes",
+      "classification": "reusable-presentation",
+      "observation": "Dust Bunny and Steps both contain source-drawn lettering whose counters, spacing, and contour are part of visual identity, while ordinary labels require a readable fixed bundled font.",
+      "resolution": "Route wordmarks through contour-locked artwork and route semantic text through declared bundled fonts with deterministic metrics and no operating-system fallback.",
+      "evidence": [
+        "governance/evidence/dust-bunny-hd-presentation.json",
+        "governance/evidence/steps-semantic-direction-checkpoint.json"
+      ],
+      "reusableRuleId": "identity-lettering-versus-semantic-text",
+      "sharedImplementation": [
+        "packages/contracts/src/source-contour.ts",
+        "packages/contracts/src/typography.ts"
+      ],
+      "sharedRegressionTests": [
+        "packages/contracts/src/source-contour.test.ts",
+        "packages/contracts/src/typography.test.ts"
+      ],
+      "humanStopId": null,
+      "prohibitedGeneralization": "Do not replace an identity-bearing wordmark with a convenient system font or render all source text as contour artwork."
+    },
+    {
+      "id": "steps-semantic-role-classification",
+      "title": "Steps gameplay marks require source-relative semantic classification",
+      "classification": "source-relative-semantic-art",
+      "observation": "Dots, blocks, hazards, inventory marks, keys, doors, ocean layers, and status symbols cannot be classified reliably from isolated pixel shape or palette alone.",
+      "resolution": "Bind each reachable Steps role to cart logic, state transitions, scene context, and human semantic review inside the private adapter before authoring its HD recipe.",
+      "evidence": [
+        "governance/evidence/steps-semantic-direction-checkpoint.json",
+        "governance/evidence/steps-semantic-v19e-preflight.json"
+      ],
+      "reusableRuleId": null,
+      "sharedImplementation": [],
+      "sharedRegressionTests": [],
+      "humanStopId": "semantic-intent",
+      "prohibitedGeneralization": "Do not turn the meaning of a Steps dot, square, or symbol into a universal mapping for unrelated carts."
+    },
+    {
+      "id": "steps-art-direction-and-composition",
+      "title": "Steps keeps its own restrained maritime and mortality art direction",
+      "classification": "source-relative-semantic-art",
+      "observation": "The accepted Dust Bunny reference uses warm rounded character language, while Steps depends on a restrained pale-on-navy composition, ordered frame layers, waves, vessel, terrain, and sparse symbolic cues.",
+      "resolution": "Preserve Steps source-relative hierarchy and atmosphere while modernizing contours, material finish, type clarity, and animation; do not import Dust Bunny's shapes or palette grammar.",
+      "evidence": [
+        "governance/evidence/dust-bunny-hd-presentation.json",
+        "governance/evidence/steps-semantic-direction-checkpoint.json"
+      ],
+      "reusableRuleId": null,
+      "sharedImplementation": [],
+      "sharedRegressionTests": [],
+      "humanStopId": "art-direction",
+      "prohibitedGeneralization": "Do not standardize every cart into rounded panels, cute faces, the Dust Bunny palette, or a shared decorative composition."
+    },
+    {
+      "id": "steps-representative-motion-and-cues",
+      "title": "Steps representative motion and gameplay cues remain a human judgment",
+      "classification": "source-relative-semantic-art",
+      "observation": "Static same-state pairs cannot prove that story progression, torch visibility, inventory and door feedback, movement, danger cues, and the ending retain the original timing and meaning.",
+      "resolution": "Review the frozen v19e story, torch, inventory and door, and ending temporal sequences before deciding whether the supervised trial may advance to final scope.",
+      "evidence": [
+        "governance/evidence/steps-semantic-v19e-preflight.json"
+      ],
+      "reusableRuleId": null,
+      "sharedImplementation": [],
+      "sharedRegressionTests": [],
+      "humanStopId": "representative-gameplay",
+      "prohibitedGeneralization": "Do not infer preserved play feel, motion, or cue readability from static identity checks or machine invariance alone."
+    }
+  ],
+  "limitations": [
+    "This sanitized classification record is not complete-game coverage or publication authority.",
+    "The project owner approved the frozen v19e representative gameplay, motion, and cue packet and retained Steps as a bounded supervised trial through an explicit recorded user message."
+  ]
+}

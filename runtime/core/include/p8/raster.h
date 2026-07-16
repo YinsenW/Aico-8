@@ -30,10 +30,24 @@ void p8_gfx_clip(p8_core *core, int x, int y, int width, int height,
 void p8_gfx_clip_reset(p8_core *core);
 
 void p8_gfx_pal(p8_core *core, uint8_t source, uint8_t target);
+void p8_gfx_pal_mode(p8_core *core, uint8_t source, uint8_t target, uint8_t palette);
 void p8_gfx_pal_reset(p8_core *core);
+void p8_gfx_pal_reset_mode(p8_core *core, uint8_t palette);
 void p8_gfx_palt(p8_core *core, uint8_t color, int transparent);
 void p8_gfx_palt_reset(p8_core *core);
 int p8_gfx_is_transparent(const p8_core *core, uint8_t color);
+int32_t p8_gfx_fillp(p8_core *core, int32_t raw_pattern);
+/*
+ * Resolves a PICO-8 16.16 colour argument. When 0x5f34 bit 0 and the
+ * argument's 0x1000.0000 marker are both set, this also installs the embedded
+ * fill pattern and fillp mode bits. The returned byte is the ordinary two-
+ * colour value consumed by primitive raster calls.
+ */
+uint8_t p8_gfx_apply_color_argument(p8_core *core, int32_t raw_color);
+/* Reports a one-call embedded inversion request; 0x5f34 bit 1 remains the
+ * persistent inversion control used directly by filled raster calls. */
+int p8_gfx_color_argument_requests_inversion(const p8_core *core,
+                                             int32_t raw_color);
 
 void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
 void p8_gfx_rect(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
@@ -41,10 +55,26 @@ void p8_gfx_rectfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t colo
 void p8_gfx_circ(p8_core *core, int center_x, int center_y, int radius, uint8_t color);
 void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
                      uint8_t color);
+void p8_gfx_oval(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_ovalfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_rrect(p8_core *core, int x, int y, int width, int height, int radius,
+                  uint8_t color);
+void p8_gfx_rrectfill(p8_core *core, int x, int y, int width, int height, int radius,
+                      uint8_t color);
 void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
                 int flip_x, int flip_y);
+void p8_gfx_sspr(p8_core *core, int source_x, int source_y, int source_width,
+                 int source_height, int destination_x, int destination_y,
+                 int destination_width, int destination_height,
+                 int flip_x, int flip_y);
 void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_y,
                 int cell_width, int cell_height, uint8_t layer);
+void p8_gfx_tline(p8_core *core, int x0, int y0, int x1, int y1,
+                  int32_t map_x_raw, int32_t map_y_raw,
+                  int32_t map_dx_raw, int32_t map_dy_raw,
+                  uint8_t layer, unsigned fractional_bits);
+/* Text pixels observe camera, clip, and draw palette, but never fillp. */
+void p8_gfx_text_pixel(p8_core *core, int x, int y, uint8_t color);
 
 /* Expands packed screen RAM to one 0..15 palette index per pixel. */
 size_t p8_gfx_copy_framebuffer_indexed(const p8_core *core, uint8_t *destination,

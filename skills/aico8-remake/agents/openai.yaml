@@ -1,0 +1,4 @@
+interface:
+  display_name: "Aico 8 Remake"
+  short_description: "Human-guided PICO-8 HD Web remake workflow"
+  default_prompt: "Use $aico8-remake to guide an authorized PICO-8 cart through the human-reviewed Aico 8 Web remake workflow."

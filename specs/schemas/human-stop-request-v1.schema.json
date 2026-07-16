@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/human-stop-request-v1.schema.json",
+  "title": "Aico 8 human stop signing request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "jobId", "gameId", "transferInstanceId", "sourceIdentitySha256",
+    "targetProfileSha256", "authorityProfileSha256", "stopId", "attempt", "proposalPath",
+    "proposalSha256", "priorDecisionSha256", "nonce", "trustedReviewerKeyIds",
+    "allowedOutcomes", "allowedScopeDispositions", "agentMaySign"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.human-stop-request.v1" },
+    "jobId": { "$ref": "#/$defs/id" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "transferInstanceId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" },
+    "sourceIdentitySha256": { "$ref": "#/$defs/hash" },
+    "targetProfileSha256": { "$ref": "#/$defs/hash" },
+    "authorityProfileSha256": { "$ref": "#/$defs/hash" },
+    "stopId": { "enum": ["semantic-intent", "art-direction", "representative-gameplay", "final-scope"] },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "proposalPath": { "$ref": "#/$defs/safePath" },
+    "proposalSha256": { "$ref": "#/$defs/hash" },
+    "priorDecisionSha256": { "oneOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }] },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" },
+    "trustedReviewerKeyIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/id" }
+    },
+    "allowedOutcomes": {
+      "type": "array",
+      "prefixItems": [{ "const": "approved" }, { "const": "revision-requested" }],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "allowedScopeDispositions": {
+      "type": "array",
+      "items": { "enum": ["retain-supervised-trial", "authorize-full-validation"] },
+      "uniqueItems": true,
+      "maxItems": 2
+    },
+    "agentMaySign": { "const": false }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "safePath": { "type": "string", "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$" }
+  }
+}

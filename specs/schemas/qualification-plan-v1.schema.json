@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/qualification-plan-v1.schema.json",
+  "title": "Aico 8 ten-game qualification plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "programId", "status", "inventory", "policy", "candidates", "coverage"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.qualification-plan.v1" },
+    "programId": { "$ref": "#/$defs/id" },
+    "status": { "enum": ["selection-locked", "qualification-complete"] },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceKind", "encodedCartCount", "decodedCartCount", "inventorySha256", "audioInventorySha256", "compileAuditSha256", "duplicateGroupCount", "compilePassCount", "compileFailureCount"],
+      "properties": {
+        "sourceKind": { "const": "user-provided-private-research-corpus" },
+        "encodedCartCount": { "type": "integer", "minimum": 1 },
+        "decodedCartCount": { "type": "integer", "minimum": 1 },
+        "inventorySha256": { "$ref": "#/$defs/hash" },
+        "audioInventorySha256": { "$ref": "#/$defs/hash" },
+        "compileAuditSha256": { "$ref": "#/$defs/hash" },
+        "duplicateGroupCount": { "type": "integer", "minimum": 0 },
+        "compilePassCount": { "type": "integer", "minimum": 0 },
+        "compileFailureCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredCandidateCount", "requiredQualificationCount", "requiresPrivateResearchAuthorization", "requiresFiniteEnding", "requiresPinnedCompilePass", "requiresIndependentEvidence"],
+      "properties": {
+        "requiredCandidateCount": { "const": 12 },
+        "requiredQualificationCount": { "const": 10 },
+        "requiresPrivateResearchAuthorization": { "const": true },
+        "requiresFiniteEnding": { "const": true },
+        "requiresPinnedCompilePass": { "const": true },
+        "requiresIndependentEvidence": { "const": true }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/candidate" }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timing-30hz", "timing-60hz", "platforming-physics", "rng-entities", "audio-synthesis", "text-p8scii", "advanced-raster", "memory-persistence", "input-progression", "large-code-progression"],
+      "properties": {
+        "timing-30hz": { "$ref": "#/$defs/coverage" },
+        "timing-60hz": { "$ref": "#/$defs/coverage" },
+        "platforming-physics": { "$ref": "#/$defs/coverage" },
+        "rng-entities": { "$ref": "#/$defs/coverage" },
+        "audio-synthesis": { "$ref": "#/$defs/coverage" },
+        "text-p8scii": { "$ref": "#/$defs/coverage" },
+        "advanced-raster": { "$ref": "#/$defs/coverage" },
+        "memory-persistence": { "$ref": "#/$defs/coverage" },
+        "input-progression": { "$ref": "#/$defs/coverage" },
+        "large-code-progression": { "$ref": "#/$defs/coverage" }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "risk": {
+      "enum": ["timing-30hz", "timing-60hz", "platforming-physics", "rng-entities", "audio-synthesis", "text-p8scii", "advanced-raster", "memory-persistence", "input-progression", "large-code-progression"]
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["title", "level-set", "stage-set", "boss-set", "course-set", "victory", "ending", "credits", "persistence", "restart"] },
+        "count": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["priority", "gameId", "title", "byline", "cart", "runtime", "rights", "finiteness", "riskCoverage", "qualification"],
+      "properties": {
+        "priority": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "gameId": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1 },
+        "byline": { "type": "string", "minLength": 1 },
+        "cart": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["filename", "encodedSha256", "decodedSha256", "version", "luaChars"],
+          "properties": {
+            "filename": { "type": "string", "pattern": "^[^/\\\\]+\\.p8$" },
+            "encodedSha256": { "$ref": "#/$defs/hash" },
+            "decodedSha256": { "$ref": "#/$defs/hash" },
+            "version": { "type": "integer", "minimum": 1 },
+            "luaChars": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["updateRate", "compileStatus", "featureIds", "audio"],
+          "properties": {
+            "updateRate": { "enum": [30, 60] },
+            "compileStatus": { "const": "passed" },
+            "featureIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+            "audio": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["activeNoteCount", "musicPatternCount", "customInstrumentCount", "filteredSfxCount"],
+              "properties": {
+                "activeNoteCount": { "type": "integer", "minimum": 0 },
+                "musicPatternCount": { "type": "integer", "minimum": 0 },
+                "customInstrumentCount": { "type": "integer", "minimum": 0 },
+                "filteredSfxCount": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        },
+        "rights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["researchStatus", "formalReleaseStatus", "evidence"],
+          "properties": {
+            "researchStatus": { "const": "authorized-private-research" },
+            "formalReleaseStatus": { "const": "not-authorized" },
+            "evidence": { "$ref": "#/$defs/id" }
+          }
+        },
+        "finiteness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "sourceAnchors", "boundaries"],
+          "properties": {
+            "status": { "enum": ["source-confirmed", "replay-confirmed"] },
+            "sourceAnchors": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^lua-line:[1-9][0-9]*(?:-[1-9][0-9]*)?$" } },
+            "boundaries": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/boundary" } }
+          }
+        },
+        "riskCoverage": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/risk" } },
+        "qualification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "workspaceId"],
+          "properties": {
+            "status": { "enum": ["selected", "qualified", "failed-retained"] },
+            "workspaceId": { "$ref": "#/$defs/id" },
+            "canonicalReplaySha256": { "$ref": "#/$defs/hash" },
+            "hdReviewDecisionSha256": { "$ref": "#/$defs/hash" },
+            "webPackageSha256": { "$ref": "#/$defs/hash" },
+            "failureClass": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selectedCandidateIds", "qualifiedCandidateIds"],
+      "properties": {
+        "selectedCandidateIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "qualifiedCandidateIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+      }
+    }
+  }
+}

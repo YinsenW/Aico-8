@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/supervised-review-proposal-v1.schema.json",
+  "title": "Aico 8 supervised human review proposal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "proposalId", "jobId", "gameId", "transferInstanceId",
+    "sourceIdentitySha256", "targetProfileSha256", "authorityProfileSha256",
+    "stopId", "attempt", "upstreamDecisionSha256", "previousProposalSha256",
+    "previousRevisionDecisionSha256", "title", "summary", "evidence",
+    "reviewItems", "limitations", "authorityLimits", "forbiddenClaims",
+    "scopeDispositionOptions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.supervised-review-proposal.v1" },
+    "proposalId": { "$ref": "#/$defs/id" },
+    "jobId": { "$ref": "#/$defs/id" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "transferInstanceId": { "$ref": "#/$defs/nonce" },
+    "sourceIdentitySha256": { "$ref": "#/$defs/hash" },
+    "targetProfileSha256": { "$ref": "#/$defs/hash" },
+    "authorityProfileSha256": { "$ref": "#/$defs/hash" },
+    "stopId": { "enum": ["semantic-intent", "art-direction", "representative-gameplay", "final-scope"] },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "upstreamDecisionSha256": { "$ref": "#/$defs/nullableHash" },
+    "previousProposalSha256": { "$ref": "#/$defs/nullableHash" },
+    "previousRevisionDecisionSha256": { "$ref": "#/$defs/nullableHash" },
+    "title": { "$ref": "#/$defs/text" },
+    "summary": { "$ref": "#/$defs/text" },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "sha256", "description"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "path": { "$ref": "#/$defs/safePath" },
+          "sha256": { "$ref": "#/$defs/hash" },
+          "description": { "$ref": "#/$defs/text" }
+        }
+      }
+    },
+    "reviewItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterionId", "question", "evidenceIds"],
+        "properties": {
+          "criterionId": { "$ref": "#/$defs/id" },
+          "question": { "$ref": "#/$defs/text" },
+          "evidenceIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/text" }
+    },
+    "authorityLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agentMayApprove", "agentMaySign", "agentMayAuthorizeFullValidation", "agentMayRelease"],
+      "properties": {
+        "agentMayApprove": { "const": false },
+        "agentMaySign": { "const": false },
+        "agentMayAuthorizeFullValidation": { "const": false },
+        "agentMayRelease": { "const": false }
+      }
+    },
+    "forbiddenClaims": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["complete-game-reviewed", "portable-ledger-accepted", "release-ready", "publication-authorized"]
+      }
+    },
+    "scopeDispositionOptions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["retain-supervised-trial", "authorize-full-validation"] }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "attempt": { "const": 1 } }, "required": ["attempt"] },
+      "then": {
+        "properties": {
+          "previousProposalSha256": { "type": "null" },
+          "previousRevisionDecisionSha256": { "type": "null" }
+        }
+      },
+      "else": {
+        "properties": {
+          "previousProposalSha256": { "$ref": "#/$defs/hash" },
+          "previousRevisionDecisionSha256": { "$ref": "#/$defs/hash" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "stopId": { "const": "final-scope" } }, "required": ["stopId"] },
+      "then": {
+        "properties": {
+          "scopeDispositionOptions": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": { "enum": ["retain-supervised-trial", "authorize-full-validation"] }
+          }
+        }
+      },
+      "else": { "properties": { "scopeDispositionOptions": { "type": "array", "maxItems": 0 } } }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22,128}$" },
+    "nullableHash": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/hash" }] },
+    "safePath": { "type": "string", "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$" },
+    "text": { "type": "string", "minLength": 8 }
+  }
+}

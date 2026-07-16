@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "subject": "web-audio-host-diagnostics",
+  "recorded_at": "2026-07-16T07:07:30Z",
+  "target": "public-web-build",
+  "browser": "Codex in-app Browser",
+  "interaction": "pointer activation on the visible Game menu touch control",
+  "observation": {
+    "audio_context_state": "suspended",
+    "audio_unlock_status": "pending",
+    "sample_rate_hz": 22050,
+    "base_latency_milliseconds": 5.333,
+    "output_latency_milliseconds": 0,
+    "underrun_count": 0,
+    "dropped_pending_samples": 0
+  },
+  "interpretation": {
+    "dom_diagnostics_present_before_unlock": true,
+    "context_created_after_pointer_activation": true,
+    "browser_reported_latency_readable": true,
+    "active_playback_qualified": false,
+    "reason_active_playback_not_qualified": "The automation browser kept AudioContext.resume pending and the public build intentionally contains no private game PCM.",
+    "unit_fixture_covers_drop_underrun_and_lead_resync": true,
+    "official_pcm_or_status_golden": false
+  }
+}

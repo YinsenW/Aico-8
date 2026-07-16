@@ -69,7 +69,11 @@ button:focus-visible {
 #app {
   display: grid;
   place-items: center;
-  padding: clamp(14px, 2.5vw, 32px);
+  padding:
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-top, 0px))
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-right, 0px))
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-bottom, 0px))
+    max(clamp(14px, 2.5vw, 32px), env(safe-area-inset-left, 0px));
 }
 
 .player-shell {
@@ -133,7 +137,11 @@ h1 {
 
 .game-frame {
   position: relative;
-  width: min(100%, calc(100dvh - 190px), 1024px);
+  width: min(
+    100%,
+    calc(100dvh - 212px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)),
+    1024px
+  );
   min-width: 280px;
   justify-self: center;
   aspect-ratio: 1;
@@ -188,6 +196,57 @@ h1 {
   color: #a7a8b4;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.system-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: clamp(18px, 5vw, 64px);
+  background: rgb(5 8 13 / 78%);
+  backdrop-filter: blur(14px);
+  transition: opacity 160ms ease, visibility 160ms ease;
+}
+
+.system-menu.hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.system-menu-panel {
+  width: min(100%, 440px);
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 28px;
+  background: rgb(13 18 29 / 96%);
+  box-shadow: 0 28px 80px rgb(0 0 0 / 55%);
+}
+
+.system-menu-panel h2 {
+  margin: 0 0 22px;
+  font-size: clamp(26px, 5vw, 38px);
+}
+
+.system-menu-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.system-menu-actions button {
+  min-height: 52px;
+  padding: 10px 18px;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 7%);
+  text-align: left;
+  cursor: pointer;
+}
+
+.system-menu-actions button:hover,
+.system-menu-actions button:focus-visible {
+  background: rgb(255 119 168 / 20%);
 }
 
 .loading-dot {
@@ -247,6 +306,15 @@ h1 {
   background: rgb(255 119 168 / 55%);
 }
 
+.menu-trigger {
+  position: absolute;
+  top: clamp(12px, 2vw, 20px);
+  right: clamp(12px, 2vw, 20px);
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 800;
+}
+
 .up { grid-column: 2; grid-row: 1; }
 .left { grid-column: 1; grid-row: 2; }
 .right { grid-column: 3; grid-row: 2; }
@@ -302,7 +370,11 @@ h1 {
 @media (max-width: 640px) {
   #app {
     align-items: start;
-    padding: 12px;
+    padding:
+      max(12px, env(safe-area-inset-top, 0px))
+      max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
   }
 
   .player-shell {
@@ -315,7 +387,6 @@ h1 {
 
   .credit,
   .control-hint,
-  #pause-button,
   #display-button {
     display: none;
   }
@@ -332,10 +403,31 @@ h1 {
 
   .touch-controls {
     opacity: 1 !important;
-    transform: scale(0.82);
-    transform-origin: bottom center;
-    width: 122%;
-    margin-left: -11%;
+    width: 100%;
+    padding: 10px;
+    margin: 0;
+    transform: none;
+  }
+
+  .dpad {
+    width: 132px;
+    height: 132px;
+  }
+
+  .touch {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .action-pad {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .action {
+    width: 56px;
+    height: 56px;
   }
 }
 

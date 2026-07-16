@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "aico8.game-module.v1",
+  "moduleId": "synthetic-orbit",
+  "status": "validated",
+  "metadata": { "title": "Synthetic Orbit", "author": "Aico 8 fixtures" },
+  "payload": {
+    "rom": { "path": "payload/source.rom", "sha256": "44c78622e646eb1e2c5a05f65bdcb976925a6c57da93c9f501b9f76996eec4a2" },
+    "sourceCode": { "path": "payload/code.p8.lua", "sha256": "2a5fdfe1777a0993f2d859a412ef3707a794b4898c32a0e58566e5d5210d6b82" },
+    "presentationModule": { "path": "presentation/synthetic-orbit.ts", "sha256": "b989efba089449e1e55fcff7fbaad1c70da948dcd5ab0e6f088209d58b10dd4e" }
+  },
+  "mappings": {
+    "hdIdentityMap": { "path": "mappings/hd-identity-map.json", "sha256": "29f5f123c4365b1f82d302e4c7d3c0de22b83e95ff0a38faf6c31b7fb65b5aae" },
+    "assetPack": { "path": "assets/asset-pack.json", "sha256": "314d72bb2eaa2f85ec3a54ce1e926dffe5c6d50360b2048f76a37588e5cc26b8" },
+    "typographyManifest": { "path": "typography/manifest.json", "sha256": "5a67de6d8dde9d4e7bafba1164471d76461bb926230a30bd9f3be2aa68ac897a" },
+    "audioManifest": { "path": "audio/manifest.json", "sha256": "ab23cf72a2117c66fe57ad6716924e332ec2a0112207cb6b74a9966ea117dfbc" }
+  },
+  "save": {
+    "namespace": "synthetic-orbit:aico8.game-module.v1",
+    "persistentBytes": 256,
+    "resetCompatibilityStateOnActivate": true
+  },
+  "provenance": {
+    "sourceCartSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "workspaceManifestSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "rightsProfile": "synthetic-public-fixture"
+  },
+  "runtime": {
+    "dependencies": [
+      { "id": "aico8-web-runtime", "version": "1.0.0", "manifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+      { "id": "aico8-wasm-kernel", "version": "1.0.0", "manifestSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }
+    ],
+    "targetBindings": [
+      { "target": "web-pwa", "targetProfileId": "web-pwa-private-research-v1", "targetProfileSha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809" }
+    ]
+  },
+  "validation": {
+    "status": "passed",
+    "evidence": [
+      { "kind": "canonical-replay", "path": "evidence/canonical-replay.json", "sha256": "cf07b2108df74db32ee20cb508b3a20ef6fda3ffa5579f439a523bb0c94542fc" },
+      { "kind": "hd-review-decision", "path": "evidence/hd-review-decision.json", "sha256": "9b111d69db2c1bca5d9aa6c151d196441d0d737251d24f11c04b6ecdcbb8ecf2" }
+    ]
+  }
+}

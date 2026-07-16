@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "subject": "Private qualification corpus and risk selection",
+  "status": "selection-locked",
+  "rights_scope": "User-provided carts are authorized for private research and testing only; no formal release is authorized by this record.",
+  "observations": {
+    "encoded_cart_count": 291,
+    "decoded_cart_count": 291,
+    "duplicate_group_count": 7,
+    "pinned_compile_pass_count": 273,
+    "pinned_compile_failure_count": 18,
+    "selected_candidate_count": 12,
+    "qualified_game_count": 1,
+    "required_qualification_count": 10,
+    "all_candidates_source_confirmed_finite": true,
+    "all_candidates_compile_passed": true,
+    "all_candidates_formal_release_blocked": true,
+    "risk_dimensions": {
+      "timing-30hz": {
+        "selected": 6,
+        "qualified": 1
+      },
+      "timing-60hz": {
+        "selected": 6,
+        "qualified": 0
+      },
+      "platforming-physics": {
+        "selected": 7,
+        "qualified": 0
+      },
+      "rng-entities": {
+        "selected": 7,
+        "qualified": 0
+      },
+      "audio-synthesis": {
+        "selected": 11,
+        "qualified": 0
+      },
+      "text-p8scii": {
+        "selected": 10,
+        "qualified": 0
+      },
+      "advanced-raster": {
+        "selected": 3,
+        "qualified": 0
+      },
+      "memory-persistence": {
+        "selected": 7,
+        "qualified": 1
+      },
+      "input-progression": {
+        "selected": 12,
+        "qualified": 1
+      },
+      "large-code-progression": {
+        "selected": 10,
+        "qualified": 0
+      }
+    }
+  },
+  "private_artifact_sha256": {
+    "normalized_inventory": "9b653eea143a65cf81e3ba42cc913f463bdead988e3509ddf20f0ee8f2d3d075",
+    "normalized_audio_inventory": "78ee492d4fb7b53e8b1db2f961e13770b560c6c998bfd3dd0d813ebf2b644843",
+    "normalized_compile_audit": "fa95a46c4de09e0f8d831f2c964fababe02586b3e1fe92e5057441536349478b",
+    "qualification_plan": "d165578236433f7cffa79ab3a4b4b57e154e8f122b7d7af2ad60da168804e4ff"
+  },
+  "selector": "TEST-QUALIFICATION-PLAN-PRIVATE"
+}

@@ -24,7 +24,7 @@ Recommended authoring sizes:
 
 - base 8×8 tile/sprite art: 64×64 at `@1`, or 128×128 at `@2`;
 - larger actors: multiples of 64 output pixels, or resolution-independent vectors;
-- UI/text: follow the bundled modern-font and reference-fallback rules in
+- UI/text: follow the bundled modern-font and complete-coverage rules in
   `specs/typography.md`;
 - post-processing: 1024×1024 reference targets unless a platform profile reduces them.
 
@@ -33,10 +33,12 @@ Recommended authoring sizes:
 - Scale the 128×128 indexed framebuffer by exactly 8× to 1024×1024.
 - Use nearest-neighbor sampling.
 - There is no border, seam, or alternating source-pixel width.
-- This mode is the raster oracle and automatic fallback for unrecognized drawing.
+- This mode is the raster oracle and an explicit diagnostic view. Unrecognized
+  drawing blocks HD acceptance; it is never composited into the modern frame.
 
 Native HD remains the product default. The compatibility framebuffer may be
-shown as an overlay for regression diagnosis and author review.
+shown separately for regression diagnosis and author review. Fault handling may
+switch a whole scene atomically, but any such switch fails release acceptance.
 
 ## Derived delivery profiles
 
