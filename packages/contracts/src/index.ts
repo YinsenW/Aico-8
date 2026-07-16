@@ -52,6 +52,7 @@ export {
   type IngestFileReferenceV1,
   type IngestIntendedUse,
   type IngestValidationResult,
+  type Pico8SectionName,
   type ReleasePermissionStatus,
   type WorkspaceResourceId,
 } from "./ingest.js";

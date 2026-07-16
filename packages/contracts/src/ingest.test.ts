@@ -58,12 +58,17 @@ describe("ingest manifests", () => {
     const input = readJson("cart-input.json") as CartInputV1;
     const corpus = [
       { name: "valid workspace", value: readJson("workspace.json"), accepted: true },
+      { name: "unknown section preserved", value: mutated("workspace.json", (v) => {
+        v.pico8.sections.push("meta");
+        v.pico8.sectionOrder.push("meta");
+      }), accepted: true },
       { name: "closed root", value: mutated("workspace.json", (v) => { v.unexpected = true; }), accepted: false },
       { name: "complete resource set", value: mutated("workspace.json", (v) => { v.resources.pop(); }), accepted: false },
       { name: "resource identity", value: mutated("workspace.json", (v) => { v.resources[0].id = "other"; }), accepted: false },
       { name: "resource section", value: mutated("workspace.json", (v) => { v.resources[1].sourceSection = "map"; }), accepted: false },
       { name: "fixed alias geometry", value: mutated("workspace.json", (v) => { v.aliases[0].offset = 0; }), accepted: false },
       { name: "fixed conflict policy", value: mutated("workspace.json", (v) => { v.aliases[0].conflictPolicy = "last-write-wins"; }), accepted: false },
+      { name: "codec revision", value: mutated("workspace.json", (v) => { v.codec.revisionSha256 = "floating"; }), accepted: false },
       { name: "rebuild equality", value: mutated("workspace.json", (v) => { v.rebuild.sourceEquivalent = false; }), accepted: false },
       { name: "rights evidence", value: mutated("workspace.json", (v) => { v.provenance.rightsEvidenceSha256 = []; }), accepted: false },
     ];
@@ -82,7 +87,7 @@ describe("ingest manifests", () => {
       { name: "section presence", value: mutated("workspace.json", (v) => { v.pico8.sectionOrder.pop(); }), error: /sectionOrder must contain exactly/ },
       { name: "artifact collision", value: mutated("workspace.json", (v) => { v.resources[1].artifact.path = v.resources[0].artifact.path; }), error: /artifact\.path must be unique/ },
       { name: "alias baseline", value: mutated("workspace.json", (v) => { v.aliases[0].baselineSemanticSha256 = "a".repeat(64); }), error: /must bind the shared-map-alias/ },
-      { name: "permission lineage", value: mutated("workspace.json", (v) => { v.provenance.rightsEvidenceSha256[0] = "a".repeat(64); }), error: /must come from cart input/ },
+      { name: "permission lineage", value: mutated("workspace.json", (v) => { v.provenance.rightsEvidenceSha256[0] = "a".repeat(64); }), error: /must exactly bind cart input/ },
     ];
     for (const item of corpus) {
       const result = validateCartWorkspace(item.value, input);

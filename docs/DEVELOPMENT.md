@@ -27,7 +27,6 @@ Never repeat full evidence generation before its narrow checkpoint. Shared-runti
 checks may be batched; acceptance evidence and failure records remain per game.
 Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses; do not add a new Python production service.
 C++ remains confined to the current compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
-
 Implementation never changes a requirement's wording. If product intent must change, update the PRD first and update its contract references in the same PR.
 Architecture changes require an ADR.
 
@@ -52,6 +51,7 @@ pnpm verify:typography-accessibility-private
 pnpm verify:text-run
 pnpm verify:replay
 pnpm verify:ingest
+pnpm verify:ingest-private
 pnpm verify:game-module
 pnpm verify:batch
 pnpm verify:supervised-transfer
@@ -62,7 +62,7 @@ pnpm verify:web
 pnpm verify:private-remake
 pnpm verify:native-cart-private
 ```
-Private selectors strengthen local evidence but never masquerade as public CI.
+Private selectors strengthen local evidence but never masquerade as public CI. `pnpm verify:ingest-private` requires the authorized cart directory, private report/evidence paths, and pinned codec command/revision/version environment; it recomputes all carts and rejects retained aggregate-attestation drift.
 `pnpm verify:batch` rejects shared identities, concurrent writers, invalid lanes,
 evidence-free acceptance, and hidden partial failure before assembly.
 `pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.
