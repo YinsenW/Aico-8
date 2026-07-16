@@ -2,8 +2,15 @@ import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
-export const OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION = 2
-export const OFFICIAL_ORACLE = 'licensed-official-pico8'
+export const OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION = 3
+export const LEGACY_OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION = 2
+export const OFFICIAL_ORACLE = 'authorized-official-pico8'
+export const LEGACY_OFFICIAL_ORACLE = 'licensed-official-pico8'
+export const OFFICIAL_ORACLE_CHANNELS = Object.freeze({
+  desktop: 'desktop-licensed',
+  education: 'education-web-authorized',
+})
+export const OFFICIAL_EDUCATION_PAGE_URL = 'https://www.pico-8-edu.com/'
 const EVENT_PREFIX = 'p8probe|'
 
 export function sha256File(file) {
@@ -124,11 +131,52 @@ export function validateOfficialProbeCapture(capture, expectedEvents) {
   if (!capture || typeof capture !== 'object' || Array.isArray(capture)) {
     return ['capture must be an object']
   }
-  if (capture.schemaVersion !== OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION) {
-    errors.push(`schemaVersion must be ${OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION}`)
+  const legacyDesktop = capture.schemaVersion === LEGACY_OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION
+    && capture.oracle === LEGACY_OFFICIAL_ORACLE
+  const current = capture.schemaVersion === OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION
+    && capture.oracle === OFFICIAL_ORACLE
+  if (!legacyDesktop && !current) {
+    errors.push(`schemaVersion/oracle must identify authorized official capture schema ${OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION}`)
   }
-  if (capture.oracle !== OFFICIAL_ORACLE || capture.licensedRuntimeDeclaration !== true) {
-    errors.push('capture must explicitly declare a licensed official PICO-8 oracle')
+  const channel = legacyDesktop ? OFFICIAL_ORACLE_CHANNELS.desktop : capture.oracleChannel
+  if (current && capture.authorizedOfficialRuntimeDeclaration !== true) {
+    errors.push('capture must explicitly declare an authorized official PICO-8 runtime')
+  }
+  if (channel === OFFICIAL_ORACLE_CHANNELS.desktop) {
+    if (capture.licensedRuntimeDeclaration !== true) {
+      errors.push('desktop capture must explicitly declare a licensed official PICO-8 runtime')
+    }
+  } else if (channel === OFFICIAL_ORACLE_CHANNELS.education) {
+    const provenance = capture.educationProvenance
+    if (capture.authorizedEducationRuntimeDeclaration !== true
+        || capture.operatorArtifactDeclaration !== true) {
+      errors.push('Education capture requires official-runtime and operator-artifact declarations')
+    }
+    if (provenance?.officialPageUrl !== OFFICIAL_EDUCATION_PAGE_URL) {
+      errors.push(`Education officialPageUrl must be ${OFFICIAL_EDUCATION_PAGE_URL}`)
+    }
+    let trustedAsset = false
+    try {
+      const url = new URL(provenance?.runtimeAssetUrl)
+      trustedAsset = url.protocol === 'https:' && url.hostname === 'www.pico-8-edu.com'
+        && url.pathname.startsWith('/play/')
+        && path.posix.basename(url.pathname) === provenance?.runtimeAssetFilename
+    } catch {}
+    if (!trustedAsset) errors.push('Education runtime asset must use the official pico-8-edu.com/play/ origin')
+    if (provenance?.manualStep !== 'local-cart-file-selection') {
+      errors.push('Education capture must record the bounded local-cart-file-selection step')
+    }
+    for (const field of ['runtimeAssetFilename', 'browserName', 'browserVersion', 'eventLogSha256']) {
+      if (typeof provenance?.[field] !== 'string' || provenance[field].trim() === '') {
+        errors.push(`Education ${field} must be a non-empty string`)
+      }
+    }
+    if (typeof provenance?.eventLogSha256 === 'string'
+        && !/^[a-f0-9]{64}$/.test(provenance.eventLogSha256)) {
+      errors.push('Education eventLogSha256 must be a lowercase SHA-256 digest')
+    }
+  } else if (current) {
+    errors.push('oracleChannel must identify a supported authorized official runtime')
   }
   for (const field of ['probe', 'runtimeVersion', 'hostPlatform', 'hostArchitecture']) {
     if (typeof capture[field] !== 'string' || capture[field].trim() === '') {
@@ -140,7 +188,7 @@ export function validateOfficialProbeCapture(capture, expectedEvents) {
       errors.push(`${field} must be a lowercase SHA-256 digest`)
     }
   }
-  if (capture.returncode !== 0) errors.push('official runtime did not exit successfully')
+  if (capture.returncode !== 0) errors.push('official capture workflow did not complete successfully')
   if (!Array.isArray(capture.events) || capture.events.some((event) =>
     !Array.isArray(event) || event.length !== 2
     || event.some((value) => typeof value !== 'string'))) {
@@ -179,6 +227,8 @@ export function buildOfficialProbeCapture({
   const capture = {
     schemaVersion: OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION,
     oracle: OFFICIAL_ORACLE,
+    oracleChannel: OFFICIAL_ORACLE_CHANNELS.desktop,
+    authorizedOfficialRuntimeDeclaration: true,
     licensedRuntimeDeclaration: true,
     probe,
     runtimeVersion,
@@ -193,4 +243,50 @@ export function buildOfficialProbeCapture({
     attachments,
   }
   return capture
+}
+
+export function buildOfficialEducationProbeCapture({
+  probe,
+  runtimeVersion,
+  runtimeSha256,
+  runtimeAssetUrl,
+  runtimeAssetFilename,
+  cartSha256,
+  browserName,
+  browserVersion,
+  eventLogSha256,
+  output,
+  attachments = [],
+  capturedAt = new Date().toISOString(),
+  hostPlatform = process.platform,
+  hostArchitecture = process.arch,
+}) {
+  return {
+    schemaVersion: OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION,
+    oracle: OFFICIAL_ORACLE,
+    oracleChannel: OFFICIAL_ORACLE_CHANNELS.education,
+    authorizedOfficialRuntimeDeclaration: true,
+    authorizedEducationRuntimeDeclaration: true,
+    operatorArtifactDeclaration: true,
+    probe,
+    runtimeVersion,
+    runtimeSha256,
+    cartSha256,
+    hostPlatform,
+    hostArchitecture,
+    capturedAt,
+    command: ['education-web', 'load-local-cart', probe],
+    returncode: 0,
+    events: parseProbeEvents(output),
+    attachments,
+    educationProvenance: {
+      officialPageUrl: OFFICIAL_EDUCATION_PAGE_URL,
+      runtimeAssetUrl,
+      runtimeAssetFilename,
+      browserName,
+      browserVersion,
+      manualStep: 'local-cart-file-selection',
+      eventLogSha256,
+    },
+  }
 }

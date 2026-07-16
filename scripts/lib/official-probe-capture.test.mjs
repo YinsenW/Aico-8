@@ -7,6 +7,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
+  buildOfficialEducationProbeCapture,
   buildOfficialProbeCapture,
   collectOfficialProbeArtifacts,
   isPrivateOfficialCapturePath,
@@ -98,6 +99,46 @@ test('builds a provenance-bound licensed official capture', () => {
   assert.deepEqual(validateOfficialProbeCapture(capture, [['edge', '8,0,8']]), [])
 })
 
+test('builds a provenance-bound authorized Education Edition capture', () => {
+  const capture = buildOfficialEducationProbeCapture({
+    probe: 'curved_raster',
+    runtimeVersion: '0.2.7',
+    runtimeSha256: digest,
+    runtimeAssetUrl: 'https://www.pico-8-edu.com/play/pico8_edu_0207.js',
+    runtimeAssetFilename: 'pico8_edu_0207.js',
+    cartSha256: digest,
+    browserName: 'Chromium',
+    browserVersion: '126.0',
+    eventLogSha256: digest,
+    output: 'p8probe|edge|8,0,8',
+    capturedAt: '2026-07-16T00:00:00.000Z',
+  })
+  assert.deepEqual(validateOfficialProbeCapture(capture, [['edge', '8,0,8']]), [])
+})
+
+test('rejects Education captures with untrusted origin or missing bounded declarations', () => {
+  const capture = buildOfficialEducationProbeCapture({
+    probe: 'curved_raster',
+    runtimeVersion: '0.2.7',
+    runtimeSha256: digest,
+    runtimeAssetUrl: 'https://example.com/play/pico8.js',
+    runtimeAssetFilename: 'pico8.js',
+    cartSha256: digest,
+    browserName: 'Chromium',
+    browserVersion: '126.0',
+    eventLogSha256: digest,
+    output: '',
+  })
+  capture.authorizedEducationRuntimeDeclaration = false
+  capture.operatorArtifactDeclaration = false
+  capture.educationProvenance.manualStep = 'automated-upload'
+  assert.deepEqual(validateOfficialProbeCapture(capture), [
+    'Education capture requires official-runtime and operator-artifact declarations',
+    'Education runtime asset must use the official pico-8-edu.com/play/ origin',
+    'Education capture must record the bounded local-cart-file-selection step',
+  ])
+})
+
 test('checked-in capture plans match the files emitted by raster and audio probes', () => {
   const matrix = JSON.parse(fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/matrix.json'),
@@ -106,6 +147,9 @@ test('checked-in capture plans match the files emitted by raster and audio probe
   const curved = matrix.areas.find(({ id }) => id === 'curved_raster')
   assert.deepEqual(curved.artifacts, ['curved_raster.png'])
   assert.match(curved.capture_command, /--artifact curved_raster\.png(?:\s|$)/)
+  assert.match(curved.education_capture_command, /import:official-education-probe/)
+  assert.match(curved.education_capture_command, /--operator-artifact-declaration/)
+  assert.match(curved.education_capture_command, /--artifact curved_raster\.png(?:\s|$)/)
   const curvedProbe = fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/probes/curved_raster.p8'),
     'utf8',
@@ -185,6 +229,55 @@ test('public CLI smoke exercises isolation, artifact copying, and capture valida
   }
 })
 
+test('Education CLI smoke imports a manually staged official Web capture end to end', () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'aico8-education-cli-'))
+  const staging = path.join(temporary, 'staging')
+  const runtimeAsset = path.join(temporary, 'pico8_edu_0207.js')
+  const cart = path.join(temporary, 'probe.p8')
+  fs.mkdirSync(staging)
+  fs.writeFileSync(runtimeAsset, 'synthetic public contract fixture; not official evidence\n')
+  fs.writeFileSync(cart, 'pico-8 cartridge\nversion 43\n__lua__\n')
+  fs.writeFileSync(path.join(staging, 'events.txt'), 'p8probe|edge|ok\n')
+  fs.writeFileSync(path.join(staging, 'screen.png'), Buffer.from([1, 2, 3]))
+  const captureDirectory = path.join(
+    repositoryRoot,
+    'captures/official',
+    `education-cli-smoke-${process.pid}-${Date.now()}`,
+  )
+  const output = path.join(captureDirectory, 'probe.json')
+  try {
+    const result = spawnSync(process.execPath, [
+      path.join(repositoryRoot, 'scripts/import-official-education-probe.mjs'),
+      '--authorized-official-education-runtime',
+      '--operator-artifact-declaration',
+      '--runtime-version', '0.2.7-contract-smoke',
+      '--runtime-asset', runtimeAsset,
+      '--runtime-asset-url', 'https://www.pico-8-edu.com/play/pico8_edu_0207.js',
+      '--browser-name', 'synthetic-test-browser',
+      '--browser-version', '1',
+      '--cart', cart,
+      '--source-dir', staging,
+      '--event-log', 'events.txt',
+      '--output', output,
+      '--artifact', 'screen.png',
+    ], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, result.stderr)
+    const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
+    assert.equal(capture.status, 'captured')
+    assert.equal(capture.oracleChannel, 'education-web-authorized')
+    assert.equal(capture.educationProvenance.manualStep, 'local-cart-file-selection')
+    assert.deepEqual(capture.events, [['edge', 'ok']])
+    assert.deepEqual(validateOfficialProbeCapture(capture), [])
+    assert.deepEqual(validateOfficialProbeArtifactFiles(capture, output), [])
+  } finally {
+    fs.rmSync(captureDirectory, { recursive: true, force: true })
+    fs.rmSync(temporary, { recursive: true, force: true })
+  }
+})
+
 test('rejects unlicensed, failed, tampered, and public capture records', () => {
   const capture = buildOfficialProbeCapture({
     probe: 'curved_raster',
@@ -199,9 +292,9 @@ test('rejects unlicensed, failed, tampered, and public capture records', () => {
   capture.returncode = 1
   capture.cartSha256 = 'not-a-digest'
   assert.deepEqual(validateOfficialProbeCapture(capture, [['edge', 'different']]), [
-    'capture must explicitly declare a licensed official PICO-8 oracle',
+    'desktop capture must explicitly declare a licensed official PICO-8 runtime',
     'cartSha256 must be a lowercase SHA-256 digest',
-    'official runtime did not exit successfully',
+    'official capture workflow did not complete successfully',
     'captured events do not match the declared expectation',
   ])
   assert.equal(isPrivateOfficialCapturePath('/repo', '/repo/captures/official/run/result.json'), true)

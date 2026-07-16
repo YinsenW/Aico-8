@@ -292,7 +292,7 @@ export function compareOfficialProbeCaptures({ official, officialPath, candidate
   if (official.cartSha256 !== candidate.cartSha256) validationErrors.push('source cart SHA-256 identities differ')
   const report = {
     schemaVersion: OFFICIAL_COMPARISON_SCHEMA,
-    oracle: 'licensed-official-pico8-versus-aico8-candidate',
+    oracle: 'authorized-official-pico8-versus-aico8-candidate',
     officialCaptureSha256: sha256File(officialPath),
     candidateCaptureSha256: sha256File(candidatePath),
     probe: official.probe,

@@ -45,7 +45,9 @@ Contracts: `JOB-INGEST-001`, `DATA-CART-001`, `DATA-WORKSPACE-001`.
 
 Run unchanged cart Lua with compatible fixed-point, RAM/ROM, draw, input, audio,
 persistence, and 30/60 Hz behavior. Native and WebAssembly builds must produce
-identical versioned checkpoints. Licensed official-runtime captures are the oracle.
+identical versioned checkpoints. The authorized official oracle has two
+capability-scoped channels: licensed desktop PICO-8 and Lexaloffle's accountless
+Education Edition. Neither channel grants cart-publication rights.
 
 Contracts: `API-CORE-001`, `API-RASTER-001`, `API-AUDIO-001`, `DATA-REPLAY-001`,
 `DATA-CHECKPOINT-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.

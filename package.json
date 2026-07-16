@@ -16,6 +16,7 @@
     "verify:governance": "node scripts/verify-governance.mjs",
     "verify:public": "make -C runtime/core wasm && node --test scripts/lib/official-probe-capture.test.mjs scripts/lib/official-probe-comparison.test.mjs scripts/smoke-private-cart-native.test.mjs scripts/smoke-private-cart.test.mjs && node scripts/verify-public-repository.mjs",
     "capture:official-probe": "node scripts/capture-official-probe.mjs",
+    "import:official-education-probe": "node scripts/import-official-education-probe.mjs",
     "capture:implementation-curved-raster": "tsx scripts/capture-implementation-curved-raster.ts",
     "compare:official-probe": "node scripts/compare-official-probe.mjs",
     "verify:rust": "node scripts/verify-rust-boundary.mjs",

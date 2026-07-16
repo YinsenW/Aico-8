@@ -164,8 +164,8 @@ idempotently resumes identical bytes, and holds no lock while awaiting a human.
 Local supervised research uses the project owner's explicit recorded decision; do not add external identity, signing, or cloud infrastructure unless a later remote multi-maintainer requirement explicitly needs it.
 ## Diagnosis
 
-- Compatibility mismatch: isolate update number, input trace, RAM/state snapshot,
-  raster/audio checkpoint, then compare against licensed official evidence.
+- Compatibility mismatch: isolate update number, input trace, RAM/state snapshot, raster/audio checkpoint, then compare against authorized official evidence. Prefer
+  Education Edition for Web/raster probes: record its single file-selection handoff, then automate staging, hashing, import, and comparison; use licensed desktop PICO-8 for native export or unsupported versions.
 - Completion mismatch: first replay the unchanged cart using only recorded
   button masks. Keep hook-driven reachability separately labeled and never use it
   to close a level, ending, game, or qualification exit.

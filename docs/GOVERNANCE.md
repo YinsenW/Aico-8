@@ -88,8 +88,10 @@ Evidence grades are ordered and never silently promoted:
   gameplay completion evidence.
 - `canonical_replay`: unchanged cart, ordinary button masks, every logical
   update, and provenance-linked persistence complete the declared path.
-- `official_differential`: a canonical replay also matches licensed official
-  runtime checkpoints for the semantics named by the exit.
+- `official_differential`: a canonical replay also matches authorized official
+  runtime checkpoints for the semantics named by the exit. Provider-authorized
+  Education Web and licensed desktop captures remain distinct channels and may
+  only prove capabilities their recorded workflow actually observes.
 - `manual_review`: a recorded human review of presentation, feel, accessibility,
   or audio; supplements but cannot replace required executable evidence.
 
