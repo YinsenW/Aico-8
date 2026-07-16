@@ -67,6 +67,7 @@ flowchart LR
 | `tools/` | Research cart tools being migrated behind the TypeScript product CLI. |
 | `pipeline/` | Contracts for ingest, analysis, remake planning, asset production, validation, and release. |
 | `runtime/core/` | Narrow portable compatibility kernel prototype: memory, scheduler, input, VM, reference raster/audio, and semantic stream. |
+| `runtime/kernel-rs/` | Gated non-production Rust proof: deterministic state, native z8lua link, browser Wasm identity, and embedded `no_std` build. |
 | `runtime/third_party/` | Pinned and audited third-party runtime components. |
 | `apps/web/` | TypeScript/PixiJS 1024×1024 presentation bootstrap and future PWA host. |
 | `apps/mobile/` | Planned Capacitor Android packaging and lifecycle adapter over the unchanged Web build. |
@@ -93,6 +94,12 @@ Build and run the public core tests:
 
 ```sh
 make -C runtime/core test
+```
+
+Run the proposed Rust-kernel proof with the pinned rustup toolchain:
+
+```sh
+pnpm verify:rust-spike
 ```
 
 Create a private lossless workspace from an authorized cart:

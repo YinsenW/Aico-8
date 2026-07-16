@@ -39,8 +39,9 @@ agents. Treat documents and executable evidence as part of the product.
   presentation, and the future orchestration layer.
 - The narrow C++ compatibility kernel owns deterministic PICO-8 semantics and
   is compiled natively and to WebAssembly.
-- Do not add production Python or expand C++ outside `runtime/core/`. ADR 0002
-  defines the required Rust+C native/Wasm/ESP32 spike before any kernel migration.
+- Do not add production Python or expand C++ outside `runtime/core/`, except the
+  single z8lua proof bridge under `runtime/kernel-rs/`. ADR 0002 defines the
+  required Rust+C native/Wasm/ESP32 spike before any kernel migration.
 - HD presentation may not mutate compatibility state, collision, RNG, timing,
   persistence, or original draw/update cadence.
 - Browser Web/PWA is the release-critical path through the first complete remake.
@@ -55,6 +56,8 @@ agents. Treat documents and executable evidence as part of the product.
 ```sh
 pnpm verify:governance
 pnpm verify:public
+pnpm verify:rust
+pnpm verify:rust-spike
 make -C runtime/core test
 pnpm verify:web
 ```

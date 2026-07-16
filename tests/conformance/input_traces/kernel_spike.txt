@@ -1,0 +1,27 @@
+# Public synthetic input trace for the Rust kernel proof.
+seed 0x8a1c0f42
+buttons 0
+buttons 2
+buttons 2
+buttons 8
+buttons 8
+buttons 1
+buttons 0
+buttons 16
+buttons 16
+buttons 4
+buttons 4
+buttons 32
+buttons 0
+buttons 3
+buttons 12
+buttons 18
+buttons 0
+buttons 1
+buttons 1
+buttons 4
+buttons 8
+buttons 2
+buttons 0
+buttons 32
+expected db36fa0801caf75b382e62f1f57293a5a9da98c4510a72f94e958a86f41810c9
