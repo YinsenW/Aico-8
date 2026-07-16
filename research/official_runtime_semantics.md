@@ -230,6 +230,12 @@ pnpm capture:official-probe -- \
 
 The runner uses the manual-defined `-x` headless switch. Independent emulator
 output is never accepted as an official golden, and capture files remain private.
+The cart runs from an isolated temporary working directory. Every explicitly
+declared PNG/WAV output is copied into an immutable sibling artifact bundle with
+its media type, byte count, and SHA-256 recorded in capture schema v2; missing,
+duplicated, unsupported, symlinked, traversing, overwritten, or later-tampered
+attachments fail validation. A probe that emits only stdout declares no
+`--artifact` arguments and still records an explicit empty attachment list.
 
 ### Scheduler
 

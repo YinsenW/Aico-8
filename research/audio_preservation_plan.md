@@ -76,6 +76,12 @@ Official manual references:
 - https://www.lexaloffle.com/dl/docs/pico-8_manual.html#EXTCMD
 - https://www.lexaloffle.com/dl/docs/pico-8_manual.html#STAT
 
+The official capture command accepts repeatable `--artifact relative.wav` and
+`--artifact relative.png` declarations. Outputs are produced in an isolated
+working directory, copied under the ignored capture bundle, and bound to the
+runtime/cart record by media type, size, and SHA-256. Undeclared filesystem
+output is discarded; missing or mutated declared output fails closed.
+
 Independent runtimes are differential-test subjects only. Their WAV output or
 status traces must not be committed as normative goldens.
 

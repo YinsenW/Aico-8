@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
-export const OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION = 1
+export const OFFICIAL_PROBE_CAPTURE_SCHEMA_VERSION = 2
 export const OFFICIAL_ORACLE = 'licensed-official-pico8'
 const EVENT_PREFIX = 'p8probe|'
 
@@ -27,6 +27,95 @@ export function isPrivateOfficialCapturePath(root, output) {
   const captureRoot = path.resolve(root, 'captures/official')
   const resolved = path.resolve(output)
   return resolved.startsWith(`${captureRoot}${path.sep}`)
+}
+
+function normalizedArtifactPath(value) {
+  if (typeof value !== 'string' || value.trim() === '' || path.isAbsolute(value)) return undefined
+  const normalized = path.posix.normalize(value.replaceAll('\\', '/'))
+  if (normalized === '.' || normalized === '..' || normalized.startsWith('../')) return undefined
+  return normalized
+}
+
+function artifactMediaType(relativePath) {
+  const extension = path.extname(relativePath).toLowerCase()
+  if (extension === '.png') return 'image/png'
+  if (extension === '.wav') return 'audio/wav'
+  return undefined
+}
+
+export function collectOfficialProbeArtifacts(workingDirectory, specifications, artifactRoot) {
+  const attachments = []
+  const errors = []
+  const seen = new Set()
+  const workingRoot = path.resolve(workingDirectory)
+  for (const specification of specifications) {
+    const relativePath = normalizedArtifactPath(specification)
+    if (!relativePath) {
+      errors.push(`artifact path is unsafe: ${specification}`)
+      continue
+    }
+    if (seen.has(relativePath)) {
+      errors.push(`artifact path is duplicated: ${relativePath}`)
+      continue
+    }
+    seen.add(relativePath)
+    const mediaType = artifactMediaType(relativePath)
+    if (!mediaType) {
+      errors.push(`artifact type must be .png or .wav: ${relativePath}`)
+      continue
+    }
+    const source = path.resolve(workingRoot, relativePath)
+    if (!source.startsWith(`${workingRoot}${path.sep}`)) {
+      errors.push(`artifact path escapes the isolated capture directory: ${relativePath}`)
+      continue
+    }
+    const stat = fs.lstatSync(source, { throwIfNoEntry: false })
+    if (!stat?.isFile() || stat.isSymbolicLink()) {
+      errors.push(`declared artifact was not produced as a regular file: ${relativePath}`)
+      continue
+    }
+    const destination = path.resolve(artifactRoot, relativePath)
+    if (!destination.startsWith(`${path.resolve(artifactRoot)}${path.sep}`)) {
+      errors.push(`artifact destination escapes its capture directory: ${relativePath}`)
+      continue
+    }
+    fs.mkdirSync(path.dirname(destination), { recursive: true })
+    fs.copyFileSync(source, destination, fs.constants.COPYFILE_EXCL)
+    attachments.push({
+      sourceRelativePath: relativePath,
+      relativePath: path.posix.join(path.basename(artifactRoot), relativePath),
+      mediaType,
+      bytes: stat.size,
+      sha256: sha256File(source),
+    })
+  }
+  return { attachments, errors }
+}
+
+export function validateOfficialProbeArtifactFiles(capture, capturePath) {
+  const errors = []
+  for (const attachment of capture.attachments ?? []) {
+    const relativePath = normalizedArtifactPath(attachment.relativePath)
+    if (!relativePath) {
+      errors.push('attachment relativePath must stay below the capture directory')
+      continue
+    }
+    const captureDirectory = path.dirname(path.resolve(capturePath))
+    const file = path.resolve(captureDirectory, relativePath)
+    if (!file.startsWith(`${captureDirectory}${path.sep}`)) {
+      errors.push(`attachment escapes capture directory: ${relativePath}`)
+      continue
+    }
+    const stat = fs.lstatSync(file, { throwIfNoEntry: false })
+    if (!stat?.isFile() || stat.isSymbolicLink()) {
+      errors.push(`attachment is missing or not a regular file: ${relativePath}`)
+      continue
+    }
+    if (stat.size !== attachment.bytes || sha256File(file) !== attachment.sha256) {
+      errors.push(`attachment size or digest mismatch: ${relativePath}`)
+    }
+  }
+  return errors
 }
 
 export function validateOfficialProbeCapture(capture, expectedEvents) {
@@ -60,6 +149,16 @@ export function validateOfficialProbeCapture(capture, expectedEvents) {
       && JSON.stringify(capture.events) !== JSON.stringify(expectedEvents)) {
     errors.push('captured events do not match the declared expectation')
   }
+  if (!Array.isArray(capture.attachments) || capture.attachments.some((attachment) => {
+    const relativePath = normalizedArtifactPath(attachment?.relativePath)
+    const sourceRelativePath = normalizedArtifactPath(attachment?.sourceRelativePath)
+    return !relativePath || !sourceRelativePath
+      || !['image/png', 'audio/wav'].includes(attachment.mediaType)
+      || !Number.isSafeInteger(attachment.bytes) || attachment.bytes < 0
+      || typeof attachment.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(attachment.sha256)
+  })) {
+    errors.push('attachments must be safe hashed PNG/WAV metadata records')
+  }
   return errors
 }
 
@@ -71,6 +170,7 @@ export function buildOfficialProbeCapture({
   command,
   returncode,
   output,
+  attachments = [],
   capturedAt = new Date().toISOString(),
   hostPlatform = process.platform,
   hostArchitecture = process.arch,
@@ -89,6 +189,7 @@ export function buildOfficialProbeCapture({
     command,
     returncode,
     events: parseProbeEvents(output),
+    attachments,
   }
   return capture
 }

@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import test from 'node:test'
 
 import {
   buildOfficialProbeCapture,
+  collectOfficialProbeArtifacts,
   isPrivateOfficialCapturePath,
   parseProbeEvents,
+  validateOfficialProbeArtifactFiles,
   validateOfficialProbeCapture,
 } from './official-probe-capture.mjs'
 
@@ -14,6 +19,63 @@ test('parses only ordered p8probe records from mixed official output', () => {
   assert.deepEqual(parseProbeEvents('boot\np8probe|alpha|1\nnoise p8probe|beta|x|y\n'), [
     ['alpha', '1'],
     ['beta', 'x|y'],
+  ])
+})
+
+test('copies declared PNG/WAV artifacts into a hashed immutable capture bundle', () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'aico8-official-artifacts-'))
+  const working = path.join(temporary, 'working')
+  const artifactRoot = path.join(temporary, 'capture.artifacts')
+  fs.mkdirSync(path.join(working, 'nested'), { recursive: true })
+  fs.writeFileSync(path.join(working, 'screen.png'), Buffer.from([1, 2, 3]))
+  fs.writeFileSync(path.join(working, 'nested/audio.wav'), Buffer.from([4, 5]))
+  const collected = collectOfficialProbeArtifacts(
+    working,
+    ['screen.png', 'nested/audio.wav'],
+    artifactRoot,
+  )
+  assert.deepEqual(collected.errors, [])
+  assert.deepEqual(collected.attachments.map(({ mediaType, bytes, relativePath }) => ({
+    mediaType,
+    bytes,
+    relativePath,
+  })), [
+    { mediaType: 'image/png', bytes: 3, relativePath: 'capture.artifacts/screen.png' },
+    { mediaType: 'audio/wav', bytes: 2, relativePath: 'capture.artifacts/nested/audio.wav' },
+  ])
+  const capturePath = path.join(temporary, 'capture.json')
+  const capture = buildOfficialProbeCapture({
+    probe: 'artifact_probe',
+    runtimeVersion: '0.2.7',
+    runtimeSha256: digest,
+    cartSha256: digest,
+    command: ['pico8', '-x', 'artifact_probe.p8'],
+    returncode: 0,
+    output: '',
+    attachments: collected.attachments,
+  })
+  assert.deepEqual(validateOfficialProbeCapture(capture), [])
+  assert.deepEqual(validateOfficialProbeArtifactFiles(capture, capturePath), [])
+  fs.writeFileSync(path.join(artifactRoot, 'screen.png'), Buffer.from([9]))
+  assert.deepEqual(validateOfficialProbeArtifactFiles(capture, capturePath), [
+    'attachment size or digest mismatch: capture.artifacts/screen.png',
+  ])
+})
+
+test('rejects missing, unsafe, duplicated, and unsupported artifacts', () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'aico8-official-artifact-errors-'))
+  fs.writeFileSync(path.join(temporary, 'note.txt'), 'no')
+  const collected = collectOfficialProbeArtifacts(
+    temporary,
+    ['../escape.png', 'missing.wav', 'note.txt', 'missing.wav'],
+    path.join(temporary, 'bundle.artifacts'),
+  )
+  assert.deepEqual(collected.attachments, [])
+  assert.deepEqual(collected.errors, [
+    'artifact path is unsafe: ../escape.png',
+    'declared artifact was not produced as a regular file: missing.wav',
+    'artifact type must be .png or .wav: note.txt',
+    'artifact path is duplicated: missing.wav',
   ])
 })
 
