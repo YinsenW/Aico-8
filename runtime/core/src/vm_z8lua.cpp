@@ -1274,6 +1274,16 @@ int api_extcmd(lua_State *state)
         }
         return 0;
     }
+    if (name == "label" || name == "screen" || name == "video"
+        || name == "audio_rec" || name == "audio_end" || name == "set_filename") {
+        const std::string message = "extcmd(" + name
+            + "): host capture is unavailable; compatibility state continued";
+        if (vm->diagnostic_output.find(message) == std::string::npos) {
+            vm->diagnostic_output.append(message);
+            vm->diagnostic_output.push_back('\n');
+        }
+        return 0;
+    }
     return luaL_error(state, "extcmd(%s) is unsupported by this host", name.c_str());
 }
 

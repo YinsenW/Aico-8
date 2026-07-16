@@ -112,6 +112,12 @@ test('checked-in capture plans match the files emitted by raster and audio probe
   )
   assert.match(curvedProbe, /extcmd\("set_filename","curved_raster"\)/)
   assert.match(curvedProbe, /extcmd\("screen",1,1\)/)
+  assert.doesNotMatch(curvedProbe, /\breset\(\)/)
+  const advancedProbe = fs.readFileSync(
+    path.join(repositoryRoot, 'tests/conformance/probes/advanced_raster.p8'),
+    'utf8',
+  )
+  assert.doesNotMatch(advancedProbe, /\breset\(\)/)
 
   const audio = JSON.parse(fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/audio_capture_manifest.json'),

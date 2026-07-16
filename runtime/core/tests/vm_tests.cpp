@@ -449,6 +449,8 @@ function _init()
  stat_rate=stat(8)
  stat_key=stat(30)
  extcmd("rec")
+ extcmd("set_filename","host-api-test")
+ extcmd("screen",1,1)
  line()
  line(30,30,10)
  line(32,30,10)
@@ -484,7 +486,10 @@ function denied_file_output() printh("unsafe","log.txt") end
     int32_t value = -1;
     assert(p8_vm_get_global_raw(vm, "initial_time", &value) && value == 0);
     assert(std::string(p8_vm_diagnostic_output(vm))
-           == "boot 0\nextcmd(rec): recording is unavailable in this host; gameplay continued\n");
+           == "boot 0\n"
+              "extcmd(rec): recording is unavailable in this host; gameplay continued\n"
+              "extcmd(set_filename): host capture is unavailable; compatibility state continued\n"
+              "extcmd(screen): host capture is unavailable; compatibility state continued\n");
     assert(p8_vm_get_global_raw(vm, "unpacked_a", &value) && value == 4 << 16);
     assert(p8_vm_get_global_raw(vm, "unpacked_b", &value) && value == 5 << 16);
     assert(p8_vm_get_global_raw(vm, "peek_a", &value) && value == 1 << 16);

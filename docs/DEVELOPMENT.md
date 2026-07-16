@@ -37,14 +37,14 @@ Architecture changes require an ADR.
 
 ## Selector catalog
 
-The exact catalog and availability are machine-owned by
-`governance/project.json`. Current top-level checks are:
+The exact catalog and availability are machine-owned by `governance/project.json`. Current top-level checks are:
 
 ```sh
 node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
-node --test scripts/lib/official-probe-capture.test.mjs
+node --test scripts/lib/official-probe-capture.test.mjs scripts/lib/official-probe-comparison.test.mjs
+make -C runtime/core wasm && node --test scripts/capture-implementation-curved-raster.test.mjs
 node --test scripts/smoke-private-cart-native.test.mjs scripts/smoke-private-cart.test.mjs
 pnpm verify:rust
 pnpm verify:hd-identity

@@ -87,6 +87,13 @@ output is discarded; missing or mutated declared output fails closed.
 Independent runtimes are differential-test subjects only. Their WAV output or
 status traces must not be committed as normative goldens.
 
+`pnpm compare:official-probe` performs the eventual runtime-audio comparison at
+the decoded integer-PCM and normalized CSV-cell boundaries, so RIFF metadata and
+CRLF/LF differences cannot create false failures. Candidate capture generation
+must still come from the production kernel and bind its binary hash; the current
+audio selectors deliberately remain fail-closed, so no candidate or matched
+report is claimed before the licensed status trace defines the missing behavior.
+
 ## Runtime boundary
 
 The compatibility core owns:

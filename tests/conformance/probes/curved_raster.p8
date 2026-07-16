@@ -14,7 +14,6 @@ local function row(y,x0,x1)
  return out
 end
 
-reset()
 cls(0)
 oval(0,0,6,4,8)
 for y=0,4 do emit("oval_odd_"..y,row(y,0,6)) end
@@ -76,7 +75,13 @@ emit("out_of_bounds",tostr(sget(-1,0))..","..tostr(mget(-1,0))..","..tostr(pget(
 
 -- Save one raw 128x128 official-raster sheet. The PNG is required because
 -- pget() cannot observe the RGB selected by the display palette.
-reset()
+camera()
+clip()
+pal()
+palt()
+fillp()
+poke(0x5f34,0)
+poke(0x5f36,0)
 cls(1)
 oval(8,8,47,35,8)
 ovalfill(56,8,95,35,10)

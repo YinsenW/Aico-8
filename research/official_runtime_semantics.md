@@ -239,6 +239,27 @@ attachments fail validation. A probe that emits only stdout declares no
 `--artifact` arguments and still records an explicit empty attachment list.
 The curved-raster matrix entry declares its exact command and a raw 128x128 PNG;
 that image is the oracle for display-palette RGB that `pget()` cannot observe.
+After the licensed capture exists, generate the source-bound production-Wasm
+candidate and compare both records with the matrix-owned commands:
+
+```sh
+pnpm capture:implementation-curved-raster -- \
+  --cart tests/conformance/probes/curved_raster.p8 \
+  --output captures/official/0.2.7/curved_raster-candidate.json
+pnpm compare:official-probe -- \
+  --official captures/official/0.2.7/curved_raster.json \
+  --candidate captures/official/0.2.7/curved_raster-candidate.json \
+  --output captures/official/0.2.7/curved_raster-comparison.json
+```
+
+Candidate records explicitly deny official authority and bind the source-cart
+hash, production Wasm hash, Git revision, command, ordered events, and artifact
+hashes. The comparator validates both records and their on-disk attachments,
+then compares decoded RGBA pixels rather than PNG compression bytes, integer PCM
+samples rather than WAV container metadata, and normalized CSV cells rather than
+line endings. Version 1 permits no tolerance. Matched reports remain private and
+immutable, and do not verify an exit until their licensed oracle provenance and
+coverage are recorded in governance.
 
 ### Scheduler
 
