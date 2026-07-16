@@ -11,6 +11,9 @@ constexpr uint16_t kClipX = 0x5f20;
 constexpr uint16_t kClipY = 0x5f21;
 constexpr uint16_t kClipWidth = 0x5f22;
 constexpr uint16_t kClipHeight = 0x5f23;
+constexpr uint16_t kDrawColor = 0x5f25;
+constexpr uint16_t kCursorX = 0x5f26;
+constexpr uint16_t kCursorY = 0x5f27;
 constexpr uint16_t kCameraX = 0x5f28;
 constexpr uint16_t kCameraY = 0x5f2a;
 constexpr uint16_t kFillPatternLow = 0x5f31;
@@ -214,6 +217,9 @@ void p8_raster_reset(p8_core *core)
     p8_gfx_clip_reset(core);
     p8_gfx_camera_reset(core);
     p8_gfx_fillp(core, 0);
+    p8_core_poke(core, kDrawColor, 6);
+    p8_core_poke(core, kCursorX, 0);
+    p8_core_poke(core, kCursorY, 0);
 }
 
 uint8_t p8_gfx_pget(const p8_core *core, int x, int y)
@@ -590,6 +596,14 @@ void p8_gfx_tline(p8_core *core, int x0, int y0, int x1, int y1,
             error += delta_x;
             y += step_y;
         }
+    }
+}
+
+void p8_gfx_text_pixel(p8_core *core, int x, int y, uint8_t color)
+{
+    if (core) {
+        draw_mapped_pixel(core, bounded_coordinate(x), bounded_coordinate(y),
+                          mapped_color(core, color));
     }
 }
 

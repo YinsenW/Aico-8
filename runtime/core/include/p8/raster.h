@@ -54,6 +54,8 @@ void p8_gfx_tline(p8_core *core, int x0, int y0, int x1, int y1,
                   int32_t map_x_raw, int32_t map_y_raw,
                   int32_t map_dx_raw, int32_t map_dy_raw,
                   uint8_t layer, unsigned fractional_bits);
+/* Text pixels observe camera, clip, and draw palette, but never fillp. */
+void p8_gfx_text_pixel(p8_core *core, int x, int y, uint8_t color);
 
 /* Expands packed screen RAM to one 0..15 palette index per pixel. */
 size_t p8_gfx_copy_framebuffer_indexed(const p8_core *core, uint8_t *destination,

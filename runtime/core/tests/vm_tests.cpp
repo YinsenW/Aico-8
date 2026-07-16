@@ -550,8 +550,8 @@ function verify_current_color()
  rect(6,1,7,2)
  circfill(9,2,1)
  sset(9,9)
- print("a",0,0)
- print("b",1,1,12)
+ print("a",0,-20)
+ print("b",1,-20,12)
  pset(11,1)
  print("c",13)
  pset(12,1)
@@ -644,6 +644,76 @@ end
     assert(commands[0].args[9] == 13 << 16);
     assert(commands[2].flags == 1 && commands[2].args[0] == 16 << 16);
     assert(commands[3].args[6] == 1 << 16 && commands[3].args[9] == 16 << 16);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
+void test_static_p8scii_executes_pixels_metrics_memory_and_custom_fonts()
+{
+    constexpr char source[] = R"p8lua(
+function verify_p8scii()
+ local special=chr(6)
+ local glyph=special..":ff818181818181ff"
+ cls(0)
+ inline_width=print(glyph,0,0,7)
+ inline_00=pget(0,0) inline_11=pget(1,1)
+ repeat_width=print(chr(1).."3".."a",0,10,7)
+ terminate_width=print(glyph..chr(0)..glyph,0,20,7)
+ print(chr(12).."8"..glyph,10,0,7)
+ foreground_pixel=pget(10,0) foreground_state=peek(0x5f25)
+ print(chr(2).."4"..glyph,20,0,7)
+ background_on=pget(20,0) background_off=pget(21,1)
+ absolute_width=print(special.."j23"..glyph,0,0,7)
+ absolute_pixel=pget(8,12)
+ print(special.."@43000004".."abcd",0,-20,7)
+ memory_0=peek(0x4300) memory_1=peek(0x4301)
+ memory_2=peek(0x4302) memory_3=peek(0x4303)
+ poke(0x5600,8,8,8,0,0,0,4,0)
+ poke(0x5680,1,2,4,8,16,32,64,128)
+ custom_width=print(chr(14)..chr(16)..chr(15),30,0,6)
+ custom_00=pget(30,0) custom_10=pget(31,0) custom_77=pget(37,7)
+ print(special.."o8ff"..":",50,1,3)
+ outline_outer=pget(50,1) outline_inner=pget(51,2)
+ print(special.."u"..":",60,1,3)
+ underline_pixel=pget(59,7)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, source, sizeof(source) - 1, "@p8scii-static"));
+    assert(p8_vm_call(vm, "verify_p8scii"));
+    const auto raw = [vm](const char *name) {
+        int32_t value = 0;
+        assert(p8_vm_get_global_raw(vm, name, &value));
+        return value >> 16;
+    };
+    assert(raw("inline_width") == 8 && raw("inline_00") == 7 && raw("inline_11") == 0);
+    assert(raw("repeat_width") == 12 && raw("terminate_width") == 8);
+    assert(raw("foreground_pixel") == 8 && raw("foreground_state") == 8);
+    assert(raw("background_on") == 7 && raw("background_off") == 4);
+    assert(raw("absolute_width") == 16 && raw("absolute_pixel") == 7);
+    assert(raw("memory_0") == 97 && raw("memory_1") == 98
+           && raw("memory_2") == 99 && raw("memory_3") == 100);
+    assert(raw("custom_width") == 38 && raw("custom_00") == 6
+           && raw("custom_10") == 0 && raw("custom_77") == 6);
+    assert(raw("outline_outer") == 8 && raw("outline_inner") == 3);
+    assert(raw("underline_pixel") == 3);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+
+    constexpr char unsupported_source[] = R"p8lua(
+function reject_audio_text() print(chr(7).."12",0,0,7) end
+)p8lua";
+    core = p8_core_create();
+    vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, unsupported_source,
+        sizeof(unsupported_source) - 1, "@p8scii-unsupported"));
+    p8_gfx_pset(core, 0, 0, 5);
+    assert(!p8_vm_call(vm, "reject_audio_text"));
+    assert(std::strstr(p8_vm_last_error(vm), "not conformance-qualified") != nullptr);
+    assert(p8_gfx_pget(core, 0, 0) == 5);
     p8_vm_destroy(vm);
     p8_core_destroy(core);
 }
@@ -742,6 +812,7 @@ int main(int argc, char **argv)
     test_palette_transparency_diagnostics_and_deterministic_time();
     test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
     test_tline_api_tracks_precision_and_draws_from_map_samples();
+    test_static_p8scii_executes_pixels_metrics_memory_and_custom_fonts();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"

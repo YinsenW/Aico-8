@@ -11,7 +11,7 @@ This document owns API, Job, and durable-data relationships; headers, types, and
 | API-VM-001 | `runtime/core/include/p8/vm.h` | P8 Lua load, boot, update, draw, pause-menu callbacks, error, and inspection | Hosts and replay harnesses |
 | API-AUDIO-001 | `runtime/core/include/p8/audio.h` | Four-channel scheduling, cart-memory synthesis, status, and deterministic mono PCM | VM, native/Wasm hosts, audio checkpoints |
 | API-SEMANTIC-001 | `p8_draw_command` in `core.h` | Ordered original draw intent plus payloads/state revision | HD adapter and diagnostics |
-| API-TEXT-001 | Planned versioned core/TypeScript boundary | Raw P8SCII execution result plus ordered semantic text runs and diagnostic correspondence regions | HD text adapter, diagnostics, validation |
+| API-TEXT-001 | `runtime/core/include/p8/text.h` for compatibility execution; versioned semantic-run boundary remains planned | Raw P8SCII execution result plus ordered semantic text runs and diagnostic correspondence regions | VM, HD text adapter, diagnostics, validation |
 | API-WASM-001 | `runtime/core/include/p8/wasm.h` | Flat lifecycle, frame, PCM audio, semantic, map, read-only global/table inspection, pause-menu, persistence, and restart exports | Browser Web/PWA, Android WebView, and Linux Web hosts |
 | API-PRESENTATION-001 | `apps/web/src/runtime/presentation.ts` | Read-only HD adapter lifecycle over display profiles, frame/command state, source-timed visibility, completeness, and diagnostic reference mode | PixiJS host and validation UI |
 | API-HOST-001 | Planned host contract | Logical input, persistence, lifecycle, clock, audio, services | Browser Web/PWA, Android WebView, Linux Web shell, future ESP-IDF |

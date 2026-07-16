@@ -10,6 +10,7 @@ Z8_SOURCES := $(wildcard $(Z8_DIR)/*.c) $(wildcard $(Z8_DIR)/*.h)
 CORE_OBJECT := $(BUILD_DIR)/core.o
 AUDIO_OBJECT := $(BUILD_DIR)/audio.o
 RASTER_OBJECT := $(BUILD_DIR)/raster.o
+TEXT_OBJECT := $(BUILD_DIR)/text.o
 VM_OBJECT := $(BUILD_DIR)/vm_z8lua.o
 CORE_LIBRARY := $(BUILD_DIR)/libp8core.a
 TEST_BINARY := $(BUILD_DIR)/core_tests
@@ -33,11 +34,11 @@ wasm: $(WASM_OUTPUT)
 wasm-test: wasm $(VM_TEST_BINARY)
 	node tests/wasm_smoke.mjs
 
-$(WASM_OUTPUT): Makefile src/core.cpp src/audio.cpp src/audio_internal.h src/raster.cpp src/vm_z8lua.cpp src/wasm_api.cpp \
-		include/p8/audio.h include/p8/core.h include/p8/raster.h include/p8/vm.h include/p8/wasm.h $(Z8_WASM_SOURCES)
+$(WASM_OUTPUT): Makefile src/core.cpp src/audio.cpp src/audio_internal.h src/raster.cpp src/text.cpp src/vm_z8lua.cpp src/wasm_api.cpp \
+		include/p8/audio.h include/p8/core.h include/p8/raster.h include/p8/text.h include/p8/vm.h include/p8/wasm.h $(Z8_WASM_SOURCES)
 	mkdir -p $(WASM_OUTPUT_DIR)
 	em++ -O3 -std=c++17 -Iinclude -I$(Z8_DIR) -x c++ \
-		src/core.cpp src/audio.cpp src/raster.cpp src/vm_z8lua.cpp src/wasm_api.cpp $(Z8_WASM_SOURCES) \
+		src/core.cpp src/audio.cpp src/raster.cpp src/text.cpp src/vm_z8lua.cpp src/wasm_api.cpp $(Z8_WASM_SOURCES) \
 		-fexceptions -sDISABLE_EXCEPTION_CATCHING=0 \
 		-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createAico8Kernel \
 		-sALLOW_MEMORY_GROWTH=1 -sENVIRONMENT=web,node -sFILESYSTEM=0 \
@@ -56,10 +57,13 @@ $(AUDIO_OBJECT): src/audio.cpp src/audio_internal.h include/p8/audio.h include/p
 $(RASTER_OBJECT): src/raster.cpp include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(TEXT_OBJECT): src/text.cpp include/p8/text.h include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 $(VM_OBJECT): src/vm_z8lua.cpp include/p8/audio.h include/p8/vm.h include/p8/core.h $(Z8_LIB) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -I$(Z8_DIR) -c $< -o $@
 
-$(CORE_LIBRARY): $(CORE_OBJECT) $(AUDIO_OBJECT) $(RASTER_OBJECT)
+$(CORE_LIBRARY): $(CORE_OBJECT) $(AUDIO_OBJECT) $(RASTER_OBJECT) $(TEXT_OBJECT)
 	$(AR) rcs $@ $^
 
 $(TEST_BINARY): tests/core_tests.cpp $(CORE_LIBRARY)

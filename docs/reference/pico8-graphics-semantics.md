@@ -71,6 +71,13 @@ calls share one copy path, dirty tracking, remapping behavior, and protected-cod
 range check. External-cart filenames are deliberately rejected until a host
 resource contract can provide a declared cartridge rather than an implicit file.
 
+`runtime/core/src/text.cpp` owns synchronous P8SCII execution and indexed text
+rasterization. The manual-defined static baseline covers built-in and custom
+font rows, inline glyphs, cursor/color/background controls, repeat/termination,
+raw writes, outline, underline, and sizing modes. Delay and audio controls are
+preflighted and rejected before mutation until their timing and synthesis paths
+are qualified; semantic text-run emission remains a separate planned boundary.
+
 The same source targets native, WebAssembly, and ESP-IDF builds. A TypeScript
 host consumes the indexed frame; it does not duplicate compatibility raster rules.
 
@@ -86,7 +93,7 @@ disagreements, but they are not the compatibility oracle.
 
 ## Next implementation slice
 
-Complete compatibility text/custom-font rasterization, remaining sprite/map and
+Complete effectful/delayed compatibility text, remaining sprite/map and
 extended-palette modes, then capture licensed official-runtime goldens for
 fixed-point and edge behavior. Keep indexed-frame tests and semantic-command
 output paired so the HD presentation bridge never invents separate semantics.

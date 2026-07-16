@@ -374,6 +374,35 @@ try {
   kernel._free(tlineSourcePointer);
 }
 
+const textRuntime = kernel._aico8_create();
+assert.notEqual(textRuntime, 0);
+const textSource = new TextEncoder().encode(
+  "function _init() local s=chr(6) local g=s..':ff818181818181ff' "
+  + "print(g,0,0,7) poke(0x5600,8,8,8,0,0,0,4,0) "
+  + "poke(0x5680,1,2,4,8,16,32,64,128) print(chr(14)..chr(16)..chr(15),30,0,6) end\n",
+);
+const textSourcePointer = copyToHeap(textSource);
+const textRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(textRuntime, textRomPointer, 0x8000,
+    textSourcePointer, textSource.length), 1);
+  assert.equal(kernel._aico8_start(textRuntime), 1);
+  const textFrame = kernel._aico8_framebuffer(textRuntime);
+  assert.equal(kernel.HEAPU8[textFrame], 7, "Wasm must rasterize inline P8SCII pixels");
+  assert.equal(kernel.HEAPU8[textFrame + 1 + 128], 0,
+    "Wasm inline glyph background must remain transparent by default");
+  assert.equal(kernel.HEAPU8[textFrame + 30], 6,
+    "Wasm must read custom glyph rows from 0x5600 memory");
+  assert.equal(kernel.HEAPU8[textFrame + 37 + 7 * 128], 6,
+    "Wasm custom font raster must preserve the eighth row and column");
+  assert.equal(kernel._aico8_draw_command_count(textRuntime), 2,
+    "Wasm must retain semantic print commands beside indexed pixels");
+} finally {
+  kernel._aico8_destroy(textRuntime);
+  kernel._free(textRomPointer);
+  kernel._free(textSourcePointer);
+}
+
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(

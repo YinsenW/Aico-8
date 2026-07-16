@@ -1,0 +1,462 @@
+#include "p8/text.h"
+
+#include "p8/raster.h"
+
+#include <algorithm>
+#include <array>
+#include <cstdint>
+
+namespace {
+
+constexpr uint16_t kDrawColor = 0x5f25;
+constexpr uint16_t kCursorX = 0x5f26;
+constexpr uint16_t kCursorY = 0x5f27;
+constexpr uint16_t kPrintAttributes = 0x5f58;
+constexpr uint16_t kCustomFont = 0x5600;
+
+enum print_mode : uint8_t {
+    mode_wide = 1u << 0,
+    mode_tall = 1u << 1,
+    mode_stripe = 1u << 2,
+    mode_invert = 1u << 3,
+    mode_solid = 1u << 4,
+    mode_custom = 1u << 5,
+};
+
+// The byte table is the MIT-licensed FAKE-08/tac08 compatibility font, stored
+// as hex to keep the generated data auditable and independent of host fonts.
+constexpr char kBuiltinFontHex[] =
+    "040805000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007070707070000000007070700000000000705070000000000050205000000000005000500000000000505050000000004060706040000000103070301000000070101010000000000040404070000000507020702000000000002000000000000000001020000000000000303000000050500000000000002050200000000000000000000000000020202000200000005050000000000000507050705000000070306070200000005040201050000000303030507000000020100000000000002010101020000000204040402000000050207020500000000020702000000000000000201000000000007000000000000000000020000000402020201000000070505050700000003020202070000000704070107000000070406040700000005050704040000000701070407000000010107050700000007040404040000000705070507000000070507040400000000020002000000000002000201000000040201020400000000070007000000000102040201000000070406000200000002050501060000000007050705000000000303050700000000070101070000000003050503000000000703010700000000070301010000000007010507000000000505070500000000070202070000000007020203000000000503050500000000010101070000000007070505000000000305050500000000060505030000000007050701000000000205030600000000070503050000000006010403000000000702020200000000050505060000000005050702000000000505070700000000050205050000000005070407000000000704010700000003010101030000000102020204000000060404040600000002050000000000000000000007000000020400000000000007050705050000000705030507000000060101010600000003050505070000000701030107000000070103010100000006010105070000000505070505000000070202020700000007020202030000000505030505000000010101010700000007070505050000000305050505000000060505050300000007050701010000000205050306000000070503050500000006010704030000000702020202000000050505050600000005050507020000000505050707000000050502050500000005050704070000000704020107000000060203020600000002020202020000000302060203000000000407010000000000020505070000007f7f7f7f7f000000552a552a55000000417f5d5d3e0000003e6363773e0000001144114411000000043c1c1e100000001c2e3e3e1c000000363e3e1c080000001c3677361c0000001c1c3e1c140000001c3e7f2a3a0000003e6763673e0000007f5d7f417f0000003808080e0e0000003e636b633e000000081c3e1c0800000000005500000000003e7363733e000000081c7f3e220000003e1c081c3e0000003e7763633e000000000552200000000000112a44000000003e6b776b3e0000007f007f007f00000055555555550000000e041e2d2600000001112125020000001c003e2018000000081e08241a0000004e043e4526000000225f12120a0000001c3e1c021c000000300c020c30000000227a2222120000000e1000023c0000003e080e011e000000020202221c000000083e080c08000000123e12021c0000003c107e0870000000040e340272000000043f1c301e0000003c434020180000003e10080810000000083804023c000000620f2239580000007a42020a72000000093e4b6d66000000324b4663620000003c4a494926000000123a123a5a000000236222221c0000000c00082a4d000000000c1221400000003d113d196d0000001c3e081e2c00000006247e2610000000244e04463c0000000a3c5a46300000001e041e4438000000247e6408080000003a565230080000000838081e2600000008023e201c00000002222224100000003c107c723000000004362c26640000003c107c4230000000324b4623120000000e641c2878000000020e12513100000000000e1008000000000a1f1a0400000000040f150d00000000020e021d0000003e20140402000000300e080808000000083e20100c0000001c0808083e000000107e181618000000043e242232000000041e083e08000000043c221008000000047c1210080000003e2020203e000000247e242010000000081204601c0000003e20101826000000047e24043800000022242010080000007c445260100000001c083e08040000004a4a20100c0000001c003e080400000004041c2404000000083e080804000000001c00003e0000003e2028300c000000083e205f080000002020100806000000102424424200000002320e023c0000003e2020100c0000000c12214000000000083e082a4d0000003e201408100000003c003e001e000000080424625e00000040281068060000003e087e0870000000744e240808000000784020207c0000001e103e101e0000001c003e201800000024242420180000001414145432000000020202320e0000007e4242427e0000003e222010080000003e203e20180000000102100807000000001510080600000000021f120400000000000e081e000000000e1e080e00000008046310080000000810630408000000";
+static_assert(sizeof(kBuiltinFontHex) == 2048u * 2u + 1u,
+              "compatibility font table must contain exactly 2 KiB");
+
+uint8_t hex_nibble(char value)
+{
+    if (value >= '0' && value <= '9') return static_cast<uint8_t>(value - '0');
+    if (value >= 'a' && value <= 'f') return static_cast<uint8_t>(value - 'a' + 10);
+    if (value >= 'A' && value <= 'F') return static_cast<uint8_t>(value - 'A' + 10);
+    return 0;
+}
+
+uint8_t builtin_font_byte(uint8_t character, int row)
+{
+    const size_t byte_index = static_cast<size_t>(character) * 8u
+                              + static_cast<size_t>(row);
+    return static_cast<uint8_t>((hex_nibble(kBuiltinFontHex[byte_index * 2u]) << 4u)
+                                | hex_nibble(kBuiltinFontHex[byte_index * 2u + 1u]));
+}
+
+int parameter(uint8_t value)
+{
+    if (value >= '0' && value <= '9') return value - '0';
+    if (value >= 'a' && value <= 'z') return value - 'a' + 10;
+    if (value >= 'A' && value <= 'Z') return value - 'A' + 10;
+    return 0;
+}
+
+struct text_state {
+    p8_core *core;
+    int x;
+    int y;
+    int home_x;
+    int home_y;
+    int previous_x;
+    int previous_y;
+    int max_x;
+    int line_height = 6;
+    int forced_width = -1;
+    int forced_height = -1;
+    int tab_width = 4;
+    int rhs = -1;
+    uint8_t foreground;
+    uint8_t background = 0;
+    uint8_t outline_color = 0;
+    uint8_t outline_neighbors = 0;
+    uint8_t mode = 0;
+    bool background_enabled = false;
+    bool underline = false;
+    bool outline_skip_interior = false;
+    uint32_t unsupported = 0;
+};
+
+std::array<uint8_t, 8> character_rows(const text_state &state, uint8_t character)
+{
+    std::array<uint8_t, 8> rows{};
+    if ((state.mode & mode_custom) != 0) {
+        const uint16_t base = static_cast<uint16_t>(kCustomFont + character * 8u);
+        for (int row = 0; row < 8; ++row) {
+            rows[row] = p8_core_peek(state.core, static_cast<uint16_t>(base + row));
+        }
+    } else {
+        for (int row = 0; row < 8; ++row) rows[row] = builtin_font_byte(character, row);
+    }
+    return rows;
+}
+
+void draw_rows(text_state &state, const std::array<uint8_t, 8> &rows,
+               int x, int y, int render_width, int render_height,
+               uint8_t foreground, bool draw_background)
+{
+    const int scale_x = (state.mode & mode_wide) != 0 ? 2 : 1;
+    const int scale_y = (state.mode & mode_tall) != 0 ? 2 : 1;
+    for (int source_y = 0; source_y < std::min(render_height, 8); ++source_y) {
+        for (int source_x = 0; source_x < std::min(render_width, 8); ++source_x) {
+            bool on = (rows[source_y] & (1u << source_x)) != 0;
+            if ((state.mode & mode_invert) != 0) on = !on;
+            for (int sy = 0; sy < scale_y; ++sy) {
+                for (int sx = 0; sx < scale_x; ++sx) {
+                    if ((state.mode & mode_stripe) != 0 && (sx != 0 || sy != 0)) continue;
+                    if (on || draw_background) {
+                        p8_gfx_text_pixel(state.core, x + source_x * scale_x + sx,
+                                          y + source_y * scale_y + sy,
+                                          on ? foreground : state.background);
+                    }
+                }
+            }
+        }
+    }
+}
+
+int custom_width_adjustment(const text_state &state, uint8_t character, int &y_offset)
+{
+    y_offset = 0;
+    if ((state.mode & mode_custom) == 0 || (p8_core_peek(state.core, 0x5605) & 1u) == 0
+        || character < 16) return 0;
+    const unsigned index = character - 16u;
+    const uint8_t packed = p8_core_peek(state.core,
+        static_cast<uint16_t>(0x5608 + index / 2u));
+    const uint8_t nibble = static_cast<uint8_t>((index & 1u) ? packed >> 4u : packed & 0x0fu);
+    y_offset = (nibble & 8u) != 0 ? -1 : 0;
+    const int width = nibble & 7u;
+    return width >= 4 ? width - 8 : width;
+}
+
+int draw_character(text_state &state, uint8_t character,
+                   const std::array<uint8_t, 8> *inline_rows = nullptr)
+{
+    const bool custom = (state.mode & mode_custom) != 0;
+    const int base_width = inline_rows ? 8 : custom
+        ? p8_core_peek(state.core, character < 0x80 ? 0x5600 : 0x5601)
+        : (character < 0x80 ? 4 : 8);
+    const int base_height = inline_rows ? 8 : custom ? p8_core_peek(state.core, 0x5602) : 5;
+    const int render_width = inline_rows ? 8 : custom ? 8
+        : (state.forced_width >= 0 ? state.forced_width + (character >= 0x80 ? 4 : 0)
+                                   : base_width);
+    const int render_height = state.forced_height >= 0 ? state.forced_height : base_height;
+    int y_adjustment = 0;
+    const int width_adjustment = inline_rows ? 0
+        : custom_width_adjustment(state, character, y_adjustment);
+    const int offset_x = custom ? static_cast<int8_t>(p8_core_peek(state.core, 0x5603)) : 0;
+    const int offset_y = custom ? static_cast<int8_t>(p8_core_peek(state.core, 0x5604)) : 0;
+    const std::array<uint8_t, 8> rows = inline_rows ? *inline_rows
+                                                    : character_rows(state, character);
+    const int draw_x = state.x + offset_x;
+    const int draw_y = state.y + offset_y + y_adjustment;
+    constexpr int neighbor_x[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+    constexpr int neighbor_y[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+    if (state.outline_neighbors != 0) {
+        for (int neighbor = 0; neighbor < 8; ++neighbor) {
+            if ((state.outline_neighbors & (1u << neighbor)) != 0) {
+                draw_rows(state, rows, draw_x + neighbor_x[neighbor],
+                          draw_y + neighbor_y[neighbor], render_width, render_height,
+                          state.outline_color, false);
+            }
+        }
+    }
+    if (!state.outline_skip_interior) {
+        draw_rows(state, rows, draw_x, draw_y, render_width, render_height,
+                  state.foreground, state.background_enabled);
+    }
+    const int scale_x = (state.mode & mode_wide) != 0 ? 2 : 1;
+    const int scale_y = (state.mode & mode_tall) != 0 ? 2 : 1;
+    const int advance = (state.forced_width >= 0 ? state.forced_width : base_width)
+                        * scale_x + width_adjustment;
+    state.line_height = std::max(state.line_height, base_height * scale_y + 1);
+    if (state.underline) {
+        for (int px = -1; px < advance; ++px) {
+            p8_gfx_text_pixel(state.core, state.x + px, state.y + state.line_height,
+                              state.foreground);
+        }
+    }
+    state.previous_x = state.x;
+    state.previous_y = state.y;
+    state.x += advance;
+    state.max_x = std::max(state.max_x, state.x);
+    return advance;
+}
+
+bool take(const uint8_t *bytes, size_t size, size_t &index, uint8_t &value)
+{
+    if (++index >= size) return false;
+    value = bytes[index];
+    return true;
+}
+
+void apply_wrap(text_state &state)
+{
+    if (state.rhs > 0 && state.x >= state.rhs) {
+        state.x = state.home_x;
+        state.y += state.line_height;
+        state.line_height = 6;
+    }
+}
+
+uint32_t unsupported_controls(const uint8_t *bytes, size_t size)
+{
+    uint32_t unsupported = 0;
+    for (size_t index = 0; index < size; ++index) {
+        const uint8_t character = bytes[index];
+        if (character == 0) break;
+        if (character == 1) {
+            index = std::min(size, index + 2u);
+        } else if (character == 2 || character == 3 || character == 4
+                   || character == 12) {
+            index = std::min(size, index + 1u);
+        } else if (character == 5 || character == 11) {
+            index = std::min(size, index + 2u);
+        } else if (character == 7) {
+            unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+        } else if (character == 6 && index + 1u < size) {
+            const uint8_t command = bytes[++index];
+            if (command >= '1' && command <= '9') {
+                unsupported |= P8_TEXT_UNSUPPORTED_DELAY;
+            } else if (command == 'd') {
+                unsupported |= P8_TEXT_UNSUPPORTED_DELAY;
+                index = std::min(size, index + 1u);
+            } else if (command == ':' || command == ';') {
+                index = std::min(size, index + 16u);
+            } else if (command == '.' || command == ',') {
+                index = std::min(size, index + 8u);
+            } else if (command == 'o') {
+                index = std::min(size, index + 3u);
+            } else if (command == 'j') {
+                index = std::min(size, index + 2u);
+            } else if (command == 'c' || command == 'r' || command == 's'
+                       || command == 'x' || command == 'y') {
+                index = std::min(size, index + 1u);
+            } else if (command == '-') {
+                if (index + 1u < size && bytes[index + 1u] == 'b') {
+                    unsupported |= P8_TEXT_UNSUPPORTED_RENDER_MODE;
+                }
+                index = std::min(size, index + 1u);
+            } else if (command == '@') {
+                if (index + 8u >= size) break;
+                size_t count = 0;
+                for (size_t digit = 5; digit <= 8; ++digit) {
+                    count = (count << 4u)
+                        | hex_nibble(static_cast<char>(bytes[index + digit]));
+                }
+                index = std::min(size, index + 8u + count);
+            } else if (command == '!') {
+                break;
+            } else if (command != 'g' && command != 'h' && command != 'w'
+                       && command != 't' && command != '=' && command != 'p'
+                       && command != 'i' && command != '#'
+                       && command != 'u') {
+                unsupported |= P8_TEXT_UNSUPPORTED_RENDER_MODE;
+            }
+        }
+    }
+    return unsupported;
+}
+
+} // namespace
+
+extern "C" {
+
+int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
+                  int x, int y, uint8_t foreground, int append_newline,
+                  p8_text_result *result)
+{
+    if (!core || (!bytes && size != 0) || !result) return 0;
+    const uint32_t unsupported = unsupported_controls(bytes, size);
+    if (unsupported != 0) {
+        *result = {x, x, y, static_cast<uint8_t>(foreground & 0x0f), unsupported};
+        return 1;
+    }
+    text_state state{core, x, y, x, y, x, y, x, 6, -1, -1, 4, -1,
+                     static_cast<uint8_t>(foreground & 0x0f)};
+    const uint8_t defaults = p8_core_peek(core, kPrintAttributes);
+    if ((defaults & 1u) != 0) {
+        if ((defaults & 0x04u) != 0) state.mode |= mode_wide;
+        if ((defaults & 0x08u) != 0) state.mode |= mode_tall;
+        if ((defaults & 0x10u) != 0) state.mode |= mode_solid;
+        if ((defaults & 0x20u) != 0) state.mode |= mode_invert;
+        if ((defaults & 0x40u) != 0) state.mode |= mode_stripe;
+        if ((defaults & 0x80u) != 0) state.mode |= mode_custom;
+        state.background_enabled = (defaults & 0x10u) != 0;
+    }
+
+    bool terminated = false;
+    for (size_t index = 0; index < size; ++index) {
+        uint8_t character = bytes[index];
+        if (character == 0) {
+            terminated = true;
+            break;
+        }
+        if (character == 1) {
+            uint8_t count = 0;
+            if (!take(bytes, size, index, count) || !take(bytes, size, index, character)) break;
+            for (int repeat = 0; repeat < parameter(count); ++repeat) draw_character(state, character);
+        } else if (character == 2) {
+            uint8_t color = 0;
+            if (!take(bytes, size, index, color)) break;
+            state.background = static_cast<uint8_t>(parameter(color) & 0x0f);
+            state.background_enabled = true;
+        } else if (character >= 3 && character <= 5) {
+            uint8_t first = 0;
+            if (!take(bytes, size, index, first)) break;
+            if (character == 3) state.x += parameter(first) - 16;
+            if (character == 4) state.y += parameter(first) - 16;
+            if (character == 5) {
+                uint8_t second = 0;
+                if (!take(bytes, size, index, second)) break;
+                state.x += parameter(first) - 16;
+                state.y += parameter(second) - 16;
+            }
+        } else if (character == 6) {
+            uint8_t command = 0;
+            if (!take(bytes, size, index, command)) break;
+            if (command >= '1' && command <= '9') {
+                state.unsupported |= P8_TEXT_UNSUPPORTED_DELAY;
+            } else if (command == 'd') {
+                uint8_t ignored = 0;
+                take(bytes, size, index, ignored);
+                state.unsupported |= P8_TEXT_UNSUPPORTED_DELAY;
+            } else if (command == 'c') {
+                uint8_t color = 0;
+                if (!take(bytes, size, index, color)) break;
+                p8_gfx_cls(core, static_cast<uint8_t>(parameter(color)));
+                state.x = state.y = state.home_x = state.home_y = 0;
+            } else if (command == 'g') {
+                state.x = state.home_x;
+                state.y = state.home_y;
+            } else if (command == 'h') {
+                state.home_x = state.x;
+                state.home_y = state.y;
+            } else if (command == 'j') {
+                uint8_t px = 0, py = 0;
+                if (!take(bytes, size, index, px) || !take(bytes, size, index, py)) break;
+                state.x = parameter(px) * 4;
+                state.y = parameter(py) * 4;
+            } else if (command == 'r' || command == 's' || command == 'x' || command == 'y') {
+                uint8_t value = 0;
+                if (!take(bytes, size, index, value)) break;
+                if (command == 'r') state.rhs = parameter(value) * 4;
+                if (command == 's') state.tab_width = std::max(1, parameter(value));
+                if (command == 'x') state.forced_width = parameter(value);
+                if (command == 'y') state.forced_height = parameter(value);
+            } else if (command == 'w') state.mode |= mode_wide;
+            else if (command == 't') state.mode |= mode_tall;
+            else if (command == '=') state.mode |= mode_stripe;
+            else if (command == 'p') state.mode |= mode_wide | mode_tall | mode_stripe;
+            else if (command == 'i') state.mode |= mode_invert;
+            else if (command == '#') state.background_enabled = true;
+            else if (command == '-') {
+                uint8_t disabled = 0;
+                if (!take(bytes, size, index, disabled)) break;
+                if (disabled == 'w') state.mode &= ~mode_wide;
+                if (disabled == 't') state.mode &= ~mode_tall;
+                if (disabled == '=') state.mode &= ~mode_stripe;
+                if (disabled == 'p') state.mode &= ~(mode_wide | mode_tall | mode_stripe);
+                if (disabled == 'i') state.mode &= ~mode_invert;
+                if (disabled == '#') state.background_enabled = false;
+            } else if (command == ':' || command == ';' || command == '.' || command == ',') {
+                std::array<uint8_t, 8> rows{};
+                const bool hexadecimal = command == ':' || command == ';';
+                for (int row = 0; row < 8; ++row) {
+                    uint8_t first = 0;
+                    if (!take(bytes, size, index, first)) break;
+                    if (hexadecimal) {
+                        uint8_t second = 0;
+                        if (!take(bytes, size, index, second)) break;
+                        rows[row] = static_cast<uint8_t>((hex_nibble(static_cast<char>(first)) << 4u)
+                                                        | hex_nibble(static_cast<char>(second)));
+                    } else rows[row] = first;
+                }
+                draw_character(state, 0x10, &rows);
+            } else if (command == '@' || command == '!') {
+                uint16_t address = 0;
+                for (int digit = 0; digit < 4; ++digit) {
+                    uint8_t value = 0;
+                    if (!take(bytes, size, index, value)) break;
+                    address = static_cast<uint16_t>((address << 4u) | hex_nibble(static_cast<char>(value)));
+                }
+                size_t count = size - index - 1u;
+                if (command == '@') {
+                    count = 0;
+                    for (int digit = 0; digit < 4; ++digit) {
+                        uint8_t value = 0;
+                        if (!take(bytes, size, index, value)) break;
+                        count = (count << 4u) | hex_nibble(static_cast<char>(value));
+                    }
+                    count = std::min(count, size - index - 1u);
+                }
+                for (size_t offset = 0; offset < count; ++offset) {
+                    p8_core_poke(core, static_cast<uint16_t>(address + offset), bytes[index + 1u + offset]);
+                }
+                index += count;
+            } else if (command == 'o') {
+                uint8_t color = 0, high = 0, low = 0;
+                if (!take(bytes, size, index, color) || !take(bytes, size, index, high)
+                    || !take(bytes, size, index, low)) break;
+                state.outline_skip_interior = color == '!';
+                state.outline_color = (color == '$' || color == '!')
+                    ? state.foreground : static_cast<uint8_t>(parameter(color) & 0x0f);
+                state.outline_neighbors = static_cast<uint8_t>(
+                    (hex_nibble(static_cast<char>(high)) << 4u) | hex_nibble(static_cast<char>(low)));
+            } else if (command == 'u') state.underline = true;
+            else state.unsupported |= P8_TEXT_UNSUPPORTED_RENDER_MODE;
+        } else if (character == 7) {
+            state.unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+        } else if (character == 8) {
+            state.x -= 4;
+        } else if (character == 9) {
+            const int stop = std::max(1, state.tab_width * 4);
+            state.x += stop - ((state.x - state.home_x) % stop);
+        } else if (character == 10) {
+            state.x = state.home_x;
+            state.y += state.line_height;
+            state.line_height = 6;
+        } else if (character == 11) {
+            uint8_t offset = 0, decorated = 0;
+            if (!take(bytes, size, index, offset) || !take(bytes, size, index, decorated)) break;
+            const int saved_x = state.x, saved_y = state.y;
+            state.x = state.previous_x + parameter(offset) % 4 - 2;
+            state.y = state.previous_y + parameter(offset) / 4 - 8;
+            draw_character(state, decorated);
+            state.x = saved_x;
+            state.y = saved_y;
+        } else if (character == 12) {
+            uint8_t color = 0;
+            if (!take(bytes, size, index, color)) break;
+            state.foreground = static_cast<uint8_t>(parameter(color) & 0x0f);
+            p8_core_poke(core, kDrawColor, state.foreground);
+        } else if (character == 13) {
+            state.x = state.home_x;
+        } else if (character == 14) {
+            state.mode |= mode_custom;
+        } else if (character == 15) {
+            state.mode &= ~mode_custom;
+        } else {
+            draw_character(state, character);
+        }
+        apply_wrap(state);
+    }
+
+    if (append_newline && !terminated) {
+        state.x = state.home_x;
+        state.y += state.line_height;
+    }
+    p8_core_poke(core, kCursorX, static_cast<uint8_t>(state.x));
+    p8_core_poke(core, kCursorY, static_cast<uint8_t>(state.y));
+    p8_core_poke(core, kDrawColor, state.foreground);
+    result->rightmost_x = state.max_x;
+    result->cursor_x = state.x;
+    result->cursor_y = state.y;
+    result->foreground = state.foreground;
+    result->unsupported = state.unsupported;
+    return 1;
+}
+
+} // extern "C"

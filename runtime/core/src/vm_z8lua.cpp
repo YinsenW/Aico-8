@@ -1,6 +1,7 @@
 #include "p8/vm.h"
 #include "p8/audio.h"
 #include "p8/raster.h"
+#include "p8/text.h"
 
 #include "lauxlib.h"
 #include "lua.h"
@@ -754,6 +755,21 @@ int api_color(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     vm->draw_color_raw = raw_number(state, 1, 6 << 16);
+    p8_core_poke(vm->core, 0x5f25,
+                 static_cast<uint8_t>(vm->draw_color_raw >> 16));
+    return 0;
+}
+
+int api_cursor(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    p8_core_poke(vm->core, 0x5f26, static_cast<uint8_t>(integer(state, 1)));
+    p8_core_poke(vm->core, 0x5f27, static_cast<uint8_t>(integer(state, 2)));
+    if (!lua_isnoneornil(state, 3)) {
+        vm->draw_color_raw = raw_number(state, 3);
+        p8_core_poke(vm->core, 0x5f25,
+                     static_cast<uint8_t>(vm->draw_color_raw >> 16));
+    }
     return 0;
 }
 
@@ -1053,20 +1069,33 @@ int api_print(lua_State *state)
     p8_draw_command command{};
     command.opcode = P8_DRAW_PRINT;
     command.flags = static_cast<uint16_t>(argument_count);
+    const bool explicit_position = optional_argument_count >= 2;
     if (optional_argument_count == 1) {
         vm->draw_color_raw = raw_number(state, 2);
-    } else {
+    } else if (explicit_position) {
         command.args[0] = raw_number(state, 2);
         command.args[1] = raw_number(state, 3);
         if (optional_argument_count >= 3) {
             vm->draw_color_raw = raw_number(state, 4);
         }
+    } else {
+        command.args[0] = static_cast<int32_t>(p8_core_peek(vm->core, 0x5f26) << 16);
+        command.args[1] = static_cast<int32_t>(p8_core_peek(vm->core, 0x5f27) << 16);
     }
     command.args[2] = vm->draw_color_raw;
-    p8_core_emit_draw_payload(vm->core, &command, text, size);
-    const int32_t rightmost = command.args[0] + static_cast<int32_t>(size * 4u << 16);
+    p8_text_result print_result{};
+    p8_text_print(vm->core, reinterpret_cast<const uint8_t *>(text), size,
+                  command.args[0] >> 16, command.args[1] >> 16,
+                  static_cast<uint8_t>(vm->draw_color_raw >> 16),
+                  explicit_position ? 0 : 1, &print_result);
+    vm->draw_color_raw = static_cast<int32_t>(print_result.foreground << 16);
     lua_pop(state, 1);
-    lua_pushnumber(state, lua_Number::frombits(rightmost));
+    if (print_result.unsupported != P8_TEXT_UNSUPPORTED_NONE) {
+        return luaL_error(state,
+            "effectful P8SCII delay/audio/render control is not conformance-qualified");
+    }
+    p8_core_emit_draw_payload(vm->core, &command, text, size);
+    lua_pushnumber(state, lua_Number::frombits(print_result.rightmost_x << 16));
     return 1;
 }
 
@@ -1276,6 +1305,7 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("sget", api_sget);
     vm->install("sset", api_sset);
     vm->install("color", api_color);
+    vm->install("cursor", api_cursor);
     vm->install("line", api_line);
     vm->install("rect", api_rect);
     vm->install("rectfill", api_rectfill);
@@ -1337,6 +1367,9 @@ int p8_vm_load_source(p8_vm *vm, const char *source, size_t size, const char *ch
     vm->draw_color_raw = 6 << 16;
     vm->line_cursor_ready = false;
     vm->tline_fractional_bits = 13;
+    p8_core_poke(vm->core, 0x5f25, 6);
+    p8_core_poke(vm->core, 0x5f26, 0);
+    p8_core_poke(vm->core, 0x5f27, 0);
     const char *name = chunk_name ? chunk_name : "@cart";
     const std::string normalized_source = normalize_p8scii_source_literals(source, size);
     if (luaL_loadbuffer(vm->state, normalized_source.data(), normalized_source.size(), name) != LUA_OK
