@@ -49,6 +49,7 @@ pnpm verify:hd-identity
 pnpm verify:hd-presentation
 pnpm verify:typography
 pnpm verify:text-completeness-private
+pnpm verify:typography-accessibility-private
 pnpm verify:text-run
 pnpm verify:replay
 pnpm verify:game-module
@@ -61,13 +62,12 @@ pnpm verify:web
 pnpm verify:private-remake
 pnpm verify:native-cart-private
 ```
-
 Private selectors strengthen local evidence but never masquerade as public CI.
 `pnpm verify:batch` rejects shared identities, concurrent writers, invalid lanes,
 evidence-free acceptance, and hidden partial failure before assembly.
 `pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.
 The host keeps the reviewer private key outside the Agent workspace; the runner consumes only the pinned public trust profile and detached signed decision.
-`pnpm verify:typography` validates routing, font evidence, contours, generated metrics, fit goldens, resource hashes, OS independence, and public completeness mutations; `pnpm verify:text-completeness-private` binds the private full replay/probes.
+`pnpm verify:typography` validates routing, font evidence, contours, generated metrics, fit goldens, resource hashes, OS independence, and public completeness/accessibility mutations; `pnpm verify:text-completeness-private` binds the private full replay/probes. `pnpm verify:typography-accessibility-private` binds the rebuilt private package to declared CSS-pixel floors, contrast, delivery-profile layout, language coverage, source-derived assistive descriptions, zero compatibility mutations, and an independent human readability decision.
 Regenerate fonts only via `pnpm build:typography-assets`. `pnpm verify:text-run` adds Native/Wasm identity.
 `pnpm verify:qualification-private` requires `AICO8_PRIVATE_WORKSPACE`; it must
 reject hooks, cart/state mutation, trace gaps, skipped logical updates, missing

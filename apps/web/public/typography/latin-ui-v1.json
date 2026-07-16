@@ -368,6 +368,7 @@
       },
       "fit": {
         "minSizePx": 36,
+        "accessibilityMinCssPx": 24,
         "overflow": "fail",
         "maxLines": 2
       },
@@ -485,6 +486,7 @@
       },
       "fit": {
         "minSizePx": 24,
+        "accessibilityMinCssPx": 16,
         "overflow": "fail",
         "maxLines": 1
       },
@@ -601,6 +603,7 @@
       },
       "fit": {
         "minSizePx": 22,
+        "accessibilityMinCssPx": 16,
         "overflow": "wrap",
         "maxLines": 4
       },
@@ -717,6 +720,7 @@
       },
       "fit": {
         "minSizePx": 24,
+        "accessibilityMinCssPx": 14,
         "overflow": "fail",
         "maxLines": 1
       },
@@ -833,6 +837,7 @@
       },
       "fit": {
         "minSizePx": 20,
+        "accessibilityMinCssPx": 16,
         "overflow": "wrap",
         "maxLines": 6
       },

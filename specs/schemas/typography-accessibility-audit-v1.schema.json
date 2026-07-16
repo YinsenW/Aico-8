@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/typography-accessibility-audit-v1.schema.json",
+  "title": "Aico 8 typography accessibility audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "status", "gameId", "sourceSha256", "typographyManifestSha256",
+    "textInventorySha256", "languageCoverage", "unsupportedScripts", "deliveryProfiles",
+    "assistiveText", "manualReadability", "regressions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "aico8.typography-accessibility-audit.v1" },
+    "status": { "enum": ["draft", "accepted"] },
+    "gameId": { "$ref": "#/$defs/id" },
+    "sourceSha256": { "$ref": "#/$defs/hash" },
+    "typographyManifestSha256": { "$ref": "#/$defs/hash" },
+    "textInventorySha256": { "$ref": "#/$defs/hash" },
+    "languageCoverage": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["locale", "script", "status", "missingCodePoints"],
+        "properties": {
+          "locale": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$" },
+          "script": { "$ref": "#/$defs/script" },
+          "status": { "const": "complete" },
+          "missingCodePoints": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 1114111 } }
+        }
+      }
+    },
+    "unsupportedScripts": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["script", "reason"],
+        "properties": {
+          "script": { "$ref": "#/$defs/script" },
+          "reason": { "enum": ["no-bundled-font-coverage", "no-human-readability-review"] }
+        }
+      }
+    },
+    "deliveryProfiles": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "viewport", "samples"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "viewport": {
+            "type": "object", "additionalProperties": false, "required": ["width", "height"],
+            "properties": { "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 } }
+          },
+          "samples": {
+            "type": "array", "minItems": 1,
+            "items": {
+              "type": "object", "additionalProperties": false,
+              "required": [
+                "id", "role", "fontSizeCssPx", "minimumCssPx", "measuredWidthCssPx", "availableWidthCssPx",
+                "measuredLineHeightCssPx", "availableHeightCssPx", "foreground", "background",
+                "contrastRatio", "requiredContrastRatio", "fits", "overflowed"
+              ],
+              "properties": {
+                "id": { "$ref": "#/$defs/id" },
+                "role": { "enum": ["display", "menu", "dialogue", "hud-number", "symbol", "diagnostic", "localized-body"] },
+                "fontSizeCssPx": { "type": "number", "minimum": 12 },
+                "minimumCssPx": { "type": "number", "minimum": 12 },
+                "measuredWidthCssPx": { "type": "number", "exclusiveMinimum": 0 },
+                "availableWidthCssPx": { "type": "number", "exclusiveMinimum": 0 },
+                "measuredLineHeightCssPx": { "type": "number", "exclusiveMinimum": 0 },
+                "availableHeightCssPx": { "type": "number", "exclusiveMinimum": 0 },
+                "foreground": { "$ref": "#/$defs/color" },
+                "background": { "$ref": "#/$defs/color" },
+                "contrastRatio": { "type": "number", "minimum": 1, "maximum": 21 },
+                "requiredContrastRatio": { "enum": [3, 4.5] },
+                "fits": { "type": "boolean" },
+                "overflowed": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "assistiveText": {
+      "type": "object", "additionalProperties": false,
+      "required": ["descriptionsObserved", "sceneIds", "missingSceneIds", "unprovenDescriptionIds", "compatibilityStateMutations"],
+      "properties": {
+        "descriptionsObserved": { "type": "integer", "minimum": 1 },
+        "sceneIds": { "$ref": "#/$defs/ids" },
+        "missingSceneIds": { "$ref": "#/$defs/ids" },
+        "unprovenDescriptionIds": { "$ref": "#/$defs/ids" },
+        "compatibilityStateMutations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "manualReadability": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["status"], "properties": { "status": { "const": "pending" } } },
+        {
+          "type": "object", "additionalProperties": false, "required": ["status", "reviewer", "decisionSha256"],
+          "properties": { "status": { "const": "approved" }, "reviewer": { "type": "string", "minLength": 1 }, "decisionSha256": { "$ref": "#/$defs/hash" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["status", "reviewer", "reason", "decisionSha256"],
+          "properties": {
+            "status": { "const": "rejected" }, "reviewer": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }, "decisionSha256": { "$ref": "#/$defs/hash" }
+          }
+        }
+      ]
+    },
+    "regressions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["category", "rejected"],
+        "properties": {
+          "category": { "enum": ["undersized-text", "low-contrast", "unsupported-code-point", "unproven-assistive-copy", "compatibility-state-drift"] },
+          "rejected": { "const": true }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "script": { "type": "string", "pattern": "^[A-Z][a-z]{3}$" },
+    "color": { "type": "string", "pattern": "^#[a-fA-F0-9]{6}$" },
+    "ids": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+  }
+}

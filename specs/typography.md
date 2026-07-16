@@ -154,8 +154,24 @@ custom, inline, button, effectful, and ambiguous runs remain `review-required`.
 - HUD numbers use tabular figures when their role requires stable visual width.
 - Minimum sizes, contrast, focus treatment, safe areas, and language expansion
   are validated at 1024 and each delivery profile.
+- Each semantic role declares an `accessibilityMinCssPx` floor. Profile scaling
+  may enlarge text but never reduce it below that CSS-pixel floor; a box that
+  cannot fit at the floor fails closed instead of rendering smaller or blurred.
+- Opaque sRGB foreground/background pairs use WCAG relative luminance: normal
+  text requires 4.5:1, while qualified large text requires 3:1.
 - An accessible text mirror may expose meaning to screen readers, but it does not
   become an input or timing authority for the compatibility core.
+
+The first qualified locale scope is `en-US` / `Latn`, bound to the complete
+printable-ASCII inventory. `Hans`, `Hant`, `Jpan`, and `Hang` remain explicitly
+unsupported because no bundled coverage and human readability evidence exist;
+the runtime fails closed rather than using an OS fallback. Adding a locale is a
+new manifest/audit decision, not an inference from a system-installed font.
+
+Assistive descriptions are structured `state-derived-accessibility` records
+with a scene ID and source state/token evidence IDs. The DOM announcer accepts
+only that evidence-bearing path. It never writes into compatibility state and
+the complete HD-on/HD-off replay must report zero state mutations.
 
 ## Dust Bunny first mapping
 

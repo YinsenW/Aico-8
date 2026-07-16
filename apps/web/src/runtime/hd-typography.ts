@@ -168,8 +168,11 @@ export class BundledTypography {
     const asset = this.#asset(role.fontAssetIds[0]!);
     const metrics = this.#metrics.get(asset.id) ?? fail(`missing metrics for ${asset.id}`);
     const advances = new Map(metrics.glyphs.map((glyph) => [glyph.codePoint, glyph.advanceWidth]));
-    const preferredSize = role.metrics.sizePx * request.profileScale;
-    const minimumSize = role.fit.minSizePx * request.profileScale;
+    const minimumSize = Math.max(
+      role.fit.minSizePx * request.profileScale,
+      role.fit.accessibilityMinCssPx,
+    );
+    const preferredSize = Math.max(role.metrics.sizePx * request.profileScale, minimumSize);
     const lineHeightRatio = role.metrics.lineHeightPx / role.metrics.sizePx;
     const trackingRatio = role.metrics.trackingPx / role.metrics.sizePx;
     const widthAt = (copy: string, size: number): number => {

@@ -88,7 +88,12 @@ export interface TypographyRoleV1 {
   readonly fontAssetIds: readonly string[];
   readonly requiredCodePoints: readonly number[];
   readonly metrics: Readonly<{ sizePx: number; weight: number; trackingPx: number; lineHeightPx: number }>;
-  readonly fit: Readonly<{ minSizePx: number; overflow: "wrap" | "ellipsis" | "fail"; maxLines: number }>;
+  readonly fit: Readonly<{
+    minSizePx: number;
+    accessibilityMinCssPx: number;
+    overflow: "wrap" | "ellipsis" | "fail";
+    maxLines: number;
+  }>;
   readonly osFallback: false;
 }
 
@@ -444,8 +449,12 @@ function validateRole(value: unknown, index: number, errors: string[]): RoleSumm
   }
   const fit = record(roleValue.fit, `${path}.fit`, errors);
   if (fit) {
-    exactKeys(fit, ["minSizePx", "overflow", "maxLines"], `${path}.fit`, errors);
+    exactKeys(fit, ["minSizePx", "accessibilityMinCssPx", "overflow", "maxLines"], `${path}.fit`, errors);
     if (typeof fit.minSizePx !== "number" || (fit.minSizePx as number) <= 0) errors.push(`${path}.fit.minSizePx must be positive`);
+    if (typeof fit.accessibilityMinCssPx !== "number" || !Number.isFinite(fit.accessibilityMinCssPx)
+      || (fit.accessibilityMinCssPx as number) < 12) {
+      errors.push(`${path}.fit.accessibilityMinCssPx must be a finite CSS-pixel floor of at least 12`);
+    }
     if (!new Set(["wrap", "ellipsis", "fail"]).has(fit.overflow as string)) errors.push(`${path}.fit.overflow is not supported`);
     if (!Number.isSafeInteger(fit.maxLines) || (fit.maxLines as number) < 1) errors.push(`${path}.fit.maxLines must be a positive integer`);
   }

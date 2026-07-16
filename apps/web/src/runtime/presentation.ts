@@ -1,5 +1,7 @@
 import type { Application } from "pixi.js";
 
+import type { SourceDerivedAccessibleDescriptionV1 } from "@aico8/contracts";
+
 import type { Aico8Kernel, DrawCommand } from "./kernel.js";
 
 export interface PresentationDiagnostics {
@@ -96,7 +98,9 @@ export interface PresentationRenderer {
   update(kernel: Aico8Kernel, commands: readonly DrawCommand[]): void;
   animate(deltaMilliseconds: number): void;
   diagnostics?(): PresentationDiagnostics | undefined;
+  /** @deprecated Accepted builds use accessibleDescriptionEvidence instead. */
   accessibleDescription?(): string | undefined;
+  accessibleDescriptionEvidence?(): SourceDerivedAccessibleDescriptionV1 | undefined;
   destroy?(): void;
 }
 
