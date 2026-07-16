@@ -19,7 +19,7 @@
     "programId": { "$ref": "#/$defs/id" },
     "referenceGameId": { "$ref": "#/$defs/id" },
     "trialGameId": { "$ref": "#/$defs/id" },
-    "status": { "enum": ["classified-human-stops-open", "supervised-transfer-closed"] },
+    "status": { "enum": ["classified-human-stops-open", "project-owner-retained-trial", "supervised-transfer-closed"] },
     "supervisedTransferLedgerSha256": {
       "oneOf": [
         { "type": "null" },

@@ -4,7 +4,7 @@
   "status": "representative-gameplay-approved-retained-supervised-trial",
   "recorded_on": "2026-07-16",
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
-  "scope": "Five same-state checkpoints, four representative temporal sequences, and an active 1024-square nested-path Web run were approved for a retained supervised research trial; this is not complete-game coverage, a detached signed ledger, or release authorization.",
+  "scope": "Five same-state checkpoints, four representative temporal sequences, and an active 1024-square nested-path Web run were approved for a retained supervised research trial; this is not complete-game coverage or release authorization.",
   "systemic_change": [
     "The accepted source-semantic visuals and source-derived visibility compositing are preserved from v19d.",
     "Every packaged HTML, CSS, kernel, font, profile, game-module, and service-worker URL resolves relative to its deployment directory.",
@@ -35,13 +35,12 @@
     "authority_mode": "interactive-user-message",
     "representative_gameplay": "approved",
     "final_scope": "retain-supervised-trial",
-    "portable_signature": false,
-    "limitations": "The user-channel decision advances this local human-guided workflow but cannot substitute for a detached signed decision in CI, authorize publication, or prove complete-game review."
+    "detached_signature": false,
+    "limitations": "The recorded project-owner decision closes only this local retained-trial scope; it cannot authorize publication or prove complete-game review."
   },
   "next_human_gate": null,
   "forbidden_claims": [
     "complete-game-reviewed",
-    "portable-signed-ledger-closed",
     "release-ready",
     "publication-authorized"
   ]

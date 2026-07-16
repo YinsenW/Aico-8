@@ -12,7 +12,10 @@ export const TRANSFER_FINDING_CLASSIFICATIONS = [
 ] as const;
 
 export type TransferFindingClassification = typeof TRANSFER_FINDING_CLASSIFICATIONS[number];
-export type TransferFindingsStatus = "classified-human-stops-open" | "supervised-transfer-closed";
+export type TransferFindingsStatus =
+  | "classified-human-stops-open"
+  | "project-owner-retained-trial"
+  | "supervised-transfer-closed";
 
 export interface TransferFindingV1 {
   readonly id: string;
@@ -123,14 +126,17 @@ export function validateTransferFindings(value: unknown): TransferFindingsValida
   idValue(root.referenceGameId, "$.referenceGameId", errors);
   idValue(root.trialGameId, "$.trialGameId", errors);
   if (root.referenceGameId === root.trialGameId) errors.push("$.trialGameId must differ from $.referenceGameId");
-  if (root.status !== "classified-human-stops-open" && root.status !== "supervised-transfer-closed") {
+  if (root.status !== "classified-human-stops-open"
+    && root.status !== "project-owner-retained-trial"
+    && root.status !== "supervised-transfer-closed") {
     errors.push("$.status is unsupported");
   }
-  if (root.status === "classified-human-stops-open") {
+  if (root.status === "classified-human-stops-open" || root.status === "project-owner-retained-trial") {
     if (root.supervisedTransferLedgerSha256 !== null) {
-      errors.push("$.supervisedTransferLedgerSha256 must be null while human stops remain open");
+      errors.push("$.supervisedTransferLedgerSha256 must be null without a detached closed ledger");
     }
-  } else if (typeof root.supervisedTransferLedgerSha256 !== "string" || !HASH.test(root.supervisedTransferLedgerSha256)) {
+  } else if (root.status === "supervised-transfer-closed"
+    && (typeof root.supervisedTransferLedgerSha256 !== "string" || !HASH.test(root.supervisedTransferLedgerSha256))) {
     errors.push("$.supervisedTransferLedgerSha256 must bind the closed supervised-transfer ledger");
   }
 

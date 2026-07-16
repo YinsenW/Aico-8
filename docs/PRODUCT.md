@@ -222,9 +222,7 @@ Create the final Skill only after the reference and supervised transfer trial
 stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for
 human approval of semantics, art direction, representative gameplay, and final
 scope, and cannot self-accept or self-release. Runtime and policy stay in software.
-An explicit user-channel decision may advance a local interactive research
-session, but portable CI or remote-agent acceptance requires the detached signed
-decision path. Neither mode grants publication rights.
+An explicit project-owner decision bound to the frozen proposal may advance the human-guided research workflow when its decision and scope are recorded in durable evidence. Detached signatures are optional for future remote review, not a prerequisite for local conversion. No approval mode grants publication rights or proves complete-game validation.
 Contracts: all `JOB-*` pipeline contracts, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
 ## Private Dust Bunny acceptance boundary
 The detailed behavioral reference, input replay, captures, and cart-specific

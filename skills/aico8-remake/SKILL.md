@@ -60,20 +60,17 @@ At every stop:
 1. Freeze a valid `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, including exact transfer
    identity, evidence hashes, required stop criteria, revision lineage,
    limitations, forbidden claims, and Agent authority limits.
-2. Export `DATA-HUMAN-STOP-REQUEST-001` when a trusted signing host is configured.
+2. Export `DATA-HUMAN-STOP-REQUEST-001` when a detached signing workflow is configured.
 3. Present the bounded evidence and forbidden claims to the human.
 4. Stop sampling. Never create, infer, edit, or replace a human decision.
-5. Resume only from an explicit human approval or revision request bound to the
-   frozen proposal. The trusted host pins the accepted manifest identity, trust
-   profile, reviewer keys, detached decisions, and rollback-resistant ledger
-   head; the Agent may consume but never create, edit, select, or replace them.
-   A fresh user message guides only the current local session: never pass it to
-   `apply`, serialize it as a signed decision, close portable acceptance, or
-   treat it as publication authority.
-   Portable acceptance additionally requires a verified
-   `DATA-HOST-AUTHORITY-RECEIPT-001` that extends the latest head independently
-   fetched from the protected host. A local receipt or hash chain is not fresh-head
-   evidence and cannot close the portable gate.
+5. Resume only from an explicit project-owner approval or revision request bound
+   to the frozen proposal. Record the exact decision, proposal identity, scope,
+   and outcome in durable project evidence. The Agent may consume that decision
+   but never create, infer, edit, select, or replace it. A local approval closes
+   only the declared research/trial stop; it is not complete-game proof,
+   publication authority, or a rights decision. A detached signed decision may
+   be used when a remote workflow genuinely needs it, but is not a prerequisite
+   for the local human-guided remake loop.
 6. On revision, preserve the rejected attempt and regenerate only evidence bound
    to changed inputs.
 

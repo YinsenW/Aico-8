@@ -96,6 +96,12 @@ describe("supervised transfer findings contract", () => {
     expect(validateTransferFindings(record).errors.join("\n")).toMatch(/must bind the closed supervised-transfer ledger/);
   });
 
+  it("allows a recorded project-owner retained trial without inventing a detached ledger", () => {
+    const record = structuredClone(validRecord()) as unknown as { status: string };
+    record.status = "project-owner-retained-trial";
+    expect(validateTransferFindings(record)).toEqual({ valid: true, errors: [] });
+  });
+
   it("validates the sanitized Dust Bunny to Steps finding record and every public evidence path", () => {
     const evidencePath = path.join(repository, "governance/evidence/dust-steps-transfer-findings.json");
     const record = JSON.parse(fs.readFileSync(evidencePath, "utf8")) as TransferFindingsV1;

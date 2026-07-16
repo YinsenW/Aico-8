@@ -142,7 +142,7 @@ first high-risk art, representative gameplay/motion, and final scope/rights.
 Agents batch deterministic work between pauses. Use representative checkpoints;
 do not solve the full game or regenerate full evidence per edit. A promoted
 artifact needs an ordinary-input route replayed twice before full selectors.
-Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable findings require shared code/tests; source-relative findings remain private-adapter work attached to a human stop. A fresh user message may decide a frozen packet only for that local session; it cannot close a portable ledger, authorize CI/publication, or prove complete coverage. Use detached Ed25519 outside that host, and stop sampling while either decision is pending.
+Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable findings require shared code/tests; source-relative findings remain private-adapter work attached to a human stop. An explicit project-owner message may decide a frozen packet when its proposal identity, scope, decision, and outcome are recorded in durable evidence. It cannot authorize publication or prove complete coverage. Detached signing remains optional for remote review. Stop sampling while either decision is pending.
 ## Recovery after interruption or failure
 
 1. Re-read terminal output and `git status`; do not assume an interrupted command
@@ -158,10 +158,7 @@ Record reference-versus-trial learning in DATA-TRANSFER-FINDINGS-001: reusable f
 After an uncatchable batch crash, disprove a lock's live owner before manual
 removal; never delete an ambiguous lock. The supervised runner uses the same rule,
 idempotently resumes identical bytes, and holds no lock while awaiting a human.
-Portable acceptance requires an Agent-inaccessible host to pin authority and a rollback-resistant head; local decisions remain non-portable. The provider-neutral core in `apps/human-authority-host/` must pass `pnpm verify:supervised-transfer`, including CAS, idempotency, crash-window, ETag, and rollback tests.
-After a commit/anchor failure, retry the identical operation ID and bytes or run protected reconciliation; never mint a replacement operation for the same decision.
-Only a protected deployment proves key isolation and external anchoring. CI must query its latest verified head and never treat a local receipt or passing core test as freshness proof.
-Run `pnpm probe:human-authority-deployment` only in protected CI with the pinned profile path, HTTPS base URL, and separate administrator/Agent/reviewer tokens; retain its JSON output with provider policy and WORM evidence.
+Local supervised research uses the project owner's explicit recorded decision; do not add external identity, signing, or cloud infrastructure unless a later remote multi-maintainer requirement explicitly needs it.
 ## Diagnosis
 
 - Compatibility mismatch: isolate update number, input trace, RAM/state snapshot,

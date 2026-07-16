@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "subject": "Aico 8 human-guided remake Skill",
-  "status": "implemented-human-gated-portable-host-pending",
+  "status": "verified-human-guided-local-workflow",
   "recorded_on": "2026-07-16",
   "basis": {
     "accepted_reference": "Dust Bunny private research qualification",
@@ -15,15 +15,7 @@
     "skills/aico8-remake/references/job-catalog.md",
     "scripts/verify-skill-package.mjs",
     "packages/contracts/src/supervised-review-proposal.ts",
-    "packages/contracts/src/host-authority.ts",
-    "apps/human-authority-host/src/api.ts",
-    "apps/human-authority-host/src/service.ts",
-    "apps/human-authority-host/src/ports.ts",
-    "apps/human-authority-host/src/deployment-probe.ts",
-    "scripts/probe-human-authority-deployment.ts",
     "specs/schemas/supervised-review-proposal-v1.schema.json",
-    "specs/schemas/host-authority-profile-v1.schema.json",
-    "specs/schemas/host-authority-receipt-v1.schema.json",
     "scripts/run-supervised-transfer.ts"
   ],
   "verified_properties": [
@@ -33,10 +25,8 @@
     "The Web workflow retains the 1024-square layout and scope-relative PWA requirements.",
     "Detailed commands route to versioned repository Jobs and selectors.",
     "A fresh read-only Agent stopped at semantic-intent instead of selecting an ambiguous fixture or inferring approval.",
-    "Every portable stop proposal now binds transfer identity, immediate revision lineage, required criteria, content-addressed evidence, claim limits, and Agent authority limits before submission.",
-    "Pinned host profiles deny all Agent mutation authority, while signed receipts bind registration, challenge, and committed monotonic-head transitions to the independently fetched prior head.",
-    "The provider-neutral host core injects authenticated actors outside request JSON, enforces conditional ETag heads, and passes reviewer-only, concurrent CAS, idempotency, crash-window recovery, signature, and rollback-detection tests.",
-    "A remote black-box probe verifies three separated identity channels, signed registration/challenge/decision receipts, stale-head rejection, idempotent retry, and a fresh externally anchored latest head without embedding provider credentials."
+    "Every stop proposal binds transfer identity, immediate revision lineage, required criteria, content-addressed evidence, claim limits, and Agent authority limits before submission.",
+    "The project owner's explicit Steps v19e approval is recorded with the frozen scope and closes only the retained supervised research trial."
   ],
   "selectors": [
     "pnpm verify:skill",
@@ -44,8 +34,8 @@
     "pnpm verify:governance"
   ],
   "limitations": [
-    "Interactive user approval is session-local and not a portable detached signature.",
-    "The host contracts, provider-neutral core, and remote probe are implemented, but a separately protected deployment must still prove real identity/key isolation plus production crash/WORM policy evidence before portable acceptance can be claimed.",
+    "The recorded project-owner approval is not a detached signature and is valid only for the declared project research scope.",
+    "A future remote multi-maintainer workflow may add detached signing without changing the local human-guided conversion contract.",
     "Steps remains a private research/test trial and is not a complete-game or publication-authorized release."
   ]
 }

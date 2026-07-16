@@ -4,7 +4,9 @@
 
 Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and adds a separate HD presentation path.
 
-The product is TypeScript-first. C++ is restricted to a small deterministic kernel compiled natively and to WebAssembly; ADR 0001 owns the reasoning and proof gates.
+The product is TypeScript-first. C++ is restricted to a small deterministic
+kernel compiled both natively and to WebAssembly. The reasoning and proof gates
+are recorded in `docs/decisions/0001-language-boundary.md`.
 
 Delivery is internally modular and externally standalone. ADR 0003 owns the
 decision to ship a statically bound single game first, add fixed collections
@@ -14,10 +16,7 @@ The future Skill is intentionally outside the trust boundary of simulation. It
 may select carts, run analysis, propose mappings, generate assets, and launch
 tests, but only versioned tools and deterministic runtime code decide whether a
 remake is compatible. The maintained `skills/aico8-remake/` package is likewise
-outside the authority boundary. A local host user channel supplies bounded human
-pauses; portable acceptance uses detached signatures, and neither grants release.
-The external human-authority host is a separate security domain. `apps/human-authority-host/` owns its provider-neutral transaction/API core, fault tests, and signed black-box deployment probe; only a protected deployment may supply reviewer authentication, receipt signing, atomic storage, and the independent rollback anchor.
-
+outside the authority boundary. The local user channel records bounded project-owner decisions in durable evidence; detached signatures remain optional for future remote review, and neither mode grants release.
 ## Delivery topology
 
 - An internal game module contains one remake's compatible payload, HD mapping,
@@ -233,7 +232,7 @@ contracts rather than shared implementation details:
 - semantic text-run and typography-manifest schemas;
 - HD mapping manifest and asset pack;
 - batch, internal game-module, fixed-collection, display, and target profiles;
-- stop-specific review proposals, supervised-transfer ledger, unsigned signing requests, signed human stops, trusted-host profiles/receipts, and classified reusable versus source-relative transfer findings;
+- stop-specific review proposals, supervised-transfer ledger, optional signing requests and signed stops, plus classified reusable versus source-relative transfer findings;
 - target profile, technical validation report, and release manifest.
 These contracts make it possible to improve the AI orchestration without
 silently changing game behavior.

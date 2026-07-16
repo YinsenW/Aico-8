@@ -151,19 +151,6 @@ export {
   type HumanStopRequestValidationResult,
 } from "./human-stop-request.js";
 export {
-  HOST_AUTHORITY_PROFILE_SCHEMA_VERSION,
-  HOST_AUTHORITY_RECEIPT_SCHEMA_VERSION,
-  hostAuthorityProfileSha256,
-  hostAuthorityReceiptSha256,
-  hostAuthorityReceiptSigningBytes,
-  validateHostAuthorityProfile,
-  validateHostAuthorityReceipt,
-  verifyHostAuthorityReceipt,
-  type HostAuthorityProfileV1,
-  type HostAuthorityReceiptV1,
-  type HostAuthorityValidationResult,
-} from "./host-authority.js";
-export {
   SUPERVISED_TRANSFER_SCHEMA_VERSION,
   applySupervisedHumanDecision,
   createSupervisedTransfer,
