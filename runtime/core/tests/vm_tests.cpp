@@ -772,6 +772,53 @@ end
     p8_core_destroy(core);
 }
 
+void test_embedded_colour_patterns_and_inversion_reach_raster_through_lua()
+{
+    constexpr char source[] = R"p8lua(
+function verify_embedded_fill()
+ pal() fillp() cls(0)
+ poke(0x5f34,1)
+ rectfill(0,10,3,13,0x104e.abcd)
+ reg_low=peek(0x5f31) reg_high=peek(0x5f32) reg_flags=peek(0x5f33)
+ row_0=pget(0,10) row_1=pget(1,10) row_2=pget(2,10) row_3=pget(3,10)
+ fillp() color(0x104e.abcd) rectfill(0,14,3,14)
+ current_color=peek(0x5f25) current_0=pget(0,14) current_1=pget(1,14)
+ fillp() cls(1) clip(0,20,8,8) poke(0x5f34,2)
+ circfill(3,23,1,0x1808.0000)
+ outside=pget(0,20) inside=pget(3,23)
+ clip() poke(0x5f34,1) cls(1)
+ rectfill(2,2,3,3,0x1808.0000)
+ embedded_outside=pget(0,0) embedded_inside=pget(2,2)
+ setting_after=peek(0x5f34)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, source, sizeof(source) - 1,
+                                   "@embedded-fill"));
+    assert(p8_vm_call(vm, "verify_embedded_fill"));
+    const auto integer_global = [vm](const char *name) {
+        int32_t raw = 0;
+        assert(p8_vm_get_global_raw(vm, name, &raw));
+        return raw >> 16;
+    };
+    assert(integer_global("reg_low") == 0xcd);
+    assert(integer_global("reg_high") == 0xab);
+    assert(integer_global("reg_flags") == 0);
+    assert(integer_global("row_0") == 4 && integer_global("row_1") == 4);
+    assert(integer_global("row_2") == 14 && integer_global("row_3") == 14);
+    assert(integer_global("current_color") == 0x4e);
+    assert(integer_global("current_0") == 4 && integer_global("current_1") == 4);
+    assert(integer_global("outside") == 8 && integer_global("inside") == 1);
+    assert(integer_global("embedded_outside") == 8);
+    assert(integer_global("embedded_inside") == 1);
+    assert(integer_global("setting_after") == 1);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_update_error_is_sticky_and_draw_is_skipped()
 {
     constexpr char source[] = R"p8lua(
@@ -868,6 +915,7 @@ int main(int argc, char **argv)
     test_tline_api_tracks_precision_and_draws_from_map_samples();
     test_static_p8scii_executes_pixels_metrics_memory_and_custom_fonts();
     test_secondary_palette_reaches_sprite_and_global_raster_through_lua();
+    test_embedded_colour_patterns_and_inversion_reach_raster_through_lua();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"

@@ -37,6 +37,17 @@ void p8_gfx_palt(p8_core *core, uint8_t color, int transparent);
 void p8_gfx_palt_reset(p8_core *core);
 int p8_gfx_is_transparent(const p8_core *core, uint8_t color);
 int32_t p8_gfx_fillp(p8_core *core, int32_t raw_pattern);
+/*
+ * Resolves a PICO-8 16.16 colour argument. When 0x5f34 bit 0 and the
+ * argument's 0x1000.0000 marker are both set, this also installs the embedded
+ * fill pattern and fillp mode bits. The returned byte is the ordinary two-
+ * colour value consumed by primitive raster calls.
+ */
+uint8_t p8_gfx_apply_color_argument(p8_core *core, int32_t raw_color);
+/* Reports a one-call embedded inversion request; 0x5f34 bit 1 remains the
+ * persistent inversion control used directly by filled raster calls. */
+int p8_gfx_color_argument_requests_inversion(const p8_core *core,
+                                             int32_t raw_color);
 
 void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
 void p8_gfx_rect(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);

@@ -34,6 +34,11 @@ frames require complete modern coverage rather than mixed indexed fragments.
   produces no drawing.
 - `fillp` is a 4x4, two-colour pattern observed by primitive drawing, with
   transparency, sprite, secondary-palette, and inversion modes.
+- When `0x5f34` bit 0 and a colour argument's `0x1000.0000` marker are set,
+  bits `0x0f00.ffff` replace the current pattern/modes for that call path;
+  `0x0800.0000` requests one-call inversion for filled shapes. Persistent
+  inversion through `0x5f34` bit 1 draws the complement of the filled shape
+  inside the active clip.
 - `pal(c0,c1,2)` stores a two-colour pair. With `fillp` flag `.01`, the pair is
   selected per screen-space pattern bit for `spr`, `sspr`, `map`, and `tline`;
   flag `.001` applies it globally after the ordinary draw palette. The shared
@@ -69,7 +74,19 @@ so low-level screen and GFX remapping remains authoritative.
 `runtime/core/src/vm_z8lua.cpp` owns the current-colour state used by PICO-8
 API calls. Semantic draw commands always contain the resolved raw colour even
 when the cart omitted the optional argument, so native rasterization and the HD
-presentation bridge consume the same deterministic value.
+presentation bridge consume the same deterministic value. The indexed path
+decodes embedded pattern arguments once through the shared raster API; explicit
+primitive colours stay local, while `color(encoded)` retains the encoded current
+colour for later omitted-colour calls.
+
+Filled rectangle and circle inversion share the ordinary camera, clip, draw
+palette, secondary palette, transparency, and screen-space pattern pipeline.
+The implementation constructs the exact complement of the same circle spans
+used by ordinary fills, avoiding a second geometry approximation. Native, VM,
+and Wasm tests cover embedded pattern bytes, screen-space tiling, persistent and
+one-call inversion, camera coordinates, and clip containment. The expectation
+probe records row 10 of `0xabcd` as `4,4,14,14`: `fillp` tiles by absolute
+screen row, so row 10 consumes pattern row 2 rather than row 0.
 
 `runtime/core/src/core.cpp` owns current-cart ROM reload so native and Wasm VM
 calls share one copy path, dirty tracking, remapping behavior, and protected-code
@@ -89,16 +106,18 @@ host consumes the indexed frame; it does not duplicate compatibility raster rule
 ## Deliberately unresolved
 
 Licensed official runtime probes are still required for fixed-point edge rounding;
-exact line/circle/ellipse edge pixels; embedded colour-argument patterns and
-inversion; extended display palettes and out-of-range overrides; upper-memory mapping
-conflicts; and draw-state byte packing not specified by the public manual.
+exact line/circle/ellipse and inverted-fill edge pixels; embedded colour-argument
+state persistence; extended display palettes and out-of-range overrides;
+upper-memory mapping conflicts; and draw-state byte packing not specified by the
+public manual.
 
 Those captures become small golden fixtures. Independent emulators may locate
 disagreements, but they are not the compatibility oracle.
 
 ## Next implementation slice
 
-Complete embedded colour-argument patterns, inversion, remaining sprite/map and
-extended-display-palette modes, then capture licensed official-runtime goldens for
-fixed-point and edge behavior. Keep indexed-frame tests and semantic-command
-output paired so the HD presentation bridge never invents separate semantics.
+Complete remaining sprite/map and extended-display-palette modes, then capture
+licensed official-runtime goldens for embedded-state persistence, fixed-point,
+inverted-fill, and other edge behavior. Keep indexed-frame tests and
+semantic-command output paired so the HD presentation bridge never invents
+separate semantics.

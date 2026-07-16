@@ -11,7 +11,7 @@
     ["secondary_global", "8,7"],
     ["draw_then_secondary", "8,7"],
     ["embedded_pattern_registers", "205,171,0"],
-    ["embedded_pattern_row", "4,14,4,14"],
+    ["embedded_pattern_row", "4,4,14,14"],
     ["inverted_outside", "8"],
     ["inverted_inside", "1"],
     ["tline_default", "1,2,3,4,5,6,7,8"],

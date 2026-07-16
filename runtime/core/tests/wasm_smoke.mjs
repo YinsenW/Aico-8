@@ -431,6 +431,36 @@ try {
   kernel._free(secondaryPaletteSourcePointer);
 }
 
+const embeddedFillRuntime = kernel._aico8_create();
+assert.notEqual(embeddedFillRuntime, 0);
+const embeddedFillSource = new TextEncoder().encode(
+  "function _init() pal() fillp() cls(0) poke(0x5f34,1) "
+  + "rectfill(0,10,3,13,0x104e.abcd) fillp() cls(1) "
+  + "clip(0,20,8,8) poke(0x5f34,2) circfill(3,23,1,0x1808.0000) "
+  + "clip() poke(0x5f34,1) rectfill(0,10,3,13,0x104e.abcd) end\n",
+);
+const embeddedFillSourcePointer = copyToHeap(embeddedFillSource);
+const embeddedFillRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(embeddedFillRuntime, embeddedFillRomPointer, 0x8000,
+    embeddedFillSourcePointer, embeddedFillSource.length), 1);
+  assert.equal(kernel._aico8_start(embeddedFillRuntime), 1);
+  const embeddedFrame = kernel._aico8_framebuffer(embeddedFillRuntime);
+  assert.deepEqual(Array.from(kernel.HEAPU8.slice(
+    embeddedFrame + 10 * 128, embeddedFrame + 10 * 128 + 4)), [4, 4, 14, 14],
+    "Wasm must install and rasterize an embedded colour-argument fill pattern");
+  assert.equal(kernel.HEAPU8[embeddedFrame + 20 * 128], 8,
+    "Wasm inverted fills must draw the clipped complement");
+  assert.equal(kernel.HEAPU8[embeddedFrame + 23 * 128 + 3], 1,
+    "Wasm inverted fills must preserve the circle interior");
+  assert.equal(kernel.HEAPU8[embeddedFrame + 20 * 128 + 8], 1,
+    "Wasm inverted fills must not escape the clip");
+} finally {
+  kernel._aico8_destroy(embeddedFillRuntime);
+  kernel._free(embeddedFillRomPointer);
+  kernel._free(embeddedFillSourcePointer);
+}
+
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(

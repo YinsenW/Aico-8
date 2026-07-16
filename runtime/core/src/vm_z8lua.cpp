@@ -724,8 +724,9 @@ int api_pset(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     vm->emit_with_resolved_argument(P8_DRAW_PSET, state, 3, 2, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 3, vm->draw_color_raw);
     p8_gfx_pset(vm->core, integer(state, 1), integer(state, 2),
-                static_cast<uint8_t>(integer(state, 3, vm->draw_color_raw >> 16)));
+                p8_gfx_apply_color_argument(vm->core, color_raw));
     return 0;
 }
 
@@ -756,7 +757,7 @@ int api_color(lua_State *state)
     p8_vm *vm = p8_vm::from(state);
     vm->draw_color_raw = raw_number(state, 1, 6 << 16);
     p8_core_poke(vm->core, 0x5f25,
-                 static_cast<uint8_t>(vm->draw_color_raw >> 16));
+                 p8_gfx_apply_color_argument(vm->core, vm->draw_color_raw));
     return 0;
 }
 
@@ -768,7 +769,7 @@ int api_cursor(lua_State *state)
     if (!lua_isnoneornil(state, 3)) {
         vm->draw_color_raw = raw_number(state, 3);
         p8_core_poke(vm->core, 0x5f25,
-                     static_cast<uint8_t>(vm->draw_color_raw >> 16));
+                     p8_gfx_apply_color_argument(vm->core, vm->draw_color_raw));
     }
     return 0;
 }
@@ -823,6 +824,7 @@ int api_line(lua_State *state)
     command.args[3] = y1_raw;
     command.args[4] = color_raw;
     p8_core_emit_draw(vm->core, &command);
+    color = p8_gfx_apply_color_argument(vm->core, color_raw);
     if (should_draw) {
         p8_gfx_line(vm->core, x0, y0, x1, y1, color);
     }
@@ -838,9 +840,9 @@ int api_rect(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     vm->emit_with_resolved_argument(P8_DRAW_RECT, state, 5, 4, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 5, vm->draw_color_raw);
     p8_gfx_rect(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
-                integer(state, 4),
-                static_cast<uint8_t>(integer(state, 5, vm->draw_color_raw >> 16)));
+                integer(state, 4), p8_gfx_apply_color_argument(vm->core, color_raw));
     return 0;
 }
 
@@ -848,9 +850,14 @@ int api_rectfill(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     vm->emit_with_resolved_argument(P8_DRAW_RECTFILL, state, 5, 4, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 5, vm->draw_color_raw);
+    const int embedded_invert =
+        p8_gfx_color_argument_requests_inversion(vm->core, color_raw);
+    const uint8_t old_setting = p8_core_peek(vm->core, 0x5f34);
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting | 0x02u);
     p8_gfx_rectfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
-                    integer(state, 4),
-                    static_cast<uint8_t>(integer(state, 5, vm->draw_color_raw >> 16)));
+                    integer(state, 4), p8_gfx_apply_color_argument(vm->core, color_raw));
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting);
     return 0;
 }
 
@@ -858,8 +865,9 @@ int api_circ(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     vm->emit_with_resolved_argument(P8_DRAW_CIRC, state, 4, 3, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 4, vm->draw_color_raw);
     p8_gfx_circ(vm->core, integer(state, 1), integer(state, 2), integer(state, 3, 4),
-                static_cast<uint8_t>(integer(state, 4, vm->draw_color_raw >> 16)));
+                p8_gfx_apply_color_argument(vm->core, color_raw));
     return 0;
 }
 
@@ -867,8 +875,14 @@ int api_circfill(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
     vm->emit_with_resolved_argument(P8_DRAW_CIRCFILL, state, 4, 3, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 4, vm->draw_color_raw);
+    const int embedded_invert =
+        p8_gfx_color_argument_requests_inversion(vm->core, color_raw);
+    const uint8_t old_setting = p8_core_peek(vm->core, 0x5f34);
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting | 0x02u);
     p8_gfx_circfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3, 4),
-                    static_cast<uint8_t>(integer(state, 4, vm->draw_color_raw >> 16)));
+                    p8_gfx_apply_color_argument(vm->core, color_raw));
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting);
     return 0;
 }
 

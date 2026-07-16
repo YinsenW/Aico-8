@@ -443,6 +443,54 @@ void test_raster_secondary_palette_patterns_sprite_and_global_draws()
     p8_core_destroy(core);
 }
 
+void test_raster_embedded_colour_patterns_and_inverted_fills()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_cls(core, 0);
+    p8_core_poke(core, 0x5f34, 0x01);
+    const int32_t embedded = static_cast<int32_t>(0x104eabcdu);
+    assert(p8_gfx_apply_color_argument(core, embedded) == 0x4e);
+    assert(p8_core_peek(core, 0x5f31) == 0xcd);
+    assert(p8_core_peek(core, 0x5f32) == 0xab);
+    assert(p8_core_peek(core, 0x5f33) == 0);
+    p8_gfx_rectfill(core, 0, 10, 3, 13, 0x4e);
+    assert(p8_gfx_pget(core, 0, 10) == 4);
+    assert(p8_gfx_pget(core, 1, 10) == 4);
+    assert(p8_gfx_pget(core, 2, 10) == 14);
+    assert(p8_gfx_pget(core, 3, 10) == 14);
+
+    // The embedded mode flags share the same bytes used by fillp(). Inversion
+    // is a one-call request and therefore does not silently mutate 0x5f34.
+    const int32_t embedded_modes = static_cast<int32_t>(0x1f08aaaau);
+    assert(p8_gfx_color_argument_requests_inversion(core, embedded_modes));
+    assert(p8_gfx_apply_color_argument(core, embedded_modes) == 8);
+    assert(p8_core_peek(core, 0x5f33) == 0x07);
+    assert(p8_core_peek(core, 0x5f34) == 0x01);
+
+    p8_gfx_fillp(core, 0);
+    p8_gfx_cls(core, 1);
+    p8_gfx_clip(core, 0, 20, 8, 8, 0);
+    p8_core_poke(core, 0x5f34, 0x02);
+    p8_gfx_circfill(core, 3, 23, 1, 8);
+    assert(p8_gfx_pget(core, 0, 20) == 8);
+    assert(p8_gfx_pget(core, 3, 23) == 1);
+    assert(p8_gfx_pget(core, 3, 22) == 1);
+    assert(p8_gfx_pget(core, 7, 27) == 8);
+    assert(p8_gfx_pget(core, 8, 20) == 1);
+
+    // Rectangle inversion observes camera coordinates while remaining bounded
+    // by the screen-space clip.
+    p8_gfx_cls(core, 2);
+    p8_gfx_clip(core, 10, 10, 4, 4, 0);
+    p8_gfx_camera(core, 5, 6);
+    p8_gfx_rectfill(core, 15, 16, 16, 17, 9);
+    assert(p8_gfx_pget(core, 10, 10) == 2);
+    assert(p8_gfx_pget(core, 11, 11) == 2);
+    assert(p8_gfx_pget(core, 13, 13) == 9);
+    assert(p8_gfx_pget(core, 9, 10) == 2);
+    p8_core_destroy(core);
+}
+
 void test_raster_tline_sampling_precision_masks_layers_and_transparency()
 {
     p8_core *core = p8_core_create();
@@ -762,6 +810,7 @@ int main()
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
     test_raster_secondary_palette_patterns_sprite_and_global_draws();
+    test_raster_embedded_colour_patterns_and_inverted_fills();
     test_raster_tline_sampling_precision_masks_layers_and_transparency();
     test_audio_is_deterministic_and_rejects_unqualified_features();
     test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic();

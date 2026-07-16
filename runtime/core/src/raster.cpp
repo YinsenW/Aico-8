@@ -3,6 +3,7 @@
 #include "core_internal.h"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 
 namespace {
@@ -20,6 +21,7 @@ constexpr uint16_t kCameraX = 0x5f28;
 constexpr uint16_t kCameraY = 0x5f2a;
 constexpr uint16_t kFillPatternLow = 0x5f31;
 constexpr uint16_t kFillPatternFlags = 0x5f33;
+constexpr uint16_t kColorSettingFlags = 0x5f34;
 constexpr uint16_t kMapSpriteZeroMode = 0x5f36;
 constexpr uint16_t kTlineMaskX = 0x5f38;
 constexpr uint16_t kTlineMaskY = 0x5f39;
@@ -33,6 +35,8 @@ constexpr uint8_t kTransparentBit = 0x10;
 constexpr uint8_t kFillTransparent = 1u << 0;
 constexpr uint8_t kFillSprites = 1u << 1;
 constexpr uint8_t kFillGlobal = 1u << 2;
+constexpr uint8_t kColorEmbeddedPattern = 1u << 0;
+constexpr uint8_t kColorInvertedFill = 1u << 1;
 
 int bounded_coordinate(int value)
 {
@@ -185,6 +189,45 @@ void draw_mapped_span(p8_core *core, int64_t world_x0, int64_t world_x1,
                                   std::min(P8_SCREEN_WIDTH - 1, clip_x + clip_width - 1));
     for (int64_t x = screen_x0; x <= screen_x1; ++x) {
         draw_patterned_pixel(core, x + camera_x, world_y, color);
+    }
+}
+
+void mark_mapped_span(const p8_core *core,
+                      std::array<uint8_t, P8_SCREEN_PIXELS> &mask,
+                      int64_t world_x0, int64_t world_x1, int64_t world_y)
+{
+    if (!core) return;
+    if (world_x0 > world_x1) std::swap(world_x0, world_x1);
+    const int64_t screen_y = world_y - signed_word(core, kCameraY);
+    if (screen_y < 0 || screen_y >= P8_SCREEN_HEIGHT) return;
+    const int camera_x = signed_word(core, kCameraX);
+    int64_t screen_x0 = std::max<int64_t>(0, world_x0 - camera_x);
+    int64_t screen_x1 = std::min<int64_t>(P8_SCREEN_WIDTH - 1, world_x1 - camera_x);
+    for (int64_t screen_x = screen_x0; screen_x <= screen_x1; ++screen_x) {
+        mask[static_cast<size_t>(screen_y) * P8_SCREEN_WIDTH
+             + static_cast<size_t>(screen_x)] = 1;
+    }
+}
+
+template <typename Inside>
+void draw_inverted_clip(p8_core *core, uint8_t color, Inside inside)
+{
+    if (!core) return;
+    const int clip_x = p8_core_peek(core, kClipX);
+    const int clip_y = p8_core_peek(core, kClipY);
+    const int clip_right = std::min(static_cast<int>(P8_SCREEN_WIDTH),
+                                    clip_x + p8_core_peek(core, kClipWidth));
+    const int clip_bottom = std::min(static_cast<int>(P8_SCREEN_HEIGHT),
+                                     clip_y + p8_core_peek(core, kClipHeight));
+    const int camera_x = signed_word(core, kCameraX);
+    const int camera_y = signed_word(core, kCameraY);
+    for (int screen_y = std::max(0, clip_y); screen_y < clip_bottom; ++screen_y) {
+        for (int screen_x = std::max(0, clip_x); screen_x < clip_right; ++screen_x) {
+            if (!inside(screen_x, screen_y)) {
+                draw_patterned_pixel(core, screen_x + camera_x,
+                                     screen_y + camera_y, color);
+            }
+        }
     }
 }
 
@@ -444,6 +487,32 @@ int32_t p8_gfx_fillp(p8_core *core, int32_t raw_pattern)
     return previous;
 }
 
+uint8_t p8_gfx_apply_color_argument(p8_core *core, int32_t raw_color)
+{
+    const uint32_t raw = static_cast<uint32_t>(raw_color);
+    if (core
+        && (p8_core_peek(core, kColorSettingFlags) & kColorEmbeddedPattern) != 0
+        && (raw & 0x10000000u) != 0) {
+        p8_core_poke16(core, kFillPatternLow, static_cast<uint16_t>(raw));
+        const uint8_t flags = static_cast<uint8_t>(
+            ((raw & 0x01000000u) != 0 ? kFillTransparent : 0)
+            | ((raw & 0x02000000u) != 0 ? kFillSprites : 0)
+            | ((raw & 0x04000000u) != 0 ? kFillGlobal : 0));
+        p8_core_poke(core, kFillPatternFlags, flags);
+    }
+    return static_cast<uint8_t>((raw >> 16u) & 0xffu);
+}
+
+int p8_gfx_color_argument_requests_inversion(const p8_core *core,
+                                             int32_t raw_color)
+{
+    if (!core) return 0;
+    const uint32_t raw = static_cast<uint32_t>(raw_color);
+    return (p8_core_peek(core, kColorSettingFlags) & kColorEmbeddedPattern) != 0
+        && (raw & 0x10000000u) != 0
+        && (raw & 0x08000000u) != 0;
+}
+
 void p8_gfx_line(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color)
 {
     if (!core) {
@@ -505,6 +574,17 @@ void p8_gfx_rectfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t colo
     const int right = std::max(bounded_coordinate(x0), bounded_coordinate(x1));
     const int top = std::min(bounded_coordinate(y0), bounded_coordinate(y1));
     const int bottom = std::max(bounded_coordinate(y0), bounded_coordinate(y1));
+    if ((p8_core_peek(core, kColorSettingFlags) & kColorInvertedFill) != 0) {
+        const int camera_x = signed_word(core, kCameraX);
+        const int camera_y = signed_word(core, kCameraY);
+        draw_inverted_clip(core, color, [&](int screen_x, int screen_y) {
+            const int64_t world_x = static_cast<int64_t>(screen_x) + camera_x;
+            const int64_t world_y = static_cast<int64_t>(screen_y) + camera_y;
+            return world_x >= left && world_x <= right
+                && world_y >= top && world_y <= bottom;
+        });
+        return;
+    }
     for (int y = top; y <= bottom; ++y) {
         draw_mapped_span(core, left, right, y, color);
     }
@@ -519,6 +599,23 @@ void p8_gfx_circ(p8_core *core, int center_x, int center_y, int radius, uint8_t 
 void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
                      uint8_t color)
 {
+    if (!core || radius < 0) return;
+    if ((p8_core_peek(core, kColorSettingFlags) & kColorInvertedFill) != 0) {
+        std::array<uint8_t, P8_SCREEN_PIXELS> mask{};
+        raster_circle(core, center_x, center_y, radius, 0,
+                      [&](p8_core *circle_core, int64_t cx, int64_t cy,
+                          int x, int y, uint8_t) {
+            mark_mapped_span(circle_core, mask, cx - x, cx + x, cy + y);
+            mark_mapped_span(circle_core, mask, cx - x, cx + x, cy - y);
+            mark_mapped_span(circle_core, mask, cx - y, cx + y, cy + x);
+            mark_mapped_span(circle_core, mask, cx - y, cx + y, cy - x);
+        });
+        draw_inverted_clip(core, color, [&](int screen_x, int screen_y) {
+            return mask[static_cast<size_t>(screen_y) * P8_SCREEN_WIDTH
+                        + static_cast<size_t>(screen_x)] != 0;
+        });
+        return;
+    }
     raster_circle(core, center_x, center_y, radius, color,
                   circle_spans);
 }
