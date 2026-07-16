@@ -295,7 +295,51 @@ function measureReleasePerformance(profile: WebTargetProfileV1): void {
 const input = new InputController();
 input.bindTouchControls(touchControls);
 const audioOutput = new KernelAudioOutput();
-const unlockAudio = (): void => { void audioOutput.unlock().catch(() => undefined); };
+const audioFrame = frame;
+function syncAudioDiagnostics(): void {
+  const diagnostics = audioOutput.diagnostics();
+  audioFrame.dataset.audioContextState = diagnostics.contextState;
+  audioFrame.dataset.audioUnlocked = String(diagnostics.unlocked);
+  audioFrame.dataset.audioSampleRate = String(diagnostics.sampleRate);
+  audioFrame.dataset.audioPendingSamples = String(diagnostics.pendingSamples);
+  audioFrame.dataset.audioDroppedPendingSamples = String(diagnostics.droppedPendingSamples);
+  audioFrame.dataset.audioScheduledSamples = String(diagnostics.scheduledSamples);
+  audioFrame.dataset.audioScheduledChunks = String(diagnostics.scheduledChunks);
+  audioFrame.dataset.audioUnderrunCount = String(diagnostics.underrunCount);
+  audioFrame.dataset.audioUnderrunMilliseconds = String(
+    roundedMeasurement(diagnostics.underrunSeconds * 1000),
+  );
+  audioFrame.dataset.audioLeadResyncCount = String(diagnostics.leadResyncCount);
+  audioFrame.dataset.audioBufferedLeadMilliseconds = String(
+    roundedMeasurement(diagnostics.bufferedLeadSeconds * 1000),
+  );
+  audioFrame.dataset.audioMaximumBufferedLeadMilliseconds = String(
+    roundedMeasurement(diagnostics.maximumBufferedLeadSeconds * 1000),
+  );
+  audioFrame.dataset.audioBaseLatencyMilliseconds = diagnostics.baseLatencySeconds === null
+    ? "unavailable"
+    : String(roundedMeasurement(diagnostics.baseLatencySeconds * 1000));
+  audioFrame.dataset.audioOutputLatencyMilliseconds = diagnostics.outputLatencySeconds === null
+    ? "unavailable"
+    : String(roundedMeasurement(diagnostics.outputLatencySeconds * 1000));
+}
+syncAudioDiagnostics();
+const unlockAudio = (): void => {
+  audioFrame.dataset.audioUnlockStatus = "pending";
+  const unlocking = audioOutput.unlock();
+  syncAudioDiagnostics();
+  void unlocking
+    .then(() => {
+      audioFrame.dataset.audioUnlockStatus = "running";
+      delete audioFrame.dataset.audioUnlockError;
+      syncAudioDiagnostics();
+    })
+    .catch((error: unknown) => {
+      audioFrame.dataset.audioUnlockStatus = "failed";
+      audioFrame.dataset.audioUnlockError = error instanceof Error ? error.message : String(error);
+      syncAudioDiagnostics();
+    });
+};
 document.addEventListener("pointerdown", unlockAudio);
 document.addEventListener("keydown", unlockAudio);
 let paused = false;
@@ -636,6 +680,7 @@ try {
       accumulator -= stepMilliseconds;
       const updated = loadedRuntime.tick60(input.mask());
       audioOutput.enqueue(loadedRuntime.readAudio());
+      syncAudioDiagnostics();
       if (updated) {
         input.commitLogicalUpdate();
         renderCurrentFrame();
@@ -645,6 +690,7 @@ try {
   });
   document.addEventListener("visibilitychange", () => {
     accumulator = 0;
+    syncAudioDiagnostics();
   });
   loadingCard.classList.add("hidden");
   loadingCard.setAttribute("aria-hidden", "true");

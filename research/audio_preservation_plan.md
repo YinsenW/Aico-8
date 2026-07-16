@@ -93,6 +93,17 @@ Platform adapters only own the output device, buffering, and sample-rate
 conversion. They may not decide musical timing from browser animation frames,
 mobile callbacks, or display refresh.
 
+The Web adapter exposes its host-only measurements on `#game-frame` as
+`data-audio-*` fields. The evidence includes context/unlock state, browser base
+and output latency when available, pending and discarded sample counts,
+scheduled chunks/samples, accumulated underrun count and duration, excessive
+lead resynchronizations, and current/maximum buffered lead. These measurements
+are diagnostics for device integration; they do not qualify synth semantics or
+replace official PCM/status goldens. Unit fixtures deterministically exercise
+the drop, underrun, and resynchronization paths, while retained device evidence
+must name the browser, operating system, audio device, and interaction used to
+unlock playback.
+
 ## Acceptance order
 
 1. Raw extracted/rebuilt bytes are identical.
