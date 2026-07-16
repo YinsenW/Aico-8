@@ -83,7 +83,7 @@ mount.innerHTML = `
       <span id="player-status">Starting…</span>
       <span class="control-hint">Arrows / WASD · Z / X · controller · touch</span>
     </footer>
-    <p id="game-announcer" class="visually-hidden" role="status" aria-live="polite"></p>
+    <p id="game-announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
   </section>
 `;
 
@@ -579,8 +579,13 @@ try {
       frame.dataset.mixedIndexedFragments = String(diagnostics.mixedIndexedFragments);
       frame.dataset.diagnosticReferenceSwitches = String(diagnostics.diagnosticReferenceSwitches);
     }
-    const description = hdRenderer?.accessibleDescription?.();
-    if (description && announcer.textContent !== description) announcer.textContent = description;
+    const description = hdRenderer?.accessibleDescriptionEvidence?.();
+    if (description) {
+      announcer.dataset.presentationScene = description.sceneId;
+      announcer.dataset.descriptionProvenance = description.provenance;
+      announcer.dataset.sourceEvidenceCount = String(description.sourceEvidenceIds.length);
+      if (announcer.textContent !== description.text) announcer.textContent = description.text;
+    }
   };
 
   if (requestedInitializationHostTick !== undefined) {

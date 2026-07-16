@@ -118,13 +118,24 @@ for (const input of inputs) {
   });
 }
 
-const role = (name, fontAssetIds, sizePx, weight, trackingPx, lineHeightPx, minSizePx, overflow, maxLines) => ({
+const role = (
+  name,
+  fontAssetIds,
+  sizePx,
+  weight,
+  trackingPx,
+  lineHeightPx,
+  minSizePx,
+  accessibilityMinCssPx,
+  overflow,
+  maxLines,
+) => ({
   role: name,
   renderer: "woff2-canvas",
   fontAssetIds,
   requiredCodePoints: coverageCodePoints,
   metrics: { sizePx, weight, trackingPx, lineHeightPx },
-  fit: { minSizePx, overflow, maxLines },
+  fit: { minSizePx, accessibilityMinCssPx, overflow, maxLines },
   osFallback: false,
 });
 
@@ -134,11 +145,11 @@ const manifest = {
   osFallback: false,
   assets,
   roles: [
-    role("display", ["atkinson-bold"], 72, 700, 1.5, 88, 36, "fail", 2),
-    role("menu", ["atkinson-regular", "atkinson-bold"], 32, 400, 0.5, 40, 24, "fail", 1),
-    role("dialogue", ["atkinson-regular"], 28, 400, 0, 38, 22, "wrap", 4),
-    role("hud-number", ["atkinson-bold"], 28, 700, 0, 34, 24, "fail", 1),
-    role("localized-body", ["atkinson-regular"], 26, 400, 0, 36, 20, "wrap", 6),
+    role("display", ["atkinson-bold"], 72, 700, 1.5, 88, 36, 24, "fail", 2),
+    role("menu", ["atkinson-regular", "atkinson-bold"], 32, 400, 0.5, 40, 24, 16, "fail", 1),
+    role("dialogue", ["atkinson-regular"], 28, 400, 0, 38, 22, 16, "wrap", 4),
+    role("hud-number", ["atkinson-bold"], 28, 700, 0, 34, 24, 14, "fail", 1),
+    role("localized-body", ["atkinson-regular"], 26, 400, 0, 36, 20, 16, "wrap", 6),
   ],
 };
 

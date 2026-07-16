@@ -67,7 +67,7 @@ describe("bundled HD typography", () => {
     const cases = [
       { target: 1024, scale: 1, box: { width: 220, height: 50 } },
       { target: 720, scale: 720 / 1024, box: { width: 154.688, height: 35.156 } },
-      { target: 360, scale: 360 / 1024, box: { width: 77.344, height: 17.578 } },
+      { target: 360, scale: 360 / 1024, box: { width: 77.344, height: 24 } },
     ];
     expect(cases.map(({ target, scale, box }) => {
       const layout = typography.layout(run("begin"), { role: "menu", profileScale: scale, box, align: "center" });
@@ -75,7 +75,7 @@ describe("bundled HD typography", () => {
     })).toEqual([
       { target: 1024, fontSize: 32, lineHeight: 40, width: 81.648, height: 40 },
       { target: 720, fontSize: 22.5, lineHeight: 28.125, width: 57.409, height: 28.125 },
-      { target: 360, fontSize: 11.25, lineHeight: 14.063, width: 28.704, height: 14.063 },
+      { target: 360, fontSize: 16, lineHeight: 20, width: 40.824, height: 20 },
     ]);
   });
 
@@ -83,11 +83,11 @@ describe("bundled HD typography", () => {
     const layout = typography.layout(run("move gently and listen"), {
       role: "dialogue",
       profileScale: 360 / 1024,
-      box: { width: 95, height: 54 },
+      box: { width: 145, height: 54 },
     });
     expect(layout.lines).toEqual(["move gently and", "listen"]);
-    expect(layout.fontSize).toBe(9.844);
-    expect(layout.height).toBe(26.719);
+    expect(layout.fontSize).toBe(16);
+    expect(layout.height).toBe(43.429);
   });
 
   it("fails closed for review-required text, undeclared glyphs, and undersized boxes", () => {
@@ -99,6 +99,9 @@ describe("bundled HD typography", () => {
     })).toThrow(/printable ASCII/);
     expect(() => typography.layout(run("begin"), {
       role: "menu", profileScale: 1, box: { width: 8, height: 8 },
+    })).toThrow(/does not fit/);
+    expect(() => typography.layoutCopy("move gently and listen", {
+      role: "dialogue", profileScale: 360 / 1024, box: { width: 48, height: 30 },
     })).toThrow(/does not fit/);
     expect(() => typography.layout({ ...run("begin"), sideEffectMask: TextRunEffect.cursor }, {
       role: "menu", profileScale: 1, box: { width: 200, height: 50 },

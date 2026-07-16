@@ -109,9 +109,10 @@
         "fit": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["minSizePx", "overflow", "maxLines"],
+          "required": ["minSizePx", "accessibilityMinCssPx", "overflow", "maxLines"],
           "properties": {
             "minSizePx": { "type": "number", "exclusiveMinimum": 0 },
+            "accessibilityMinCssPx": { "type": "number", "minimum": 12 },
             "overflow": { "enum": ["wrap", "ellipsis", "fail"] },
             "maxLines": { "type": "integer", "minimum": 1 }
           }

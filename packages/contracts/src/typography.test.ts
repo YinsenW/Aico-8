@@ -117,7 +117,7 @@ const manifest = (): any => ({
     fontAssetIds: ["atkinson-regular"],
     requiredCodePoints: codePoints("begin").sort((left, right) => left - right),
     metrics: { sizePx: 32, weight: 400, trackingPx: 0, lineHeightPx: 40 },
-    fit: { minSizePx: 24, overflow: "fail", maxLines: 1 },
+    fit: { minSizePx: 24, accessibilityMinCssPx: 16, overflow: "fail", maxLines: 1 },
     osFallback: false,
   }],
 });

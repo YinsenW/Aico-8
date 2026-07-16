@@ -248,6 +248,21 @@ export {
   type TypographyValidationResult,
 } from "./typography.js";
 export {
+  REQUIRED_ACCESSIBILITY_REGRESSIONS,
+  TYPOGRAPHY_ACCESSIBILITY_AUDIT_SCHEMA_VERSION,
+  assertTypographyAccessibilityAudit,
+  relativeLuminance,
+  requiredTextContrast,
+  sourceDerivedAccessibleDescription,
+  typographyContrastRatio,
+  validateTypographyAccessibilityAudit,
+  type SourceDerivedAccessibleDescriptionV1,
+  type TypographyAccessibilityAuditV1,
+  type TypographyAccessibilityRegression,
+  type TypographyAccessibilitySampleV1,
+  type TypographyAccessibilityValidationResult,
+} from "./typography-accessibility.js";
+export {
   RELEASE_MANIFEST_SCHEMA_VERSION,
   RELEASE_VALIDATION_SCHEMA_VERSION,
   TARGET_PROFILE_SCHEMA_VERSION,

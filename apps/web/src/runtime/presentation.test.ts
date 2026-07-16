@@ -5,6 +5,7 @@ import {
   sourceTimedElementVisibility,
   sourceTimedVisibility,
 } from "./presentation.js";
+import { sourceDerivedAccessibleDescription } from "@aico8/contracts";
 
 describe("source-authored HD copy", () => {
   const contract = {
@@ -74,5 +75,20 @@ describe("source-timed HD element visibility", () => {
     expect(() => sourceTimedElementVisibility([], [])).toThrow(/at least one mapped element/);
     expect(() => sourceTimedElementVisibility(["effect.sparkle"], ["effect.sparkle", "effect.sparkle"]))
       .toThrow(/duplicate mapped elements/);
+  });
+});
+
+describe("assistive text provenance", () => {
+  it("keeps the DOM mirror source-derived and non-authoritative", () => {
+    expect(sourceDerivedAccessibleDescription({
+      sceneId: "scene.gameplay",
+      text: "Level 3. 12 dust remaining.",
+      sourceEvidenceIds: ["state.level", "state.dust"],
+    })).toEqual({
+      sceneId: "scene.gameplay",
+      text: "Level 3. 12 dust remaining.",
+      provenance: "state-derived-accessibility",
+      sourceEvidenceIds: ["state.level", "state.dust"],
+    });
   });
 });
