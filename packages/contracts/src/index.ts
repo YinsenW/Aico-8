@@ -38,6 +38,24 @@ export {
   type GameModuleValidationResult,
 } from "./game-module.js";
 export {
+  CART_INPUT_SCHEMA_VERSION,
+  CART_WORKSPACE_SCHEMA_VERSION,
+  assertCartInput,
+  assertCartWorkspace,
+  validateCartInput,
+  validateCartWorkspace,
+  type CartFormat,
+  type CartInputV1,
+  type CartSection,
+  type CartWorkspaceResourceV1,
+  type CartWorkspaceV1,
+  type IngestFileReferenceV1,
+  type IngestIntendedUse,
+  type IngestValidationResult,
+  type ReleasePermissionStatus,
+  type WorkspaceResourceId,
+} from "./ingest.js";
+export {
   REFERENCE_PROFILE,
   fitReferenceSquare,
   logicalToReference,

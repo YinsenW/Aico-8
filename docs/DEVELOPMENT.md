@@ -25,7 +25,6 @@ Through the first complete remake, select only browser Web/PWA work or its direc
 
 Never repeat full evidence generation before its narrow checkpoint. Shared-runtime
 checks may be batched; acceptance evidence and failure records remain per game.
-
 Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and asset-tool changes use TypeScript. Python remains limited to research/migration tools and test harnesses; do not add a new Python production service.
 C++ remains confined to the current compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
 
@@ -52,6 +51,7 @@ pnpm verify:text-completeness-private
 pnpm verify:typography-accessibility-private
 pnpm verify:text-run
 pnpm verify:replay
+pnpm verify:ingest
 pnpm verify:game-module
 pnpm verify:batch
 pnpm verify:supervised-transfer

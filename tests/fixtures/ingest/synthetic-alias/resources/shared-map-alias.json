@@ -1,0 +1,6 @@
+{
+  "width": 128,
+  "height": 32,
+  "source": "gfx rows 64..127 packed as little-nibble bytes",
+  "nonzeroCells": []
+}

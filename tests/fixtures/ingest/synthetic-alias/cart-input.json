@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "aico8.cart-input.v1",
+  "inputId": "synthetic-alias",
+  "format": "p8-text",
+  "source": {
+    "path": "source/source.p8",
+    "sha256": "dcb6c5186f97aa49dafaaf7ade548b08691da652469dab170032856990fe06f1",
+    "byteLength": 194
+  },
+  "provenance": {
+    "suppliedBy": "aico8-project",
+    "intendedUse": "public-synthetic-fixture",
+    "sourceUrl": null,
+    "declaredLicense": {
+      "spdx": "CC0-1.0",
+      "evidence": [
+        {
+          "path": "rights/CC0-1.0.txt",
+          "sha256": "7bc718132762b91b90d1fbcaed8b0e14e2ceaf576a0f92504afaf30a6fed5284",
+          "byteLength": 103
+        }
+      ]
+    },
+    "releasePermission": {
+      "status": "granted",
+      "evidence": [
+        {
+          "path": "rights/CC0-1.0.txt",
+          "sha256": "7bc718132762b91b90d1fbcaed8b0e14e2ceaf576a0f92504afaf30a6fed5284",
+          "byteLength": 103
+        }
+      ]
+    }
+  }
+}
