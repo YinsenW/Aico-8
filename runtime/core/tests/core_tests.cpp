@@ -520,6 +520,55 @@ void test_raster_embedded_colour_patterns_and_inverted_fills()
     p8_core_destroy(core);
 }
 
+void test_raster_ellipse_and_rounded_rectangle_primitives()
+{
+    p8_core *core = p8_core_create();
+    p8_gfx_cls(core, 0);
+    p8_gfx_oval(core, 10, 10, 14, 12, 8);
+    assert(p8_gfx_pget(core, 12, 10) == 8);
+    assert(p8_gfx_pget(core, 10, 11) == 8);
+    assert(p8_gfx_pget(core, 14, 11) == 8);
+    assert(p8_gfx_pget(core, 12, 12) == 8);
+    assert(p8_gfx_pget(core, 12, 11) == 0);
+
+    p8_gfx_ovalfill(core, 20, 20, 26, 24, 9);
+    assert(p8_gfx_pget(core, 23, 20) == 9);
+    assert(p8_gfx_pget(core, 20, 22) == 9);
+    assert(p8_gfx_pget(core, 23, 22) == 9);
+    assert(p8_gfx_pget(core, 26, 22) == 9);
+
+    p8_gfx_rrectfill(core, 30, 30, 6, 4, 2, 10);
+    assert(p8_gfx_pget(core, 30, 30) == 0);
+    assert(p8_gfx_pget(core, 31, 30) == 10);
+    assert(p8_gfx_pget(core, 34, 30) == 10);
+    assert(p8_gfx_pget(core, 35, 30) == 0);
+    assert(p8_gfx_pget(core, 30, 31) == 10);
+    assert(p8_gfx_pget(core, 35, 32) == 10);
+
+    p8_gfx_rrect(core, 40, 30, 6, 4, 99, 11); // radius clamps to 2
+    assert(p8_gfx_pget(core, 40, 30) == 0);
+    assert(p8_gfx_pget(core, 41, 30) == 11);
+    assert(p8_gfx_pget(core, 40, 31) == 11);
+    assert(p8_gfx_pget(core, 42, 31) == 0);
+    p8_gfx_rrectfill(core, 50, 30, 0, 4, 2, 12);
+    assert(p8_gfx_pget(core, 50, 30) == 0);
+
+    p8_gfx_cls(core, 1);
+    p8_gfx_clip(core, 0, 0, 8, 8, 0);
+    p8_core_poke(core, 0x5f34, 2);
+    p8_gfx_ovalfill(core, 2, 2, 5, 5, 8);
+    assert(p8_gfx_pget(core, 3, 3) == 1);
+    assert(p8_gfx_pget(core, 0, 0) == 8);
+    assert(p8_gfx_pget(core, 8, 0) == 1);
+    p8_gfx_cls(core, 1);
+    p8_gfx_clip(core, 0, 0, 8, 8, 0);
+    p8_gfx_rrectfill(core, 2, 2, 4, 4, 1, 9);
+    assert(p8_gfx_pget(core, 3, 3) == 1);
+    assert(p8_gfx_pget(core, 0, 0) == 9);
+    assert(p8_gfx_pget(core, 8, 0) == 1);
+    p8_core_destroy(core);
+}
+
 void test_raster_tline_sampling_precision_masks_layers_and_transparency()
 {
     p8_core *core = p8_core_create();
@@ -840,6 +889,7 @@ int main()
     test_raster_sprite_map_palette_and_flip();
     test_raster_secondary_palette_patterns_sprite_and_global_draws();
     test_raster_embedded_colour_patterns_and_inverted_fills();
+    test_raster_ellipse_and_rounded_rectangle_primitives();
     test_raster_tline_sampling_precision_masks_layers_and_transparency();
     test_audio_is_deterministic_and_rejects_unqualified_features();
     test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic();

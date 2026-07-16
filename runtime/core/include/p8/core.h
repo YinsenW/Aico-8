@@ -51,6 +51,8 @@ typedef enum p8_draw_opcode {
     P8_DRAW_PALT,
     P8_DRAW_CAMERA,
     P8_DRAW_CLIP,
+    P8_DRAW_RRECT,
+    P8_DRAW_RRECTFILL,
 } p8_draw_opcode;
 
 /* Arguments are raw PICO-8 16:16 values unless an opcode says otherwise. */

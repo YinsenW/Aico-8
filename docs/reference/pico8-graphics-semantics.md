@@ -81,14 +81,18 @@ decodes embedded pattern arguments once through the shared raster API; explicit
 primitive colours stay local, while `color(encoded)` retains the encoded current
 colour for later omitted-colour calls.
 
-Filled rectangle and circle inversion share the ordinary camera, clip, draw
-palette, secondary palette, transparency, and screen-space pattern pipeline.
-The implementation constructs the exact complement of the same circle spans
-used by ordinary fills, avoiding a second geometry approximation. Native, VM,
-and Wasm tests cover embedded pattern bytes, screen-space tiling, persistent and
-one-call inversion, camera coordinates, and clip containment. The expectation
-probe records row 10 of `0xabcd` as `4,4,14,14`: `fillp` tiles by absolute
-screen row, so row 10 consumes pattern row 2 rather than row 0.
+Filled rectangle, circle, ellipse, and rounded-rectangle inversion share the
+ordinary camera, clip, draw palette, secondary palette, transparency, and
+screen-space pattern pipeline. Each filled primitive constructs the complement
+from the same deterministic spans used by its ordinary fill, avoiding a second
+geometry approximation. Ellipses use an integer bounding-box raster on native
+and Wasm; rounded rectangles interpret width and height as pixel counts, reject
+non-positive dimensions, and clamp radius to `0..min(width,height)/2`. Native,
+VM, Wasm, and Web tests cover all four curved primitive APIs and their semantic
+draw commands. Exact official edge pixels remain a golden-capture requirement.
+
+The expectation probe records row 10 of `0xabcd` as `4,4,14,14`: `fillp` tiles
+by absolute screen row, so row 10 consumes pattern row 2 rather than row 0.
 
 `runtime/core/src/core.cpp` owns current-cart ROM reload so native and Wasm VM
 calls share one copy path, dirty tracking, remapping behavior, and protected-code
@@ -124,11 +128,10 @@ public manual.
 Those captures become small golden fixtures. Independent emulators may locate
 disagreements, but they are not the compatibility oracle.
 
-## Next implementation slice
+## Next qualification slice
 
-Implement the remaining manual drawing primitives (`oval`, `ovalfill`, `rrect`,
-and `rrectfill`) in the shared native/Wasm raster and VM API, then capture
-licensed official-runtime goldens for embedded-state persistence, fixed-point,
-extended-colour output, inverted-fill, and other edge behavior. Keep
-indexed-frame tests and semantic-command output paired so the HD presentation
-bridge never invents separate semantics.
+Capture licensed official-runtime goldens for ellipse and rounded-rectangle
+edges, embedded-state persistence, fixed-point input, extended-colour output,
+inverted fills, and other edge behavior. Apply any resulting corrections to the
+single shared raster and keep indexed-frame tests and semantic-command output
+paired so the HD presentation bridge never invents separate semantics.

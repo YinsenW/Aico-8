@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
 
 namespace {
 
@@ -276,6 +277,133 @@ void raster_circle(p8_core *core, int center_x, int center_y, int radius,
             --x;
             error += 2 * (y - x) + 1;
         }
+    }
+}
+
+template <typename Plot>
+void raster_ellipse_points(int x0, int y0, int x1, int y1, Plot plot)
+{
+    int64_t left = std::min<int64_t>(bounded_coordinate(x0), bounded_coordinate(x1));
+    int64_t right = std::max<int64_t>(bounded_coordinate(x0), bounded_coordinate(x1));
+    int64_t top = std::min<int64_t>(bounded_coordinate(y0), bounded_coordinate(y1));
+    int64_t bottom = std::max<int64_t>(bounded_coordinate(y0), bounded_coordinate(y1));
+    if (left == right || top == bottom) {
+        if (left == right) {
+            for (int64_t y = top; y <= bottom; ++y) plot(left, y);
+        } else {
+            for (int64_t x = left; x <= right; ++x) plot(x, top);
+        }
+        return;
+    }
+
+    // Integer bounding-box ellipse by Alois Zingl. Keeping the algorithm in
+    // integer space makes native and Wasm edge decisions identical; licensed
+    // official captures still own the final PICO-8 edge golden.
+    int64_t a = right - left;
+    const int64_t b = bottom - top;
+    int64_t b_odd = b & 1;
+    int64_t dx = 4 * (1 - a) * b * b;
+    int64_t dy = 4 * (b_odd + 1) * a * a;
+    int64_t error = dx + dy + b_odd * a * a;
+    top += (b + 1) / 2;
+    bottom = top - b_odd;
+    const int64_t a_step = 8 * a * a;
+    const int64_t b_step = 8 * b * b;
+    do {
+        plot(right, top);
+        plot(left, top);
+        plot(left, bottom);
+        plot(right, bottom);
+        const int64_t twice_error = 2 * error;
+        if (twice_error <= dy) {
+            ++top;
+            --bottom;
+            error += dy += a_step;
+        }
+        if (twice_error >= dx || 2 * error > dy) {
+            ++left;
+            --right;
+            error += dx += b_step;
+        }
+    } while (left <= right);
+    while (top - bottom < b) {
+        plot(left - 1, top);
+        plot(right + 1, top++);
+        plot(left - 1, bottom);
+        plot(right + 1, bottom--);
+    }
+}
+
+struct visible_row_extents {
+    std::array<int64_t, P8_SCREEN_HEIGHT> left{};
+    std::array<int64_t, P8_SCREEN_HEIGHT> right{};
+
+    visible_row_extents()
+    {
+        left.fill(std::numeric_limits<int64_t>::max());
+        right.fill(std::numeric_limits<int64_t>::min());
+    }
+};
+
+visible_row_extents ellipse_extents(const p8_core *core, int x0, int y0, int x1, int y1)
+{
+    visible_row_extents extents;
+    if (!core) return extents;
+    const int camera_y = signed_word(core, kCameraY);
+    raster_ellipse_points(x0, y0, x1, y1, [&](int64_t world_x, int64_t world_y) {
+        const int64_t screen_y = world_y - camera_y;
+        if (screen_y < 0 || screen_y >= P8_SCREEN_HEIGHT) return;
+        const size_t row = static_cast<size_t>(screen_y);
+        extents.left[row] = std::min(extents.left[row], world_x);
+        extents.right[row] = std::max(extents.right[row], world_x);
+    });
+    return extents;
+}
+
+int64_t rounded_rect_cut(int64_t radius, int64_t corner_row)
+{
+    if (radius <= 1 || corner_row >= radius) return 0;
+    // Small radii use PICO-8's characteristic one-pixel staircase. Larger
+    // radii use an integer pixel-centre circle and remain deterministic.
+    if (radius <= 5) return radius - 1 - corner_row;
+    const int64_t diameter = radius * 2;
+    const int64_t dy = 2 * (radius - corner_row) - 1;
+    const int64_t available = diameter * diameter - dy * dy;
+    int64_t low = 0;
+    int64_t high = radius - 1;
+    while (low < high) {
+        const int64_t middle = low + (high - low) / 2;
+        const int64_t dx = 2 * (radius - middle) - 1;
+        if (dx * dx <= available) high = middle;
+        else low = middle + 1;
+    }
+    return low;
+}
+
+template <typename Span>
+void rounded_rect_spans(const p8_core *core, int x, int y, int width, int height,
+                        int radius, Span span)
+{
+    if (!core || width <= 0 || height <= 0) return;
+    const int64_t left = bounded_coordinate(x);
+    const int64_t top = bounded_coordinate(y);
+    const int64_t shape_width = width;
+    const int64_t shape_height = height;
+    const int64_t clamped_radius = std::max<int64_t>(0, std::min<int64_t>(
+        radius, std::min(shape_width, shape_height) / 2));
+    const int camera_y = signed_word(core, kCameraY);
+    const int first_screen_y = p8_core_peek(core, kClipY);
+    const int last_screen_y = std::min(static_cast<int>(P8_SCREEN_HEIGHT),
+        static_cast<int>(p8_core_peek(core, kClipY))
+        + static_cast<int>(p8_core_peek(core, kClipHeight)));
+    for (int screen_y = first_screen_y; screen_y < last_screen_y; ++screen_y) {
+        const int64_t world_y = static_cast<int64_t>(screen_y) + camera_y;
+        const int64_t row = world_y - top;
+        if (row < 0 || row >= shape_height) continue;
+        const int64_t corner_row = std::min(row, shape_height - 1 - row);
+        const int64_t cut = rounded_rect_cut(clamped_radius, corner_row);
+        span(left + cut, left + shape_width - 1 - cut, world_y,
+             row == 0 || row == shape_height - 1);
     }
 }
 
@@ -628,6 +756,81 @@ void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
     }
     raster_circle(core, center_x, center_y, radius, color,
                   circle_spans);
+}
+
+void p8_gfx_oval(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color)
+{
+    if (!core) return;
+    raster_ellipse_points(x0, y0, x1, y1, [&](int64_t world_x, int64_t world_y) {
+        draw_patterned_pixel(core, world_x, world_y, color);
+    });
+}
+
+void p8_gfx_ovalfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color)
+{
+    if (!core) return;
+    const visible_row_extents extents = ellipse_extents(core, x0, y0, x1, y1);
+    const int camera_y = signed_word(core, kCameraY);
+    if ((p8_core_peek(core, kColorSettingFlags) & kColorInvertedFill) != 0) {
+        std::array<uint8_t, P8_SCREEN_PIXELS> mask{};
+        for (int screen_y = 0; screen_y < P8_SCREEN_HEIGHT; ++screen_y) {
+            if (extents.left[static_cast<size_t>(screen_y)]
+                > extents.right[static_cast<size_t>(screen_y)]) continue;
+            mark_mapped_span(core, mask,
+                             extents.left[static_cast<size_t>(screen_y)],
+                             extents.right[static_cast<size_t>(screen_y)],
+                             static_cast<int64_t>(screen_y) + camera_y);
+        }
+        draw_inverted_clip(core, color, [&](int screen_x, int screen_y) {
+            return mask[static_cast<size_t>(screen_y) * P8_SCREEN_WIDTH
+                        + static_cast<size_t>(screen_x)] != 0;
+        });
+        return;
+    }
+    for (int screen_y = 0; screen_y < P8_SCREEN_HEIGHT; ++screen_y) {
+        if (extents.left[static_cast<size_t>(screen_y)]
+            > extents.right[static_cast<size_t>(screen_y)]) continue;
+        draw_mapped_span(core,
+                         extents.left[static_cast<size_t>(screen_y)],
+                         extents.right[static_cast<size_t>(screen_y)],
+                         static_cast<int64_t>(screen_y) + camera_y, color);
+    }
+}
+
+void p8_gfx_rrect(p8_core *core, int x, int y, int width, int height, int radius,
+                  uint8_t color)
+{
+    rounded_rect_spans(core, x, y, width, height, radius,
+        [&](int64_t left, int64_t right, int64_t world_y, bool horizontal_edge) {
+            if (horizontal_edge) {
+                draw_mapped_span(core, left, right, world_y, color);
+            } else {
+                draw_patterned_pixel(core, left, world_y, color);
+                if (right != left) draw_patterned_pixel(core, right, world_y, color);
+            }
+        });
+}
+
+void p8_gfx_rrectfill(p8_core *core, int x, int y, int width, int height, int radius,
+                      uint8_t color)
+{
+    if (!core || width <= 0 || height <= 0) return;
+    if ((p8_core_peek(core, kColorSettingFlags) & kColorInvertedFill) != 0) {
+        std::array<uint8_t, P8_SCREEN_PIXELS> mask{};
+        rounded_rect_spans(core, x, y, width, height, radius,
+            [&](int64_t left, int64_t right, int64_t world_y, bool) {
+                mark_mapped_span(core, mask, left, right, world_y);
+            });
+        draw_inverted_clip(core, color, [&](int screen_x, int screen_y) {
+            return mask[static_cast<size_t>(screen_y) * P8_SCREEN_WIDTH
+                        + static_cast<size_t>(screen_x)] != 0;
+        });
+        return;
+    }
+    rounded_rect_spans(core, x, y, width, height, radius,
+        [&](int64_t left, int64_t right, int64_t world_y, bool) {
+            draw_mapped_span(core, left, right, world_y, color);
+        });
 }
 
 void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,

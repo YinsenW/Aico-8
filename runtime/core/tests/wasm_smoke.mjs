@@ -508,6 +508,54 @@ try {
   kernel._free(rasterRegisterSourcePointer);
 }
 
+const curvedPrimitiveRuntime = kernel._aico8_create();
+assert.notEqual(curvedPrimitiveRuntime, 0);
+const curvedPrimitiveSource = new TextEncoder().encode(`
+function _init()
+ cls(0)
+ oval(10,10,14,12,8) oval_top=pget(12,10)
+ ovalfill(20,20,26,24,9) oval_center=pget(23,22)
+ rrectfill(30,30,6,4,2,10) rounded_corner=pget(30,30) rounded_top=pget(31,30)
+ rrect(40,30,6,4,99,11) outline_side=pget(40,31) outline_center=pget(42,31)
+ poke(0x5f34,3) cls(1) clip(0,0,8,8)
+ ovalfill(2,2,5,5,0x1808.0000)
+ inverted_inside=pget(3,3) inverted_outside=pget(0,0)
+end
+`);
+const curvedPrimitiveSourcePointer = copyToHeap(curvedPrimitiveSource);
+const curvedPrimitiveRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(curvedPrimitiveRuntime, curvedPrimitiveRomPointer, 0x8000,
+    curvedPrimitiveSourcePointer, curvedPrimitiveSource.length), 1);
+  assert.equal(kernel._aico8_start(curvedPrimitiveRuntime), 1);
+  const valuePointer = kernel._malloc(4);
+  const expectedGlobals = {
+    oval_top: 8,
+    oval_center: 9,
+    rounded_corner: 0,
+    rounded_top: 10,
+    outline_side: 11,
+    outline_center: 0,
+    inverted_inside: 1,
+    inverted_outside: 8,
+  };
+  const names = Object.fromEntries(Object.keys(expectedGlobals)
+    .map((name) => [name, copyToHeap(new TextEncoder().encode(`${name}\0`))]));
+  try {
+    for (const [name, expected] of Object.entries(expectedGlobals)) {
+      assert.equal(kernel._aico8_get_global_raw(curvedPrimitiveRuntime, names[name], valuePointer), 1);
+      assert.equal(new DataView(kernel.HEAPU8.buffer).getInt32(valuePointer, true), expected << 16);
+    }
+  } finally {
+    for (const pointer of Object.values(names)) kernel._free(pointer);
+    kernel._free(valuePointer);
+  }
+} finally {
+  kernel._aico8_destroy(curvedPrimitiveRuntime);
+  kernel._free(curvedPrimitiveRomPointer);
+  kernel._free(curvedPrimitiveSourcePointer);
+}
+
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(

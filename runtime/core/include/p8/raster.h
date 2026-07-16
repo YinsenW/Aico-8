@@ -55,6 +55,12 @@ void p8_gfx_rectfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t colo
 void p8_gfx_circ(p8_core *core, int center_x, int center_y, int radius, uint8_t color);
 void p8_gfx_circfill(p8_core *core, int center_x, int center_y, int radius,
                      uint8_t color);
+void p8_gfx_oval(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_ovalfill(p8_core *core, int x0, int y0, int x1, int y1, uint8_t color);
+void p8_gfx_rrect(p8_core *core, int x, int y, int width, int height, int radius,
+                  uint8_t color);
+void p8_gfx_rrectfill(p8_core *core, int x, int y, int width, int height, int radius,
+                      uint8_t color);
 void p8_gfx_spr(p8_core *core, int sprite, int x, int y, int width, int height,
                 int flip_x, int flip_y);
 void p8_gfx_sspr(p8_core *core, int source_x, int source_y, int source_width,

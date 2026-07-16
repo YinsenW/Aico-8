@@ -22,6 +22,8 @@ const OPCODE = {
   palt: 18,
   camera: 19,
   clip: 20,
+  rrect: 21,
+  rrectfill: 22,
 } as const;
 
 type Point = { x: number; y: number };
@@ -449,6 +451,30 @@ export class VectorCommandPresenter {
         const oval = graphics.ellipse(left + width / 2, top + height / 2, width / 2, height / 2);
         if (command.opcode === OPCODE.ovalfill) oval.fill({ color: colorFor(integer(args[4], 6)) });
         else oval.stroke({ color: colorFor(integer(args[4], 6)), width: scale });
+        sourcePrimitiveCount += 1;
+        continuousPrimitiveCount += 1;
+        continue;
+      }
+      if (command.opcode === OPCODE.rrect || command.opcode === OPCODE.rrectfill) {
+        const width = Math.max(0, integer(args[2])) * scale;
+        const height = Math.max(0, integer(args[3])) * scale;
+        if (width === 0 || height === 0) continue;
+        const radius = Math.max(0, Math.min(
+          integer(args[4]),
+          Math.floor(Math.min(integer(args[2]), integer(args[3])) / 2),
+        )) * scale;
+        if (command.opcode === OPCODE.rrectfill) {
+          graphics.roundRect(x(args[0]), y(args[1]), width, height, radius)
+            .fill({ color: colorFor(integer(args[5], 6)) });
+        } else {
+          graphics.roundRect(
+            x(args[0]) + scale / 2,
+            y(args[1]) + scale / 2,
+            Math.max(0, width - scale),
+            Math.max(0, height - scale),
+            Math.max(0, radius - scale / 2),
+          ).stroke({ color: colorFor(integer(args[5], 6)), width: scale, join: "round" });
+        }
         sourcePrimitiveCount += 1;
         continuousPrimitiveCount += 1;
         continue;

@@ -45,6 +45,25 @@ describe("vector command presenter", () => {
     });
   });
 
+  it("presents ellipse and rounded-rectangle commands as continuous HD geometry", () => {
+    const presenter = new VectorCommandPresenter({ scale: 8, palette });
+    const graphics = new Graphics();
+    presenter.render(graphics, kernel, [
+      command(8, [10, 10, 20, 16, 8]),
+      command(9, [24, 10, 34, 16, 9]),
+      command(21, [10, 24, 12, 8, 3, 10]),
+      command(22, [28, 24, 12, 8, 3, 11]),
+    ], () => {});
+
+    expect(presenter.measurements()).toMatchObject({
+      sourcePrimitiveCount: 4,
+      continuousPrimitiveCount: 4,
+      spriteSurfaceCount: 0,
+      indexedCellQuadCount: 0,
+    });
+    expect(graphics.bounds.width).toBeGreaterThan(200);
+  });
+
   it("collapses dense pset read-modify-write output into final-frame surfaces", () => {
     const framebuffer = new Uint8Array(128 * 128);
     const commands = Array.from({ length: 64 }, (_, index) => {

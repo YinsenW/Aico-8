@@ -853,6 +853,62 @@ end
     p8_core_destroy(core);
 }
 
+void test_ellipse_and_rounded_rectangle_apis_reach_raster_and_draw_stream()
+{
+    constexpr char source[] = R"p8lua(
+function verify_curved_primitives()
+ cls(0)
+ oval(10,10,14,12,8) oval_top=pget(12,10)
+ ovalfill(20,20,26,24,9) oval_center=pget(23,22)
+ rrectfill(30,30,6,4,2,10) rounded_corner=pget(30,30) rounded_top=pget(31,30)
+ rrect(40,30,6,4,99,11) outline_side=pget(40,31) outline_center=pget(42,31)
+ poke(0x5f34,3) cls(1) clip(0,0,8,8)
+ ovalfill(2,2,5,5,0x1808.0000)
+ oval_inverted_inside=pget(3,3) oval_inverted_outside=pget(0,0)
+ cls(1) clip(0,0,8,8)
+ rrectfill(2,2,4,4,1,0x1809.0000)
+ rounded_inverted_inside=pget(3,3) rounded_inverted_outside=pget(0,0)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, source, sizeof(source) - 1,
+                                   "@curved-primitives"));
+    assert(p8_vm_call(vm, "verify_curved_primitives"));
+    const auto integer_global = [vm](const char *name) {
+        int32_t raw = 0;
+        assert(p8_vm_get_global_raw(vm, name, &raw));
+        return raw >> 16;
+    };
+    assert(integer_global("oval_top") == 8);
+    assert(integer_global("oval_center") == 9);
+    assert(integer_global("rounded_corner") == 0);
+    assert(integer_global("rounded_top") == 10);
+    assert(integer_global("outline_side") == 11);
+    assert(integer_global("outline_center") == 0);
+    assert(integer_global("oval_inverted_inside") == 1);
+    assert(integer_global("oval_inverted_outside") == 8);
+    assert(integer_global("rounded_inverted_inside") == 1);
+    assert(integer_global("rounded_inverted_outside") == 9);
+
+    bool saw_oval = false;
+    bool saw_ovalfill = false;
+    bool saw_rrect = false;
+    bool saw_rrectfill = false;
+    const p8_draw_command *commands = p8_core_draw_data(core);
+    for (size_t index = 0; index < p8_core_draw_count(core); ++index) {
+        saw_oval |= commands[index].opcode == P8_DRAW_OVAL;
+        saw_ovalfill |= commands[index].opcode == P8_DRAW_OVALFILL;
+        saw_rrect |= commands[index].opcode == P8_DRAW_RRECT;
+        saw_rrectfill |= commands[index].opcode == P8_DRAW_RRECTFILL;
+    }
+    assert(saw_oval && saw_ovalfill && saw_rrect && saw_rrectfill);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_update_error_is_sticky_and_draw_is_skipped()
 {
     constexpr char source[] = R"p8lua(
@@ -951,6 +1007,7 @@ int main(int argc, char **argv)
     test_secondary_palette_reaches_sprite_and_global_raster_through_lua();
     test_embedded_colour_patterns_and_inversion_reach_raster_through_lua();
     test_map_sprite_zero_read_overrides_and_extended_display_palette_reach_lua();
+    test_ellipse_and_rounded_rectangle_apis_reach_raster_and_draw_stream();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"

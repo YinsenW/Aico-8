@@ -886,6 +886,58 @@ int api_circfill(lua_State *state)
     return 0;
 }
 
+int api_oval(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit_with_resolved_argument(P8_DRAW_OVAL, state, 5, 4, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 5, vm->draw_color_raw);
+    p8_gfx_oval(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                integer(state, 4), p8_gfx_apply_color_argument(vm->core, color_raw));
+    return 0;
+}
+
+int api_ovalfill(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit_with_resolved_argument(P8_DRAW_OVALFILL, state, 5, 4, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 5, vm->draw_color_raw);
+    const int embedded_invert =
+        p8_gfx_color_argument_requests_inversion(vm->core, color_raw);
+    const uint8_t old_setting = p8_core_peek(vm->core, 0x5f34);
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting | 0x02u);
+    p8_gfx_ovalfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                    integer(state, 4), p8_gfx_apply_color_argument(vm->core, color_raw));
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting);
+    return 0;
+}
+
+int api_rrect(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit_with_resolved_argument(P8_DRAW_RRECT, state, 6, 5, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 6, vm->draw_color_raw);
+    p8_gfx_rrect(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                 integer(state, 4), integer(state, 5),
+                 p8_gfx_apply_color_argument(vm->core, color_raw));
+    return 0;
+}
+
+int api_rrectfill(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    vm->emit_with_resolved_argument(P8_DRAW_RRECTFILL, state, 6, 5, vm->draw_color_raw);
+    const int32_t color_raw = raw_number(state, 6, vm->draw_color_raw);
+    const int embedded_invert =
+        p8_gfx_color_argument_requests_inversion(vm->core, color_raw);
+    const uint8_t old_setting = p8_core_peek(vm->core, 0x5f34);
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting | 0x02u);
+    p8_gfx_rrectfill(vm->core, integer(state, 1), integer(state, 2), integer(state, 3),
+                     integer(state, 4), integer(state, 5),
+                     p8_gfx_apply_color_argument(vm->core, color_raw));
+    if (embedded_invert) p8_core_poke(vm->core, 0x5f34, old_setting);
+    return 0;
+}
+
 int api_spr(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
@@ -1328,6 +1380,10 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("rectfill", api_rectfill);
     vm->install("circ", api_circ);
     vm->install("circfill", api_circfill);
+    vm->install("oval", api_oval);
+    vm->install("ovalfill", api_ovalfill);
+    vm->install("rrect", api_rrect);
+    vm->install("rrectfill", api_rrectfill);
     vm->install("spr", api_spr);
     vm->install("sspr", api_sspr);
     vm->install("map", api_map);
