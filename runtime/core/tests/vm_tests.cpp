@@ -1,6 +1,7 @@
 #include "p8/core.h"
 #include "p8/audio.h"
 #include "p8/raster.h"
+#include "p8/text.h"
 #include "p8/vm.h"
 
 #include <algorithm>
@@ -140,6 +141,36 @@ std::vector<uint8_t> test_custom_audio_fixture_is_explicit_and_hashable()
     assert(std::any_of(audio.begin(), audio.end(), [](int16_t sample) { return sample != 0; }));
     assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_INSTRUMENT);
     assert(event_count >= 2 && events[0].kind == P8_AUDIO_EVENT_DIAGNOSTIC_CUSTOM_AUDIO);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+    return checkpoint;
+}
+
+std::vector<uint8_t> test_text_ir_fixture_is_canonical_and_hashable()
+{
+    constexpr char source[] =
+        "function _init() local s=chr(6) local g=s..':ff818181818181ff' "
+        "print(g,0,0,7) poke(0x5600,8,8,8,0,0,0,4,0) "
+        "poke(0x5680,1,2,4,8,16,32,64,128) "
+        "print(chr(14)..chr(16)..chr(15),30,0,6) end "
+        "function _update() print('u',1,10,7) end "
+        "function _draw() print('d',2,10,7) end\n";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@text-ir-fixture"));
+    assert(p8_vm_call(vm, "_init"));
+    const uint8_t *stream = p8_core_text_ir_data(core);
+    const size_t size = p8_core_text_ir_size(core);
+    assert(stream && size > 12 && stream[0] == 'A' && stream[1] == '8'
+           && stream[2] == 'T' && stream[3] == 'R');
+    assert(stream[8] == 2 && stream[9] == 0 && stream[10] == 0 && stream[11] == 0);
+    std::vector<uint8_t> checkpoint(stream, stream + size);
+    assert(p8_core_host_tick60(core, 1) == 1);
+    stream = p8_core_text_ir_data(core);
+    assert(stream[8] == 2 && stream[9] == 0 && stream[10] == 0 && stream[11] == 0);
     p8_vm_destroy(vm);
     p8_core_destroy(core);
     return checkpoint;
@@ -1000,6 +1031,8 @@ int main(int argc, char **argv)
     const std::vector<uint8_t> checkpoint = test_synthetic_cart_updates_raster_and_semantic_stream();
     const std::vector<uint8_t> custom_audio_checkpoint =
         test_custom_audio_fixture_is_explicit_and_hashable();
+    const std::vector<uint8_t> text_ir_checkpoint =
+        test_text_ir_fixture_is_canonical_and_hashable();
     test_pico_button_glyph_constants_map_to_all_six_buttons();
     test_unicode_source_glyphs_execute_as_p8scii_byte_strings();
     test_holdframe_defers_presentation_until_the_next_host_frame();
@@ -1016,9 +1049,12 @@ int main(int argc, char **argv)
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"
-                       || std::string(argv[1]) == "--custom-audio-checkpoint")) {
-        const std::vector<uint8_t> &selected = std::string(argv[1]) == "--checkpoint"
-            ? checkpoint : custom_audio_checkpoint;
+                       || std::string(argv[1]) == "--custom-audio-checkpoint"
+                       || std::string(argv[1]) == "--text-ir-checkpoint")) {
+        const std::string selector = argv[1];
+        const std::vector<uint8_t> &selected = selector == "--checkpoint" ? checkpoint
+            : selector == "--custom-audio-checkpoint" ? custom_audio_checkpoint
+                                                       : text_ir_checkpoint;
         for (uint8_t byte : selected) std::printf("%02x", byte);
         std::putchar('\n');
     } else {

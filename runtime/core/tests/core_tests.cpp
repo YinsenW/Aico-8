@@ -1,6 +1,7 @@
 #include "p8/core.h"
 #include "p8/audio.h"
 #include "p8/raster.h"
+#include "p8/text.h"
 
 #include <algorithm>
 #include <array>
@@ -11,6 +12,20 @@
 #include <cstdio>
 
 namespace {
+
+uint16_t read_u16(const uint8_t *bytes, size_t offset)
+{
+    return static_cast<uint16_t>(bytes[offset]
+        | (static_cast<uint16_t>(bytes[offset + 1]) << 8u));
+}
+
+uint32_t read_u32(const uint8_t *bytes, size_t offset)
+{
+    return static_cast<uint32_t>(bytes[offset])
+        | (static_cast<uint32_t>(bytes[offset + 1]) << 8u)
+        | (static_cast<uint32_t>(bytes[offset + 2]) << 16u)
+        | (static_cast<uint32_t>(bytes[offset + 3]) << 24u);
+}
 
 void write_sfx_note(std::array<uint8_t, P8_ROM_SIZE> &rom, unsigned sfx,
                     unsigned note, uint8_t key, uint8_t waveform,
@@ -218,6 +233,69 @@ void test_draw_stream()
     p8_core_begin_draw_stream(core);
     assert(p8_core_draw_count(core) == 0);
     assert(p8_core_draw_payload_size(core) == 0);
+    p8_core_destroy(core);
+}
+
+void test_text_ir_is_versioned_lossless_and_conservative()
+{
+    p8_core *core = p8_core_create();
+    p8_core_begin_update(core);
+    assert(p8_core_text_ir_size(core) == 12);
+    const uint8_t *stream = p8_core_text_ir_data(core);
+    assert(std::memcmp(stream, "A8TR", 4) == 0);
+    assert(read_u16(stream, 4) == P8_TEXT_IR_SCHEMA_VERSION);
+    assert(read_u16(stream, 6) == 12);
+    assert(read_u32(stream, 8) == 0);
+
+    constexpr uint8_t plain[] = {'d', 'u', 's', 't'};
+    p8_text_result result{};
+    assert(p8_text_print(core, plain, sizeof(plain), 4, 5, 8, 0, &result));
+    stream = p8_core_text_ir_data(core);
+    assert(read_u32(stream, 8) == 1);
+    const size_t first = 12;
+    assert(read_u16(stream, first + 4) == 112);
+    assert(read_u16(stream, first + 6) == 1);
+    assert(read_u32(stream, first + 8) == 0);
+    assert(read_u32(stream, first + 20) == P8_TEXT_CLASS_SAFE_MODERN);
+    assert(read_u32(stream, first + 24) == P8_TEXT_REASON_NONE);
+    assert(read_u32(stream, first + 28) == P8_TEXT_EFFECT_CURSOR);
+    assert(read_u32(stream, first + 32) == P8_TEXT_UNSUPPORTED_NONE);
+    assert(static_cast<int32_t>(read_u32(stream, first + 36)) == 4);
+    assert(static_cast<int32_t>(read_u32(stream, first + 40)) == 5);
+    assert(static_cast<int32_t>(read_u32(stream, first + 52)) == result.cursor_x);
+    assert(static_cast<int32_t>(read_u32(stream, first + 60)) == result.rightmost_x);
+    assert(read_u32(stream, first + 72) > 0);
+    assert(read_u32(stream, first + 76) > 0);
+    assert(read_u32(stream, first + 108) == sizeof(plain));
+    assert(read_u32(stream, first + 112) == 0);
+    assert(read_u32(stream, first + 116) == sizeof(plain));
+    assert(read_u32(stream, first + 120) == P8_TEXT_SPAN_VISUAL);
+    assert(std::memcmp(stream + first + 132, plain, sizeof(plain)) == 0);
+
+    constexpr uint8_t custom[] = {14, 'a', 15};
+    assert(p8_text_print(core, custom, sizeof(custom), 20, 5, 6, 0, &result));
+    stream = p8_core_text_ir_data(core);
+    assert(read_u32(stream, 8) == 2);
+    const size_t second = first + read_u32(stream, first);
+    assert(read_u32(stream, second + 8) == 1);
+    assert(read_u32(stream, second + 20) == P8_TEXT_CLASS_REVIEW_REQUIRED);
+    assert((read_u32(stream, second + 24) & P8_TEXT_REASON_CUSTOM_FONT) != 0);
+    assert((read_u32(stream, second + 28) & P8_TEXT_EFFECT_CUSTOM_FONT_STATE) != 0);
+    assert(read_u32(stream, second + 92) != 0);
+    assert(read_u32(stream, second + 96) == 0x5600);
+    assert(read_u32(stream, second + 100) == 256);
+
+    p8_core_begin_update(core);
+    constexpr uint8_t delayed[] = {6, '1'};
+    assert(p8_text_print(core, delayed, sizeof(delayed), 0, 0, 7, 0, &result));
+    assert(result.unsupported == P8_TEXT_UNSUPPORTED_DELAY);
+    stream = p8_core_text_ir_data(core);
+    assert(read_u32(stream, 8) == 1);
+    assert(read_u32(stream, 12 + 20) == P8_TEXT_CLASS_REFERENCE_ONLY);
+    assert((read_u32(stream, 12 + 24) & P8_TEXT_REASON_UNSUPPORTED) != 0);
+    assert((read_u32(stream, 12 + 28) & P8_TEXT_EFFECT_TIMING) != 0);
+    assert(read_u32(stream, 12 + 32) == P8_TEXT_UNSUPPORTED_DELAY);
+    assert(std::memcmp(stream + 12 + 112 + 20, delayed, sizeof(delayed)) == 0);
     p8_core_destroy(core);
 }
 
@@ -884,6 +962,7 @@ int main()
     test_btnp_is_latched_and_repeats();
     test_scheduler();
     test_draw_stream();
+    test_text_ir_is_versioned_lossless_and_conservative();
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();

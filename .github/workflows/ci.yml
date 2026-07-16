@@ -73,6 +73,8 @@ jobs:
         run: corepack enable
       - name: Install TypeScript workspace
         run: pnpm install --frozen-lockfile
+      - name: Verify semantic text-run Native/Wasm identity
+        run: pnpm verify:text-run
       - name: Check, test, and build Web product
         run: pnpm verify:web
       - name: Verify human-guided Skill package

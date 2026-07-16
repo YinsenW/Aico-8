@@ -2,6 +2,7 @@
 
 #include "p8/audio.h"
 #include "p8/raster.h"
+#include "p8/text.h"
 #include "p8/vm.h"
 
 #include <algorithm>
@@ -243,6 +244,16 @@ const uint8_t *aico8_draw_payload(const aico8_runtime *runtime)
 size_t aico8_draw_payload_size(const aico8_runtime *runtime)
 {
     return runtime ? p8_core_draw_payload_size(runtime->core) : 0;
+}
+
+const uint8_t *aico8_text_ir(const aico8_runtime *runtime)
+{
+    return runtime ? p8_core_text_ir_data(runtime->core) : nullptr;
+}
+
+size_t aico8_text_ir_size(const aico8_runtime *runtime)
+{
+    return runtime ? p8_core_text_ir_size(runtime->core) : 0;
 }
 
 size_t aico8_copy_map_region(const aico8_runtime *runtime, int cell_x, int cell_y,

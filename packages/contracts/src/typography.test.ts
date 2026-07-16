@@ -231,10 +231,19 @@ describe("typography routing contracts", () => {
     const manifestSchema = JSON.parse(readFileSync(
       new URL("../../../specs/schemas/typography-manifest-v1.schema.json", import.meta.url), "utf8",
     ));
+    const textRunSchema = JSON.parse(readFileSync(
+      new URL("../../../specs/schemas/text-run-v1.schema.json", import.meta.url), "utf8",
+    ));
     expect(inventorySchema.properties.schemaVersion.const).toBe(TEXT_INVENTORY_SCHEMA_VERSION);
     expect(inventorySchema.$defs.run.properties.classification.enum).toEqual(TEXT_CLASSIFICATIONS);
     expect(inventorySchema.$defs.run.properties.provenance.properties.kind.enum).toEqual(TEXT_PROVENANCE_KINDS);
     expect(manifestSchema.properties.schemaVersion.const).toBe(TYPOGRAPHY_MANIFEST_SCHEMA_VERSION);
     expect(manifestSchema.properties.osFallback.const).toBe(false);
+    expect(textRunSchema.properties.schemaVersion.const).toBe(1);
+    expect(textRunSchema.properties.classification.enum).toEqual(TEXT_CLASSIFICATIONS);
+    expect(textRunSchema.properties.customFont.properties).toMatchObject({
+      memoryBase: { const: 0x5600 },
+      memorySize: { const: 256 },
+    });
   });
 });

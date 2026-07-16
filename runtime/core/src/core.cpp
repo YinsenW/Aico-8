@@ -1,6 +1,7 @@
 #include "p8/core.h"
 #include "p8/audio.h"
 #include "p8/raster.h"
+#include "p8/text.h"
 
 #include "audio_internal.h"
 #include "core_internal.h"
@@ -46,8 +47,10 @@ struct p8_core {
     unsigned host_phase = 0;
     uint64_t update_count = 0;
     uint32_t draw_sequence = 0;
+    uint32_t text_ir_sequence = 0;
     std::vector<p8_draw_command> draw_commands;
     std::vector<uint8_t> draw_payload;
+    std::vector<uint8_t> text_ir;
     p8_audio_state audio{};
 
     uint16_t translate(uint16_t address) const
@@ -114,6 +117,23 @@ struct p8_core {
         return update_rate == 60 ? 2u : 1u;
     }
 };
+
+namespace {
+
+void reset_text_ir(p8_core *core)
+{
+    core->text_ir = {'A', '8', 'T', 'R', 1, 0, 12, 0, 0, 0, 0, 0};
+    core->text_ir_sequence = 0;
+}
+
+void write_u32_le(std::vector<uint8_t> &bytes, size_t offset, uint32_t value)
+{
+    for (unsigned shift = 0; shift < 32; shift += 8) {
+        bytes[offset++] = static_cast<uint8_t>(value >> shift);
+    }
+}
+
+} // namespace
 
 uint8_t p8_core_secondary_palette_get(const p8_core *core, uint8_t color)
 {
@@ -198,6 +218,7 @@ void p8_core_reset(p8_core *core)
     core->draw_sequence = 0;
     core->draw_commands.clear();
     core->draw_payload.clear();
+    reset_text_ir(core);
     p8_audio_reset(core);
 }
 
@@ -359,6 +380,7 @@ void p8_core_begin_update(p8_core *core)
     if (!core) {
         return;
     }
+    reset_text_ir(core);
     const unsigned scale = core->repeat_scale();
     const uint32_t delay = static_cast<uint32_t>(core->ram[kRepeatDelayRegister]) * scale;
     const uint32_t interval = std::max<uint32_t>(1, static_cast<uint32_t>(core->ram[kRepeatIntervalRegister]) * scale);
@@ -525,4 +547,35 @@ const uint8_t *p8_core_draw_payload_data(const p8_core *core)
     return core && !core->draw_payload.empty() ? core->draw_payload.data() : nullptr;
 }
 
+const uint8_t *p8_core_text_ir_data(const p8_core *core)
+{
+    return core && !core->text_ir.empty() ? core->text_ir.data() : nullptr;
+}
+
+size_t p8_core_text_ir_size(const p8_core *core)
+{
+    return core ? core->text_ir.size() : 0;
+}
+
 } // extern "C"
+
+uint32_t p8_core_text_ir_next_sequence(p8_core *core)
+{
+    return core ? core->text_ir_sequence++ : 0;
+}
+
+int p8_core_append_text_ir_record(p8_core *core, const uint8_t *record,
+                                  size_t record_size)
+{
+    if (!core || !record || record_size < 4
+        || core->text_ir.size() > std::numeric_limits<uint32_t>::max() - record_size) {
+        return 0;
+    }
+    core->text_ir.insert(core->text_ir.end(), record, record + record_size);
+    uint32_t count = static_cast<uint32_t>(core->text_ir[8])
+        | (static_cast<uint32_t>(core->text_ir[9]) << 8u)
+        | (static_cast<uint32_t>(core->text_ir[10]) << 16u)
+        | (static_cast<uint32_t>(core->text_ir[11]) << 24u);
+    write_u32_le(core->text_ir, 8, count + 1u);
+    return 1;
+}

@@ -1,4 +1,5 @@
 import { resolvePackageAssetUrl, resolvePackageChildAssetUrl } from "./package-url.js";
+import { decodeTextRunIr, type TextRunV1 } from "./text-run-ir.js";
 
 export interface GameManifest {
   readonly formatVersion: 1;
@@ -138,6 +139,8 @@ interface EmscriptenKernel {
   _aico8_draw_command_count(runtime: number): number;
   _aico8_draw_payload(runtime: number): number;
   _aico8_draw_payload_size(runtime: number): number;
+  _aico8_text_ir(runtime: number): number;
+  _aico8_text_ir_size(runtime: number): number;
   _aico8_copy_map_region(runtime: number, cellX: number, cellY: number, width: number, height: number, destination: number, capacity: number): number;
   _aico8_copy_sprite_region(runtime: number, pixelX: number, pixelY: number, width: number, height: number, destination: number, capacity: number): number;
   _aico8_copy_sprite_flags(runtime: number, firstSprite: number, count: number, destination: number, capacity: number): number;
@@ -426,6 +429,13 @@ export class Aico8Kernel {
       });
     }
     return result;
+  }
+
+  textRuns(): readonly TextRunV1[] {
+    const pointer = this.#module._aico8_text_ir(this.#runtime);
+    const size = this.#module._aico8_text_ir_size(this.#runtime);
+    if (!pointer || size < 12) throw new Error("Kernel returned an invalid text-run stream");
+    return decodeTextRunIr(this.#module.HEAPU8.slice(pointer, pointer + size));
   }
 
   mapRegion(cellX: number, cellY: number, width: number, height: number): Uint8Array {

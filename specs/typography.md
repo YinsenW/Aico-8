@@ -53,7 +53,7 @@ cannot be composited into an accepted HD frame.
 
 The executable modernization companion is
 `specs/schemas/text-inventory-v1.schema.json` plus
-`packages/contracts/src/typography.ts`. It does not replace the planned kernel
+`packages/contracts/src/typography.ts`. It does not replace the kernel
 text-run IR: it inventories every reachable run exactly once and binds its
 P8SCII/Unicode evidence, provenance, routing class, and explicit mapping. A
 review blocker is a mapping; a missing mapping is invalid evidence. Drafts may
@@ -62,7 +62,11 @@ allows identity artwork only through a reviewed contour decision.
 For identity artwork, `safe-modern` means a review-approved identity asset; it
 never means that the artwork is eligible for substitution by an ordinary font.
 
-The future versioned text-run schema must preserve at least:
+The version-1 kernel wire contract is emitted by `runtime/core/src/text.cpp`,
+exposed unchanged by the native/Wasm C ABI, decoded fail-closed by
+`apps/web/src/runtime/text-run-ir.ts`, and projected by
+`specs/schemas/text-run-v1.schema.json`. It uses explicit little-endian fields,
+not compiler struct layout, and preserves:
 
 - command/update identity and ordered span identity;
 - original byte range and unmodified P8SCII bytes;
@@ -73,6 +77,14 @@ The future versioned text-run schema must preserve at least:
 - semantic role, localization key when applicable, and source provenance;
 - classification: `safe-modern`, `reference-only`, or `review-required`;
 - reason codes and exact diagnostic correspondence region.
+
+The kernel classifies only plain printable ASCII without control/custom/inline
+ambiguity as `safe-modern`. Unsupported effectful controls are
+`reference-only`; non-ASCII glyphs, custom fonts, inline glyphs, visual controls,
+or ambiguous mappings are `review-required`. These are routing permissions, not
+permission for the HD layer to replay cursor, color, RAM, timing, audio, clear,
+or render-state effects. The ordered span ledger records those effects while the
+compatibility executor remains their sole authority.
 
 Effectful controls are never discarded from the compatibility stream. A modern
 run may represent their visual result, but it may not execute or approximate the

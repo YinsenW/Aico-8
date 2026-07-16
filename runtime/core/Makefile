@@ -46,13 +46,13 @@ $(WASM_OUTPUT): Makefile src/core.cpp src/core_internal.h src/audio.cpp src/audi
 		-fexceptions -sDISABLE_EXCEPTION_CATCHING=0 \
 		-sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createAico8Kernel \
 		-sALLOW_MEMORY_GROWTH=1 -sENVIRONMENT=web,node -sFILESYSTEM=0 \
-		-sEXPORTED_FUNCTIONS='["_malloc","_free","_aico8_create","_aico8_destroy","_aico8_load_cart","_aico8_load_persistent","_aico8_start","_aico8_initialization_complete","_aico8_tick60","_aico8_audio_available","_aico8_read_audio","_aico8_audio_capabilities","_aico8_set_audio_diagnostic_mask","_aico8_audio_diagnostic_flags","_aico8_get_audio_channel_status","_aico8_copy_audio_events","_aico8_framebuffer","_aico8_framebuffer_size","_aico8_draw_commands","_aico8_draw_command_count","_aico8_draw_payload","_aico8_draw_payload_size","_aico8_copy_map_region","_aico8_copy_sprite_region","_aico8_copy_sprite_flags","_aico8_copy_palette_state","_aico8_get_global_raw","_aico8_get_global_boolean","_aico8_copy_global_string","_aico8_get_table_length","_aico8_get_table_value_raw","_aico8_get_table_field_raw","_aico8_get_table_field_boolean","_aico8_get_table_entry_raw","_aico8_get_table_entry_boolean","_aico8_copy_menu_item_label","_aico8_menu_item_filter","_aico8_invoke_menu_item","_aico8_copy_persistent","_aico8_last_error","_aico8_diagnostic_output"]' \
+		-sEXPORTED_FUNCTIONS='["_malloc","_free","_aico8_create","_aico8_destroy","_aico8_load_cart","_aico8_load_persistent","_aico8_start","_aico8_initialization_complete","_aico8_tick60","_aico8_audio_available","_aico8_read_audio","_aico8_audio_capabilities","_aico8_set_audio_diagnostic_mask","_aico8_audio_diagnostic_flags","_aico8_get_audio_channel_status","_aico8_copy_audio_events","_aico8_framebuffer","_aico8_framebuffer_size","_aico8_draw_commands","_aico8_draw_command_count","_aico8_draw_payload","_aico8_draw_payload_size","_aico8_text_ir","_aico8_text_ir_size","_aico8_copy_map_region","_aico8_copy_sprite_region","_aico8_copy_sprite_flags","_aico8_copy_palette_state","_aico8_get_global_raw","_aico8_get_global_boolean","_aico8_copy_global_string","_aico8_get_table_length","_aico8_get_table_value_raw","_aico8_get_table_field_raw","_aico8_get_table_field_boolean","_aico8_get_table_entry_raw","_aico8_get_table_entry_boolean","_aico8_copy_menu_item_label","_aico8_menu_item_filter","_aico8_invoke_menu_item","_aico8_copy_persistent","_aico8_last_error","_aico8_diagnostic_output"]' \
 		-sEXPORTED_RUNTIME_METHODS='["UTF8ToString","HEAPU8"]' -o $@
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(CORE_OBJECT): src/core.cpp src/audio_internal.h src/core_internal.h include/p8/audio.h include/p8/core.h | $(BUILD_DIR)
+$(CORE_OBJECT): src/core.cpp src/audio_internal.h src/core_internal.h include/p8/audio.h include/p8/core.h include/p8/text.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(AUDIO_OBJECT): src/audio.cpp src/audio_internal.h include/p8/audio.h include/p8/core.h | $(BUILD_DIR)
@@ -61,13 +61,13 @@ $(AUDIO_OBJECT): src/audio.cpp src/audio_internal.h include/p8/audio.h include/p
 $(RASTER_OBJECT): src/raster.cpp src/core_internal.h include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(TEXT_OBJECT): src/text.cpp include/p8/text.h include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
+$(TEXT_OBJECT): src/text.cpp src/core_internal.h include/p8/text.h include/p8/raster.h include/p8/core.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(VM_OBJECT): src/vm_z8lua.cpp include/p8/audio.h include/p8/vm.h include/p8/core.h $(Z8_LIB) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -I$(Z8_DIR) -c $< -o $@
 
-$(HOST_OBJECT): src/wasm_api.cpp include/p8/audio.h include/p8/core.h include/p8/raster.h include/p8/vm.h include/p8/wasm.h | $(BUILD_DIR)
+$(HOST_OBJECT): src/wasm_api.cpp include/p8/audio.h include/p8/core.h include/p8/raster.h include/p8/text.h include/p8/vm.h include/p8/wasm.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -I$(Z8_DIR) -c $< -o $@
 
 $(CORE_LIBRARY): $(CORE_OBJECT) $(AUDIO_OBJECT) $(RASTER_OBJECT) $(TEXT_OBJECT)

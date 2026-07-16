@@ -397,6 +397,16 @@ try {
     "Wasm custom font raster must preserve the eighth row and column");
   assert.equal(kernel._aico8_draw_command_count(textRuntime), 2,
     "Wasm must retain semantic print commands beside indexed pixels");
+  const textIrPointer = kernel._aico8_text_ir(textRuntime);
+  const textIrSize = kernel._aico8_text_ir_size(textRuntime);
+  assert.ok(textIrPointer !== 0 && textIrSize > 12,
+    "Wasm must expose the canonical semantic text-run stream");
+  const wasmTextIr = Buffer.from(kernel.HEAPU8.slice(textIrPointer, textIrPointer + textIrSize));
+  const nativeTextIr = execFileSync("./build/vm_tests", ["--text-ir-checkpoint"], {
+    encoding: "utf8",
+  }).trim();
+  assert.equal(wasmTextIr.toString("hex"), nativeTextIr,
+    "native and Wasm semantic text runs must be byte-identical");
 } finally {
   kernel._aico8_destroy(textRuntime);
   kernel._free(textRomPointer);
