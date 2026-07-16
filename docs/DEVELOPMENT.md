@@ -44,6 +44,7 @@ The exact catalog and availability are machine-owned by
 node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
+node --test scripts/lib/official-probe-capture.test.mjs
 pnpm verify:rust
 pnpm verify:hd-identity
 pnpm verify:hd-presentation

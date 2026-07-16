@@ -213,6 +213,24 @@ current official runtime and, when a discrepancy appears, consult the changelog 
 
 ## Required conformance tests
 
+Official stdout probes are captured only through the provenance-bound Node
+entry point and only into the ignored `captures/official/` tree. The caller must
+explicitly attest that the executable is a licensed official PICO-8 runtime;
+the capture records runtime/cart hashes, version, host, ordered events, command,
+and exit status. For example:
+
+```sh
+pnpm capture:official-probe -- \
+  --licensed-official-runtime \
+  --runtime /path/to/pico8 \
+  --runtime-version 0.2.7 \
+  --cart tests/conformance/probes/curved_raster.p8 \
+  --output captures/official/0.2.7/curved_raster.json
+```
+
+The runner uses the manual-defined `-x` headless switch. Independent emulator
+output is never accepted as an official golden, and capture files remain private.
+
 ### Scheduler
 
 - 30 Hz and 60 Hz callbacks.

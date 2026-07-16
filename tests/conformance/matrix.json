@@ -59,6 +59,21 @@
       ]
     },
     {
+      "id": "curved_raster",
+      "status": "capture_ready",
+      "probe": "probes/curved_raster.p8",
+      "golden_status": "Licensed official PICO-8 capture required; independent runtimes are not normative.",
+      "covers": [
+        "oval and ovalfill odd/even bounding boxes",
+        "reversed and fractional ellipse coordinates",
+        "rounded rectangle pixel dimensions and radius clamp",
+        "ellipse and rounded-rectangle inversion",
+        "extended display-palette register",
+        "map sprite-zero override",
+        "out-of-range read registers"
+      ]
+    },
+    {
       "id": "p8scii",
       "status": "partially_executable",
       "probe": "probes/p8scii.p8",
