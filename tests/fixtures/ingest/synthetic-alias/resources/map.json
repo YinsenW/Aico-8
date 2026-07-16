@@ -1,0 +1,6 @@
+{
+  "width": 128,
+  "height": 32,
+  "nonzeroCells": [[0, 0, 1]],
+  "padding": "zero-fill"
+}

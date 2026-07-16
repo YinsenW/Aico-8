@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/cart-workspace-v1.schema.json",
+  "title": "Aico 8 decoded cart workspace v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "workspaceId", "status", "input", "codec", "pico8", "resources", "aliases", "rebuild", "provenance"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.cart-workspace.v1" },
+    "workspaceId": { "$ref": "#/$defs/id" },
+    "status": { "const": "decoded-lossless" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "format", "sourceSha256"],
+      "properties": {
+        "manifest": { "$ref": "#/$defs/file" },
+        "format": { "$ref": "#/$defs/format" },
+        "sourceSha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "codec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z0-9.-]+)?$" }
+      }
+    },
+    "pico8": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sections", "sectionOrder"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "sections": { "$ref": "#/$defs/sectionList" },
+        "sectionOrder": { "$ref": "#/$defs/sectionList" }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": { "$ref": "#/$defs/resource" },
+      "allOf": [
+        { "contains": { "type": "object", "properties": { "id": { "const": "lua" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "gfx" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "shared-map-alias" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "map" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "gff" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "sfx" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "music" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "type": "object", "properties": { "id": { "const": "label" } }, "required": ["id"] }, "minContains": 1, "maxContains": 1 }
+      ]
+    },
+    "aliases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "offset", "length", "resourceIds", "baselineSemanticSha256", "conflictPolicy"],
+        "properties": {
+          "id": { "const": "gfx-shared-map" },
+          "kind": { "const": "shared-memory" },
+          "offset": { "const": 4096 },
+          "length": { "const": 4096 },
+          "resourceIds": { "const": ["gfx", "shared-map-alias"] },
+          "baselineSemanticSha256": { "$ref": "#/$defs/hash" },
+          "conflictPolicy": { "const": "reject-divergent-dual-edit" }
+        }
+      }
+    },
+    "rebuild": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rebuiltCart", "decodedRomHex", "comparison", "sourceEquivalent"],
+      "properties": {
+        "rebuiltCart": { "$ref": "#/$defs/file" },
+        "decodedRomHex": { "$ref": "#/$defs/file" },
+        "comparison": { "const": "exact-decoded-rom-and-resources" },
+        "sourceEquivalent": { "const": true }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cartInputManifestSha256", "sourceSha256", "declaredLicenseSpdx", "releasePermissionStatus", "rightsEvidenceSha256"],
+      "properties": {
+        "cartInputManifestSha256": { "$ref": "#/$defs/hash" },
+        "sourceSha256": { "$ref": "#/$defs/hash" },
+        "declaredLicenseSpdx": { "$ref": "#/$defs/spdx" },
+        "releasePermissionStatus": { "$ref": "#/$defs/permission" },
+        "rightsEvidenceSha256": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/hash" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "releasePermissionStatus": { "const": "granted" } }, "required": ["releasePermissionStatus"] },
+          "then": { "properties": { "rightsEvidenceSha256": { "type": "array", "minItems": 1 } } }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "spdx": { "type": "string", "pattern": "^(?:[A-Za-z0-9][A-Za-z0-9.+-]*|NOASSERTION)$" },
+    "format": { "enum": ["p8-text", "p8-png", "raw-rom"] },
+    "permission": { "enum": ["granted", "denied", "unknown"] },
+    "section": { "enum": ["lua", "gfx", "gff", "map", "sfx", "music", "label"] },
+    "sectionList": { "type": "array", "maxItems": 7, "uniqueItems": true, "items": { "$ref": "#/$defs/section" } },
+    "safePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)(?:\\.{1,2})(?:/|$))(?!.*//)[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "byteLength"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/hash" },
+        "byteLength": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceSection", "presentInSource", "artifact", "semanticSha256"],
+      "properties": {
+        "id": { "enum": ["lua", "gfx", "shared-map-alias", "map", "gff", "sfx", "music", "label"] },
+        "sourceSection": { "$ref": "#/$defs/section" },
+        "presentInSource": { "type": "boolean" },
+        "artifact": { "$ref": "#/$defs/file" },
+        "semanticSha256": { "$ref": "#/$defs/hash" }
+      },
+      "allOf": [
+        { "if": { "properties": { "id": { "const": "lua" } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "lua" } } } },
+        { "if": { "properties": { "id": { "enum": ["gfx", "shared-map-alias"] } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "gfx" } } } },
+        { "if": { "properties": { "id": { "const": "map" } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "map" } } } },
+        { "if": { "properties": { "id": { "const": "gff" } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "gff" } } } },
+        { "if": { "properties": { "id": { "const": "sfx" } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "sfx" } } } },
+        { "if": { "properties": { "id": { "const": "music" } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "music" } } } },
+        { "if": { "properties": { "id": { "const": "label" } }, "required": ["id"] }, "then": { "properties": { "sourceSection": { "const": "label" } } } }
+      ]
+    }
+  }
+}

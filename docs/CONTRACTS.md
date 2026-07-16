@@ -23,8 +23,8 @@ Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript 
 
 | ID | Canonical content | Field owner |
 | --- | --- | --- |
-| DATA-CART-001 | Supplied cart bytes, format, source hash | Ingest schema |
-| DATA-WORKSPACE-001 | Lossless decoded resources, aliases, hashes, provenance | Workspace schema |
+| DATA-CART-001 | Supplied cart bytes, format, source hash, declared use, license, and publication permission evidence | `specs/schemas/cart-input-v1.schema.json` and `packages/contracts/src/ingest.ts` |
+| DATA-WORKSPACE-001 | Lossless decoded resources, section presence/order, gfx/shared-map alias baseline, rebuild equality, hashes, and immutable provenance binding | `specs/schemas/cart-workspace-v1.schema.json` and `packages/contracts/src/ingest.ts` |
 | DATA-INPUT-TRACE-001 | Contiguous logical-update button-mask spans, initial persistence lineage, and no-skip policy | `specs/schemas/input-trace-v1.schema.json` |
 | DATA-TRACE-PROVENANCE-001 | Exact trace hash, derivation kind, generator identity, and explicit licensed provenance for every contributing external action seed | `specs/schemas/input-trace-provenance-v1.schema.json` and `scripts/lib/input-trace-provenance.mjs` |
 | DATA-REPLAY-001 | Cart/runtime identity, canonicality declaration, input trace, milestones, and ordered checkpoints | `specs/schemas/replay-v1.schema.json` and TypeScript validator |
@@ -58,7 +58,7 @@ JSON Schemas are required before a payload becomes a stable public contract. Res
 
 | Job ID | Inputs | Outputs | Purpose |
 | --- | --- | --- | --- |
-| JOB-INGEST-001 | DATA-CART-001 | DATA-WORKSPACE-001 | Decode losslessly and record provenance |
+| JOB-INGEST-001 | DATA-CART-001 | DATA-WORKSPACE-001 | Decode losslessly, preserve absent/present sections and shared-memory aliases, bind provenance, reject divergent dual edits, and prove rebuild equality before downstream use |
 | JOB-BATCH-001 | DATA-BATCH-001 | Isolated per-cart Job invocations and status ledger | `scripts/run-batch.ts` verifies authorized bytes, materializes isolated workspaces, enforces one ledger writer plus declared attempt timeouts, resumes durable attempts, and contains partial failure |
 | JOB-SUPERVISED-TRANSFER-001 | DATA-SUPERVISED-TRANSFER-001, DATA-SUPERVISED-REVIEW-PROPOSAL-001, DATA-HUMAN-STOP-DECISION-001, host-owned reviewer trust profile | Recoverable ledger plus DATA-HUMAN-STOP-REQUEST-001 at each pause | `scripts/run-supervised-transfer.ts` validates proposal identity, evidence bytes and revision lineage before freezing state; `scripts/export-human-stop-request.ts` exports the exact unsigned challenge. Neither can sign, accept, release, prevent host rollback, or turn authorization into completion |
 | JOB-ANALYZE-001 | DATA-WORKSPACE-001 | Risk/API/semantic analysis | Identify compatibility and remake risks |

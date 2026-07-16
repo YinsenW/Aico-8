@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "aico8.cart-workspace.v1",
+  "workspaceId": "synthetic-alias",
+  "status": "decoded-lossless",
+  "input": {
+    "manifest": {
+      "path": "cart-input.json",
+      "sha256": "035d1c98dc4a32582dc3568d7bb0e762c751342c3499d16dadc918203666487c",
+      "byteLength": 908
+    },
+    "format": "p8-text",
+    "sourceSha256": "dcb6c5186f97aa49dafaaf7ade548b08691da652469dab170032856990fe06f1"
+  },
+  "codec": {
+    "id": "aico8-typescript-ingest",
+    "version": "0.1.0"
+  },
+  "pico8": {
+    "version": 42,
+    "sections": ["lua", "gfx", "gff", "map", "sfx", "music", "label"],
+    "sectionOrder": ["lua", "gfx", "gff", "map", "sfx", "music", "label"]
+  },
+  "resources": [
+    {
+      "id": "lua",
+      "sourceSection": "lua",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/code.p8.lua",
+        "sha256": "25dac24bb0c5254aa2ab3bf4475dc969b25051b25c625afd1f148d83d97229f4",
+        "byteLength": 43
+      },
+      "semanticSha256": "25dac24bb0c5254aa2ab3bf4475dc969b25051b25c625afd1f148d83d97229f4"
+    },
+    {
+      "id": "gfx",
+      "sourceSection": "gfx",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/gfx-pixels.json",
+        "sha256": "801504e3a67df2e853780588194e663a5a6beab72aaa6cb158d5e47273e12d97",
+        "byteLength": 105
+      },
+      "semanticSha256": "801504e3a67df2e853780588194e663a5a6beab72aaa6cb158d5e47273e12d97"
+    },
+    {
+      "id": "shared-map-alias",
+      "sourceSection": "gfx",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/shared-map-alias.json",
+        "sha256": "75d0432645705e5f7f28649d5da740cb39c6b4005f3caed16db01da0c4cd6b5e",
+        "byteLength": 119
+      },
+      "semanticSha256": "75d0432645705e5f7f28649d5da740cb39c6b4005f3caed16db01da0c4cd6b5e"
+    },
+    {
+      "id": "map",
+      "sourceSection": "map",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/map.json",
+        "sha256": "b7f62a4acc0bcca9e7725dc34ec66c398ad2b83ccb003bcfdae2ace923612f28",
+        "byteLength": 92
+      },
+      "semanticSha256": "b7f62a4acc0bcca9e7725dc34ec66c398ad2b83ccb003bcfdae2ace923612f28"
+    },
+    {
+      "id": "gff",
+      "sourceSection": "gff",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/sprite-flags.json",
+        "sha256": "44b845d8ac4ccec94d8b9311581e75d6f882812c41ac929ce6b498c20c01f0a1",
+        "byteLength": 73
+      },
+      "semanticSha256": "44b845d8ac4ccec94d8b9311581e75d6f882812c41ac929ce6b498c20c01f0a1"
+    },
+    {
+      "id": "sfx",
+      "sourceSection": "sfx",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/sfx.json",
+        "sha256": "6f2e6c7724074e507057bba6726b5e894381fde10d51e18f76c927ff5c97d50a",
+        "byteLength": 107
+      },
+      "semanticSha256": "6f2e6c7724074e507057bba6726b5e894381fde10d51e18f76c927ff5c97d50a"
+    },
+    {
+      "id": "music",
+      "sourceSection": "music",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/music.json",
+        "sha256": "3f73b7a2e9bd7db87629497b12f1fd7262c4adc9765a66423e3eab339cc292dd",
+        "byteLength": 108
+      },
+      "semanticSha256": "3f73b7a2e9bd7db87629497b12f1fd7262c4adc9765a66423e3eab339cc292dd"
+    },
+    {
+      "id": "label",
+      "sourceSection": "label",
+      "presentInSource": true,
+      "artifact": {
+        "path": "resources/label-pixels.json",
+        "sha256": "d5a5e11db56c77ee28ed44520780a0dd1aad30cbd73d19e5b6e5802578611085",
+        "byteLength": 95
+      },
+      "semanticSha256": "d5a5e11db56c77ee28ed44520780a0dd1aad30cbd73d19e5b6e5802578611085"
+    }
+  ],
+  "aliases": [
+    {
+      "id": "gfx-shared-map",
+      "kind": "shared-memory",
+      "offset": 4096,
+      "length": 4096,
+      "resourceIds": ["gfx", "shared-map-alias"],
+      "baselineSemanticSha256": "75d0432645705e5f7f28649d5da740cb39c6b4005f3caed16db01da0c4cd6b5e",
+      "conflictPolicy": "reject-divergent-dual-edit"
+    }
+  ],
+  "rebuild": {
+    "rebuiltCart": {
+      "path": "rebuild/rebuilt.p8",
+      "sha256": "dcb6c5186f97aa49dafaaf7ade548b08691da652469dab170032856990fe06f1",
+      "byteLength": 194
+    },
+    "decodedRomHex": {
+      "path": "rebuild/source.rom.hex",
+      "sha256": "861ea9ae83b6ad3e3aebf270ba6e8e3055cb24edba2d8113e9691209eddf0cf7",
+      "byteLength": 65
+    },
+    "comparison": "exact-decoded-rom-and-resources",
+    "sourceEquivalent": true
+  },
+  "provenance": {
+    "cartInputManifestSha256": "035d1c98dc4a32582dc3568d7bb0e762c751342c3499d16dadc918203666487c",
+    "sourceSha256": "dcb6c5186f97aa49dafaaf7ade548b08691da652469dab170032856990fe06f1",
+    "declaredLicenseSpdx": "CC0-1.0",
+    "releasePermissionStatus": "granted",
+    "rightsEvidenceSha256": [
+      "7bc718132762b91b90d1fbcaed8b0e14e2ceaf576a0f92504afaf30a6fed5284"
+    ]
+  }
+}
