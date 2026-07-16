@@ -395,6 +395,60 @@ void test_raster_sprite_map_palette_and_flip()
     p8_core_destroy(core);
 }
 
+void test_raster_tline_sampling_precision_masks_layers_and_transparency()
+{
+    p8_core *core = p8_core_create();
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        p8_gfx_sset(core, 8 + pixel, 0, static_cast<uint8_t>(pixel + 1));
+        p8_gfx_sset(core, 16 + pixel, 0, static_cast<uint8_t>(pixel + 8));
+    }
+    p8_core_mset(core, 0, 0, 1);
+    p8_core_mset(core, 1, 0, 2);
+
+    p8_gfx_tline(core, 0, 30, 7, 30, 0, 0, 0x2000, 0, 0, 13);
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 30) == pixel + 1);
+    }
+
+    p8_core_poke(core, 0x5f38, 1);
+    p8_core_poke(core, 0x5f3a, 1);
+    p8_gfx_tline(core, 0, 31, 7, 31, 0, 0, 0x2000, 0, 0, 13);
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 31) == ((pixel + 8) & 0x0f));
+    }
+
+    p8_core_poke(core, 0x5f38, 0);
+    p8_core_poke(core, 0x5f3a, 0);
+    p8_gfx_tline(core, 0, 32, 7, 32, 0, 0, 0x10000, 0, 0, 16);
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 32) == pixel + 1);
+    }
+
+    p8_core_poke(core, 0x3001, 1u << 2);
+    p8_gfx_cls(core, 6);
+    p8_gfx_tline(core, 0, 33, 0, 33, 0, 0, 0, 0, 1u << 1, 13);
+    assert(p8_gfx_pget(core, 0, 33) == 6);
+    p8_gfx_tline(core, 0, 33, 0, 33, 0, 0, 0, 0, 1u << 2, 13);
+    assert(p8_gfx_pget(core, 0, 33) == 1);
+    p8_gfx_pal(core, 1, 9);
+    p8_gfx_tline(core, 3, 33, 3, 33, 0, 0, 0, 0, 1u << 2, 13);
+    assert(p8_gfx_pget(core, 3, 33) == 9);
+    p8_gfx_pal_reset(core);
+
+    p8_gfx_sset(core, 0, 0, 7);
+    p8_core_mset(core, 0, 0, 0);
+    p8_gfx_tline(core, 1, 33, 1, 33, 0, 0, 0, 0, 0, 13);
+    assert(p8_gfx_pget(core, 1, 33) == 6);
+    p8_core_poke(core, 0x5f36, 0x08);
+    p8_gfx_tline(core, 1, 33, 1, 33, 0, 0, 0, 0, 0, 13);
+    assert(p8_gfx_pget(core, 1, 33) == 7);
+    p8_gfx_palt(core, 7, 1);
+    p8_gfx_tline(core, 2, 33, 2, 33, 0, 0, 0, 0, 0, 13);
+    assert(p8_gfx_pget(core, 2, 33) == 6);
+
+    p8_core_destroy(core);
+}
+
 void test_audio_is_deterministic_and_rejects_unqualified_features()
 {
     std::array<uint8_t, P8_ROM_SIZE> rom{};
@@ -659,6 +713,7 @@ int main()
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
+    test_raster_tline_sampling_precision_masks_layers_and_transparency();
     test_audio_is_deterministic_and_rejects_unqualified_features();
     test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic();
     std::puts("p8 core tests: ok");

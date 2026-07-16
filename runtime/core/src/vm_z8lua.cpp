@@ -279,6 +279,7 @@ struct p8_vm {
     int32_t line_cursor_x_raw = 0;
     int32_t line_cursor_y_raw = 0;
     int32_t draw_color_raw = 6 << 16;
+    unsigned tline_fractional_bits = 13;
 
     static p8_vm *from(lua_State *state)
     {
@@ -918,6 +919,37 @@ int api_map(lua_State *state)
     return 0;
 }
 
+int api_tline(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    const int argument_count = lua_gettop(state);
+    p8_draw_command command{};
+    command.opcode = P8_DRAW_TLINE;
+    command.flags = static_cast<uint16_t>(argument_count);
+
+    if (argument_count == 1) {
+        vm->tline_fractional_bits = static_cast<unsigned>(
+            std::max(0, std::min(16, integer(state, 1, 13))));
+        command.args[0] = raw_number(state, 1, 13 << 16);
+        command.args[9] = static_cast<int32_t>(vm->tline_fractional_bits << 16);
+        p8_core_emit_draw(vm->core, &command);
+        return 0;
+    }
+
+    for (int index = 0; index < 9; ++index) {
+        command.args[index] = raw_number(state, index + 1);
+    }
+    command.args[6] = raw_number(state, 7, 0x2000); // 0.125 tiles per pixel
+    command.args[7] = raw_number(state, 8, 0);
+    command.args[9] = static_cast<int32_t>(vm->tline_fractional_bits << 16);
+    p8_core_emit_draw(vm->core, &command);
+    p8_gfx_tline(vm->core, integer(state, 1), integer(state, 2),
+                 integer(state, 3), integer(state, 4),
+                 command.args[4], command.args[5], command.args[6], command.args[7],
+                 static_cast<uint8_t>(integer(state, 9)), vm->tline_fractional_bits);
+    return 0;
+}
+
 int api_pal(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
@@ -1252,6 +1284,7 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("spr", api_spr);
     vm->install("sspr", api_sspr);
     vm->install("map", api_map);
+    vm->install("tline", api_tline);
     vm->install("pal", api_pal);
     vm->install("palt", api_palt);
     vm->install("camera", api_camera);
@@ -1303,6 +1336,7 @@ int p8_vm_load_source(p8_vm *vm, const char *source, size_t size, const char *ch
     vm->clear_menu_items();
     vm->draw_color_raw = 6 << 16;
     vm->line_cursor_ready = false;
+    vm->tline_fractional_bits = 13;
     const char *name = chunk_name ? chunk_name : "@cart";
     const std::string normalized_source = normalize_p8scii_source_literals(source, size);
     if (luaL_loadbuffer(vm->state, normalized_source.data(), normalized_source.size(), name) != LUA_OK

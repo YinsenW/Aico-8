@@ -345,6 +345,35 @@ try {
   kernel._free(policySourcePointer);
 }
 
+const tlineRuntime = kernel._aico8_create();
+assert.notEqual(tlineRuntime, 0);
+const tlineSource = new TextEncoder().encode(
+  "function _init() tline(0,30,7,30,0,0) tline(16) tline(0,31,7,31,0,0,1,0) end\n",
+);
+const tlineSourcePointer = copyToHeap(tlineSource);
+const tlineRom = new Uint8Array(0x8000);
+tlineRom.set([0x21, 0x43, 0x65, 0x87], 4);
+tlineRom[0x2000] = 1;
+const tlineRomPointer = copyToHeap(tlineRom);
+try {
+  assert.equal(kernel._aico8_load_cart(tlineRuntime, tlineRomPointer, tlineRom.length,
+    tlineSourcePointer, tlineSource.length), 1);
+  assert.equal(kernel._aico8_start(tlineRuntime), 1);
+  const tlineFrame = kernel._aico8_framebuffer(tlineRuntime);
+  for (let pixel = 0; pixel < 8; pixel += 1) {
+    assert.equal(kernel.HEAPU8[tlineFrame + 30 * 128 + pixel], pixel + 1,
+      "default 13-bit tline sampling must advance one sprite pixel");
+    assert.equal(kernel.HEAPU8[tlineFrame + 31 * 128 + pixel], pixel + 1,
+      "16-bit tline sampling must interpret coordinates in pixels");
+  }
+  assert.equal(kernel._aico8_draw_command_count(tlineRuntime), 3,
+    "Wasm must preserve precision-state and raster tline commands");
+} finally {
+  kernel._aico8_destroy(tlineRuntime);
+  kernel._free(tlineRomPointer);
+  kernel._free(tlineSourcePointer);
+}
+
 const audioStatRuntime = kernel._aico8_create();
 assert.notEqual(audioStatRuntime, 0);
 const audioStatSource = new TextEncoder().encode(

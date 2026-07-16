@@ -15,6 +15,11 @@ constexpr uint16_t kCameraX = 0x5f28;
 constexpr uint16_t kCameraY = 0x5f2a;
 constexpr uint16_t kFillPatternLow = 0x5f31;
 constexpr uint16_t kFillPatternTransparency = 0x5f33;
+constexpr uint16_t kMapSpriteZeroMode = 0x5f36;
+constexpr uint16_t kTlineMaskX = 0x5f38;
+constexpr uint16_t kTlineMaskY = 0x5f39;
+constexpr uint16_t kTlineOffsetX = 0x5f3a;
+constexpr uint16_t kTlineOffsetY = 0x5f3b;
 constexpr uint16_t kGfxBase = 0x0000;
 constexpr uint16_t kSpriteFlagsBase = 0x3000;
 constexpr uint16_t kScreenBase = 0x6000;
@@ -513,6 +518,77 @@ void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_
                 p8_gfx_spr(core, sprite, screen_x + x * 8, screen_y + y * 8,
                            1, 1, 0, 0);
             }
+        }
+    }
+}
+
+void p8_gfx_tline(p8_core *core, int x0, int y0, int x1, int y1,
+                  int32_t map_x_raw, int32_t map_y_raw,
+                  int32_t map_dx_raw, int32_t map_dy_raw,
+                  uint8_t layer, unsigned fractional_bits)
+{
+    if (!core) {
+        return;
+    }
+
+    // TLINE's precision register moves the binary point used by map sampling.
+    // 13 fractional bits means one numeric tile is eight sampled pixels; 16
+    // means the coordinates are already expressed in sampled pixels.
+    const unsigned bits = std::min(fractional_bits, 16u);
+    const auto coordinate_mask = [bits](uint8_t register_value) {
+        const uint32_t tiles = register_value == 0 ? 256u : register_value;
+        return (tiles << (bits + 3u)) - 1u;
+    };
+    const uint32_t mask_x = coordinate_mask(p8_core_peek(core, kTlineMaskX));
+    const uint32_t mask_y = coordinate_mask(p8_core_peek(core, kTlineMaskY));
+    const uint32_t offset_x = static_cast<uint32_t>(p8_core_peek(core, kTlineOffsetX))
+                              << (bits + 3u);
+    const uint32_t offset_y = static_cast<uint32_t>(p8_core_peek(core, kTlineOffsetY))
+                              << (bits + 3u);
+    const bool draw_sprite_zero = (p8_core_peek(core, kMapSpriteZeroMode) & 0x08u) != 0;
+
+    int x = bounded_coordinate(x0);
+    int y = bounded_coordinate(y0);
+    const int target_x = bounded_coordinate(x1);
+    const int target_y = bounded_coordinate(y1);
+    const int delta_x = target_x >= x ? target_x - x : x - target_x;
+    const int step_x = x < target_x ? 1 : -1;
+    const int delta_y = -(target_y >= y ? target_y - y : y - target_y);
+    const int step_y = y < target_y ? 1 : -1;
+    int error = delta_x + delta_y;
+    uint32_t sample_x_raw = static_cast<uint32_t>(map_x_raw);
+    uint32_t sample_y_raw = static_cast<uint32_t>(map_y_raw);
+
+    for (;;) {
+        const uint32_t sampled_x = ((sample_x_raw & mask_x) + offset_x) >> bits;
+        const uint32_t sampled_y = ((sample_y_raw & mask_y) + offset_y) >> bits;
+        const uint8_t sprite = p8_core_mget(core,
+            static_cast<int>(sampled_x >> 3u), static_cast<int>(sampled_y >> 3u));
+        const uint8_t flags = p8_core_peek(core,
+            static_cast<uint16_t>(kSpriteFlagsBase + sprite));
+        if ((sprite != 0 || draw_sprite_zero) && (layer == 0 || (flags & layer) != 0)) {
+            const int sprite_x = (sprite & 0x0f) * 8 + static_cast<int>(sampled_x & 7u);
+            const int sprite_y = ((sprite >> 4) & 0x0f) * 8
+                                 + static_cast<int>(sampled_y & 7u);
+            const uint8_t color = p8_gfx_sget(core, sprite_x, sprite_y);
+            if (!p8_gfx_is_transparent(core, color)) {
+                draw_mapped_pixel(core, x, y, mapped_color(core, color));
+            }
+        }
+
+        if (x == target_x && y == target_y) {
+            break;
+        }
+        sample_x_raw += static_cast<uint32_t>(map_dx_raw);
+        sample_y_raw += static_cast<uint32_t>(map_dy_raw);
+        const int twice_error = 2 * error;
+        if (twice_error >= delta_y) {
+            error += delta_y;
+            x += step_x;
+        }
+        if (twice_error <= delta_x) {
+            error += delta_x;
+            y += step_y;
         }
     }
 }

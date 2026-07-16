@@ -607,6 +607,47 @@ function verify_reload_default() pset(20,20) end
     p8_core_destroy(core);
 }
 
+void test_tline_api_tracks_precision_and_draws_from_map_samples()
+{
+    constexpr char source[] = R"p8lua(
+function draw_tlines()
+ tline(0,30,7,30,0,0)
+ poke(0x5f38,1) poke(0x5f3a,1)
+ tline(0,31,7,31,0,0)
+ poke(0x5f38,0) poke(0x5f3a,0)
+ tline(16)
+ tline(0,32,7,32,0,0,1,0)
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        p8_gfx_sset(core, 8 + pixel, 0, static_cast<uint8_t>(pixel + 1));
+        p8_gfx_sset(core, 16 + pixel, 0, static_cast<uint8_t>(pixel + 8));
+    }
+    p8_core_mset(core, 0, 0, 1);
+    p8_core_mset(core, 1, 0, 2);
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@tline-test"));
+    p8_core_begin_draw_stream(core);
+    assert(p8_vm_call(vm, "draw_tlines"));
+    for (int pixel = 0; pixel < 8; ++pixel) {
+        assert(p8_gfx_pget(core, pixel, 30) == pixel + 1);
+        assert(p8_gfx_pget(core, pixel, 31) == ((pixel + 8) & 0x0f));
+        assert(p8_gfx_pget(core, pixel, 32) == pixel + 1);
+    }
+    const p8_draw_command *commands = p8_core_draw_data(core);
+    assert(p8_core_draw_count(core) == 4);
+    assert(commands[0].opcode == P8_DRAW_TLINE && commands[0].args[6] == 0x2000);
+    assert(commands[0].args[9] == 13 << 16);
+    assert(commands[2].flags == 1 && commands[2].args[0] == 16 << 16);
+    assert(commands[3].args[6] == 1 << 16 && commands[3].args[9] == 16 << 16);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_update_error_is_sticky_and_draw_is_skipped()
 {
     constexpr char source[] = R"p8lua(
@@ -700,6 +741,7 @@ int main(int argc, char **argv)
     test_menu_items_register_filter_invoke_update_and_remove();
     test_palette_transparency_diagnostics_and_deterministic_time();
     test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
+    test_tline_api_tracks_precision_and_draws_from_map_samples();
     test_update_error_is_sticky_and_draw_is_skipped();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"

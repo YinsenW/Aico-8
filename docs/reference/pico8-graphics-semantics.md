@@ -2,7 +2,7 @@
 
 - Status: maintained implementation reference; edge-raster details require official probes
 - Primary source: PICO-8 User Manual v0.2.7
-- Last reviewed: 2026-07-15
+- Last reviewed: 2026-07-16
 
 ## Why the compatibility image stays 128x128
 
@@ -47,6 +47,12 @@ frames require complete modern coverage rather than mixed indexed fragments.
   protected.
 - `map()` treats cell value `0` as empty and skips it even when sprite `0` has
   visible pixels; layer filtering applies only to non-zero cells.
+- `tline()` samples map-backed sprite pixels along an inclusive screen line.
+  Its default 13-bit coordinate mode advances one sprite pixel per `0.125`
+  tile; `tline(16)` switches the sampling coordinates to pixel units. The
+  masks at `0x5f38..0x5f39`, offsets at `0x5f3a..0x5f3b`, layer flags,
+  sprite-zero override at `0x5f36`, draw palette, and `palt` are applied on the
+  same indexed path.
 
 ## Implemented interpretation
 
@@ -70,7 +76,7 @@ host consumes the indexed frame; it does not duplicate compatibility raster rule
 
 ## Deliberately unresolved
 
-Licensed official runtime probes are still required for fixed-point rounding;
+Licensed official runtime probes are still required for fixed-point edge rounding;
 exact line/circle/ellipse edge pixels; fill patterns, inversion and secondary
 palettes; extended palettes and out-of-range overrides; upper-memory mapping
 conflicts; and draw-state byte packing not specified by the public manual.
@@ -80,6 +86,7 @@ disagreements, but they are not the compatibility oracle.
 
 ## Next implementation slice
 
-Add `fillp`, `spr`, `sspr`, and `map` on the same pixel path, followed by `tline`,
-text, and extended palette modes. Each operation needs indexed-frame tests and
-semantic-command output for the HD presentation bridge.
+Complete compatibility text/custom-font rasterization, remaining sprite/map and
+extended-palette modes, then capture licensed official-runtime goldens for
+fixed-point and edge behavior. Keep indexed-frame tests and semantic-command
+output paired so the HD presentation bridge never invents separate semantics.

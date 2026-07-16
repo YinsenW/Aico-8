@@ -50,6 +50,10 @@ void p8_gfx_sspr(p8_core *core, int source_x, int source_y, int source_width,
                  int flip_x, int flip_y);
 void p8_gfx_map(p8_core *core, int cell_x, int cell_y, int screen_x, int screen_y,
                 int cell_width, int cell_height, uint8_t layer);
+void p8_gfx_tline(p8_core *core, int x0, int y0, int x1, int y1,
+                  int32_t map_x_raw, int32_t map_y_raw,
+                  int32_t map_dx_raw, int32_t map_dy_raw,
+                  uint8_t layer, unsigned fractional_bits);
 
 /* Expands packed screen RAM to one 0..15 palette index per pixel. */
 size_t p8_gfx_copy_framebuffer_indexed(const p8_core *core, uint8_t *destination,
