@@ -45,6 +45,7 @@ node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
 node --test scripts/lib/official-probe-capture.test.mjs
+node --test scripts/smoke-private-cart-native.test.mjs scripts/smoke-private-cart.test.mjs
 pnpm verify:rust
 pnpm verify:hd-identity
 pnpm verify:hd-presentation
@@ -58,6 +59,7 @@ make -C runtime/core test
 make -C runtime/core wasm-test
 pnpm verify:web
 pnpm verify:private-remake
+pnpm verify:native-cart-private
 ```
 
 Private selectors strengthen local evidence but never masquerade as public CI.

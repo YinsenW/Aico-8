@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  expandCleanSinglePlayerReplay,
+  parseButtonUpdates,
+} from "./lib/replay-button-stream.mjs";
 
 function argumentsMap(values) {
   const result = new Map();
@@ -21,25 +25,21 @@ function sha256(bytes) {
 
 const arguments_ = argumentsMap(process.argv.slice(2));
 const workspace = path.resolve(arguments_.get("workspace") ?? "");
-const hostTicks = Number(arguments_.get("host-ticks") ?? "120");
+const replayPath = arguments_.get("replay") ? path.resolve(arguments_.get("replay")) : undefined;
+const replay = replayPath ? JSON.parse(fs.readFileSync(replayPath, "utf8")) : undefined;
+const replayButtons = replay ? expandCleanSinglePlayerReplay(replay) : undefined;
+const hostTicks = Number(arguments_.get("host-ticks")
+  ?? (replayButtons ? replayButtons.length * 2 + 36_000 : 120));
 const output = arguments_.get("out") ? path.resolve(arguments_.get("out")) : undefined;
 const observedNumberNames = (arguments_.get("observe-numbers") ?? "")
   .split(",")
   .filter((value) => value.length > 0);
-const buttonUpdates = (arguments_.get("button-updates") ?? "")
-  .split(",")
-  .filter((value) => value.length > 0)
-  .flatMap((token) => {
-    const [maskText, repeatText, extra] = token.split("*");
-    assert.equal(extra, undefined, "--button-updates tokens use mask or mask*repeat");
-    const mask = Number(maskText);
-    const repeat = repeatText === undefined ? 1 : Number(repeatText);
-    assert.ok(Number.isSafeInteger(repeat) && repeat >= 1 && repeat <= 36_000,
-      "--button-updates repeat counts must be integers from 1 through 36000");
-    return Array.from({ length: repeat }, () => mask);
-  });
+const buttonUpdates = replayButtons
+  ? Array.from(replayButtons)
+  : parseButtonUpdates(arguments_.get("button-updates") ?? "");
 assert.ok(arguments_.get("workspace"), "--workspace is required");
-assert.ok(Number.isSafeInteger(hostTicks) && hostTicks > 0 && hostTicks <= 36_000, "--host-ticks must be an integer from 1 to 36000");
+assert.ok(Number.isSafeInteger(hostTicks) && hostTicks > 0 && hostTicks <= 10_000_000,
+  "--host-ticks must be an integer from 1 to 10000000");
 assert.ok(buttonUpdates.every((mask) => Number.isSafeInteger(mask) && mask >= 0 && mask <= 63),
   "--button-updates must be comma-separated PICO-8 button masks from 0 through 63");
 assert.ok(observedNumberNames.every((name) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)),
@@ -104,6 +104,7 @@ const cartIdentity = {
   combinedSha256: createHash("sha256").update(rom).update(source).digest("hex"),
 };
 const diagnosticInput = {
+  ...(replay ? { replayId: replay.replayId } : {}),
   logicalUpdateMaskCount: buttonUpdates.length,
   sha256: sha256(Uint8Array.from(buttonUpdates)),
 };
@@ -134,6 +135,7 @@ try {
   assert.equal(kernel._aico8_start(runtime), 1, lastError(runtime));
   maximumDrawCommandCount = kernel._aico8_draw_command_count(runtime);
   for (let tick = 0; tick < hostTicks; tick += 1) {
+    if (replay && logicalUpdates >= buttonUpdates.length) break;
     hostTicksAttempted = tick + 1;
     const initializedBeforeTick = kernel._aico8_initialization_complete(runtime) === 1;
     const buttons = initializedBeforeTick ? (buttonUpdates[logicalUpdates] ?? 0) : 0;
@@ -147,6 +149,8 @@ try {
   assert.equal(kernel._aico8_initialization_complete(runtime), 1,
     `Initialization is still suspended after ${hostTicks} host ticks`);
   assert.ok(logicalUpdates > 0, "Cart did not execute a logical update");
+  if (replay) assert.equal(logicalUpdates, buttonUpdates.length,
+    "Cart did not execute every replay logical update");
   const framebufferPointer = kernel._aico8_framebuffer(runtime);
   const framebufferSize = kernel._aico8_framebuffer_size();
   const persistentResultPointer = kernel._malloc(256);
@@ -160,7 +164,7 @@ try {
       observedNumberRaw16_16: readGlobalNumbers(runtime),
       execution: {
         hostTickRate: 60,
-        hostTicks,
+        hostTicks: hostTicksAttempted,
         initializationTicks,
         initializationCompleted: true,
         logicalUpdates,

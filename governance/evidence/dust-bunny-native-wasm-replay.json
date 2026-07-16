@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "aico8.private-cart-backend-comparison.v1",
+  "cart": {
+    "romSha256": "e51f17df87ae97226a5566a1980f386180a58eb068972b2b7c2348407954fb61",
+    "sourceSha256": "c2b02aba1769b355ccc7fdd203fb2a937ccfadcc8d4b1edfa457d455f06b1dab",
+    "combinedSha256": "85ac47b6ea3cc1e0e99ae52106daa4c17f2260f15ad3bc98569b914d9f15c590"
+  },
+  "replay": {
+    "replayId": "dust-bunny-canonical-30-level-v1",
+    "logicalUpdates": 9206,
+    "cleanInitialState": {
+      "kind": "clean",
+      "persistenceSha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+    }
+  },
+  "backends": {
+    "native": {
+      "hostTickRate": 60,
+      "hostTicks": 18410,
+      "initializationTicks": 0,
+      "initializationCompleted": true,
+      "logicalUpdates": 9206,
+      "maximumDrawCommandCount": 169,
+      "audioSampleCount": 6765307,
+      "audioPeakAbsolute": 0,
+      "audioPcmSha256": "e436c22439abb74b7429022015e48d4eb160713c497ad92962284e4992353895",
+      "framebufferSha256": "bdb5e4f73e5512f488fd70a79343cf80f57161f225371329aaee6704cc4998f9",
+      "persistenceSha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+    },
+    "wasm": {
+      "hostTickRate": 60,
+      "hostTicks": 18410,
+      "initializationTicks": 0,
+      "initializationCompleted": true,
+      "logicalUpdates": 9206,
+      "maximumDrawCommandCount": 169,
+      "audioSampleCount": 6765307,
+      "audioPeakAbsolute": 0,
+      "audioPcmSha256": "e436c22439abb74b7429022015e48d4eb160713c497ad92962284e4992353895",
+      "framebufferSha256": "bdb5e4f73e5512f488fd70a79343cf80f57161f225371329aaee6704cc4998f9",
+      "persistenceSha256": "5341e6b2646979a70e57653007a1f310169421ec9bdd9f1a5648f75ade005af1"
+    }
+  },
+  "comparedFields": [
+    "cart.combinedSha256",
+    "input.sha256",
+    "execution.logicalUpdates",
+    "execution.maximumDrawCommandCount",
+    "execution.audioSampleCount",
+    "execution.audioPeakAbsolute",
+    "execution.audioPcmSha256",
+    "execution.framebufferSha256",
+    "execution.persistenceSha256",
+    "observedNumberRaw16_16"
+  ],
+  "mismatches": [],
+  "authority": "native-wasm-identity-not-official-conformance",
+  "status": "passed"
+}

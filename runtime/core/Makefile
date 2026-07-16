@@ -12,22 +12,26 @@ AUDIO_OBJECT := $(BUILD_DIR)/audio.o
 RASTER_OBJECT := $(BUILD_DIR)/raster.o
 TEXT_OBJECT := $(BUILD_DIR)/text.o
 VM_OBJECT := $(BUILD_DIR)/vm_z8lua.o
+HOST_OBJECT := $(BUILD_DIR)/host_api.o
 CORE_LIBRARY := $(BUILD_DIR)/libp8core.a
 TEST_BINARY := $(BUILD_DIR)/core_tests
 VM_TEST_BINARY := $(BUILD_DIR)/vm_tests
+NATIVE_CART_SMOKE_BINARY := $(BUILD_DIR)/native_cart_smoke
 WASM_OUTPUT_DIR := ../../apps/web/public/kernel
 WASM_OUTPUT := $(WASM_OUTPUT_DIR)/aico8-kernel.js
 Z8_WASM_SOURCES := $(addprefix $(Z8_DIR)/,lapi.c lcode.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c \
 	lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c lctype.c \
 	lauxlib.c lbaselib.c lcorolib.c ldblib.c ltablib.c lstrlib.c lpico8lib.c linit.c)
 
-.PHONY: all test wasm wasm-test clean
+.PHONY: all test native-cart-smoke wasm wasm-test clean
 
 all: $(CORE_LIBRARY)
 
-test: $(TEST_BINARY) $(VM_TEST_BINARY)
+test: $(TEST_BINARY) $(VM_TEST_BINARY) $(NATIVE_CART_SMOKE_BINARY)
 	$(TEST_BINARY)
 	$(VM_TEST_BINARY)
+
+native-cart-smoke: $(NATIVE_CART_SMOKE_BINARY)
 
 wasm: $(WASM_OUTPUT)
 
@@ -63,6 +67,9 @@ $(TEXT_OBJECT): src/text.cpp include/p8/text.h include/p8/raster.h include/p8/co
 $(VM_OBJECT): src/vm_z8lua.cpp include/p8/audio.h include/p8/vm.h include/p8/core.h $(Z8_LIB) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -I$(Z8_DIR) -c $< -o $@
 
+$(HOST_OBJECT): src/wasm_api.cpp include/p8/audio.h include/p8/core.h include/p8/raster.h include/p8/vm.h include/p8/wasm.h | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -I$(Z8_DIR) -c $< -o $@
+
 $(CORE_LIBRARY): $(CORE_OBJECT) $(AUDIO_OBJECT) $(RASTER_OBJECT) $(TEXT_OBJECT)
 	$(AR) rcs $@ $^
 
@@ -71,6 +78,9 @@ $(TEST_BINARY): tests/core_tests.cpp $(CORE_LIBRARY)
 
 $(VM_TEST_BINARY): tests/vm_tests.cpp tests/fixtures/synthetic_cart.lua tests/fixtures/custom_audio_cart.lua $(VM_OBJECT) $(CORE_LIBRARY) $(Z8_LIB)
 	$(CXX) $(CXXFLAGS) $< $(VM_OBJECT) $(CORE_LIBRARY) $(Z8_LIB) -lm -o $@
+
+$(NATIVE_CART_SMOKE_BINARY): tools/native_cart_smoke.cpp $(HOST_OBJECT) $(VM_OBJECT) $(CORE_LIBRARY) $(Z8_LIB)
+	$(CXX) $(CXXFLAGS) $< $(HOST_OBJECT) $(VM_OBJECT) $(CORE_LIBRARY) $(Z8_LIB) -lm -o $@
 
 $(Z8_LIB): $(Z8_SOURCES)
 	$(MAKE) -C $(Z8_DIR) CC=$(CXX) MYCFLAGS= MYLDFLAGS= MYLIBS= liblua.a
