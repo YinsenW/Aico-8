@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
   "normative_oracle": {
-    "runtime": "Licensed official PICO-8",
+    "runtime": "Licensed official desktop PICO-8",
     "minimum_version": "0.2.7",
     "manual": "https://www.lexaloffle.com/dl/docs/pico-8_manual.html",
-    "rule": "Do not bless files captured from FAKE-08 or another independent runtime as goldens."
+    "rule": "Normative PCM/export evidence remains on licensed desktop PICO-8 until an authorized official Web channel exposes equivalent capture; do not bless files from FAKE-08 or another independent runtime as goldens."
   },
   "fixture": "probes/audio_status.p8",
   "captures": [

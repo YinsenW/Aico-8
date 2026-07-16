@@ -119,7 +119,7 @@ presenters.
 
 ## Deliberately unresolved
 
-Licensed official runtime probes are still required for fixed-point edge rounding;
+Authorized official runtime probes are still required for fixed-point edge rounding;
 exact line/circle/ellipse and inverted-fill edge pixels; embedded colour-argument
 state persistence; exact extended-palette RGB output and override edge behavior;
 upper-memory mapping conflicts; and draw-state byte packing not specified by the
@@ -130,7 +130,7 @@ disagreements, but they are not the compatibility oracle.
 
 ## Next qualification slice
 
-Capture licensed official-runtime goldens for ellipse and rounded-rectangle
+Capture authorized official-runtime goldens for ellipse and rounded-rectangle
 edges, embedded-state persistence, fixed-point input, extended-colour output,
 inverted fills, and other edge behavior. Apply any resulting corrections to the
 single shared raster and keep indexed-frame tests and semantic-command output

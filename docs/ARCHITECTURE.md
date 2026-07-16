@@ -49,8 +49,9 @@ Output: a private, versioned cart workspace with a lossless rebuild manifest.
   direct raster writes, palette effects, audio mutation, and persistence.
 - Classify gameplay state, entities, tiles, collision, UI, particles, and audio cues.
 - Generate deterministic input replays and state serializers.
-- Use official PICO-8 captures as the primary behavioral oracle; independent
-  runtimes are secondary diagnostics only.
+- Use authorized official PICO-8 captures as the primary behavioral oracle;
+  independent runtimes are diagnostics. Prefer Education Edition for supported 0.2.7 Web probes and record its one local-file-selection step. Use licensed
+  desktop PICO-8 for exporters and unsupported or version-sensitive semantics; both bind runtime, cart, artifacts, and environment hashes.
 
 Output: a compatibility report, semantic model, replay suite, and remake risk map.
 

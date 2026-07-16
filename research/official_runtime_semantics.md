@@ -213,11 +213,9 @@ current official runtime and, when a discrepancy appears, consult the changelog 
 
 ## Required conformance tests
 
-Official stdout probes are captured only through the provenance-bound Node
-entry point and only into the ignored `captures/official/` tree. The caller must
-explicitly attest that the executable is a licensed official PICO-8 runtime;
-the capture records runtime/cart hashes, version, host, ordered events, command,
-and exit status. For example:
+Official probes use one of two provenance-bound channels and write only into the
+ignored `captures/official/` tree. The licensed desktop channel records the
+executable/cart hashes, version, host, ordered events, command, and exit status:
 
 ```sh
 pnpm capture:official-probe -- \
@@ -233,10 +231,41 @@ The runner uses the manual-defined `-x` headless switch. Independent emulator
 output is never accepted as an official golden, and capture files remain private.
 The cart runs from an isolated temporary working directory. Every explicitly
 declared PNG/WAV/CSV output is copied into an immutable sibling artifact bundle with
-its media type, byte count, and SHA-256 recorded in capture schema v2; missing,
+its media type, byte count, and SHA-256 recorded in capture schema v3; schema v2
+licensed-desktop records remain readable. Missing,
 duplicated, unsupported, symlinked, traversing, overwritten, or later-tampered
 attachments fail validation. A probe that emits only stdout declares no
 `--artifact` arguments and still records an explicit empty attachment list.
+
+For Web-supported 0.2.7 raster/state probes, the preferred channel is the
+provider-authorized, accountless PICO-8 Education Edition at
+`https://www.pico-8-edu.com/`. Browser security intentionally keeps local cart
+selection human-controlled. The operator selects the exact hashed cart once,
+lets the official page produce the declared artifacts/event log, and attests
+that the staged files came from that run. The importer then hashes the official
+runtime asset, cart, browser identity, event log, and immutable artifacts:
+
+```sh
+pnpm import:official-education-probe -- \
+  --authorized-official-education-runtime \
+  --operator-artifact-declaration \
+  --runtime-version 0.2.7 \
+  --runtime-asset /private/staging/pico8_edu_0207.js \
+  --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js \
+  --browser-name Chromium \
+  --browser-version current-browser-version \
+  --cart tests/conformance/probes/curved_raster.p8 \
+  --source-dir /private/staging/curved-raster \
+  --event-log events.txt \
+  --output captures/official/0.2.7-education/curved_raster.json \
+  --artifact curved_raster.png
+```
+
+The importer refuses non-official origins, absent declarations, unbounded or
+symlinked paths, missing artifacts, and mutable output. Education Edition does
+not substitute for desktop-only PCM/export or historical-version evidence; those
+probes remain on the licensed desktop channel. Neither channel authorizes
+publication of the captured cart or generated remake.
 The curved-raster matrix entry declares its exact command and a raw 128x128 PNG;
 that image is the oracle for display-palette RGB that `pget()` cannot observe.
 After the licensed capture exists, generate the source-bound production-Wasm
@@ -258,7 +287,7 @@ hashes. The comparator validates both records and their on-disk attachments,
 then compares decoded RGBA pixels rather than PNG compression bytes, integer PCM
 samples rather than WAV container metadata, and normalized CSV cells rather than
 line endings. Version 1 permits no tolerance. Matched reports remain private and
-immutable, and do not verify an exit until their licensed oracle provenance and
+immutable, and do not verify an exit until their authorized official provenance and
 coverage are recorded in governance.
 
 ### Scheduler
