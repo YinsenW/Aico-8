@@ -10,6 +10,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  ANDROID_DEVICE_ARTIFACT_FILES,
   buildPendingAndroidDeviceReport,
   evaluateAndroidPerformance,
   instrumentationPassed,
@@ -111,7 +112,7 @@ if (!webViewPackage) throw new Error("Unable to identify the active vendor WebVi
 const webViewVersion = parsePackageVersion(adb(["shell", "dumpsys", "package", webViewPackage]));
 
 const inputDevices = adb(["shell", "dumpsys", "input"]);
-const inputDevicesSha256 = writeText("input-devices.txt", inputDevices);
+const inputDevicesSha256 = writeText(ANDROID_DEVICE_ARTIFACT_FILES.inputDevicesSha256, inputDevices);
 const controllerEnumerated = inputDevices.toLocaleLowerCase().includes(controllerName.toLocaleLowerCase());
 
 adb(["install", "-r", debugApk]);
@@ -136,7 +137,7 @@ const instrumentation = spawnSync(
   { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
 );
 const instrumentationOutput = `${instrumentation.stdout ?? ""}${instrumentation.stderr ?? ""}`;
-const instrumentationSha256 = writeText("instrumentation.txt", instrumentationOutput);
+const instrumentationSha256 = writeText(ANDROID_DEVICE_ARTIFACT_FILES.instrumentationSha256, instrumentationOutput);
 const passedInstrumentation = instrumentationPassed(instrumentationOutput, instrumentation.status);
 
 let screenshot: Uint8Array = new Uint8Array();
@@ -153,12 +154,12 @@ if (passedInstrumentation) {
     orientationEvidence = "";
   }
 }
-const orientationSha256 = writeText("physical-orientation.json", orientationEvidence);
+const orientationSha256 = writeText(ANDROID_DEVICE_ARTIFACT_FILES.orientationSha256, orientationEvidence);
 const orientationChangePassed = orientationEvidencePassed(orientationEvidence);
 const screenshotDimensions = pngDimensions(screenshot);
 const readyScreenshotCaptured = screenshotDimensions?.width === physicalPixels.width
   && screenshotDimensions.height === physicalPixels.height;
-const screenshotSha256 = writeBinary("physical-host.png", screenshot);
+const screenshotSha256 = writeBinary(ANDROID_DEVICE_ARTIFACT_FILES.screenshotSha256, screenshot);
 
 adb(["shell", "am", "force-stop", applicationId]);
 adb(["shell", "dumpsys", "gfxinfo", applicationId, "reset"]);
@@ -172,8 +173,8 @@ console.log(
 await new Promise<void>((resolve) => setTimeout(resolve, performanceCaptureSeconds * 1_000));
 const logcat = adb(["logcat", "-d", "-v", "threadtime"]);
 const gfxInfo = adb(["shell", "dumpsys", "gfxinfo", applicationId, "framestats"]);
-const logcatSha256 = writeText("logcat.txt", logcat);
-const gfxInfoSha256 = writeText("gfxinfo-framestats.txt", gfxInfo);
+const logcatSha256 = writeText(ANDROID_DEVICE_ARTIFACT_FILES.logcatSha256, logcat);
+const gfxInfoSha256 = writeText(ANDROID_DEVICE_ARTIFACT_FILES.gfxInfoSha256, gfxInfo);
 const performance = evaluateAndroidPerformance(
   parseGfxFrameDurationsMilliseconds(gfxInfo),
   targetProfile,

@@ -17,6 +17,47 @@ export function sha256(value: string | Uint8Array): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+export const ANDROID_DEVICE_ARTIFACT_FILES = {
+  screenshotSha256: "physical-host.png",
+  instrumentationSha256: "instrumentation.txt",
+  orientationSha256: "physical-orientation.json",
+  logcatSha256: "logcat.txt",
+  inputDevicesSha256: "input-devices.txt",
+  gfxInfoSha256: "gfxinfo-framestats.txt",
+} as const satisfies Record<keyof AndroidPhysicalDeviceValidationV2["artifacts"], string>;
+
+export function verifyAndroidDeviceEvidenceBindings(
+  report: AndroidPhysicalDeviceValidationV2,
+  apkBytes: Uint8Array,
+  lineageBytes: Uint8Array,
+  lineage: AndroidWebLineageV1,
+  targetProfileBytes: Uint8Array,
+  targetProfile: AndroidTargetProfileV1,
+  artifactBytes: Readonly<Record<keyof AndroidPhysicalDeviceValidationV2["artifacts"], Uint8Array>>,
+): void {
+  if (targetProfile.target !== "android-webview") {
+    throw new Error("Android device evidence requires an android-webview target profile");
+  }
+  const exactBindings = [
+    [sha256(apkBytes), report.subject.apkSha256, "APK bytes"],
+    [sha256(lineageBytes), report.subject.androidWebLineageSha256, "Android Web lineage bytes"],
+    [sha256(targetProfileBytes), report.subject.targetProfileSha256, "Android target-profile bytes"],
+    [lineage.host.applicationId, report.subject.applicationId, "lineage application ID"],
+    [lineage.targetProfile.id, report.subject.targetProfileId, "lineage target-profile ID"],
+    [lineage.targetProfile.sha256, report.subject.targetProfileSha256, "lineage target-profile hash"],
+    [targetProfile.id, report.subject.targetProfileId, "target-profile ID"],
+    [targetProfile.android.applicationId, report.subject.applicationId, "target-profile application ID"],
+  ] as const;
+  for (const [actual, expected, label] of exactBindings) {
+    if (actual !== expected) throw new Error(`${label} does not match the device report`);
+  }
+  for (const field of Object.keys(ANDROID_DEVICE_ARTIFACT_FILES) as (keyof typeof ANDROID_DEVICE_ARTIFACT_FILES)[]) {
+    if (sha256(artifactBytes[field]) !== report.artifacts[field]) {
+      throw new Error(`${ANDROID_DEVICE_ARTIFACT_FILES[field]} does not match device report artifact hash ${field}`);
+    }
+  }
+}
+
 export function parseConnectedAndroidDevices(output: string): readonly ConnectedAndroidDevice[] {
   return output
     .split(/\r?\n/u)
