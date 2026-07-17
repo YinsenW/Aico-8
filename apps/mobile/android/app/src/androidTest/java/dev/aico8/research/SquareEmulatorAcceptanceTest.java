@@ -51,12 +51,15 @@ public final class SquareEmulatorAcceptanceTest {
                 evaluateJavascript(
                     webView.get(),
                     "window.__aico8TouchCount = 0; " +
-                        "document.addEventListener('click', () => window.__aico8TouchCount += 1, " +
-                        "{ once: true }); window.__aico8TouchCount"
+                        "const markAico8Touch = () => window.__aico8TouchCount += 1; " +
+                        "document.addEventListener('touchstart', markAico8Touch, " +
+                        "{ once: true, capture: true, passive: true }); " +
+                        "document.addEventListener('pointerdown', markAico8Touch, " +
+                        "{ once: true, capture: true }); window.__aico8TouchCount"
                 )
             );
             onView(isAssignableFrom(WebView.class)).perform(click());
-            awaitJavascriptTrue(webView.get(), "window.__aico8TouchCount === 1");
+            awaitJavascriptTrue(webView.get(), "window.__aico8TouchCount >= 1");
 
             scenario.recreate();
             webView = captureSquareWebView(scenario);

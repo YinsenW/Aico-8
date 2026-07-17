@@ -111,8 +111,18 @@ set +e
 adb shell am instrument -w -r \
   dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner \
   | tee "$evidence_dir/instrumentation.txt"
-instrumentation_status=${PIPESTATUS[0]}
+instrumentation_process_status=${PIPESTATUS[0]}
 set -e
+
+instrumentation_outcome="failed"
+if [[ $instrumentation_process_status -eq 0 ]] \
+  && grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$evidence_dir/instrumentation.txt" \
+  && ! grep -q '^FAILURES!!!' "$evidence_dir/instrumentation.txt"; then
+  instrumentation_outcome="passed"
+fi
+
+adb shell am start -W -n dev.aico8.research/.MainActivity > "$evidence_dir/host-launch.txt"
+sleep 3
 
 adb shell dumpsys window displays > "$evidence_dir/window-displays.txt"
 adb shell dumpsys activity activities > "$evidence_dir/activities.txt"
@@ -126,10 +136,10 @@ adb exec-out screencap -p > "$evidence_dir/square-host.png"
   echo "wm_size=$wm_size"
   echo "wm_density=$wm_density"
   echo "network_mode=airplane-wifi-off-data-off"
-  echo "instrumentation_status=$instrumentation_status"
+  echo "instrumentation_process_status=$instrumentation_process_status"
+  echo "instrumentation_outcome=$instrumentation_outcome"
 } > "$evidence_dir/device-profile.txt"
 
-if [[ $instrumentation_status -ne 0 ]]; then
-  exit "$instrumentation_status"
+if [[ "$instrumentation_outcome" != "passed" ]]; then
+  exit 1
 fi
-grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$evidence_dir/instrumentation.txt"
