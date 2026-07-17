@@ -121,13 +121,22 @@ if [[ $instrumentation_process_status -eq 0 ]] \
   instrumentation_outcome="passed"
 fi
 
+if [[ "$instrumentation_outcome" == "passed" ]]; then
+  adb exec-out run-as dev.aico8.research \
+    cat files/square-host.png > "$evidence_dir/square-host.png"
+  file "$evidence_dir/square-host.png" | tee "$evidence_dir/square-host-file.txt"
+  if ! grep -q 'PNG image data, 1024 x 1024' "$evidence_dir/square-host-file.txt"; then
+    echo "Ready-host screenshot is not the expected 1024x1024 PNG" >&2
+    exit 1
+  fi
+fi
+
 adb shell am start -W -n dev.aico8.research/.MainActivity > "$evidence_dir/host-launch.txt"
 sleep 3
 
 adb shell dumpsys window displays > "$evidence_dir/window-displays.txt"
 adb shell dumpsys activity activities > "$evidence_dir/activities.txt"
 adb logcat -d -v threadtime > "$evidence_dir/logcat.txt"
-adb exec-out screencap -p > "$evidence_dir/square-host.png"
 {
   echo "profile_id=$profile_id"
   echo "avd_name=$avd_name"

@@ -4,8 +4,10 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import android.graphics.Bitmap;
 import android.util.DisplayMetrics;
 import android.webkit.WebView;
 
@@ -16,6 +18,9 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -71,7 +76,29 @@ public final class SquareEmulatorAcceptanceTest {
                     "localStorage.getItem('aico8-square-acceptance')"
                 )
             );
+            captureReadyHostEvidence(scenario);
         }
+    }
+
+    private static void captureReadyHostEvidence(ActivityScenario<MainActivity> scenario) {
+        scenario.onActivity(activity -> {
+            Bitmap screenshot = InstrumentationRegistry
+                .getInstrumentation()
+                .getUiAutomation()
+                .takeScreenshot();
+            assertNotNull("Unable to capture the ready Android host", screenshot);
+            File output = new File(activity.getFilesDir(), "square-host.png");
+            try (FileOutputStream stream = new FileOutputStream(output)) {
+                assertTrue(
+                    "Unable to encode the ready Android host screenshot",
+                    screenshot.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                );
+            } catch (IOException error) {
+                throw new AssertionError("Unable to retain the ready Android host screenshot", error);
+            } finally {
+                screenshot.recycle();
+            }
+        });
     }
 
     private static AtomicReference<WebView> captureSquareWebView(
