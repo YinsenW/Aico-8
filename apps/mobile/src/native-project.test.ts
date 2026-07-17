@@ -104,4 +104,13 @@ describe("Capacitor Android host project", () => {
     expect(settings).toContain(`@capacitor+android@${profile.android.capacitorVersion}`);
     expect(settings).toContain("@capacitor+app@8.1.1");
   });
+
+  it("keeps physical-device evidence independently re-verifiable after capture", () => {
+    expect(read("package.json")).toContain('"verify:device": "tsx src/verify-android-device.ts"');
+    const verifier = read("src/verify-android-device.ts");
+    expect(verifier).toContain("validateAndroidPhysicalDeviceValidation");
+    expect(verifier).toContain("validateAndroidWebLineage");
+    expect(verifier).toContain("validateTargetProfile");
+    expect(verifier).toContain("verifyAndroidDeviceEvidenceBindings");
+  });
 });
