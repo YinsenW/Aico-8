@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <new>
 #include <vector>
 
 namespace {
@@ -87,6 +88,27 @@ struct text_state {
     int max_draw_y = 0;
     uint32_t unsupported = 0;
 };
+
+} // namespace
+
+struct p8_text_job {
+    std::vector<uint8_t> bytes;
+    text_state state;
+    size_t index = 0;
+    int anchor_x = 0;
+    int anchor_y = 0;
+    uint8_t foreground_in = 0;
+    uint8_t print_attributes = 0;
+    bool append_newline = false;
+    bool terminated = false;
+    bool completed = false;
+    uint16_t repeated_character = 0;
+    unsigned repeat_remaining = 0;
+    uint32_t character_delay = 0;
+    bool requires_frames = false;
+};
+
+namespace {
 
 void include_pixel(text_state &state, int x, int y)
 {
@@ -209,13 +231,6 @@ int draw_character(text_state &state, uint8_t character,
     state.x += advance;
     state.max_x = std::max(state.max_x, state.x);
     return advance;
-}
-
-bool take(const uint8_t *bytes, size_t size, size_t &index, uint8_t &value)
-{
-    if (++index >= size) return false;
-    value = bytes[index];
-    return true;
 }
 
 void apply_wrap(text_state &state)
@@ -347,11 +362,9 @@ token_description describe_token(const uint8_t *bytes, size_t size, size_t index
         const uint8_t command = bytes[index + 1];
         if (command >= '1' && command <= '9') {
             token.length = 2;
-            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
             token.effects = P8_TEXT_EFFECT_TIMING;
         } else if (command == 'd') {
             token.length = bounded_token_size(3, remaining);
-            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
             token.effects = P8_TEXT_EFFECT_TIMING;
         } else if (command == 'c') {
             token.length = bounded_token_size(3, remaining);
@@ -547,9 +560,318 @@ void record_text_ir(p8_core *core, const uint8_t *bytes, size_t size,
     p8_core_append_text_ir_record(core, record.data(), record.size());
 }
 
+bool take_job(p8_text_job &job, uint8_t &value)
+{
+    if (job.index >= job.bytes.size()) return false;
+    value = job.bytes[job.index++];
+    return true;
+}
+
+void complete_job(p8_text_job &job, p8_text_result &result)
+{
+    if (job.append_newline && !job.terminated) {
+        job.state.x = job.state.home_x;
+        job.state.y += job.state.line_height;
+    }
+    p8_core_poke(job.state.core, kCursorX, static_cast<uint8_t>(job.state.x));
+    p8_core_poke(job.state.core, kCursorY, static_cast<uint8_t>(job.state.y));
+    p8_core_poke(job.state.core, kDrawColor, job.state.foreground);
+    result.rightmost_x = job.state.max_x;
+    result.cursor_x = job.state.x;
+    result.cursor_y = job.state.y;
+    result.foreground = job.state.foreground;
+    result.unsupported = job.state.unsupported;
+    record_text_ir(job.state.core, job.bytes.data(), job.bytes.size(),
+                   job.anchor_x, job.anchor_y, job.foreground_in,
+                   job.append_newline ? 1 : 0, job.print_attributes,
+                   result, &job.state);
+    job.completed = true;
+}
+
+void reject_job(p8_text_job &job, p8_text_result &result)
+{
+    result = {job.anchor_x, job.anchor_x, job.anchor_y,
+              job.foreground_in, job.state.unsupported};
+    record_text_ir(job.state.core, job.bytes.data(), job.bytes.size(),
+                   job.anchor_x, job.anchor_y, job.foreground_in,
+                   job.append_newline ? 1 : 0, job.print_attributes,
+                   result, nullptr);
+    job.completed = true;
+}
+
+int advance_job(p8_text_job &job, uint32_t &wait_frames, p8_text_result &result)
+{
+    wait_frames = 0;
+    if (job.completed) {
+        result = {job.state.max_x, job.state.x, job.state.y,
+                  job.state.foreground, job.state.unsupported};
+        return P8_TEXT_STEP_COMPLETE;
+    }
+    if (job.state.unsupported != P8_TEXT_UNSUPPORTED_NONE) {
+        reject_job(job, result);
+        return P8_TEXT_STEP_COMPLETE;
+    }
+
+    while (job.index < job.bytes.size() || job.repeat_remaining != 0) {
+        bool drew_character = false;
+        if (job.repeat_remaining != 0) {
+            draw_character(job.state, static_cast<uint8_t>(job.repeated_character));
+            --job.repeat_remaining;
+            drew_character = true;
+        } else {
+            uint8_t character = 0;
+            if (!take_job(job, character)) break;
+            if (character == 0) {
+                job.terminated = true;
+                job.index = job.bytes.size();
+                break;
+            }
+            if (character == 1) {
+                uint8_t count = 0;
+                if (!take_job(job, count) || !take_job(job, character)) break;
+                job.repeated_character = character;
+                job.repeat_remaining = static_cast<unsigned>(parameter(count));
+                continue;
+            }
+            if (character == 2) {
+                uint8_t color = 0;
+                if (!take_job(job, color)) break;
+                job.state.background = static_cast<uint8_t>(parameter(color) & 0x0f);
+                job.state.background_enabled = true;
+            } else if (character >= 3 && character <= 5) {
+                uint8_t first = 0;
+                if (!take_job(job, first)) break;
+                if (character == 3) job.state.x += parameter(first) - 16;
+                if (character == 4) job.state.y += parameter(first) - 16;
+                if (character == 5) {
+                    uint8_t second = 0;
+                    if (!take_job(job, second)) break;
+                    job.state.x += parameter(first) - 16;
+                    job.state.y += parameter(second) - 16;
+                }
+            } else if (character == 6) {
+                uint8_t command = 0;
+                if (!take_job(job, command)) break;
+                if (command >= '1' && command <= '9') {
+                    wait_frames = 1u << static_cast<unsigned>(command - '1');
+                    return P8_TEXT_STEP_WAIT;
+                }
+                if (command == 'd') {
+                    uint8_t delay = 0;
+                    if (!take_job(job, delay)) break;
+                    job.character_delay = static_cast<uint32_t>(parameter(delay));
+                } else if (command == 'c') {
+                    uint8_t color = 0;
+                    if (!take_job(job, color)) break;
+                    p8_gfx_cls(job.state.core, static_cast<uint8_t>(parameter(color)));
+                    job.state.x = job.state.y = job.state.home_x = job.state.home_y = 0;
+                } else if (command == 'g') {
+                    job.state.x = job.state.home_x;
+                    job.state.y = job.state.home_y;
+                } else if (command == 'h') {
+                    job.state.home_x = job.state.x;
+                    job.state.home_y = job.state.y;
+                } else if (command == 'j') {
+                    uint8_t px = 0, py = 0;
+                    if (!take_job(job, px) || !take_job(job, py)) break;
+                    job.state.x = parameter(px) * 4;
+                    job.state.y = parameter(py) * 4;
+                } else if (command == 'r' || command == 's'
+                           || command == 'x' || command == 'y') {
+                    uint8_t value = 0;
+                    if (!take_job(job, value)) break;
+                    if (command == 'r') job.state.rhs = parameter(value) * 4;
+                    if (command == 's') job.state.tab_width = std::max(1, parameter(value));
+                    if (command == 'x') job.state.forced_width = parameter(value);
+                    if (command == 'y') job.state.forced_height = parameter(value);
+                } else if (command == 'w') job.state.mode |= mode_wide;
+                else if (command == 't') job.state.mode |= mode_tall;
+                else if (command == '=') job.state.mode |= mode_stripe;
+                else if (command == 'p') job.state.mode |= mode_wide | mode_tall | mode_stripe;
+                else if (command == 'i') job.state.mode |= mode_invert;
+                else if (command == '#') job.state.background_enabled = true;
+                else if (command == '-') {
+                    uint8_t disabled = 0;
+                    if (!take_job(job, disabled)) break;
+                    if (disabled == 'w') job.state.mode &= ~mode_wide;
+                    if (disabled == 't') job.state.mode &= ~mode_tall;
+                    if (disabled == '=') job.state.mode &= ~mode_stripe;
+                    if (disabled == 'p') {
+                        job.state.mode &= ~(mode_wide | mode_tall | mode_stripe);
+                    }
+                    if (disabled == 'i') job.state.mode &= ~mode_invert;
+                    if (disabled == '#') job.state.background_enabled = false;
+                } else if (command == ':' || command == ';'
+                           || command == '.' || command == ',') {
+                    std::array<uint8_t, 8> rows{};
+                    const bool hexadecimal = command == ':' || command == ';';
+                    for (int row = 0; row < 8; ++row) {
+                        uint8_t first = 0;
+                        if (!take_job(job, first)) break;
+                        if (hexadecimal) {
+                            uint8_t second = 0;
+                            if (!take_job(job, second)) break;
+                            rows[row] = static_cast<uint8_t>(
+                                (hex_nibble(static_cast<char>(first)) << 4u)
+                                | hex_nibble(static_cast<char>(second)));
+                        } else {
+                            rows[row] = first;
+                        }
+                    }
+                    draw_character(job.state, 0x10, &rows);
+                    drew_character = true;
+                } else if (command == '@' || command == '!') {
+                    uint16_t address = 0;
+                    for (int digit = 0; digit < 4; ++digit) {
+                        uint8_t value = 0;
+                        if (!take_job(job, value)) break;
+                        address = static_cast<uint16_t>(
+                            (address << 4u) | hex_nibble(static_cast<char>(value)));
+                    }
+                    size_t count = job.bytes.size() - job.index;
+                    if (command == '@') {
+                        count = 0;
+                        for (int digit = 0; digit < 4; ++digit) {
+                            uint8_t value = 0;
+                            if (!take_job(job, value)) break;
+                            count = (count << 4u)
+                                | hex_nibble(static_cast<char>(value));
+                        }
+                        count = std::min(count, job.bytes.size() - job.index);
+                    }
+                    for (size_t offset = 0; offset < count; ++offset) {
+                        p8_core_poke(job.state.core,
+                            static_cast<uint16_t>(address + offset),
+                            job.bytes[job.index + offset]);
+                    }
+                    job.index += count;
+                } else if (command == 'o') {
+                    uint8_t color = 0, high = 0, low = 0;
+                    if (!take_job(job, color) || !take_job(job, high)
+                        || !take_job(job, low)) break;
+                    job.state.outline_skip_interior = color == '!';
+                    job.state.outline_color = (color == '$' || color == '!')
+                        ? job.state.foreground
+                        : static_cast<uint8_t>(parameter(color) & 0x0f);
+                    job.state.outline_neighbors = static_cast<uint8_t>(
+                        (hex_nibble(static_cast<char>(high)) << 4u)
+                        | hex_nibble(static_cast<char>(low)));
+                } else if (command == 'u') {
+                    job.state.underline = true;
+                } else {
+                    job.state.unsupported |= P8_TEXT_UNSUPPORTED_RENDER_MODE;
+                }
+            } else if (character == 7) {
+                job.state.unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+            } else if (character == 8) {
+                job.state.x -= 4;
+            } else if (character == 9) {
+                const int stop = std::max(1, job.state.tab_width * 4);
+                job.state.x += stop - ((job.state.x - job.state.home_x) % stop);
+            } else if (character == 10) {
+                job.state.x = job.state.home_x;
+                job.state.y += job.state.line_height;
+                job.state.line_height = 6;
+            } else if (character == 11) {
+                uint8_t offset = 0, decorated = 0;
+                if (!take_job(job, offset) || !take_job(job, decorated)) break;
+                const int saved_x = job.state.x, saved_y = job.state.y;
+                job.state.x = job.state.previous_x + parameter(offset) % 4 - 2;
+                job.state.y = job.state.previous_y + parameter(offset) / 4 - 8;
+                draw_character(job.state, decorated);
+                job.state.x = saved_x;
+                job.state.y = saved_y;
+            } else if (character == 12) {
+                uint8_t color = 0;
+                if (!take_job(job, color)) break;
+                job.state.foreground = static_cast<uint8_t>(parameter(color) & 0x0f);
+                p8_core_poke(job.state.core, kDrawColor, job.state.foreground);
+            } else if (character == 13) {
+                job.state.x = job.state.home_x;
+            } else if (character == 14) {
+                job.state.mode |= mode_custom;
+            } else if (character == 15) {
+                job.state.mode &= ~mode_custom;
+            } else {
+                draw_character(job.state, character);
+                drew_character = true;
+            }
+        }
+        apply_wrap(job.state);
+        if (drew_character && job.character_delay != 0) {
+            wait_frames = job.character_delay;
+            return P8_TEXT_STEP_WAIT;
+        }
+    }
+
+    complete_job(job, result);
+    return P8_TEXT_STEP_COMPLETE;
+}
+
 } // namespace
 
 extern "C" {
+
+p8_text_job *p8_text_job_create(p8_core *core, const uint8_t *bytes, size_t size,
+                                int x, int y, uint8_t foreground,
+                                int append_newline)
+{
+    if (!core || (!bytes && size != 0)) return nullptr;
+    p8_text_job *job = new (std::nothrow) p8_text_job{};
+    if (!job) return nullptr;
+    if (size != 0) job->bytes.assign(bytes, bytes + size);
+    job->anchor_x = x;
+    job->anchor_y = y;
+    job->foreground_in = static_cast<uint8_t>(foreground & 0x0f);
+    job->print_attributes = p8_core_peek(core, kPrintAttributes);
+    job->append_newline = append_newline != 0;
+    job->state.core = core;
+    job->state.x = x;
+    job->state.y = y;
+    job->state.home_x = x;
+    job->state.home_y = y;
+    job->state.previous_x = x;
+    job->state.previous_y = y;
+    job->state.max_x = x;
+    job->state.foreground = job->foreground_in;
+    const uint32_t unsupported = unsupported_controls(bytes, size);
+    job->requires_frames = (unsupported & P8_TEXT_UNSUPPORTED_DELAY) != 0;
+    job->state.unsupported = unsupported
+        & ~static_cast<uint32_t>(P8_TEXT_UNSUPPORTED_DELAY);
+    if ((job->print_attributes & 1u) != 0) {
+        if ((job->print_attributes & 0x04u) != 0) job->state.mode |= mode_wide;
+        if ((job->print_attributes & 0x08u) != 0) job->state.mode |= mode_tall;
+        if ((job->print_attributes & 0x10u) != 0) job->state.mode |= mode_solid;
+        if ((job->print_attributes & 0x20u) != 0) job->state.mode |= mode_invert;
+        if ((job->print_attributes & 0x40u) != 0) job->state.mode |= mode_stripe;
+        if ((job->print_attributes & 0x80u) != 0) job->state.mode |= mode_custom;
+        job->state.background_enabled = (job->print_attributes & 0x10u) != 0;
+    }
+    return job;
+}
+
+void p8_text_job_destroy(p8_text_job *job)
+{
+    delete job;
+}
+
+uint32_t p8_text_job_unsupported(const p8_text_job *job)
+{
+    return job ? job->state.unsupported
+               : static_cast<uint32_t>(P8_TEXT_UNSUPPORTED_RENDER_MODE);
+}
+
+int p8_text_job_requires_frames(const p8_text_job *job)
+{
+    return job && job->requires_frames ? 1 : 0;
+}
+
+int p8_text_job_step(p8_text_job *job, uint32_t *wait_frames,
+                     p8_text_result *result)
+{
+    if (!job || !wait_frames || !result) return P8_TEXT_STEP_ERROR;
+    return advance_job(*job, *wait_frames, *result);
+}
 
 int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
                   int x, int y, uint8_t foreground, int append_newline,
@@ -565,190 +887,13 @@ int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
                        defaults, *result, nullptr);
         return 1;
     }
-    text_state state{core, x, y, x, y, x, y, x, 6, -1, -1, 4, -1,
-                     static_cast<uint8_t>(foreground & 0x0f)};
-    if ((defaults & 1u) != 0) {
-        if ((defaults & 0x04u) != 0) state.mode |= mode_wide;
-        if ((defaults & 0x08u) != 0) state.mode |= mode_tall;
-        if ((defaults & 0x10u) != 0) state.mode |= mode_solid;
-        if ((defaults & 0x20u) != 0) state.mode |= mode_invert;
-        if ((defaults & 0x40u) != 0) state.mode |= mode_stripe;
-        if ((defaults & 0x80u) != 0) state.mode |= mode_custom;
-        state.background_enabled = (defaults & 0x10u) != 0;
-    }
-
-    bool terminated = false;
-    for (size_t index = 0; index < size; ++index) {
-        uint8_t character = bytes[index];
-        if (character == 0) {
-            terminated = true;
-            break;
-        }
-        if (character == 1) {
-            uint8_t count = 0;
-            if (!take(bytes, size, index, count) || !take(bytes, size, index, character)) break;
-            for (int repeat = 0; repeat < parameter(count); ++repeat) draw_character(state, character);
-        } else if (character == 2) {
-            uint8_t color = 0;
-            if (!take(bytes, size, index, color)) break;
-            state.background = static_cast<uint8_t>(parameter(color) & 0x0f);
-            state.background_enabled = true;
-        } else if (character >= 3 && character <= 5) {
-            uint8_t first = 0;
-            if (!take(bytes, size, index, first)) break;
-            if (character == 3) state.x += parameter(first) - 16;
-            if (character == 4) state.y += parameter(first) - 16;
-            if (character == 5) {
-                uint8_t second = 0;
-                if (!take(bytes, size, index, second)) break;
-                state.x += parameter(first) - 16;
-                state.y += parameter(second) - 16;
-            }
-        } else if (character == 6) {
-            uint8_t command = 0;
-            if (!take(bytes, size, index, command)) break;
-            if (command >= '1' && command <= '9') {
-                state.unsupported |= P8_TEXT_UNSUPPORTED_DELAY;
-            } else if (command == 'd') {
-                uint8_t ignored = 0;
-                take(bytes, size, index, ignored);
-                state.unsupported |= P8_TEXT_UNSUPPORTED_DELAY;
-            } else if (command == 'c') {
-                uint8_t color = 0;
-                if (!take(bytes, size, index, color)) break;
-                p8_gfx_cls(core, static_cast<uint8_t>(parameter(color)));
-                state.x = state.y = state.home_x = state.home_y = 0;
-            } else if (command == 'g') {
-                state.x = state.home_x;
-                state.y = state.home_y;
-            } else if (command == 'h') {
-                state.home_x = state.x;
-                state.home_y = state.y;
-            } else if (command == 'j') {
-                uint8_t px = 0, py = 0;
-                if (!take(bytes, size, index, px) || !take(bytes, size, index, py)) break;
-                state.x = parameter(px) * 4;
-                state.y = parameter(py) * 4;
-            } else if (command == 'r' || command == 's' || command == 'x' || command == 'y') {
-                uint8_t value = 0;
-                if (!take(bytes, size, index, value)) break;
-                if (command == 'r') state.rhs = parameter(value) * 4;
-                if (command == 's') state.tab_width = std::max(1, parameter(value));
-                if (command == 'x') state.forced_width = parameter(value);
-                if (command == 'y') state.forced_height = parameter(value);
-            } else if (command == 'w') state.mode |= mode_wide;
-            else if (command == 't') state.mode |= mode_tall;
-            else if (command == '=') state.mode |= mode_stripe;
-            else if (command == 'p') state.mode |= mode_wide | mode_tall | mode_stripe;
-            else if (command == 'i') state.mode |= mode_invert;
-            else if (command == '#') state.background_enabled = true;
-            else if (command == '-') {
-                uint8_t disabled = 0;
-                if (!take(bytes, size, index, disabled)) break;
-                if (disabled == 'w') state.mode &= ~mode_wide;
-                if (disabled == 't') state.mode &= ~mode_tall;
-                if (disabled == '=') state.mode &= ~mode_stripe;
-                if (disabled == 'p') state.mode &= ~(mode_wide | mode_tall | mode_stripe);
-                if (disabled == 'i') state.mode &= ~mode_invert;
-                if (disabled == '#') state.background_enabled = false;
-            } else if (command == ':' || command == ';' || command == '.' || command == ',') {
-                std::array<uint8_t, 8> rows{};
-                const bool hexadecimal = command == ':' || command == ';';
-                for (int row = 0; row < 8; ++row) {
-                    uint8_t first = 0;
-                    if (!take(bytes, size, index, first)) break;
-                    if (hexadecimal) {
-                        uint8_t second = 0;
-                        if (!take(bytes, size, index, second)) break;
-                        rows[row] = static_cast<uint8_t>((hex_nibble(static_cast<char>(first)) << 4u)
-                                                        | hex_nibble(static_cast<char>(second)));
-                    } else rows[row] = first;
-                }
-                draw_character(state, 0x10, &rows);
-            } else if (command == '@' || command == '!') {
-                uint16_t address = 0;
-                for (int digit = 0; digit < 4; ++digit) {
-                    uint8_t value = 0;
-                    if (!take(bytes, size, index, value)) break;
-                    address = static_cast<uint16_t>((address << 4u) | hex_nibble(static_cast<char>(value)));
-                }
-                size_t count = size - index - 1u;
-                if (command == '@') {
-                    count = 0;
-                    for (int digit = 0; digit < 4; ++digit) {
-                        uint8_t value = 0;
-                        if (!take(bytes, size, index, value)) break;
-                        count = (count << 4u) | hex_nibble(static_cast<char>(value));
-                    }
-                    count = std::min(count, size - index - 1u);
-                }
-                for (size_t offset = 0; offset < count; ++offset) {
-                    p8_core_poke(core, static_cast<uint16_t>(address + offset), bytes[index + 1u + offset]);
-                }
-                index += count;
-            } else if (command == 'o') {
-                uint8_t color = 0, high = 0, low = 0;
-                if (!take(bytes, size, index, color) || !take(bytes, size, index, high)
-                    || !take(bytes, size, index, low)) break;
-                state.outline_skip_interior = color == '!';
-                state.outline_color = (color == '$' || color == '!')
-                    ? state.foreground : static_cast<uint8_t>(parameter(color) & 0x0f);
-                state.outline_neighbors = static_cast<uint8_t>(
-                    (hex_nibble(static_cast<char>(high)) << 4u) | hex_nibble(static_cast<char>(low)));
-            } else if (command == 'u') state.underline = true;
-            else state.unsupported |= P8_TEXT_UNSUPPORTED_RENDER_MODE;
-        } else if (character == 7) {
-            state.unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
-        } else if (character == 8) {
-            state.x -= 4;
-        } else if (character == 9) {
-            const int stop = std::max(1, state.tab_width * 4);
-            state.x += stop - ((state.x - state.home_x) % stop);
-        } else if (character == 10) {
-            state.x = state.home_x;
-            state.y += state.line_height;
-            state.line_height = 6;
-        } else if (character == 11) {
-            uint8_t offset = 0, decorated = 0;
-            if (!take(bytes, size, index, offset) || !take(bytes, size, index, decorated)) break;
-            const int saved_x = state.x, saved_y = state.y;
-            state.x = state.previous_x + parameter(offset) % 4 - 2;
-            state.y = state.previous_y + parameter(offset) / 4 - 8;
-            draw_character(state, decorated);
-            state.x = saved_x;
-            state.y = saved_y;
-        } else if (character == 12) {
-            uint8_t color = 0;
-            if (!take(bytes, size, index, color)) break;
-            state.foreground = static_cast<uint8_t>(parameter(color) & 0x0f);
-            p8_core_poke(core, kDrawColor, state.foreground);
-        } else if (character == 13) {
-            state.x = state.home_x;
-        } else if (character == 14) {
-            state.mode |= mode_custom;
-        } else if (character == 15) {
-            state.mode &= ~mode_custom;
-        } else {
-            draw_character(state, character);
-        }
-        apply_wrap(state);
-    }
-
-    if (append_newline && !terminated) {
-        state.x = state.home_x;
-        state.y += state.line_height;
-    }
-    p8_core_poke(core, kCursorX, static_cast<uint8_t>(state.x));
-    p8_core_poke(core, kCursorY, static_cast<uint8_t>(state.y));
-    p8_core_poke(core, kDrawColor, state.foreground);
-    result->rightmost_x = state.max_x;
-    result->cursor_x = state.x;
-    result->cursor_y = state.y;
-    result->foreground = state.foreground;
-    result->unsupported = state.unsupported;
-    record_text_ir(core, bytes, size, x, y, foreground_in, append_newline,
-                   defaults, *result, &state);
-    return 1;
+    p8_text_job *job = p8_text_job_create(core, bytes, size, x, y, foreground,
+                                                append_newline);
+    if (!job) return 0;
+    uint32_t wait_frames = 0;
+    const int status = p8_text_job_step(job, &wait_frames, result);
+    p8_text_job_destroy(job);
+    return status == P8_TEXT_STEP_COMPLETE && wait_frames == 0 ? 1 : 0;
 }
 
 } // extern "C"

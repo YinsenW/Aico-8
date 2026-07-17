@@ -99,12 +99,17 @@ calls share one copy path, dirty tracking, remapping behavior, and protected-cod
 range check. External-cart filenames are deliberately rejected until a host
 resource contract can provide a declared cartridge rather than an implicit file.
 
-`runtime/core/src/text.cpp` owns synchronous P8SCII execution and indexed text
-rasterization. The manual-defined static baseline covers built-in and custom
-font rows, inline glyphs, cursor/color/background controls, repeat/termination,
-raw writes, outline, underline, and sizing modes. Delay and audio controls are
-preflighted and rejected before mutation until their timing and synthesis paths
-are qualified; semantic text-run emission remains a separate planned boundary.
+`runtime/core/src/text.cpp` owns resumable P8SCII execution and indexed text
+rasterization. The manual-defined baseline covers built-in and custom font rows,
+inline glyphs, cursor/color/background controls, repeat/termination, raw writes,
+outline, underline, sizing modes, per-character delay, and the 1/2/4/.../256
+frame skip controls. One stateful text job preserves every render and memory
+side effect across the existing VM coroutine scheduler; Native and Wasm tests
+pin the exact public frame boundaries. Delayed top-level and nested-coroutine
+calls are rejected before mutation because only the host-resumable cart callback
+can advance logical frames. P8SCII audio remains
+fail-closed until its dynamic synthesis and licensed-official PCM path is
+qualified. Effectful timing runs remain review-required for HD presentation.
 
 The same source targets native, WebAssembly, and ESP-IDF builds. A TypeScript
 host consumes the indexed frame; it does not duplicate compatibility raster rules.

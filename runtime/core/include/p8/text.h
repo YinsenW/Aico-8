@@ -62,10 +62,31 @@ typedef struct p8_text_result {
     uint32_t unsupported;
 } p8_text_result;
 
+typedef struct p8_text_job p8_text_job;
+
+enum {
+    P8_TEXT_STEP_ERROR = 0,
+    P8_TEXT_STEP_COMPLETE = 1,
+    P8_TEXT_STEP_WAIT = 2,
+};
+
 /* Executes the synchronous/manual-defined P8SCII subset against core RAM. */
 int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
                   int x, int y, uint8_t foreground, int append_newline,
                   p8_text_result *result);
+
+/*
+ * Creates one resumable print invocation. Audio and unqualified render controls
+ * remain fail-closed; delay controls are consumed by p8_text_job_step().
+ */
+p8_text_job *p8_text_job_create(p8_core *core, const uint8_t *bytes, size_t size,
+                                int x, int y, uint8_t foreground,
+                                int append_newline);
+void p8_text_job_destroy(p8_text_job *job);
+uint32_t p8_text_job_unsupported(const p8_text_job *job);
+int p8_text_job_requires_frames(const p8_text_job *job);
+int p8_text_job_step(p8_text_job *job, uint32_t *wait_frames,
+                     p8_text_result *result);
 
 /* Canonical little-endian DATA-TEXT-RUN-001 stream for the current draw stream. */
 const uint8_t *p8_core_text_ir_data(const p8_core *core);

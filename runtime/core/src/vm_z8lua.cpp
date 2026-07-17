@@ -221,6 +221,19 @@ function sub(value,first,last)
  return __host_sub(value,first,last)
 end
 
+local __host_print_begin=__aico8_print_begin
+local __host_print_step=__aico8_print_step
+__aico8_print_begin=nil
+__aico8_print_step=nil
+function print(...)
+ __host_print_begin(...)
+ while true do
+  local complete,value=__host_print_step()
+  if complete then return value end
+  for frame=1,value do flip() end
+ end
+end
+
 yield=coroutine.yield
 cocreate=coroutine.create
 coresume=coroutine.resume
@@ -281,6 +294,9 @@ struct p8_vm {
     int32_t line_cursor_y_raw = 0;
     int32_t draw_color_raw = 6 << 16;
     unsigned tline_fractional_bits = 13;
+    p8_text_job *text_job = nullptr;
+    p8_draw_command text_command{};
+    std::string text_payload;
 
     static p8_vm *from(lua_State *state)
     {
@@ -303,6 +319,14 @@ struct p8_vm {
         active_thread = nullptr;
         active_thread_ref = LUA_NOREF;
         active_function.clear();
+    }
+
+    void clear_text_job()
+    {
+        p8_text_job_destroy(text_job);
+        text_job = nullptr;
+        text_command = {};
+        text_payload.clear();
     }
 
     void clear_menu_item(unsigned index)
@@ -333,6 +357,7 @@ struct p8_vm {
         if (status != LUA_OK) {
             set_error_from_stack(active_thread);
             faulted = true;
+            clear_text_job();
             clear_active_thread();
             return 0;
         }
@@ -1128,9 +1153,12 @@ int api_fillp(lua_State *state)
     return 1;
 }
 
-int api_print(lua_State *state)
+int api_print_begin(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
+    if (vm->text_job) {
+        return luaL_error(state, "print() cannot begin while another print job is active");
+    }
     const int argument_count = lua_gettop(state);
     const int optional_argument_count = argument_count - 1;
     size_t size = 0;
@@ -1152,20 +1180,62 @@ int api_print(lua_State *state)
         command.args[1] = static_cast<int32_t>(p8_core_peek(vm->core, 0x5f27) << 16);
     }
     command.args[2] = vm->draw_color_raw;
-    p8_text_result print_result{};
-    p8_text_print(vm->core, reinterpret_cast<const uint8_t *>(text), size,
-                  command.args[0] >> 16, command.args[1] >> 16,
-                  static_cast<uint8_t>(vm->draw_color_raw >> 16),
-                  explicit_position ? 0 : 1, &print_result);
-    vm->draw_color_raw = static_cast<int32_t>(print_result.foreground << 16);
-    lua_pop(state, 1);
-    if (print_result.unsupported != P8_TEXT_UNSUPPORTED_NONE) {
-        return luaL_error(state,
-            "effectful P8SCII delay/audio/render control is not conformance-qualified");
+    vm->text_job = p8_text_job_create(
+        vm->core, reinterpret_cast<const uint8_t *>(text), size,
+        command.args[0] >> 16, command.args[1] >> 16,
+        static_cast<uint8_t>(vm->draw_color_raw >> 16),
+        explicit_position ? 0 : 1);
+    if (!vm->text_job) {
+        lua_pop(state, 1);
+        return luaL_error(state, "print() could not allocate its resumable text job");
     }
-    p8_core_emit_draw_payload(vm->core, &command, text, size);
-    lua_pushnumber(state, lua_Number::frombits(print_result.rightmost_x << 16));
-    return 1;
+    const uint32_t unsupported = p8_text_job_unsupported(vm->text_job);
+    if (unsupported != P8_TEXT_UNSUPPORTED_NONE) {
+        vm->clear_text_job();
+        lua_pop(state, 1);
+        return luaL_error(state,
+            "effectful P8SCII audio/render control is not conformance-qualified");
+    }
+    if (p8_text_job_requires_frames(vm->text_job)) {
+        if (state != vm->active_thread) {
+            vm->clear_text_job();
+            lua_pop(state, 1);
+            return luaL_error(state,
+                "delayed P8SCII print() requires the host-resumable cart callback");
+        }
+    }
+    vm->text_command = command;
+    vm->text_payload.assign(text, size);
+    lua_pop(state, 1);
+    return 0;
+}
+
+int api_print_step(lua_State *state)
+{
+    p8_vm *vm = p8_vm::from(state);
+    if (!vm->text_job) {
+        return luaL_error(state, "print() has no active resumable text job");
+    }
+    p8_core_emit_draw_payload(vm->core, &vm->text_command,
+        vm->text_payload.data(), vm->text_payload.size());
+    uint32_t wait_frames = 0;
+    p8_text_result result{};
+    const int status = p8_text_job_step(vm->text_job, &wait_frames, &result);
+    if (status == P8_TEXT_STEP_ERROR) {
+        vm->clear_text_job();
+        return luaL_error(state, "print() resumable text step failed");
+    }
+    if (status == P8_TEXT_STEP_WAIT) {
+        lua_pushboolean(state, 0);
+        lua_pushnumber(state, lua_Number::frombits(
+            static_cast<int32_t>(wait_frames << 16u)));
+        return 2;
+    }
+    vm->draw_color_raw = static_cast<int32_t>(result.foreground << 16);
+    vm->clear_text_job();
+    lua_pushboolean(state, 1);
+    lua_pushnumber(state, lua_Number::frombits(result.rightmost_x << 16));
+    return 2;
 }
 
 int api_printh(lua_State *state)
@@ -1403,7 +1473,8 @@ p8_vm *p8_vm_create(p8_core *core)
     vm->install("camera", api_camera);
     vm->install("clip", api_clip);
     vm->install("fillp", api_fillp);
-    vm->install("print", api_print);
+    vm->install("__aico8_print_begin", api_print_begin);
+    vm->install("__aico8_print_step", api_print_step);
     vm->install("printh", api_printh);
     vm->install("time", api_time);
     vm->install("t", api_time);
@@ -1432,6 +1503,7 @@ void p8_vm_destroy(p8_vm *vm)
         p8_core_set_callbacks(vm->core, nullptr);
     }
     if (vm->state) {
+        vm->clear_text_job();
         vm->clear_active_thread();
         vm->clear_menu_items();
         lua_close(vm->state);
@@ -1446,6 +1518,7 @@ int p8_vm_load_source(p8_vm *vm, const char *source, size_t size, const char *ch
     }
     vm->error.clear();
     vm->faulted = false;
+    vm->clear_text_job();
     vm->clear_menu_items();
     vm->draw_color_raw = 6 << 16;
     vm->line_cursor_ready = false;

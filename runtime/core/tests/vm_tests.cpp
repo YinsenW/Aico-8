@@ -752,6 +752,112 @@ function reject_audio_text() print(chr(7).."12",0,0,7) end
     assert(p8_gfx_pget(core, 0, 0) == 5);
     p8_vm_destroy(vm);
     p8_core_destroy(core);
+
+    constexpr char top_level_delay_source[] = R"p8lua(
+local special=chr(6)
+print(special.."d1"..special..":ff818181818181ff",0,0,7)
+)p8lua";
+    core = p8_core_create();
+    vm = p8_vm_create(core);
+    p8_gfx_pset(core, 0, 0, 5);
+    assert(vm && !p8_vm_load_source(vm, top_level_delay_source,
+        sizeof(top_level_delay_source) - 1, "@p8scii-top-level-delay"));
+    assert(std::strstr(p8_vm_last_error(vm),
+                       "requires the host-resumable cart callback")
+           != nullptr);
+    assert(p8_gfx_pget(core, 0, 0) == 5);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+
+    constexpr char nested_delay_source[] = R"p8lua(
+local special=chr(6)
+local worker=cocreate(function()
+ print(special.."d1"..special..":ff818181818181ff",0,0,7)
+end)
+function reject_nested_delay()
+ nested_ok,nested_error=coresume(worker)
+end
+)p8lua";
+    core = p8_core_create();
+    vm = p8_vm_create(core);
+    p8_gfx_pset(core, 0, 0, 5);
+    assert(vm && p8_vm_load_source(vm, nested_delay_source,
+        sizeof(nested_delay_source) - 1, "@p8scii-nested-delay"));
+    assert(p8_vm_call(vm, "reject_nested_delay"));
+    int nested_ok = 1;
+    assert(p8_vm_get_global_boolean(vm, "nested_ok", &nested_ok) && !nested_ok);
+    std::array<char, 160> nested_error{};
+    assert(p8_vm_copy_global_string(vm, "nested_error", nested_error.data(),
+                                    nested_error.size()) > 0);
+    assert(std::strstr(nested_error.data(), "host-resumable cart callback") != nullptr);
+    assert(p8_gfx_pget(core, 0, 0) == 5);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
+void test_p8scii_delay_controls_resume_on_exact_frame_boundaries()
+{
+    constexpr char source[] = R"p8lua(
+local special=chr(6)
+local glyph=special..":ff818181818181ff"
+phase=0
+function delayed_characters()
+ cls(0)
+ phase=1
+ delayed_width=print(special.."d1"..glyph..glyph,0,0,7)
+ phase=2
+end
+function skipped_frames()
+ cls(0)
+ phase=3
+ skipped_width=print(glyph..special.."2"..glyph,0,12,7)
+ phase=4
+end
+)p8lua";
+    std::array<uint8_t, P8_ROM_SIZE> rom{};
+    p8_core *core = p8_core_create();
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm && p8_vm_load_source(vm, source, sizeof(source) - 1,
+                                   "@p8scii-delay"));
+
+    int32_t value = 0;
+    p8_core_begin_draw_stream(core);
+    assert(p8_vm_call(vm, "delayed_characters"));
+    assert(p8_vm_call_pending(vm));
+    assert(p8_core_draw_count(core) == 2);
+    assert(p8_vm_get_global_raw(vm, "phase", &value) && value == 1 << 16);
+    assert(p8_gfx_pget(core, 0, 0) == 7);
+    assert(p8_gfx_pget(core, 8, 0) == 0);
+
+    assert(p8_vm_update(vm));
+    assert(p8_vm_call_pending(vm));
+    assert(p8_core_draw_count(core) == 1);
+    assert(p8_vm_get_global_raw(vm, "phase", &value) && value == 1 << 16);
+    assert(p8_gfx_pget(core, 8, 0) == 7);
+
+    assert(p8_vm_update(vm));
+    assert(!p8_vm_call_pending(vm));
+    assert(p8_core_draw_count(core) == 1);
+    assert(p8_vm_get_global_raw(vm, "phase", &value) && value == 2 << 16);
+    assert(p8_vm_get_global_raw(vm, "delayed_width", &value) && value == 16 << 16);
+
+    p8_core_begin_draw_stream(core);
+    assert(p8_vm_call(vm, "skipped_frames"));
+    assert(p8_vm_call_pending(vm));
+    assert(p8_gfx_pget(core, 0, 12) == 7);
+    assert(p8_gfx_pget(core, 8, 12) == 0);
+    assert(p8_vm_update(vm));
+    assert(p8_vm_call_pending(vm));
+    assert(p8_gfx_pget(core, 8, 12) == 0);
+    assert(p8_vm_update(vm));
+    assert(!p8_vm_call_pending(vm));
+    assert(p8_gfx_pget(core, 8, 12) == 7);
+    assert(p8_vm_get_global_raw(vm, "phase", &value) && value == 4 << 16);
+    assert(p8_vm_get_global_raw(vm, "skipped_width", &value) && value == 16 << 16);
+
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
 }
 
 void test_secondary_palette_reaches_sprite_and_global_raster_through_lua()
@@ -1042,6 +1148,7 @@ int main(int argc, char **argv)
     test_current_draw_color_is_shared_by_primitives_print_and_sprite_sheet();
     test_tline_api_tracks_precision_and_draws_from_map_samples();
     test_static_p8scii_executes_pixels_metrics_memory_and_custom_fonts();
+    test_p8scii_delay_controls_resume_on_exact_frame_boundaries();
     test_secondary_palette_reaches_sprite_and_global_raster_through_lua();
     test_embedded_colour_patterns_and_inversion_reach_raster_through_lua();
     test_map_sprite_zero_read_overrides_and_extended_display_palette_reach_lua();
