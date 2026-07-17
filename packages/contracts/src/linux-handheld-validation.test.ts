@@ -129,6 +129,24 @@ describe("Linux handheld Web validation", () => {
       .toMatch(/exactly cover failed required browser capabilities/);
   });
 
+  it("binds every browser gap to its capability-specific retained artifact", () => {
+    const value = structuredClone(report()) as any;
+    value.artifacts.controllerReportSha256 = "b".repeat(64);
+    value.automatedChecks.controllerEnumerated = false;
+    value.capabilityGaps = [{
+      capability: "controller",
+      symptom: "The named controller was not enumerated by the browser.",
+      evidenceSha256: hash,
+      remediation: "thin-web-shell",
+    }];
+    value.status = "browser-gap";
+    expect(validateLinuxHandheldValidation(value).errors.join("\n"))
+      .toMatch(/must equal \$\.artifacts\.controllerReportSha256/);
+
+    value.capabilityGaps[0].evidenceSha256 = value.artifacts.controllerReportSha256;
+    expect(validateLinuxHandheldValidation(value)).toEqual({ ok: true, errors: [] });
+  });
+
   it("rejects invented gaps and never turns a hard lineage failure into a shell request", () => {
     const invented = structuredClone(report()) as any;
     invented.capabilityGaps = [{

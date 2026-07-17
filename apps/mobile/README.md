@@ -45,6 +45,15 @@ reports `pending-human`: audio interruption/recovery, controller gameplay,
 vendor-WebView gameplay, and sustained gameplay quality must all be reviewed
 before the contract permits `passed`.
 
+Before handing the machine evidence to a reviewer, recompute every subject and
+artifact binding without requiring the device to stay attached:
+
+```sh
+pnpm --filter @aico8/mobile verify:device -- \
+  <android-device-validation.json> <debug-apk> <android-web-lineage.json> \
+  <target-profile.json> <evidence-directory>
+```
+
 Record those four outcomes in an
 `aico8.android-device-manual-decision.v1` file whose
 `subjectReportSha256` is the exact SHA-256 of the pending report, then finalize
@@ -76,7 +85,9 @@ pnpm --filter @aico8/mobile capture:linux -- \
 The command recomputes the Web tree, target-profile, release-manifest, visual-runtime,
 and evidence hashes plus the target-owned performance budgets. All browser capabilities
 passing yields `pending-human`; any failed required capability yields `browser-gap`
-only when `capabilityGaps` contains an exact evidence-bound entry. A `thin-web-shell`
+only when `capabilityGaps` contains an exact evidence-bound entry. Controller gaps bind
+`controller.json`; offline gaps bind `offline.json`; storage gaps bind `storage.json`;
+audio, fullscreen, Wasm, and WebGL2 gaps bind `capabilities.json`. A `thin-web-shell`
 remediation is permission to investigate that gap, not evidence that a shell or the
 platform exit passes. Recheck retained bytes and finalize an all-pass manual decision:
 
