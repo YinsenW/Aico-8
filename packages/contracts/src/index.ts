@@ -23,6 +23,24 @@ export {
 } from "./android-device-validation.js";
 
 export {
+  LINUX_HANDHELD_CAPABILITIES,
+  LINUX_HANDHELD_MANUAL_CHECKS,
+  LINUX_HANDHELD_MANUAL_DECISION_SCHEMA_VERSION,
+  LINUX_HANDHELD_MIN_PERFORMANCE_CAPTURE_SECONDS,
+  LINUX_HANDHELD_VALIDATION_SCHEMA_VERSION,
+  expectedLinuxHandheldValidationStatus,
+  failedLinuxHandheldCapabilities,
+  validateLinuxHandheldManualDecision,
+  validateLinuxHandheldValidation,
+  type LinuxHandheldCapability,
+  type LinuxHandheldManualCheck,
+  type LinuxHandheldManualDecisionV1,
+  type LinuxHandheldManualStatus,
+  type LinuxHandheldValidationStatus,
+  type LinuxHandheldValidationV1,
+} from "./linux-handheld-validation.js";
+
+export {
   BATCH_SCHEMA_VERSION,
   acceptedBatchGameIds,
   batchWorkspaceId,
@@ -310,11 +328,13 @@ export {
   RELEASE_VALIDATION_SCHEMA_VERSION,
   TARGET_PROFILE_SCHEMA_VERSION,
   ANDROID_HOST_CAPABILITIES,
+  LINUX_HANDHELD_WEB_CAPABILITIES,
   validateReleaseManifest,
   validateReleaseValidation,
   validateTargetProfile,
   type ContractValidationResult,
   type AndroidTargetProfileV1,
+  type LinuxHandheldTargetProfileV1,
   type TargetBudgetsV1,
   type TargetLayoutProfileV1,
   type TargetProfileV1,

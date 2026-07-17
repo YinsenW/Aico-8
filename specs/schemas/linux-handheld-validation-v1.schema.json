@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/linux-handheld-validation-v1.schema.json",
+  "title": "Aico 8 Linux handheld browser validation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "capturedAt", "subject", "device", "automatedChecks", "capabilityGaps", "artifacts", "manualReview", "status"],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "manualStatus": { "enum": ["pending", "passed", "failed"] },
+    "capability": { "enum": ["audio-output", "controller", "fullscreen", "offline-assets", "persistent-storage", "wasm", "webgl2"] }
+  },
+  "properties": {
+    "schemaVersion": { "const": "aico8.linux-handheld-validation.v1" },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["webReleaseTreeSha256", "releaseManifestSha256", "targetProfileId", "targetProfileSha256", "visualRuntimeSha256"],
+      "properties": {
+        "webReleaseTreeSha256": { "$ref": "#/$defs/sha256" },
+        "releaseManifestSha256": { "$ref": "#/$defs/sha256" },
+        "targetProfileId": { "$ref": "#/$defs/id" },
+        "targetProfileSha256": { "$ref": "#/$defs/sha256" },
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileId", "manufacturer", "model", "osName", "osVersion", "kernelVersion", "architecture", "sessionType", "physicalPixels", "browser", "controllerName"],
+      "properties": {
+        "profileId": { "$ref": "#/$defs/id" },
+        "manufacturer": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "osName": { "type": "string", "minLength": 1 },
+        "osVersion": { "type": "string", "minLength": 1 },
+        "kernelVersion": { "type": "string", "minLength": 1 },
+        "architecture": { "type": "string", "minLength": 1 },
+        "sessionType": { "enum": ["wayland", "x11", "direct-drm"] },
+        "physicalPixels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "browser": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version", "engine"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 },
+            "engine": { "type": "string", "minLength": 1 }
+          }
+        },
+        "controllerName": { "type": "string", "minLength": 1 }
+      }
+    },
+    "automatedChecks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["singleAuthorizedDevice", "exactWebArtifact", "cleanInstall", "offlineLaunch", "serviceWorkerControlled", "persistentStorageRoundTrip", "controllerEnumerated", "fullscreenAvailable", "audioOutputAvailable", "lifecycleResumePassed", "wasmAvailable", "webgl2Available", "readyScreenshotCaptured", "coldLaunchMilliseconds", "performance"],
+      "properties": {
+        "singleAuthorizedDevice": { "type": "boolean" },
+        "exactWebArtifact": { "type": "boolean" },
+        "cleanInstall": { "type": "boolean" },
+        "offlineLaunch": { "type": "boolean" },
+        "serviceWorkerControlled": { "type": "boolean" },
+        "persistentStorageRoundTrip": { "type": "boolean" },
+        "controllerEnumerated": { "type": "boolean" },
+        "fullscreenAvailable": { "type": "boolean" },
+        "audioOutputAvailable": { "type": "boolean" },
+        "lifecycleResumePassed": { "type": "boolean" },
+        "wasmAvailable": { "type": "boolean" },
+        "webgl2Available": { "type": "boolean" },
+        "readyScreenshotCaptured": { "type": "boolean" },
+        "coldLaunchMilliseconds": { "type": "number", "minimum": 0 },
+        "performance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["captureSeconds", "warmupFrames", "requiredSampleFrames", "observedSampleFrames", "droppedFrameThresholdMilliseconds", "startupMillisecondsMax", "p95FrameMillisecondsMax", "droppedFrameRatioMax", "p95FrameMilliseconds", "droppedFrameRatio", "budgetPassed"],
+          "properties": {
+            "captureSeconds": { "type": "number", "minimum": 60 },
+            "warmupFrames": { "type": "integer", "minimum": 0 },
+            "requiredSampleFrames": { "type": "integer", "minimum": 1 },
+            "observedSampleFrames": { "type": "integer", "minimum": 0 },
+            "droppedFrameThresholdMilliseconds": { "type": "number", "exclusiveMinimum": 0 },
+            "startupMillisecondsMax": { "type": "number", "exclusiveMinimum": 0 },
+            "p95FrameMillisecondsMax": { "type": "number", "exclusiveMinimum": 0 },
+            "droppedFrameRatioMax": { "type": "number", "minimum": 0, "maximum": 1 },
+            "p95FrameMilliseconds": { "type": "number", "minimum": 0 },
+            "droppedFrameRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "budgetPassed": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "capabilityGaps": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "symptom", "evidenceSha256", "remediation"],
+        "properties": {
+          "capability": { "$ref": "#/$defs/capability" },
+          "symptom": { "type": "string", "minLength": 1 },
+          "evidenceSha256": { "$ref": "#/$defs/sha256" },
+          "remediation": { "enum": ["browser-configuration", "thin-web-shell"] }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["screenshotSha256", "capabilityReportSha256", "offlineReportSha256", "storageReportSha256", "controllerReportSha256", "lifecycleReportSha256", "performanceReportSha256"],
+      "properties": {
+        "screenshotSha256": { "$ref": "#/$defs/sha256" },
+        "capabilityReportSha256": { "$ref": "#/$defs/sha256" },
+        "offlineReportSha256": { "$ref": "#/$defs/sha256" },
+        "storageReportSha256": { "$ref": "#/$defs/sha256" },
+        "controllerReportSha256": { "$ref": "#/$defs/sha256" },
+        "lifecycleReportSha256": { "$ref": "#/$defs/sha256" },
+        "performanceReportSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "manualReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisionSha256", "reviewerId", "reviewedAt", "checks"],
+      "properties": {
+        "decisionSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "reviewerId": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "reviewedAt": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["audioOutput", "controllerGameplay", "suspendResume", "sustainedGameplayQuality"],
+          "properties": {
+            "audioOutput": { "$ref": "#/$defs/manualStatus" },
+            "controllerGameplay": { "$ref": "#/$defs/manualStatus" },
+            "suspendResume": { "$ref": "#/$defs/manualStatus" },
+            "sustainedGameplayQuality": { "$ref": "#/$defs/manualStatus" }
+          }
+        }
+      }
+    },
+    "status": { "enum": ["pending-human", "browser-gap", "passed", "failed"] }
+  }
+}

@@ -57,3 +57,33 @@ pnpm --filter @aico8/mobile finalize:device -- \
 
 The decision forbids `pending` values. Any failed manual check produces a failed
 final report; only four explicit passes produce `passed`.
+
+## Linux handheld browser-first evidence
+
+Linux does not receive another game implementation or a pre-emptive native shell.
+Use `target-profile.linux.json` with the exact validated Web/PWA release. A named
+device harness records its browser/device identity, Web capability results, frame
+durations, and the conventional evidence files `ready.png`, `capabilities.json`,
+`offline.json`, `storage.json`, `controller.json`, `lifecycle.json`, and
+`performance.json`. Import and derive the fail-closed report with:
+
+```sh
+pnpm --filter @aico8/mobile capture:linux -- \
+  <machine-capture.json> <web-release-directory> <linux-target-profile.json> \
+  <evidence-directory> <pending-report.json>
+```
+
+The command recomputes the Web tree, target-profile, release-manifest, visual-runtime,
+and evidence hashes plus the target-owned performance budgets. All browser capabilities
+passing yields `pending-human`; any failed required capability yields `browser-gap`
+only when `capabilityGaps` contains an exact evidence-bound entry. A `thin-web-shell`
+remediation is permission to investigate that gap, not evidence that a shell or the
+platform exit passes. Recheck retained bytes and finalize an all-pass manual decision:
+
+```sh
+pnpm --filter @aico8/mobile verify:linux -- \
+  <report.json> <web-release-directory> <linux-target-profile.json> <evidence-directory>
+
+pnpm --filter @aico8/mobile finalize:linux -- \
+  <pending-report.json> <manual-decision.json> <final-report.json>
+```

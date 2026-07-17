@@ -8,14 +8,14 @@
   "properties": {
     "schemaVersion": { "const": "aico8.target-profile.v1" },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "target": { "enum": ["web-pwa", "android-webview"] },
+    "target": { "enum": ["web-pwa", "android-webview", "linux-handheld-web"] },
     "outputProfile": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "measurementEnvironment": {
       "type": "object",
       "additionalProperties": false,
       "required": ["class", "viewport", "warmupFrames", "sampleFrames", "droppedFrameThresholdMilliseconds"],
       "properties": {
-        "class": { "enum": ["local-http-active-browser", "android-instrumented-device"] },
+        "class": { "enum": ["local-http-active-browser", "android-instrumented-device", "linux-handheld-browser"] },
         "viewport": {
           "type": "object",
           "additionalProperties": false,
@@ -32,7 +32,7 @@
     },
     "layoutProfiles": {
       "type": "array",
-      "minItems": 3,
+      "minItems": 2,
       "maxItems": 4,
       "items": {
         "type": "object",
@@ -40,7 +40,7 @@
         "required": ["id", "class", "viewport", "minGameFrameCssPixels", "minTouchTargetCssPixels"],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-          "class": { "enum": ["phone-portrait", "square-handheld", "android-handheld-landscape", "wide-web"] },
+          "class": { "enum": ["phone-portrait", "square-handheld", "android-handheld-landscape", "linux-handheld-landscape", "wide-web"] },
           "viewport": {
             "type": "object",
             "additionalProperties": false,
@@ -110,6 +110,25 @@
           }
         }
       }
+    },
+    "linux": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliveryMode", "webArtifactPolicy", "shellPolicy", "requiredCapabilities"],
+      "properties": {
+        "deliveryMode": { "const": "browser-pwa" },
+        "webArtifactPolicy": { "const": "byte-identical-web-release" },
+        "shellPolicy": { "const": "measured-capability-gap-only" },
+        "requiredCapabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "enum": ["audio-output", "controller", "fullscreen", "offline-assets", "persistent-storage", "wasm", "webgl2"]
+          }
+        }
+      }
     }
   },
   "allOf": [
@@ -117,12 +136,13 @@
       "if": { "properties": { "target": { "const": "web-pwa" } }, "required": ["target"] },
       "then": {
         "properties": {
-          "layoutProfiles": { "minItems": 4, "maxItems": 4 },
+          "layoutProfiles": { "type": "array", "minItems": 4, "maxItems": 4 },
           "measurementEnvironment": {
+            "type": "object",
             "properties": { "class": { "const": "local-http-active-browser" } }
           }
         },
-        "not": { "required": ["android"] }
+        "not": { "anyOf": [{ "required": ["android"] }, { "required": ["linux"] }] }
       }
     },
     {
@@ -130,11 +150,35 @@
       "then": {
         "required": ["android"],
         "properties": {
-          "layoutProfiles": { "minItems": 3, "maxItems": 3 },
+          "layoutProfiles": { "type": "array", "minItems": 3, "maxItems": 3 },
           "measurementEnvironment": {
+            "type": "object",
             "properties": { "class": { "const": "android-instrumented-device" } }
           }
-        }
+        },
+        "not": { "required": ["linux"] }
+      }
+    },
+    {
+      "if": { "properties": { "target": { "const": "linux-handheld-web" } }, "required": ["target"] },
+      "then": {
+        "required": ["linux"],
+        "properties": {
+          "layoutProfiles": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "contains": { "type": "object", "properties": { "class": { "const": "square-handheld" } }, "required": ["class"] },
+            "allOf": [
+              { "contains": { "type": "object", "properties": { "class": { "const": "linux-handheld-landscape" } }, "required": ["class"] } }
+            ]
+          },
+          "measurementEnvironment": {
+            "type": "object",
+            "properties": { "class": { "const": "linux-handheld-browser" } }
+          }
+        },
+        "not": { "required": ["android"] }
       }
     }
   ]

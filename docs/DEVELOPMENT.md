@@ -10,11 +10,9 @@ The complete browser remake unlocks Android; finish that shared-Web-host boundar
 ## Implementation loop
 1. Write or adjust the smallest failing test/checkpoint that represents the exit.
 2. Change code behind the owning API or data contract.
-3. Preserve the separate compatibility reference path; never introduce mixed
-   indexed fragments into accepted HD presentation.
+3. Preserve the separate compatibility reference path; never introduce mixed indexed fragments into accepted HD presentation.
 4. During editing, run only the narrow selector and one or two high-risk checkpoints.
-5. Promote a visual candidate only after title/menu, representative gameplay, and
-   ending checkpoints pass; then batch its complete static/temporal evidence.
+5. Promote a visual candidate only after title/menu, representative gameplay, and ending checkpoints pass; then batch its complete static/temporal evidence.
 6. At a frozen game handoff, run every selector attached to the affected exit,
    complete replay, package, viewport/input, governance, and release checks.
 7. Record exact implementation/evidence paths and remaining work in the manifest.
@@ -50,6 +48,7 @@ pnpm verify:replay
 pnpm verify:ingest
 pnpm verify:ingest-private
 pnpm verify:android-host
+pnpm verify:linux-handheld
 pnpm verify:game-module
 pnpm verify:batch
 pnpm verify:supervised-transfer
@@ -63,6 +62,7 @@ pnpm verify:native-cart-private
 Private selectors strengthen local evidence but never masquerade as public CI. `pnpm verify:ingest-private` requires the authorized cart directory, private report/evidence paths, and pinned codec command/revision/version environment; it recomputes all carts and rejects retained aggregate-attestation drift.
 `pnpm verify:android-host` validates the Android target profile, exact Web-artifact inventory and tree identity, Capacitor/native policy, lifecycle/audio-focus bridge, external signing boundary, and source/staging/native-asset drift rejection. The `android-host` CI job additionally performs clean Java 21/API 36 debug and externally signed research APK/AAB builds, then boots the named API 35 emulator at a verified 1024×1024 display and runs offline local-host, lifecycle/resume, DOM touch, and persistent-storage instrumentation. Real controller enumeration, audio interruption, sustained gameplay performance, and vendor-WebView behavior still require named physical-device evidence.
 Use `pnpm --filter @aico8/mobile capture:device -- <debug-apk> <android-test-apk> <android-web-lineage.json> <target-profile.json> <device-profile-id> <controller-name> <performance-seconds> <output-directory>` with exactly one authorized non-emulator device. The collector hashes the private serial, proves user-orientation state preservation, and measures at least 60 seconds of named-controller play against the lineage-bound target profile's frame sample and budgets. Its report remains `pending-human` until `finalize:device` consumes a content-bound reviewer decision for audio interruption/recovery, controller gameplay, vendor-WebView gameplay, and sustained quality; implementation or machine capture alone cannot verify the exit.
+`pnpm verify:linux-handheld` validates the browser-first Linux target, device-evidence and manual-decision contracts, shared lifecycle/audio paths, and the measured-gap shell prohibition. On a named device, `capture:linux` binds the exact Web release tree, Linux target bytes, seven retained evidence files, browser/device identity, capability outcomes, and at least 60 seconds of frame samples. `verify:linux` recomputes every hash; `finalize:linux` accepts only a content-bound four-check human decision. `pending-human` and `browser-gap` are incomplete states: the former still needs play review, while the latter permits investigation of a thin shell only for the exact failed capabilities and does not verify the exit.
 `pnpm verify:batch` rejects shared identities, concurrent writers, invalid lanes,
 evidence-free acceptance, and hidden partial failure before assembly.
 `pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.
