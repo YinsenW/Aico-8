@@ -41,25 +41,27 @@
     "externalSigningFailClosed": "passed",
     "cleanSignedApkAabCi": {
       "status": "passed",
-      "revision": "5d927d086b6fec199bfa40614662e74a1169e4ac",
-      "runId": 29545742718
+      "revision": "2db51fab98f00e80bdf577f0879400376c0b2a39",
+      "runId": 29566510987
     },
     "namedSquareApi35Emulator": {
       "status": "passed",
-      "revision": "1334536a84e3522450fdd41ba983c346ea82cfb1",
-      "runId": 29547551430,
-      "jobId": 87783023505,
-      "artifactId": 8394650066,
-      "artifactName": "android-square-api35-7332fc7c4b1a58367c8acd8ebf8ffb1fe93ab003",
+      "revision": "2db51fab98f00e80bdf577f0879400376c0b2a39",
+      "runId": 29566510987,
+      "jobId": 87840232598,
+      "artifactId": 8401485055,
+      "artifactName": "android-square-api35-2db51fab98f00e80bdf577f0879400376c0b2a39",
+      "artifactDigestSha256": "bf187d3b3dc2497683b986173d7e3d218cf6f4ce0d78fa5bd0e70d9ad3765b14",
       "profileId": "aico8-square-api35",
       "apiLevel": 35,
       "physicalPixels": "1024x1024",
       "densityDpi": 320,
       "networkMode": "airplane-wifi-off-data-off",
-      "instrumentationTests": 2,
+      "instrumentationTests": 4,
       "instrumentationOutcome": "passed",
       "readyHostScreenshot": "passed-1024x1024-png",
-      "coldLaunchMilliseconds": 1894
+      "readyHostScreenshotSha256": "c833f2e16ce8f11372b0cca2784c0564d6c1e6366851921eafd7bd38598efb73",
+      "coldLaunchMilliseconds": 1608
     }
   },
   "localBuildEnvironment": {

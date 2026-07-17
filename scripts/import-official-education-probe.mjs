@@ -46,7 +46,7 @@ if (!runtimeVersion || !runtimeAsset || !runtimeAssetUrl || !browserName || !bro
     + '--browser-name <name> --browser-version <version> --cart <probe.p8> '
     + '[--load-method local-cart-file-selection|official-drag-drop-data-path] '
     + '--source-dir <private-staging-dir> --event-log <relative-log.txt> '
-    + '--output <captures/official/...json> --artifact <relative.png|relative.wav|relative.csv> [... ]\n')
+    + '--output <captures/official/...json> [--artifact <relative.png|relative.wav|relative.csv> ...]\n')
   process.exit(2)
 }
 if (!isPrivateOfficialCapturePath(root, output)) {
