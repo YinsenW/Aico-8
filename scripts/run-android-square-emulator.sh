@@ -16,6 +16,11 @@ evidence_dir="${AICO8_ANDROID_EMULATOR_EVIDENCE_DIR:-artifacts/test-reports/andr
 emulator_log="$evidence_dir/emulator.log"
 
 mkdir -p "$evidence_dir"
+{
+  echo "profile_id=$profile_id"
+  echo "avd_name=$avd_name"
+  echo "status=bootstrap"
+} > "$evidence_dir/bootstrap.txt"
 test -f "$debug_apk"
 test -f "$test_apk"
 
@@ -25,7 +30,18 @@ echo "no" | avdmanager create avd \
   --package "system-images;android-35;google_apis;x86_64" \
   --device "pixel_2"
 
-avd_config="$HOME/.android/avd/$avd_name.avd/config.ini"
+avd_path="$(
+  avdmanager list avd | awk -v wanted="$avd_name" '
+    $1 == "Name:" { selected = ($2 == wanted) }
+    selected && $1 == "Path:" { print $2; exit }
+  '
+)"
+if [[ -z "$avd_path" || ! -f "$avd_path/config.ini" ]]; then
+  echo "Unable to resolve the created AVD path" >&2
+  avdmanager list avd | tee "$evidence_dir/avd-list.txt" >&2
+  exit 1
+fi
+avd_config="$avd_path/config.ini"
 printf '%s\n' \
   'hw.lcd.width=1024' \
   'hw.lcd.height=1024' \
