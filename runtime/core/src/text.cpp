@@ -857,7 +857,8 @@ void p8_text_job_destroy(p8_text_job *job)
 
 uint32_t p8_text_job_unsupported(const p8_text_job *job)
 {
-    return job ? job->state.unsupported : P8_TEXT_UNSUPPORTED_RENDER_MODE;
+    return job ? job->state.unsupported
+               : static_cast<uint32_t>(P8_TEXT_UNSUPPORTED_RENDER_MODE);
 }
 
 int p8_text_job_requires_frames(const p8_text_job *job)
