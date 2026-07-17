@@ -39,7 +39,12 @@
     "overlappingLifecycleSuspension": "passed",
     "nativeAudioFocusBoundary": "passed",
     "externalSigningFailClosed": "passed",
-    "cleanSignedApkAabCi": "pending-exact-revision-ci"
+    "cleanSignedApkAabCi": {
+      "status": "passed",
+      "revision": "5d927d086b6fec199bfa40614662e74a1169e4ac",
+      "runId": 29545742718
+    },
+    "namedSquareApi35Emulator": "implemented-ci-pending"
   },
   "localBuildEnvironment": {
     "javaRuntime": "missing-apple-command-shim-only",
@@ -51,10 +56,9 @@
     "gradleWrapperResult": "blocked-before-gradle-unable-to-locate-java-runtime"
   },
   "acceptanceStillRequired": [
-    "exact-revision CI clean build and signature verification",
-    "Android emulator or physical-device lifecycle and resume matrix",
-    "audio-focus interruption and recovery on a named device",
-    "controller, touch, orientation, storage, offline, and performance evidence on named profiles",
+    "named API 35 1024-square emulator lifecycle, resume, offline local-host, touch, and storage result",
+    "audio-focus interruption and recovery on a named physical device",
+    "real controller, vendor WebView, and sustained gameplay performance evidence on named physical profiles",
     "release-key and store-policy decision independent of research CI signing"
   ],
   "completionClaim": false

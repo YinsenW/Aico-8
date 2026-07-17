@@ -54,6 +54,18 @@ describe("Capacitor Android host project", () => {
     expect(lifecycleTest).toContain("ActivityScenario.launch(MainActivity.class)");
     expect(lifecycleTest).toContain("Lifecycle.State.STARTED");
     expect(lifecycleTest).toContain("Lifecycle.State.RESUMED");
+
+    const squareTest = read("android/app/src/androidTest/java/dev/aico8/research/SquareEmulatorAcceptanceTest.java");
+    expect(squareTest).toContain("SQUARE_EDGE_PX = 1024");
+    expect(squareTest).toContain("location.hostname === 'localhost'");
+    expect(squareTest).toContain("localStorage.setItem('aico8-square-acceptance'");
+    expect(squareTest).toContain("onView(isAssignableFrom(WebView.class)).perform(click())");
+
+    const emulatorRunner = read("../../scripts/run-android-square-emulator.sh");
+    expect(emulatorRunner).toContain('profile_id="aico8-square-api35"');
+    expect(emulatorRunner).toContain("adb shell wm size 1024x1024");
+    expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
+    expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
   });
 
   it("pins Capacitor-generated Java and Gradle toolchain inputs", () => {
