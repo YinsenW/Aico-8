@@ -149,13 +149,15 @@ test('checked-in capture plans match the files emitted by raster and audio probe
   assert.match(curved.capture_command, /--artifact curved_raster\.png(?:\s|$)/)
   assert.match(curved.education_capture_command, /import:official-education-probe/)
   assert.match(curved.education_capture_command, /--operator-artifact-declaration/)
-  assert.match(curved.education_capture_command, /--artifact curved_raster\.png(?:\s|$)/)
+  assert.doesNotMatch(curved.education_capture_command, /--artifact/)
+  assert.match(curved.education_capture_scope, /events-only/)
   const curvedProbe = fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/probes/curved_raster.p8'),
     'utf8',
   )
-  assert.match(curvedProbe, /extcmd\("set_filename","curved_raster"\)/)
-  assert.match(curvedProbe, /extcmd\("screen",1,1\)/)
+  assert.match(curvedProbe, /printh\("p8probe\|"\.\.name/)
+  assert.doesNotMatch(curvedProbe, /extcmd\("screen"/)
+  assert.match(curvedProbe, /qualifies diagnostic events only/)
   assert.doesNotMatch(curvedProbe, /\breset\(\)/)
   const advancedProbe = fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/probes/advanced_raster.p8'),

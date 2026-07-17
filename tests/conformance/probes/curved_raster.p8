@@ -90,8 +90,8 @@ rrectfill(56,48,40,28,10,12)
 pal(7,143,1)
 rrectfill(16,88,96,24,8,7)
 print("extended 143",33,97,0)
-extcmd("set_filename","curved_raster")
-extcmd("screen",1,1)
+cursor(-16,-16,1)
 
-function _draw()
-end
+-- Education Edition does not expose the desktop screenshot command. This
+-- top-level probe qualifies diagnostic events only; visual evidence requires
+-- a separate declared live-frame capture so the shell cannot alter the image.

@@ -1,8 +1,10 @@
 {
   "schemaVersion": "aico8.external-gate.v1",
-  "recordedAt": "2026-07-16T20:36:36+08:00",
+  "recordedAt": "2026-07-17T13:19:01+08:00",
   "gateId": "official-education-local-cart-selection",
-  "status": "awaiting-explicit-user-authorization",
+  "status": "resolved-superseded",
+  "resolvedAt": "2026-07-17T14:07:00+08:00",
+  "supersededBy": "governance/evidence/official-education-curved-raster-differential.json",
   "channel": {
     "provider": "Lexaloffle",
     "product": "PICO-8 Education Edition",
@@ -15,15 +17,24 @@
     "path": "tests/conformance/probes/curved_raster.p8",
     "sha256": "6eaa83f80e707695f1032de9e8dd93919d99c5abaf29ba8a4c85e62be543b03a"
   },
+  "authorization": {
+    "status": "granted",
+    "authorizedAt": "2026-07-17T13:19:01+08:00",
+    "scope": "Upload only the public curved_raster probe to the official PICO-8 Education Edition; no private carts, workspaces, or game assets."
+  },
   "observedBoundary": {
     "officialRuntimeLoaded": true,
     "loadCommandEntered": true,
     "nativeFileChooserReached": true,
     "fileSelected": false,
-    "bytesTransmitted": false
+    "bytesTransmitted": false,
+    "browserChannel": "Chrome with ChatGPT extension",
+    "browserFileUrlAccess": false,
+    "fileSelectionError": "Not allowed",
+    "postAttemptInputValue": ""
   },
-  "reason": "Selecting a local file in the browser is an external upload action and requires explicit user authorization. The public probe was intentionally not selected.",
-  "nextAction": "After explicit authorization, select the exact public probe, capture the official raster bundle, import it with pnpm import:official-education-probe, and run the exact comparator before changing any compatibility exit status.",
+  "reason": "The user explicitly authorized this bounded public-probe upload. Chrome opened the official file chooser, but the ChatGPT Chrome Extension rejected local-file access because its Allow access to file URLs permission is disabled. The file input remained empty and no probe bytes were transmitted.",
+  "nextAction": "Follow the superseding differential record. File access was enabled, the bounded upload succeeded, and this historical blocker no longer owns current status.",
   "claims": {
     "provesChannelReachability": true,
     "provesOfficialRasterCompatibility": false,
