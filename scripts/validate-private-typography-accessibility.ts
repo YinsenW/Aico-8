@@ -4,9 +4,17 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
+  TYPOGRAPHY_READABILITY_CHECKS,
+  applyTypographyReadabilityDecision,
   validateTypographyAccessibilityAudit,
+  validateTypographyReadabilityDecision,
   type TypographyAccessibilityAuditV1,
+  type TypographyReadabilityDecisionV1,
 } from "../packages/contracts/src/index.js";
+import {
+  sha256Bytes,
+  verifyTypographyReadabilityReviewPacket,
+} from "./lib/typography-readability-review.mjs";
 
 const workspaceInput = process.env.AICO8_PRIVATE_WORKSPACE;
 if (!workspaceInput) throw new Error("AICO8_PRIVATE_WORKSPACE is required");
@@ -52,8 +60,52 @@ assert.deepEqual(audit.assistiveText.missingSceneIds, []);
 assert.deepEqual(audit.assistiveText.unprovenDescriptionIds, []);
 assert.equal(audit.assistiveText.compatibilityStateMutations, 0);
 
+if (audit.manualReadability.status !== "pending") {
+  const decisionPath = privateFile("evidence/typography-readability-decision.json");
+  const decisionBytes = fs.readFileSync(decisionPath);
+  assert.equal(sha256Bytes(decisionBytes), audit.manualReadability.decisionSha256,
+    "audit must bind the exact readability decision bytes");
+  const decisionUnknown: unknown = JSON.parse(decisionBytes.toString("utf8"));
+  const standaloneDecision = validateTypographyReadabilityDecision(decisionUnknown);
+  assert.equal(standaloneDecision.valid, true, standaloneDecision.errors.join("\n"));
+  const decision = decisionUnknown as TypographyReadabilityDecisionV1;
+  const archiveDirectory = `evidence/readability-reviews/${decision.subject.reviewPacketSha256}`;
+  const pendingAuditPath = privateFile(`${archiveDirectory}/pending-typography-accessibility-audit.json`);
+  const reviewPacketPath = privateFile(`${archiveDirectory}/typography-accessibility-review.json`);
+  const pendingAuditBytes = fs.readFileSync(pendingAuditPath);
+  const reviewPacketBytes = fs.readFileSync(reviewPacketPath);
+  assert.equal(sha256Bytes(pendingAuditBytes), decision.subject.pendingAuditSha256,
+    "decision must bind archived pending audit bytes");
+  assert.equal(sha256Bytes(reviewPacketBytes), decision.subject.reviewPacketSha256,
+    "decision must bind archived review packet bytes");
+  const pendingAuditUnknown: unknown = JSON.parse(pendingAuditBytes.toString("utf8"));
+  const pendingValidation = validateTypographyAccessibilityAudit(pendingAuditUnknown);
+  assert.equal(pendingValidation.valid, true, pendingValidation.errors.join("\n"));
+  const pendingAudit = pendingAuditUnknown as TypographyAccessibilityAuditV1;
+  const decisionValidation = validateTypographyReadabilityDecision(decision, pendingAudit);
+  assert.equal(decisionValidation.valid, true, decisionValidation.errors.join("\n"));
+  const review = verifyTypographyReadabilityReviewPacket({
+    workspace,
+    packetBytes: reviewPacketBytes,
+    pendingAuditBytes,
+    pendingAudit,
+    expectedCheckCount: TYPOGRAPHY_READABILITY_CHECKS.length,
+  });
+  assert.equal(review.packetSha256, decision.subject.reviewPacketSha256);
+  const expected = applyTypographyReadabilityDecision({
+    pendingAudit,
+    pendingAuditSha256: decision.subject.pendingAuditSha256,
+    reviewPacketSha256: decision.subject.reviewPacketSha256,
+    decision,
+    decisionSha256: sha256Bytes(decisionBytes),
+  });
+  assert.deepEqual(audit, expected, "final audit must be derived exactly from the retained human decision");
+}
+
 process.stdout.write(
-  `Private typography accessibility: ${audit.status === "accepted" ? "PASS" : "AUTOMATED PASS; HUMAN REVIEW PENDING"} `
+  `Private typography accessibility: ${audit.status === "accepted"
+    ? "PASS"
+    : audit.manualReadability.status === "rejected" ? "HUMAN REVIEW REJECTED" : "AUTOMATED PASS; HUMAN REVIEW PENDING"} `
   + `(${audit.assistiveText.descriptionsObserved} descriptions; ${audit.deliveryProfiles.length} profiles; `
   + `${audit.languageCoverage.map(({ locale }) => locale).join(", ")} supported)\n`,
 );

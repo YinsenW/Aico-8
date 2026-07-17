@@ -1,6 +1,14 @@
 import type { TypographyRole } from "./typography.js";
 
 export const TYPOGRAPHY_ACCESSIBILITY_AUDIT_SCHEMA_VERSION = "aico8.typography-accessibility-audit.v1" as const;
+export const TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION = "aico8.typography-readability-decision.v1" as const;
+
+export const TYPOGRAPHY_READABILITY_CHECKS = [
+  "phoneTitleReadable",
+  "hudLabelsCrispAcrossProfiles",
+  "glyphsCompleteWithoutFallback",
+  "visualHierarchyPreserved",
+] as const;
 
 export const REQUIRED_ACCESSIBILITY_REGRESSIONS = [
   "undersized-text",
@@ -11,6 +19,25 @@ export const REQUIRED_ACCESSIBILITY_REGRESSIONS = [
 ] as const;
 
 export type TypographyAccessibilityRegression = (typeof REQUIRED_ACCESSIBILITY_REGRESSIONS)[number];
+export type TypographyReadabilityCheck = (typeof TYPOGRAPHY_READABILITY_CHECKS)[number];
+export type TypographyReadabilityVerdict = "passed" | "failed";
+
+export interface TypographyReadabilityDecisionV1 {
+  readonly schemaVersion: typeof TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION;
+  readonly gameId: string;
+  readonly decision: "approved" | "rejected";
+  readonly reviewer: string;
+  readonly reviewedAt: string;
+  readonly subject: Readonly<{
+    pendingAuditSha256: string;
+    reviewPacketSha256: string;
+    sourceSha256: string;
+    typographyManifestSha256: string;
+    textInventorySha256: string;
+  }>;
+  readonly checks: Readonly<Record<TypographyReadabilityCheck, TypographyReadabilityVerdict>>;
+  readonly notes: string;
+}
 
 export interface SourceDerivedAccessibleDescriptionV1 {
   readonly sceneId: string;
@@ -85,6 +112,22 @@ const idPattern = /^[a-z0-9][a-z0-9._:-]{1,127}$/;
 const localePattern = /^[a-z]{2,3}(?:-[A-Z]{2})?$/;
 const scriptPattern = /^[A-Z][a-z]{3}$/;
 const colorPattern = /^#[a-fA-F0-9]{6}$/;
+
+type UnknownRecord = Record<string, unknown>;
+
+function record(value: unknown, path: string, errors: string[]): UnknownRecord | undefined {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    errors.push(`${path} must be an object`);
+    return undefined;
+  }
+  return value as UnknownRecord;
+}
+
+function exactKeys(value: UnknownRecord, keys: readonly string[], path: string, errors: string[]): void {
+  const expected = new Set(keys);
+  for (const key of keys) if (!(key in value)) errors.push(`${path}.${key} is required`);
+  for (const key of Object.keys(value)) if (!expected.has(key)) errors.push(`${path}.${key} is not allowed`);
+}
 
 function linearChannel(channel: number): number {
   const value = channel / 255;
@@ -233,4 +276,114 @@ export function validateTypographyAccessibilityAudit(value: unknown): Typography
 export function assertTypographyAccessibilityAudit(value: unknown): asserts value is TypographyAccessibilityAuditV1 {
   const result = validateTypographyAccessibilityAudit(value);
   if (!result.valid) throw new TypeError(`Invalid typography accessibility audit:\n- ${result.errors.join("\n- ")}`);
+}
+
+export function validateTypographyReadabilityDecision(
+  value: unknown,
+  pendingAudit?: unknown,
+): TypographyAccessibilityValidationResult {
+  const errors: string[] = [];
+  const root = record(value, "$", errors);
+  if (!root) return { valid: false, errors };
+  exactKeys(root, ["schemaVersion", "gameId", "decision", "reviewer", "reviewedAt", "subject", "checks", "notes"], "$", errors);
+  if (root.schemaVersion !== TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION) {
+    errors.push(`$.schemaVersion must equal ${TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION}`);
+  }
+  if (typeof root.gameId !== "string" || !idPattern.test(root.gameId)) errors.push("$.gameId is invalid");
+  if (root.decision !== "approved" && root.decision !== "rejected") errors.push("$.decision must be approved or rejected");
+  if (typeof root.reviewer !== "string" || !idPattern.test(root.reviewer)) errors.push("$.reviewer is invalid");
+  if (typeof root.reviewedAt !== "string" || Number.isNaN(Date.parse(root.reviewedAt))) {
+    errors.push("$.reviewedAt must be an ISO date-time");
+  }
+  if (typeof root.notes !== "string" || root.notes.trim().length === 0) errors.push("$.notes must be non-empty");
+
+  const subject = record(root.subject, "$.subject", errors);
+  const subjectKeys = [
+    "pendingAuditSha256", "reviewPacketSha256", "sourceSha256",
+    "typographyManifestSha256", "textInventorySha256",
+  ] as const;
+  if (subject) {
+    exactKeys(subject, subjectKeys, "$.subject", errors);
+    for (const key of subjectKeys) {
+      if (typeof subject[key] !== "string" || !hashPattern.test(subject[key])) {
+        errors.push(`$.subject.${key} must be a SHA-256 digest`);
+      }
+    }
+  }
+
+  const checks = record(root.checks, "$.checks", errors);
+  if (checks) {
+    exactKeys(checks, TYPOGRAPHY_READABILITY_CHECKS, "$.checks", errors);
+    for (const check of TYPOGRAPHY_READABILITY_CHECKS) {
+      if (checks[check] !== "passed" && checks[check] !== "failed") {
+        errors.push(`$.checks.${check} must be passed or failed`);
+      }
+    }
+    const expectedDecision = TYPOGRAPHY_READABILITY_CHECKS.every((check) => checks[check] === "passed")
+      ? "approved" : "rejected";
+    if (root.decision !== expectedDecision) errors.push(`$.decision must equal derived value ${expectedDecision}`);
+  }
+
+  if (pendingAudit !== undefined) {
+    const pendingValidation = validateTypographyAccessibilityAudit(pendingAudit);
+    if (!pendingValidation.valid) {
+      errors.push(...pendingValidation.errors.map((error) => `pending audit ${error}`));
+    } else {
+      const pending = pendingAudit as TypographyAccessibilityAuditV1;
+      if (pending.status !== "draft" || pending.manualReadability.status !== "pending") {
+        errors.push("pending audit must be draft with manual readability pending");
+      }
+      if (root.gameId !== pending.gameId) errors.push("$.gameId must match the pending audit");
+      if (subject) {
+        const bindings = [
+          ["sourceSha256", pending.sourceSha256],
+          ["typographyManifestSha256", pending.typographyManifestSha256],
+          ["textInventorySha256", pending.textInventorySha256],
+        ] as const;
+        for (const [key, expected] of bindings) {
+          if (subject[key] !== expected) errors.push(`$.subject.${key} must match the pending audit`);
+        }
+      }
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function applyTypographyReadabilityDecision(options: {
+  readonly pendingAudit: TypographyAccessibilityAuditV1;
+  readonly pendingAuditSha256: string;
+  readonly reviewPacketSha256: string;
+  readonly decision: TypographyReadabilityDecisionV1;
+  readonly decisionSha256: string;
+}): TypographyAccessibilityAuditV1 {
+  const validation = validateTypographyReadabilityDecision(options.decision, options.pendingAudit);
+  if (!validation.valid) {
+    throw new TypeError(`Invalid typography readability decision:\n- ${validation.errors.join("\n- ")}`);
+  }
+  if (options.decision.subject.pendingAuditSha256 !== options.pendingAuditSha256) {
+    throw new TypeError("Typography readability decision does not bind the exact pending audit bytes");
+  }
+  if (options.decision.subject.reviewPacketSha256 !== options.reviewPacketSha256) {
+    throw new TypeError("Typography readability decision does not bind the exact review packet bytes");
+  }
+  if (!hashPattern.test(options.decisionSha256)) throw new TypeError("Typography readability decision hash is invalid");
+
+  const approved = options.decision.decision === "approved";
+  const finalized: TypographyAccessibilityAuditV1 = {
+    ...options.pendingAudit,
+    status: approved ? "accepted" : "draft",
+    manualReadability: approved
+      ? { status: "approved", reviewer: options.decision.reviewer, decisionSha256: options.decisionSha256 }
+      : {
+          status: "rejected",
+          reviewer: options.decision.reviewer,
+          reason: options.decision.notes,
+          decisionSha256: options.decisionSha256,
+        },
+  };
+  const finalValidation = validateTypographyAccessibilityAudit(finalized);
+  if (!finalValidation.valid) {
+    throw new TypeError(`Typography readability decision produced an invalid audit:\n- ${finalValidation.errors.join("\n- ")}`);
+  }
+  return finalized;
 }

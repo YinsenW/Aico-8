@@ -209,6 +209,13 @@ coverage, accessibility review, or licensed-official compatibility evidence.
 - HD typography on/off leaves compatibility checkpoints byte-identical.
 - Automated accessibility checks and human readability review both pass.
 
+The readability review is an immutable four-check decision rather than a free
+form approval flag. It binds the exact pending audit and screenshot review
+packet, records phone-title readability, cross-profile HUD crispness, complete
+glyph rendering without OS fallback, and preserved visual hierarchy, and
+derives approval only when all four checks pass. The final audit must reconstruct
+exactly from the archived pending bytes and decision.
+
 ## Primary references
 
 - [PICO-8 manual: `print`, P8SCII, and custom font memory](https://www.lexaloffle.com/dl/docs/pico-8_manual.html)
