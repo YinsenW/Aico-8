@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "aico8.target-profile.v1",
+  "id": "linux-handheld-web-private-research-v1",
+  "target": "linux-handheld-web",
+  "outputProfile": "hd-1024-square",
+  "measurementEnvironment": {
+    "class": "linux-handheld-browser",
+    "viewport": { "width": 1280, "height": 800 },
+    "warmupFrames": 30,
+    "sampleFrames": 180,
+    "droppedFrameThresholdMilliseconds": 25
+  },
+  "layoutProfiles": [
+    {
+      "id": "square-handheld-1024x1024",
+      "class": "square-handheld",
+      "viewport": { "width": 1024, "height": 1024 },
+      "minGameFrameCssPixels": 800,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "linux-handheld-landscape-1280x800",
+      "class": "linux-handheld-landscape",
+      "viewport": { "width": 1280, "height": 800 },
+      "minGameFrameCssPixels": 560,
+      "minTouchTargetCssPixels": 44
+    }
+  ],
+  "budgets": {
+    "artifactCountMax": 60,
+    "unpackedBytesMax": 3000000,
+    "largestArtifactBytesMax": 750000,
+    "startupMillisecondsMax": 4000,
+    "p95FrameMillisecondsMax": 25,
+    "droppedFrameRatioMax": 0.02
+  },
+  "linux": {
+    "deliveryMode": "browser-pwa",
+    "webArtifactPolicy": "byte-identical-web-release",
+    "shellPolicy": "measured-capability-gap-only",
+    "requiredCapabilities": [
+      "audio-output",
+      "controller",
+      "fullscreen",
+      "offline-assets",
+      "persistent-storage",
+      "wasm",
+      "webgl2"
+    ]
+  }
+}

@@ -108,6 +108,34 @@ const androidTargetProfile = {
   },
 };
 
+const linuxTargetProfile = {
+  schemaVersion: TARGET_PROFILE_SCHEMA_VERSION,
+  id: "linux-handheld-web-private-research-v1",
+  target: "linux-handheld-web",
+  outputProfile: "hd-1024-square",
+  measurementEnvironment: {
+    class: "linux-handheld-browser",
+    viewport: { width: 1280, height: 800 },
+    warmupFrames: 30,
+    sampleFrames: 180,
+    droppedFrameThresholdMilliseconds: 25,
+  },
+  layoutProfiles: [
+    { id: "square-handheld-1024x1024", class: "square-handheld", viewport: { width: 1024, height: 1024 }, minGameFrameCssPixels: 800, minTouchTargetCssPixels: 44 },
+    { id: "linux-handheld-landscape-1280x800", class: "linux-handheld-landscape", viewport: { width: 1280, height: 800 }, minGameFrameCssPixels: 560, minTouchTargetCssPixels: 44 },
+  ],
+  budgets: structuredClone(targetProfile.budgets),
+  linux: {
+    deliveryMode: "browser-pwa",
+    webArtifactPolicy: "byte-identical-web-release",
+    shellPolicy: "measured-capability-gap-only",
+    requiredCapabilities: [
+      "audio-output", "controller", "fullscreen", "offline-assets",
+      "persistent-storage", "wasm", "webgl2",
+    ],
+  },
+};
+
 describe("release contracts", () => {
   it("accepts the canonical packaged Web target profile", () => {
     const canonicalProfile = JSON.parse(fs.readFileSync(
@@ -126,6 +154,29 @@ describe("release contracts", () => {
     expect(validateTargetProfile(androidTargetProfile)).toEqual({ ok: true, errors: [] });
     expect(validateReleaseValidation(releaseValidation, androidTargetProfile).errors.join("\n"))
       .toMatch(/browser release validation requires a web-pwa/);
+  });
+
+  it("accepts the canonical Linux browser-first profile without creating a second Web artifact", () => {
+    const canonicalProfile = JSON.parse(fs.readFileSync(
+      new URL("../../../apps/mobile/target-profile.linux.json", import.meta.url),
+      "utf8",
+    ));
+    expect(validateTargetProfile(canonicalProfile)).toEqual({ ok: true, errors: [] });
+    expect(validateTargetProfile(linuxTargetProfile)).toEqual({ ok: true, errors: [] });
+    expect(validateReleaseValidation(releaseValidation, linuxTargetProfile).errors.join("\n"))
+      .toMatch(/browser release validation requires a web-pwa/);
+  });
+
+  it("rejects Linux profiles that rewrite the Web release or pre-authorize a shell", () => {
+    const mutated = structuredClone(linuxTargetProfile);
+    mutated.linux.webArtifactPolicy = "linux-rebundle";
+    mutated.linux.shellPolicy = "shell-first";
+    mutated.linux.requiredCapabilities.splice(0, 1);
+    const result = validateTargetProfile(mutated);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toMatch(/byte-identical-web-release/);
+    expect(result.errors.join("\n")).toMatch(/measured-capability-gap-only/);
+    expect(result.errors.join("\n")).toMatch(/audio-output/);
   });
 
   it("rejects Android profiles that weaken byte lineage, platform support, or host capabilities", () => {

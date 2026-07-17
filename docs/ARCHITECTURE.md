@@ -168,8 +168,8 @@ The detailed mapping is defined in `specs/display-1024.md` and
   APK/AAB and adds only lifecycle, storage, controller, audio-focus, and store adapters.
   One inventory/tree hash binds source, ignored `www/`, and Android assets; only
   declared Capacitor shims may differ. Gradle fails closed without external keys.
-- Linux handhelds later: use the same browser/PWA artifact first; add a thin Web
-  shell only for a measured device gap. Windows, macOS, and iOS are not targets.
+- Linux handhelds later use the same content-addressed browser/PWA artifact first. A named-device report binds exact Web/target bytes, capabilities, controller/offline/storage/lifecycle evidence, a 60-second performance window, and human play review.
+  Only an exactly enumerated failed capability with retained evidence may propose a thin Web shell. Windows, macOS, and iOS are not targets.
 - ESP32-P4 is future independent work: ESP-IDF host, native core, fixed-memory
   derived assets, and board adapters, with no browser or JavaScript requirement.
 ### 9. Validation and release

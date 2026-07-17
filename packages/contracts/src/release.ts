@@ -9,7 +9,7 @@ export interface ContractValidationResult {
 
 export interface TargetLayoutProfileV1 {
   readonly id: string;
-  readonly class: "phone-portrait" | "square-handheld" | "android-handheld-landscape" | "wide-web";
+  readonly class: "phone-portrait" | "square-handheld" | "android-handheld-landscape" | "linux-handheld-landscape" | "wide-web";
   readonly viewport: { readonly width: number; readonly height: number };
   readonly minGameFrameCssPixels: number;
   readonly minTouchTargetCssPixels: number;
@@ -77,7 +77,39 @@ export interface AndroidTargetProfileV1 {
   };
 }
 
-export type TargetProfileV1 = WebTargetProfileV1 | AndroidTargetProfileV1;
+export const LINUX_HANDHELD_WEB_CAPABILITIES = Object.freeze([
+  "audio-output",
+  "controller",
+  "fullscreen",
+  "offline-assets",
+  "persistent-storage",
+  "wasm",
+  "webgl2",
+] as const);
+
+export interface LinuxHandheldTargetProfileV1 {
+  readonly schemaVersion: typeof TARGET_PROFILE_SCHEMA_VERSION;
+  readonly id: string;
+  readonly target: "linux-handheld-web";
+  readonly outputProfile: string;
+  readonly measurementEnvironment: {
+    readonly class: "linux-handheld-browser";
+    readonly viewport: { readonly width: number; readonly height: number };
+    readonly warmupFrames: number;
+    readonly sampleFrames: number;
+    readonly droppedFrameThresholdMilliseconds: number;
+  };
+  readonly layoutProfiles: readonly TargetLayoutProfileV1[];
+  readonly budgets: TargetBudgetsV1;
+  readonly linux: {
+    readonly deliveryMode: "browser-pwa";
+    readonly webArtifactPolicy: "byte-identical-web-release";
+    readonly shellPolicy: "measured-capability-gap-only";
+    readonly requiredCapabilities: readonly typeof LINUX_HANDHELD_WEB_CAPABILITIES[number][];
+  };
+}
+
+export type TargetProfileV1 = WebTargetProfileV1 | AndroidTargetProfileV1 | LinuxHandheldTargetProfileV1;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -145,11 +177,11 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
   const errors: string[] = [];
   const root = record(value, "$", errors);
   if (!root) return { ok: false, errors };
-  exactKeys(root, ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "layoutProfiles", "budgets"], ["android"], "$", errors);
+  exactKeys(root, ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "layoutProfiles", "budgets"], ["android", "linux"], "$", errors);
   if (root.schemaVersion !== TARGET_PROFILE_SCHEMA_VERSION) errors.push(`$.schemaVersion must equal ${TARGET_PROFILE_SCHEMA_VERSION}`);
   stringValue(root.id, "$.id", errors, idPattern);
-  if (root.target !== "web-pwa" && root.target !== "android-webview") {
-    errors.push("$.target must equal web-pwa or android-webview");
+  if (root.target !== "web-pwa" && root.target !== "android-webview" && root.target !== "linux-handheld-web") {
+    errors.push("$.target must equal web-pwa, android-webview, or linux-handheld-web");
   }
   stringValue(root.outputProfile, "$.outputProfile", errors, idPattern);
   const environment = record(root.measurementEnvironment, "$.measurementEnvironment", errors);
@@ -157,7 +189,9 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     exactKeys(environment, ["class", "viewport", "warmupFrames", "sampleFrames", "droppedFrameThresholdMilliseconds"], [], "$.measurementEnvironment", errors);
     const expectedEnvironment = root.target === "android-webview"
       ? "android-instrumented-device"
-      : "local-http-active-browser";
+      : root.target === "linux-handheld-web"
+        ? "linux-handheld-browser"
+        : "local-http-active-browser";
     if (environment.class !== expectedEnvironment) {
       errors.push(`$.measurementEnvironment.class must equal ${expectedEnvironment}`);
     }
@@ -171,10 +205,12 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     integer(environment.sampleFrames, "$.measurementEnvironment.sampleFrames", errors, 1);
     finite(environment.droppedFrameThresholdMilliseconds, "$.measurementEnvironment.droppedFrameThresholdMilliseconds", errors, Number.EPSILON);
   }
-  const allLayoutClasses = ["phone-portrait", "square-handheld", "android-handheld-landscape", "wide-web"] as const;
+  const allLayoutClasses = ["phone-portrait", "square-handheld", "android-handheld-landscape", "linux-handheld-landscape", "wide-web"] as const;
   const requiredLayoutClasses = root.target === "android-webview"
     ? allLayoutClasses.slice(0, 3)
-    : allLayoutClasses;
+    : root.target === "linux-handheld-web"
+      ? [allLayoutClasses[1], allLayoutClasses[3]]
+      : [allLayoutClasses[0], allLayoutClasses[1], allLayoutClasses[2], allLayoutClasses[4]];
   if (!Array.isArray(root.layoutProfiles)) {
     errors.push("$.layoutProfiles must be an array");
   } else {
@@ -225,8 +261,11 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     if (finite(budgets.droppedFrameRatioMax, "$.budgets.droppedFrameRatioMax", errors, 0)
       && (budgets.droppedFrameRatioMax as number) > 1) errors.push("$.budgets.droppedFrameRatioMax must not exceed 1");
   }
-  if (root.target === "web-pwa" && "android" in root) {
-    errors.push("$.android is not allowed for web-pwa");
+  if (root.target !== "android-webview" && "android" in root) {
+    errors.push("$.android is allowed only for android-webview");
+  }
+  if (root.target !== "linux-handheld-web" && "linux" in root) {
+    errors.push("$.linux is allowed only for linux-handheld-web");
   }
   if (root.target === "android-webview") {
     const android = record(root.android, "$.android", errors);
@@ -268,6 +307,37 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
         for (const capability of capabilities) {
           if (!(ANDROID_HOST_CAPABILITIES as readonly unknown[]).includes(capability)) {
             errors.push(`$.android.requiredCapabilities contains unsupported ${String(capability)}`);
+          }
+        }
+      }
+    }
+  }
+  if (root.target === "linux-handheld-web") {
+    const linux = record(root.linux, "$.linux", errors);
+    if (linux) {
+      exactKeys(linux, ["deliveryMode", "webArtifactPolicy", "shellPolicy", "requiredCapabilities"], [], "$.linux", errors);
+      if (linux.deliveryMode !== "browser-pwa") errors.push("$.linux.deliveryMode must equal browser-pwa");
+      if (linux.webArtifactPolicy !== "byte-identical-web-release") {
+        errors.push("$.linux.webArtifactPolicy must equal byte-identical-web-release");
+      }
+      if (linux.shellPolicy !== "measured-capability-gap-only") {
+        errors.push("$.linux.shellPolicy must equal measured-capability-gap-only");
+      }
+      if (!Array.isArray(linux.requiredCapabilities)) {
+        errors.push("$.linux.requiredCapabilities must be an array");
+      } else {
+        const capabilities = linux.requiredCapabilities;
+        if (new Set(capabilities).size !== capabilities.length) {
+          errors.push("$.linux.requiredCapabilities must not contain duplicates");
+        }
+        for (const capability of LINUX_HANDHELD_WEB_CAPABILITIES) {
+          if (!capabilities.includes(capability)) {
+            errors.push(`$.linux.requiredCapabilities must include ${capability}`);
+          }
+        }
+        for (const capability of capabilities) {
+          if (!(LINUX_HANDHELD_WEB_CAPABILITIES as readonly unknown[]).includes(capability)) {
+            errors.push(`$.linux.requiredCapabilities contains unsupported ${String(capability)}`);
           }
         }
       }

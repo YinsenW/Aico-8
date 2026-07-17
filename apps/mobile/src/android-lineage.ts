@@ -12,6 +12,9 @@ import {
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { inventoryWebAssets, webAssetTreeSha256 } from "./web-release-inventory.js";
+
+export { inventoryWebAssets, webAssetTreeSha256 } from "./web-release-inventory.js";
 
 const hashPattern = /^[a-f0-9]{64}$/;
 
@@ -21,37 +24,6 @@ function sha256(bytes: Uint8Array): string {
 
 async function readJson(file: string): Promise<unknown> {
   return JSON.parse(await fs.readFile(file, "utf8")) as unknown;
-}
-
-async function walk(root: string, relative = ""): Promise<AndroidWebLineageFileV1[]> {
-  const directory = path.join(root, relative);
-  const entries = await fs.readdir(directory, { withFileTypes: true });
-  entries.sort((left, right) => left.name.localeCompare(right.name));
-  const files: AndroidWebLineageFileV1[] = [];
-  for (const entry of entries) {
-    const child = relative ? `${relative}/${entry.name}` : entry.name;
-    if (entry.isSymbolicLink()) throw new Error(`Web artifact contains symlink: ${child}`);
-    if (entry.isDirectory()) files.push(...await walk(root, child));
-    else if (entry.isFile()) {
-      const bytes = await fs.readFile(path.join(root, child));
-      files.push({ path: child, sha256: sha256(bytes), bytes: bytes.length });
-    } else throw new Error(`Web artifact contains unsupported filesystem entry: ${child}`);
-  }
-  return files;
-}
-
-export async function inventoryWebAssets(root: string): Promise<readonly AndroidWebLineageFileV1[]> {
-  const stat = await fs.stat(root).catch(() => undefined);
-  if (!stat?.isDirectory()) throw new Error(`Web artifact directory is missing: ${root}`);
-  const files = await walk(root);
-  files.sort((left, right) => left.path.localeCompare(right.path));
-  return files;
-}
-
-export function webAssetTreeSha256(files: readonly AndroidWebLineageFileV1[]): string {
-  const digest = createHash("sha256");
-  for (const file of files) digest.update(file.path).update("\0").update(file.sha256).update("\0").update(String(file.bytes)).update("\n");
-  return digest.digest("hex");
 }
 
 function assertSameInventory(

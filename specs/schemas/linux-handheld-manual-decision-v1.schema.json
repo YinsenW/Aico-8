@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/linux-handheld-manual-decision-v1.schema.json",
+  "title": "Aico 8 Linux handheld manual decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "subjectReportSha256", "reviewerId", "reviewedAt", "checks"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.linux-handheld-manual-decision.v1" },
+    "subjectReportSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "reviewerId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audioOutput", "controllerGameplay", "suspendResume", "sustainedGameplayQuality"],
+      "properties": {
+        "audioOutput": { "enum": ["passed", "failed"] },
+        "controllerGameplay": { "enum": ["passed", "failed"] },
+        "suspendResume": { "enum": ["passed", "failed"] },
+        "sustainedGameplayQuality": { "enum": ["passed", "failed"] }
+      }
+    }
+  }
+}
