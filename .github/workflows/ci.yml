@@ -122,7 +122,7 @@ jobs:
           AICO8_ANDROID_KEYSTORE_PASSWORD: aico8-ci-only
           AICO8_ANDROID_KEY_ALIAS: aico8-ci
           AICO8_ANDROID_KEY_PASSWORD: aico8-ci-only
-        run: ./gradlew clean assembleDebug assembleRelease bundleRelease assembleAndroidTest
+        run: ./gradlew clean assembleDebug assembleRelease bundleRelease :app:assembleAndroidTest
       - name: Verify APK and AAB signatures
         run: |
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose apps/mobile/android/app/build/outputs/apk/release/app-release.apk
