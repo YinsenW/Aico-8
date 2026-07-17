@@ -54,6 +54,17 @@ pnpm --filter @aico8/mobile verify:device -- \
   <target-profile.json> <evidence-directory>
 ```
 
+After `finalize:device`, verify the final report with the exact pending report
+and decision bytes appended to the same command. A reviewed report is rejected
+when either file is omitted or when the reconstructed final report differs:
+
+```sh
+pnpm --filter @aico8/mobile verify:device -- \
+  <final-report.json> <debug-apk> <android-web-lineage.json> \
+  <target-profile.json> <evidence-directory> \
+  <pending-report.json> <manual-decision.json>
+```
+
 Record those four outcomes in an
 `aico8.android-device-manual-decision.v1` file whose
 `subjectReportSha256` is the exact SHA-256 of the pending report, then finalize
@@ -97,4 +108,11 @@ pnpm --filter @aico8/mobile verify:linux -- \
 
 pnpm --filter @aico8/mobile finalize:linux -- \
   <pending-report.json> <manual-decision.json> <final-report.json>
+
+pnpm --filter @aico8/mobile verify:linux -- \
+  <final-report.json> <web-release-directory> <linux-target-profile.json> \
+  <evidence-directory> <pending-report.json> <manual-decision.json>
 ```
+
+The shorter verifier form is only for an unreviewed report. Once a manual
+decision is present, omission or byte drift of either source file fails closed.

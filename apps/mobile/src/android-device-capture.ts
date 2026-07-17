@@ -7,6 +7,7 @@ import {
   type AndroidWebLineageV1,
 } from "@aico8/contracts";
 import crypto from "node:crypto";
+import { verifyFinalizedManualDecisionBinding } from "./manual-decision-binding.js";
 
 export interface ConnectedAndroidDevice {
   readonly serial: string;
@@ -268,4 +269,22 @@ export function applyAndroidDeviceManualDecision(
     },
   } as const;
   return { ...updated, status: expectedAndroidDeviceValidationStatus(updated) };
+}
+
+export function verifyAndroidDeviceManualDecisionBinding(
+  finalReport: AndroidPhysicalDeviceValidationV2,
+  pendingReportBytes: Uint8Array,
+  pendingReport: AndroidPhysicalDeviceValidationV2,
+  decisionBytes: Uint8Array,
+  decision: AndroidDeviceManualDecisionV1,
+): void {
+  verifyFinalizedManualDecisionBinding(
+    finalReport,
+    pendingReportBytes,
+    pendingReport,
+    decisionBytes,
+    decision,
+    applyAndroidDeviceManualDecision,
+    "Android physical-device",
+  );
 }

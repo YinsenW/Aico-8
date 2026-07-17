@@ -1,7 +1,9 @@
 import {
+  validateLinuxHandheldManualDecision,
   validateLinuxHandheldValidation,
   validateReleaseManifest,
   validateTargetProfile,
+  type LinuxHandheldManualDecisionV1,
   type LinuxHandheldTargetProfileV1,
   type LinuxHandheldValidationV1,
 } from "@aico8/contracts";
@@ -10,24 +12,52 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { inventoryWebAssets, webAssetTreeSha256 } from "./web-release-inventory.js";
+import { verifyLinuxHandheldManualDecisionBinding } from "./linux-handheld-capture.js";
 
 function sha256(value: Uint8Array): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 const args = process.argv.slice(2).filter((argument) => argument !== "--");
-if (args.length !== 4) {
+if (args.length !== 4 && args.length !== 6) {
   throw new Error(
     "Usage: pnpm --filter @aico8/mobile verify:linux -- "
-      + "<linux-validation.json> <web-release-directory> <linux-target-profile.json> <evidence-directory>",
+      + "<linux-validation.json> <web-release-directory> <linux-target-profile.json> <evidence-directory> "
+      + "[<pending-report.json> <manual-decision.json>]",
   );
 }
-const [reportValue, webReleaseValue, targetValue, evidenceValue] = args as [string, string, string, string];
+const [reportValue, webReleaseValue, targetValue, evidenceValue, pendingValue, decisionValue]
+  = args as [string, string, string, string, string | undefined, string | undefined];
 const reportBytes = fs.readFileSync(path.resolve(reportValue));
 const reportUnknown: unknown = JSON.parse(reportBytes.toString("utf8"));
 const reportValidation = validateLinuxHandheldValidation(reportUnknown);
 if (!reportValidation.ok) throw new Error(`Invalid Linux handheld report: ${reportValidation.errors.join("; ")}`);
 const report = reportUnknown as LinuxHandheldValidationV1;
+
+if (report.manualReview.decisionSha256 === null) {
+  if (pendingValue !== undefined || decisionValue !== undefined) {
+    throw new Error("An unreviewed Linux report must not include manual-decision verification inputs");
+  }
+} else {
+  if (pendingValue === undefined || decisionValue === undefined) {
+    throw new Error("A reviewed Linux report requires its exact pending report and manual decision bytes");
+  }
+  const pendingBytes = fs.readFileSync(path.resolve(pendingValue));
+  const pendingUnknown: unknown = JSON.parse(pendingBytes.toString("utf8"));
+  const pendingValidation = validateLinuxHandheldValidation(pendingUnknown);
+  if (!pendingValidation.ok) throw new Error(`Invalid pending Linux handheld report: ${pendingValidation.errors.join("; ")}`);
+  const decisionBytes = fs.readFileSync(path.resolve(decisionValue));
+  const decisionUnknown: unknown = JSON.parse(decisionBytes.toString("utf8"));
+  const decisionValidation = validateLinuxHandheldManualDecision(decisionUnknown);
+  if (!decisionValidation.ok) throw new Error(`Invalid Linux handheld manual decision: ${decisionValidation.errors.join("; ")}`);
+  verifyLinuxHandheldManualDecisionBinding(
+    report,
+    pendingBytes,
+    pendingUnknown as LinuxHandheldValidationV1,
+    decisionBytes,
+    decisionUnknown as LinuxHandheldManualDecisionV1,
+  );
+}
 
 const targetBytes = fs.readFileSync(path.resolve(targetValue));
 const targetUnknown: unknown = JSON.parse(targetBytes.toString("utf8"));

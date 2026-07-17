@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 
 import {
   LINUX_HANDHELD_MANUAL_DECISION_SCHEMA_VERSION,
@@ -9,6 +10,7 @@ import {
   applyLinuxHandheldManualDecision,
   buildPendingLinuxHandheldReport,
   evaluateLinuxHandheldPerformance,
+  verifyLinuxHandheldManualDecisionBinding,
 } from "./linux-handheld-capture.js";
 
 const hash = "a".repeat(64);
@@ -118,9 +120,11 @@ describe("Linux handheld evidence builder", () => {
     const performance = evaluateLinuxHandheldPerformance([99, 10, 20, 24], target, 60);
     const report = buildPendingLinuxHandheldReport(input(performance));
     expect(report.status).toBe("pending-human");
-    const finalized = applyLinuxHandheldManualDecision(report, hash, {
+    const pendingBytes = Buffer.from(`${JSON.stringify(report, null, 2)}\n`);
+    const pendingHash = createHash("sha256").update(pendingBytes).digest("hex");
+    const decision = {
       schemaVersion: LINUX_HANDHELD_MANUAL_DECISION_SCHEMA_VERSION,
-      subjectReportSha256: hash,
+      subjectReportSha256: pendingHash,
       reviewerId: "handheld-reviewer",
       reviewedAt: "2026-07-17T01:00:00.000Z",
       checks: {
@@ -129,8 +133,32 @@ describe("Linux handheld evidence builder", () => {
         suspendResume: "passed",
         sustainedGameplayQuality: "passed",
       },
-    }, "b".repeat(64));
+    } as const;
+    const decisionBytes = Buffer.from(`${JSON.stringify(decision, null, 2)}\n`);
+    const decisionHash = createHash("sha256").update(decisionBytes).digest("hex");
+    const finalized = applyLinuxHandheldManualDecision(report, pendingHash, decision, decisionHash);
     expect(finalized.status).toBe("passed");
+    expect(() => verifyLinuxHandheldManualDecisionBinding(
+      finalized,
+      pendingBytes,
+      report,
+      decisionBytes,
+      decision,
+    )).not.toThrow();
+    expect(() => verifyLinuxHandheldManualDecisionBinding(
+      { ...finalized, manualReview: { ...finalized.manualReview, reviewerId: "forged-reviewer" } },
+      pendingBytes,
+      report,
+      decisionBytes,
+      decision,
+    )).toThrow(/does not exactly match/);
+    expect(() => verifyLinuxHandheldManualDecisionBinding(
+      finalized,
+      pendingBytes,
+      report,
+      Buffer.from("tampered-decision"),
+      decision,
+    )).toThrow(/does not exactly match/);
     expect(() => applyLinuxHandheldManualDecision(report, "b".repeat(64), {
       schemaVersion: LINUX_HANDHELD_MANUAL_DECISION_SCHEMA_VERSION,
       subjectReportSha256: hash,
