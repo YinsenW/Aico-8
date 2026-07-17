@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs";
 
 import {
   REQUIRED_ACCESSIBILITY_REGRESSIONS,
   TYPOGRAPHY_ACCESSIBILITY_AUDIT_SCHEMA_VERSION,
+  TYPOGRAPHY_READABILITY_CHECKS,
+  TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION,
+  applyTypographyReadabilityDecision,
   requiredTextContrast,
   sourceDerivedAccessibleDescription,
   typographyContrastRatio,
   validateTypographyAccessibilityAudit,
+  validateTypographyReadabilityDecision,
 } from "./typography-accessibility.js";
 
 const hash = "a".repeat(64);
@@ -94,5 +99,92 @@ describe("typography accessibility contract", () => {
     value.deliveryProfiles[2].samples[0].availableWidthCssPx = 80;
     expect(validateTypographyAccessibilityAudit(value).errors.join("\n"))
       .toMatch(/fits must be derived|does not fit/);
+  });
+
+  it("derives an accepted audit only from a byte-bound all-pass readability decision", () => {
+    const pending = audit();
+    pending.status = "draft";
+    pending.manualReadability = { status: "pending" };
+    const decision = {
+      schemaVersion: TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION,
+      gameId: pending.gameId,
+      decision: "approved",
+      reviewer: "independent-reviewer",
+      reviewedAt: "2026-07-17T12:00:00.000Z",
+      subject: {
+        pendingAuditSha256: hash,
+        reviewPacketSha256: "b".repeat(64),
+        sourceSha256: pending.sourceSha256,
+        typographyManifestSha256: pending.typographyManifestSha256,
+        textInventorySha256: pending.textInventorySha256,
+      },
+      checks: Object.fromEntries(TYPOGRAPHY_READABILITY_CHECKS.map((check) => [check, "passed"])),
+      notes: "All four delivery-profile readability criteria passed.",
+    } as any;
+    expect(validateTypographyReadabilityDecision(decision, pending)).toEqual({ valid: true, errors: [] });
+    const accepted = applyTypographyReadabilityDecision({
+      pendingAudit: pending,
+      pendingAuditSha256: hash,
+      reviewPacketSha256: "b".repeat(64),
+      decision,
+      decisionSha256: "c".repeat(64),
+    });
+    expect(accepted.status).toBe("accepted");
+    expect(accepted.manualReadability).toEqual({
+      status: "approved",
+      reviewer: "independent-reviewer",
+      decisionSha256: "c".repeat(64),
+    });
+  });
+
+  it("rejects forged lineage and derives rejection from any failed readability check", () => {
+    const pending = audit();
+    pending.status = "draft";
+    pending.manualReadability = { status: "pending" };
+    const decision = {
+      schemaVersion: TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION,
+      gameId: pending.gameId,
+      decision: "approved",
+      reviewer: "independent-reviewer",
+      reviewedAt: "2026-07-17T12:00:00.000Z",
+      subject: {
+        pendingAuditSha256: hash,
+        reviewPacketSha256: "b".repeat(64),
+        sourceSha256: pending.sourceSha256,
+        typographyManifestSha256: pending.typographyManifestSha256,
+        textInventorySha256: pending.textInventorySha256,
+      },
+      checks: Object.fromEntries(TYPOGRAPHY_READABILITY_CHECKS.map((check) => [check, "passed"])),
+      notes: "Reviewed all declared delivery profiles.",
+    } as any;
+    decision.checks.phoneTitleReadable = "failed";
+    expect(validateTypographyReadabilityDecision(decision, pending).errors.join("\n"))
+      .toMatch(/decision must equal derived value rejected/);
+    decision.decision = "rejected";
+    const rejected = applyTypographyReadabilityDecision({
+      pendingAudit: pending,
+      pendingAuditSha256: hash,
+      reviewPacketSha256: "b".repeat(64),
+      decision,
+      decisionSha256: "c".repeat(64),
+    });
+    expect(rejected.status).toBe("draft");
+    expect(rejected.manualReadability.status).toBe("rejected");
+    expect(() => applyTypographyReadabilityDecision({
+      pendingAudit: pending,
+      pendingAuditSha256: "d".repeat(64),
+      reviewPacketSha256: "b".repeat(64),
+      decision,
+      decisionSha256: "c".repeat(64),
+    })).toThrow(/exact pending audit bytes/);
+  });
+
+  it("keeps the readability decision schema synchronized with contract check order", () => {
+    const schema = JSON.parse(fs.readFileSync(
+      new URL("../../../specs/schemas/typography-readability-decision-v1.schema.json", import.meta.url),
+      "utf8",
+    ));
+    expect(schema.properties.schemaVersion.const).toBe(TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION);
+    expect(schema.properties.checks.required).toEqual([...TYPOGRAPHY_READABILITY_CHECKS]);
   });
 });

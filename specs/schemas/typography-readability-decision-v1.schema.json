@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/typography-readability-decision-v1.schema.json",
+  "title": "Aico 8 typography readability decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "gameId", "decision", "reviewer", "reviewedAt", "subject", "checks", "notes"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.typography-readability-decision.v1" },
+    "gameId": { "$ref": "#/$defs/id" },
+    "decision": { "enum": ["approved", "rejected"] },
+    "reviewer": { "$ref": "#/$defs/id" },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pendingAuditSha256", "reviewPacketSha256", "sourceSha256",
+        "typographyManifestSha256", "textInventorySha256"
+      ],
+      "properties": {
+        "pendingAuditSha256": { "$ref": "#/$defs/hash" },
+        "reviewPacketSha256": { "$ref": "#/$defs/hash" },
+        "sourceSha256": { "$ref": "#/$defs/hash" },
+        "typographyManifestSha256": { "$ref": "#/$defs/hash" },
+        "textInventorySha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phoneTitleReadable", "hudLabelsCrispAcrossProfiles",
+        "glyphsCompleteWithoutFallback", "visualHierarchyPreserved"
+      ],
+      "properties": {
+        "phoneTitleReadable": { "$ref": "#/$defs/verdict" },
+        "hudLabelsCrispAcrossProfiles": { "$ref": "#/$defs/verdict" },
+        "glyphsCompleteWithoutFallback": { "$ref": "#/$defs/verdict" },
+        "visualHierarchyPreserved": { "$ref": "#/$defs/verdict" }
+      }
+    },
+    "notes": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "verdict": { "enum": ["passed", "failed"] }
+  }
+}
