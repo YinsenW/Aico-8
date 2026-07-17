@@ -1,4 +1,12 @@
 export {
+  ANDROID_WEB_ASSET_POLICY,
+  ANDROID_WEB_LINEAGE_SCHEMA_VERSION,
+  validateAndroidWebLineage,
+  type AndroidWebLineageFileV1,
+  type AndroidWebLineageV1,
+} from "./android-host.js";
+
+export {
   BATCH_SCHEMA_VERSION,
   acceptedBatchGameIds,
   batchWorkspaceId,
@@ -285,10 +293,15 @@ export {
   RELEASE_MANIFEST_SCHEMA_VERSION,
   RELEASE_VALIDATION_SCHEMA_VERSION,
   TARGET_PROFILE_SCHEMA_VERSION,
+  ANDROID_HOST_CAPABILITIES,
   validateReleaseManifest,
   validateReleaseValidation,
   validateTargetProfile,
   type ContractValidationResult,
+  type AndroidTargetProfileV1,
+  type TargetBudgetsV1,
+  type TargetLayoutProfileV1,
+  type TargetProfileV1,
   type WebTargetProfileV1,
 } from "./release.js";
 export {

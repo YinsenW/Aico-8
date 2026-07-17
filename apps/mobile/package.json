@@ -1,0 +1,28 @@
+{
+  "name": "@aico8/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "assemble:web": "tsx src/assemble-android-host.ts",
+    "verify:lineage": "tsx src/verify-android-lineage.ts",
+    "cap:copy": "cap copy android",
+    "android:debug": "pnpm verify:lineage && cd android && ./gradlew assembleDebug",
+    "android:bundle": "pnpm verify:lineage && cd android && ./gradlew bundleRelease"
+  },
+  "dependencies": {
+    "@aico8/contracts": "workspace:*",
+    "@capacitor/android": "8.4.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.4.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.4.2",
+    "@types/node": "24.13.3",
+    "typescript": "5.9.3",
+    "vite": "8.1.4",
+    "vitest": "4.1.10"
+  }
+}

@@ -81,3 +81,49 @@ jobs:
         run: pnpm verify:web
       - name: Verify human-guided Skill package
         run: pnpm verify:skill
+
+  android-host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.2
+          actions-cache-folder: emsdk-cache
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install TypeScript workspace
+        run: pnpm install --frozen-lockfile
+      - name: Verify Android host contracts and lifecycle boundary
+        run: pnpm verify:android-host
+      - name: Build unchanged public Web host
+        run: pnpm --filter @aico8/web build
+      - name: Stage public Web host for native compile
+        run: rsync -a --delete apps/web/dist/ apps/mobile/www/
+      - name: Copy Web host through Capacitor
+        run: pnpm --filter @aico8/mobile exec cap sync android
+      - name: Create disposable research-only CI signing key
+        run: keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$RUNNER_TEMP/aico8-ci.p12" -storepass aico8-ci-only -keypass aico8-ci-only -alias aico8-ci -keyalg RSA -keysize 3072 -validity 2 -dname "CN=Aico 8 CI Research,O=Aico 8,C=XX"
+      - name: Clean-build debug APK and signed research APK/AAB
+        working-directory: apps/mobile/android
+        env:
+          AICO8_ANDROID_KEYSTORE: ${{ runner.temp }}/aico8-ci.p12
+          AICO8_ANDROID_KEYSTORE_PASSWORD: aico8-ci-only
+          AICO8_ANDROID_KEY_ALIAS: aico8-ci
+          AICO8_ANDROID_KEY_PASSWORD: aico8-ci-only
+        run: ./gradlew clean assembleDebug assembleRelease bundleRelease assembleAndroidTest
+      - name: Verify APK and AAB signatures
+        run: |
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          jarsigner -verify -verbose -certs apps/mobile/android/app/build/outputs/bundle/release/app-release.aab

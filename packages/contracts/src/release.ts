@@ -7,6 +7,23 @@ export interface ContractValidationResult {
   readonly errors: readonly string[];
 }
 
+export interface TargetLayoutProfileV1 {
+  readonly id: string;
+  readonly class: "phone-portrait" | "square-handheld" | "android-handheld-landscape" | "wide-web";
+  readonly viewport: { readonly width: number; readonly height: number };
+  readonly minGameFrameCssPixels: number;
+  readonly minTouchTargetCssPixels: number;
+}
+
+export interface TargetBudgetsV1 {
+  readonly artifactCountMax: number;
+  readonly unpackedBytesMax: number;
+  readonly largestArtifactBytesMax: number;
+  readonly startupMillisecondsMax: number;
+  readonly p95FrameMillisecondsMax: number;
+  readonly droppedFrameRatioMax: number;
+}
+
 export interface WebTargetProfileV1 {
   readonly schemaVersion: typeof TARGET_PROFILE_SCHEMA_VERSION;
   readonly id: string;
@@ -19,22 +36,48 @@ export interface WebTargetProfileV1 {
     readonly sampleFrames: number;
     readonly droppedFrameThresholdMilliseconds: number;
   };
-  readonly layoutProfiles: readonly {
-    readonly id: string;
-    readonly class: "phone-portrait" | "square-handheld" | "android-handheld-landscape" | "wide-web";
+  readonly layoutProfiles: readonly TargetLayoutProfileV1[];
+  readonly budgets: TargetBudgetsV1;
+}
+
+export const ANDROID_HOST_CAPABILITIES = Object.freeze([
+  "audio-focus",
+  "controller",
+  "lifecycle",
+  "offline-assets",
+  "orientation",
+  "persistent-storage",
+  "touch",
+] as const);
+
+export interface AndroidTargetProfileV1 {
+  readonly schemaVersion: typeof TARGET_PROFILE_SCHEMA_VERSION;
+  readonly id: string;
+  readonly target: "android-webview";
+  readonly outputProfile: string;
+  readonly measurementEnvironment: {
+    readonly class: "android-instrumented-device";
     readonly viewport: { readonly width: number; readonly height: number };
-    readonly minGameFrameCssPixels: number;
-    readonly minTouchTargetCssPixels: number;
-  }[];
-  readonly budgets: {
-    readonly artifactCountMax: number;
-    readonly unpackedBytesMax: number;
-    readonly largestArtifactBytesMax: number;
-    readonly startupMillisecondsMax: number;
-    readonly p95FrameMillisecondsMax: number;
-    readonly droppedFrameRatioMax: number;
+    readonly warmupFrames: number;
+    readonly sampleFrames: number;
+    readonly droppedFrameThresholdMilliseconds: number;
+  };
+  readonly layoutProfiles: readonly TargetLayoutProfileV1[];
+  readonly budgets: TargetBudgetsV1;
+  readonly android: {
+    readonly applicationId: string;
+    readonly capacitorVersion: string;
+    readonly minSdk: number;
+    readonly targetSdk: number;
+    readonly compileSdk: number;
+    readonly orientationPolicy: "user";
+    readonly webArtifactPolicy: "byte-identical-recursive-copy";
+    readonly signingPolicy: "external-release-key";
+    readonly requiredCapabilities: readonly typeof ANDROID_HOST_CAPABILITIES[number][];
   };
 }
+
+export type TargetProfileV1 = WebTargetProfileV1 | AndroidTargetProfileV1;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -102,15 +145,22 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
   const errors: string[] = [];
   const root = record(value, "$", errors);
   if (!root) return { ok: false, errors };
-  exactKeys(root, ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "layoutProfiles", "budgets"], [], "$", errors);
+  exactKeys(root, ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "layoutProfiles", "budgets"], ["android"], "$", errors);
   if (root.schemaVersion !== TARGET_PROFILE_SCHEMA_VERSION) errors.push(`$.schemaVersion must equal ${TARGET_PROFILE_SCHEMA_VERSION}`);
   stringValue(root.id, "$.id", errors, idPattern);
-  if (root.target !== "web-pwa") errors.push("$.target must equal web-pwa");
+  if (root.target !== "web-pwa" && root.target !== "android-webview") {
+    errors.push("$.target must equal web-pwa or android-webview");
+  }
   stringValue(root.outputProfile, "$.outputProfile", errors, idPattern);
   const environment = record(root.measurementEnvironment, "$.measurementEnvironment", errors);
   if (environment) {
     exactKeys(environment, ["class", "viewport", "warmupFrames", "sampleFrames", "droppedFrameThresholdMilliseconds"], [], "$.measurementEnvironment", errors);
-    if (environment.class !== "local-http-active-browser") errors.push("$.measurementEnvironment.class must equal local-http-active-browser");
+    const expectedEnvironment = root.target === "android-webview"
+      ? "android-instrumented-device"
+      : "local-http-active-browser";
+    if (environment.class !== expectedEnvironment) {
+      errors.push(`$.measurementEnvironment.class must equal ${expectedEnvironment}`);
+    }
     const viewport = record(environment.viewport, "$.measurementEnvironment.viewport", errors);
     if (viewport) {
       exactKeys(viewport, ["width", "height"], [], "$.measurementEnvironment.viewport", errors);
@@ -121,7 +171,10 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     integer(environment.sampleFrames, "$.measurementEnvironment.sampleFrames", errors, 1);
     finite(environment.droppedFrameThresholdMilliseconds, "$.measurementEnvironment.droppedFrameThresholdMilliseconds", errors, Number.EPSILON);
   }
-  const requiredLayoutClasses = ["phone-portrait", "square-handheld", "android-handheld-landscape", "wide-web"] as const;
+  const allLayoutClasses = ["phone-portrait", "square-handheld", "android-handheld-landscape", "wide-web"] as const;
+  const requiredLayoutClasses = root.target === "android-webview"
+    ? allLayoutClasses.slice(0, 3)
+    : allLayoutClasses;
   if (!Array.isArray(root.layoutProfiles)) {
     errors.push("$.layoutProfiles must be an array");
   } else {
@@ -136,7 +189,7 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
         if (ids.has(item.id)) errors.push(`${itemPath}.id duplicates ${item.id}`);
         ids.add(item.id);
       }
-      if (!requiredLayoutClasses.includes(item.class as typeof requiredLayoutClasses[number])) {
+      if (!requiredLayoutClasses.includes(item.class as typeof allLayoutClasses[number])) {
         errors.push(`${itemPath}.class is unsupported`);
       } else {
         if (classes.has(item.class as string)) errors.push(`${itemPath}.class duplicates ${item.class}`);
@@ -171,6 +224,54 @@ export function validateTargetProfile(value: unknown): ContractValidationResult 
     finite(budgets.p95FrameMillisecondsMax, "$.budgets.p95FrameMillisecondsMax", errors, Number.EPSILON);
     if (finite(budgets.droppedFrameRatioMax, "$.budgets.droppedFrameRatioMax", errors, 0)
       && (budgets.droppedFrameRatioMax as number) > 1) errors.push("$.budgets.droppedFrameRatioMax must not exceed 1");
+  }
+  if (root.target === "web-pwa" && "android" in root) {
+    errors.push("$.android is not allowed for web-pwa");
+  }
+  if (root.target === "android-webview") {
+    const android = record(root.android, "$.android", errors);
+    if (android) {
+      exactKeys(android, [
+        "applicationId", "capacitorVersion", "minSdk", "targetSdk", "compileSdk",
+        "orientationPolicy", "webArtifactPolicy", "signingPolicy", "requiredCapabilities",
+      ], [], "$.android", errors);
+      stringValue(android.applicationId, "$.android.applicationId", errors, /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/);
+      stringValue(android.capacitorVersion, "$.android.capacitorVersion", errors, /^\d+\.\d+\.\d+$/);
+      const hasMin = integer(android.minSdk, "$.android.minSdk", errors, 24);
+      const hasTarget = integer(android.targetSdk, "$.android.targetSdk", errors, 24);
+      const hasCompile = integer(android.compileSdk, "$.android.compileSdk", errors, 24);
+      if (hasMin && hasTarget && (android.minSdk as number) > (android.targetSdk as number)) {
+        errors.push("$.android.minSdk must not exceed targetSdk");
+      }
+      if (hasTarget && hasCompile && (android.targetSdk as number) > (android.compileSdk as number)) {
+        errors.push("$.android.targetSdk must not exceed compileSdk");
+      }
+      if (android.orientationPolicy !== "user") errors.push("$.android.orientationPolicy must equal user");
+      if (android.webArtifactPolicy !== "byte-identical-recursive-copy") {
+        errors.push("$.android.webArtifactPolicy must equal byte-identical-recursive-copy");
+      }
+      if (android.signingPolicy !== "external-release-key") {
+        errors.push("$.android.signingPolicy must equal external-release-key");
+      }
+      if (!Array.isArray(android.requiredCapabilities)) {
+        errors.push("$.android.requiredCapabilities must be an array");
+      } else {
+        const capabilities = android.requiredCapabilities;
+        if (new Set(capabilities).size !== capabilities.length) {
+          errors.push("$.android.requiredCapabilities must not contain duplicates");
+        }
+        for (const capability of ANDROID_HOST_CAPABILITIES) {
+          if (!capabilities.includes(capability)) {
+            errors.push(`$.android.requiredCapabilities must include ${capability}`);
+          }
+        }
+        for (const capability of capabilities) {
+          if (!(ANDROID_HOST_CAPABILITIES as readonly unknown[]).includes(capability)) {
+            errors.push(`$.android.requiredCapabilities contains unsupported ${String(capability)}`);
+          }
+        }
+      }
+    }
   }
   return { ok: errors.length === 0, errors };
 }
@@ -269,7 +370,10 @@ export function validateReleaseValidation(value: unknown, profileValue: unknown)
   const profileValidation = validateTargetProfile(profileValue);
   if (!profileValidation.ok) return profileValidation;
   const errors: string[] = [];
-  const profile = profileValue as WebTargetProfileV1;
+  const profile = profileValue as TargetProfileV1;
+  if (profile.target !== "web-pwa") {
+    return { ok: false, errors: ["$: browser release validation requires a web-pwa target profile"] };
+  }
   const root = record(value, "$", errors);
   if (!root) return { ok: false, errors };
   exactKeys(root, ["schemaVersion", "subject", "targetProfile", "environment", "package", "runtime", "layouts", "checks", "status"], [], "$", errors);

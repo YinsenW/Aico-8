@@ -1,5 +1,4 @@
 # Aico 8 product requirements (PRD)
-
 ## Product outcome
 
 Aico 8 turns legally supplied PICO-8 cartridges into modern, high-fidelity
@@ -135,8 +134,9 @@ directly. Platform adapters may not fork gameplay. Windows, macOS, and iOS are
 outside the current delivery roadmap.
 
 Contracts: `API-HOST-001`, `API-GAME-MODULE-001`,
-`DATA-TARGET-PROFILE-001`, `DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`,
-`JOB-VALIDATE-001`, `JOB-PACKAGE-001`.
+`DATA-TARGET-PROFILE-001`, `DATA-ANDROID-WEB-LINEAGE-001`,
+`DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`, `JOB-VALIDATE-001`,
+`JOB-PACKAGE-001`.
 
 ### REQ-EMBEDDED-001 — Constrained ESP32-P4 profile after Web
 

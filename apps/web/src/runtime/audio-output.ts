@@ -18,6 +18,7 @@ export interface AudioOutputContext {
   readonly outputLatency?: number;
   readonly destination: unknown;
   resume(): Promise<void>;
+  suspend(): Promise<void>;
   close(): Promise<void>;
   createBuffer(channels: number, length: number, sampleRate: number): AudioBufferLike;
   createBufferSource(): AudioSourceLike;
@@ -104,6 +105,15 @@ export class KernelAudioOutput {
       this.#pendingSamples -= dropped;
       this.#droppedPendingSamples += dropped;
     }
+  }
+
+  async suspend(): Promise<void> {
+    if (this.#context?.state === "running") await this.#context.suspend();
+  }
+
+  async resumeAfterInterruption(): Promise<void> {
+    const context = this.#context;
+    if (this.#unlocked && context && context.state !== "running") await context.resume();
   }
 
   diagnostics(): AudioOutputDiagnostics {

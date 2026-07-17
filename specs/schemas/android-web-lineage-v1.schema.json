@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/android-web-lineage-v1.schema.json",
+  "title": "Aico 8 Android Web artifact lineage v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedBy", "targetProfile", "webRelease", "webAssets", "host"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.android-web-lineage.v1" },
+    "generatedBy": { "const": "aico8-mobile-assembler-v1" },
+    "targetProfile": { "$ref": "#/$defs/profileIdentity" },
+    "webRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releaseManifestSha256", "visualRuntimeSha256", "sourceTargetProfileId", "sourceTargetProfileSha256"],
+      "properties": {
+        "releaseManifestSha256": { "$ref": "#/$defs/sha256" },
+        "visualRuntimeSha256": { "$ref": "#/$defs/sha256" },
+        "sourceTargetProfileId": { "$ref": "#/$defs/id" },
+        "sourceTargetProfileSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "webAssets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "treeSha256", "artifactCount", "unpackedBytes", "files"],
+      "properties": {
+        "policy": { "const": "byte-identical-recursive-copy" },
+        "treeSha256": { "$ref": "#/$defs/sha256" },
+        "artifactCount": { "type": "integer", "minimum": 1 },
+        "unpackedBytes": { "type": "integer", "minimum": 1 },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256", "bytes"],
+            "properties": {
+              "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?!.*\\\\)[^/]+(?:/[^/]+)*$" },
+              "sha256": { "$ref": "#/$defs/sha256" },
+              "bytes": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicationId", "capacitorVersion", "minSdk", "targetSdk", "compileSdk", "signingPolicy", "allowedGeneratedAssetPaths"],
+      "properties": {
+        "applicationId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$" },
+        "capacitorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "minSdk": { "type": "integer", "minimum": 24 },
+        "targetSdk": { "type": "integer", "minimum": 24 },
+        "compileSdk": { "type": "integer", "minimum": 24 },
+        "signingPolicy": { "const": "external-release-key" },
+        "allowedGeneratedAssetPaths": {
+          "type": "array",
+          "prefixItems": [{ "const": "cordova.js" }, { "const": "cordova_plugins.js" }],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "profileIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "sha256": { "$ref": "#/$defs/sha256" } }
+    }
+  }
+}

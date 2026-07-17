@@ -1,16 +1,14 @@
 # Development agent runbook
-
 ## Bootstrap and select work
 1. Inspect `git status --short --branch` and existing stacked PRs before editing.
 2. Run `pnpm verify:governance` and read `current_focus` in `governance/project.json`.
 3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item set. Do not invent a parallel status list in a plan, README, PR body, or research note.
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
-
-Through the first complete remake, select only browser Web/PWA work or its direct dependencies. Android, Linux, collection, ESP32, and final Skill work remain later.
+The complete browser remake unlocks Android; finish that shared-Web-host boundary
+before Linux. Collection, ESP32, and final Skill remain later unless focus changes.
 
 ## Implementation loop
-
 1. Write or adjust the smallest failing test/checkpoint that represents the exit.
 2. Change code behind the owning API or data contract.
 3. Preserve the separate compatibility reference path; never introduce mixed
@@ -52,6 +50,7 @@ pnpm verify:text-run
 pnpm verify:replay
 pnpm verify:ingest
 pnpm verify:ingest-private
+pnpm verify:android-host
 pnpm verify:game-module
 pnpm verify:batch
 pnpm verify:supervised-transfer
@@ -63,6 +62,7 @@ pnpm verify:private-remake
 pnpm verify:native-cart-private
 ```
 Private selectors strengthen local evidence but never masquerade as public CI. `pnpm verify:ingest-private` requires the authorized cart directory, private report/evidence paths, and pinned codec command/revision/version environment; it recomputes all carts and rejects retained aggregate-attestation drift.
+`pnpm verify:android-host` validates the Android target profile, exact Web-artifact inventory and tree identity, Capacitor/native policy, lifecycle/audio-focus bridge, external signing boundary, and source/staging/native-asset drift rejection. The `android-host` CI job additionally performs clean Java 21/API 36 debug and externally signed research APK/AAB builds; emulator or physical-device lifecycle evidence remains a separate acceptance boundary.
 `pnpm verify:batch` rejects shared identities, concurrent writers, invalid lanes,
 evidence-free acceptance, and hidden partial failure before assembly.
 `pnpm verify:supervised-transfer` validates four ordered human pauses, stop-specific proposal criteria/evidence/revision lineage, immutable unsigned signing-request export, recoverable filesystem state, and transfer-finding classification. It rejects forged/stale decisions, identity or byte drift, widened Agent authority, repeated challenges, concurrent/ambiguous writers, symlink aliases, handwritten terminal ledgers, universalized source-relative art, and reusable claims without shared regression evidence.

@@ -82,6 +82,32 @@ const releaseValidation = {
   status: "passed",
 };
 
+const androidTargetProfile = {
+  ...structuredClone(targetProfile),
+  id: "android-webview-private-research-v1",
+  target: "android-webview",
+  measurementEnvironment: {
+    ...targetProfile.measurementEnvironment,
+    class: "android-instrumented-device",
+    viewport: { width: 1024, height: 1024 },
+  },
+  layoutProfiles: structuredClone(targetProfile.layoutProfiles.slice(0, 3)),
+  android: {
+    applicationId: "dev.aico8.research",
+    capacitorVersion: "8.4.2",
+    minSdk: 24,
+    targetSdk: 36,
+    compileSdk: 36,
+    orientationPolicy: "user",
+    webArtifactPolicy: "byte-identical-recursive-copy",
+    signingPolicy: "external-release-key",
+    requiredCapabilities: [
+      "audio-focus", "controller", "lifecycle", "offline-assets",
+      "orientation", "persistent-storage", "touch",
+    ],
+  },
+};
+
 describe("release contracts", () => {
   it("accepts the canonical packaged Web target profile", () => {
     const canonicalProfile = JSON.parse(fs.readFileSync(
@@ -89,6 +115,29 @@ describe("release contracts", () => {
       "utf8",
     ));
     expect(validateTargetProfile(canonicalProfile)).toEqual({ ok: true, errors: [] });
+  });
+
+  it("accepts the canonical Android WebView profile but keeps browser validation target-specific", () => {
+    const canonicalProfile = JSON.parse(fs.readFileSync(
+      new URL("../../../apps/mobile/target-profile.json", import.meta.url),
+      "utf8",
+    ));
+    expect(validateTargetProfile(canonicalProfile)).toEqual({ ok: true, errors: [] });
+    expect(validateTargetProfile(androidTargetProfile)).toEqual({ ok: true, errors: [] });
+    expect(validateReleaseValidation(releaseValidation, androidTargetProfile).errors.join("\n"))
+      .toMatch(/browser release validation requires a web-pwa/);
+  });
+
+  it("rejects Android profiles that weaken byte lineage, platform support, or host capabilities", () => {
+    const mutated = structuredClone(androidTargetProfile);
+    mutated.android.minSdk = 23;
+    mutated.android.webArtifactPolicy = "rewrite-assets";
+    mutated.android.requiredCapabilities.splice(0, 1);
+    const result = validateTargetProfile(mutated);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join("\n")).toMatch(/minSdk/);
+    expect(result.errors.join("\n")).toMatch(/byte-identical-recursive-copy/);
+    expect(result.errors.join("\n")).toMatch(/audio-focus/);
   });
 
   it("accepts a bounded Web target, release manifest, and technical validation report", () => {

@@ -1,5 +1,4 @@
 # Aico 8 architecture
-
 ## Product boundary
 Aico 8 is a monorepo for the complete remake lifecycle, not a source translator or single emulator. It preserves an authoritative compatibility path and adds a separate HD presentation path.
 
@@ -167,11 +166,12 @@ The detailed mapping is defined in `specs/display-1024.md` and
   portable single-HTML convenience build, and installable/offline PWA release.
 - Android next: a Capacitor/WebView shell packages the unchanged Web build as
   APK/AAB and adds only lifecycle, storage, controller, audio-focus, and store adapters.
+  One inventory/tree hash binds source, ignored `www/`, and Android assets; only
+  declared Capacitor shims may differ. Gradle fails closed without external keys.
 - Linux handhelds later: use the same browser/PWA artifact first; add a thin Web
   shell only for a measured device gap. Windows, macOS, and iOS are not targets.
 - ESP32-P4 is future independent work: ESP-IDF host, native core, fixed-memory
   derived assets, and board adapters, with no browser or JavaScript requirement.
-
 ### 9. Validation and release
 - Canonical replays execute every original logical update on unchanged cart
   bytes and accept PICO-8 button masks plus source-authored `menuitem()` callbacks
