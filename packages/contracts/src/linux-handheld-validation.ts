@@ -103,6 +103,16 @@ export interface LinuxHandheldValidationV1 {
   readonly status: LinuxHandheldValidationStatus;
 }
 
+export const LINUX_HANDHELD_CAPABILITY_EVIDENCE_FIELDS = {
+  "audio-output": "capabilityReportSha256",
+  controller: "controllerReportSha256",
+  fullscreen: "capabilityReportSha256",
+  "offline-assets": "offlineReportSha256",
+  "persistent-storage": "storageReportSha256",
+  wasm: "capabilityReportSha256",
+  webgl2: "capabilityReportSha256",
+} as const satisfies Record<LinuxHandheldCapability, keyof LinuxHandheldValidationV1["artifacts"]>;
+
 type UnknownRecord = Record<string, unknown>;
 const hashPattern = /^[a-f0-9]{64}$/;
 const idPattern = /^[a-z0-9][a-z0-9-]*$/;
@@ -306,6 +316,18 @@ export function validateLinuxHandheldValidation(value: unknown): ContractValidat
     const keys = ["screenshotSha256", "capabilityReportSha256", "offlineReportSha256", "storageReportSha256", "controllerReportSha256", "lifecycleReportSha256", "performanceReportSha256"] as const;
     exactKeys(artifacts, keys, "$.artifacts", errors);
     for (const key of keys) stringValue(artifacts[key], `$.artifacts.${key}`, errors, hashPattern);
+  }
+  if (Array.isArray(gaps) && artifacts) {
+    gaps.forEach((value, index) => {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) return;
+      const gap = value as UnknownRecord;
+      if (!(LINUX_HANDHELD_CAPABILITIES as readonly unknown[]).includes(gap.capability)) return;
+      const capability = gap.capability as LinuxHandheldCapability;
+      const evidenceField = LINUX_HANDHELD_CAPABILITY_EVIDENCE_FIELDS[capability];
+      if (typeof artifacts[evidenceField] === "string" && gap.evidenceSha256 !== artifacts[evidenceField]) {
+        errors.push(`$.capabilityGaps[${index}].evidenceSha256 must equal $.artifacts.${evidenceField} for ${capability}`);
+      }
+    });
   }
 
   const manual = record(root.manualReview, "$.manualReview", errors);
