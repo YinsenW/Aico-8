@@ -41,6 +41,7 @@ if [[ -z "$avd_path" || ! -f "$avd_path/config.ini" ]]; then
   avdmanager list avd | tee "$evidence_dir/avd-list.txt" >&2
   exit 1
 fi
+export ANDROID_AVD_HOME="$(dirname "$avd_path")"
 avd_config="$avd_path/config.ini"
 printf '%s\n' \
   'hw.lcd.width=1024' \
@@ -120,6 +121,7 @@ adb exec-out screencap -p > "$evidence_dir/square-host.png"
 {
   echo "profile_id=$profile_id"
   echo "avd_name=$avd_name"
+  echo "avd_home=$ANDROID_AVD_HOME"
   echo "api_level=$api_level"
   echo "wm_size=$wm_size"
   echo "wm_density=$wm_density"

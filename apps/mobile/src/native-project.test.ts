@@ -64,6 +64,7 @@ describe("Capacitor Android host project", () => {
     const emulatorRunner = read("../../scripts/run-android-square-emulator.sh");
     expect(emulatorRunner).toContain('profile_id="aico8-square-api35"');
     expect(emulatorRunner).toContain('avdmanager list avd | awk');
+    expect(emulatorRunner).toContain('export ANDROID_AVD_HOME="$(dirname "$avd_path")"');
     expect(emulatorRunner).toContain("adb shell wm size 1024x1024");
     expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
     expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
