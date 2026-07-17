@@ -1,6 +1,6 @@
 # PICO-8 graphics semantics baseline
 
-- Status: maintained implementation reference; edge-raster details require official probes
+- Status: maintained implementation reference; the declared curved-raster slice is officially qualified
 - Primary source: PICO-8 User Manual v0.2.7
 - Last reviewed: 2026-07-16
 
@@ -89,7 +89,11 @@ geometry approximation. Ellipses use an integer bounding-box raster on native
 and Wasm; rounded rectangles interpret width and height as pixel counts, reject
 non-positive dimensions, and clamp radius to `0..min(width,height)/2`. Native,
 VM, Wasm, and Web tests cover all four curved primitive APIs and their semantic
-draw commands. Exact official edge pixels remain a golden-capture requirement.
+draw commands. The authorized Education 0.2.7 curved-raster probe now matches
+all 38 declared events, and an independent live 128x128 canvas-backing-store
+capture matches the production-Wasm candidate with zero exact RGBA differences.
+This qualifies only the probe's ellipse and rounded-rectangle edge cases,
+inverted fills, active display-palette sample, and origin marker.
 
 The expectation probe records row 10 of `0xabcd` as `4,4,14,14`: `fillp` tiles
 by absolute screen row, so row 10 consumes pattern row 2 rather than row 0.
@@ -124,9 +128,9 @@ presenters.
 
 ## Deliberately unresolved
 
-Authorized official runtime probes are still required for fixed-point edge rounding;
-exact line/circle/ellipse and inverted-fill edge pixels; embedded colour-argument
-state persistence; exact extended-palette RGB output and override edge behavior;
+Authorized official runtime probes are still required for fixed-point behavior
+outside the declared curved-raster fixture; broader line/circle edge cases;
+embedded colour-argument state persistence; extended-palette override edge behavior;
 upper-memory mapping conflicts; and draw-state byte packing not specified by the
 public manual.
 
@@ -135,8 +139,8 @@ disagreements, but they are not the compatibility oracle.
 
 ## Next qualification slice
 
-Capture authorized official-runtime goldens for ellipse and rounded-rectangle
-edges, embedded-state persistence, fixed-point input, extended-colour output,
-inverted fills, and other edge behavior. Apply any resulting corrections to the
+Capture authorized official-runtime goldens for the remaining line/circle and
+fixed-point boundaries, embedded-state persistence, input, extended-colour
+override behavior, and other uncaptured edges. Apply any resulting corrections to the
 single shared raster and keep indexed-frame tests and semantic-command output
 paired so the HD presentation bridge never invents separate semantics.

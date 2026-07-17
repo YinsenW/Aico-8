@@ -27,6 +27,7 @@ const runtimeAsset = value('--runtime-asset')
 const runtimeAssetUrl = value('--runtime-asset-url')
 const browserName = value('--browser-name')
 const browserVersion = value('--browser-version')
+const loadMethod = value('--load-method') ?? 'local-cart-file-selection'
 const cart = value('--cart')
 const sourceDirectory = value('--source-dir')
 const eventLog = value('--event-log')
@@ -36,13 +37,14 @@ const authorized = args.includes('--authorized-official-education-runtime')
 const declared = args.includes('--operator-artifact-declaration')
 
 if (!runtimeVersion || !runtimeAsset || !runtimeAssetUrl || !browserName || !browserVersion
-    || !cart || !sourceDirectory || !eventLog || !output || artifacts.length === 0
+    || !cart || !sourceDirectory || !eventLog || !output
     || !authorized || !declared) {
   process.stderr.write('Usage: node scripts/import-official-education-probe.mjs '
     + '--authorized-official-education-runtime --operator-artifact-declaration '
     + '--runtime-version <version> --runtime-asset <official-js> '
     + '--runtime-asset-url <https://www.pico-8-edu.com/play/...js> '
     + '--browser-name <name> --browser-version <version> --cart <probe.p8> '
+    + '[--load-method local-cart-file-selection|official-drag-drop-data-path] '
     + '--source-dir <private-staging-dir> --event-log <relative-log.txt> '
     + '--output <captures/official/...json> --artifact <relative.png|relative.wav|relative.csv> [... ]\n')
   process.exit(2)
@@ -87,6 +89,7 @@ const capture = buildOfficialEducationProbeCapture({
   cartSha256: sha256File(cartPath),
   browserName,
   browserVersion,
+  loadMethod,
   eventLogSha256: sha256File(eventLogPath),
   output: eventOutput,
   attachments: collected.attachments,

@@ -38,15 +38,20 @@ function extractSourceOnlyProbe(cart: Buffer): Buffer {
   if (!lua || lua.index === undefined) throw new Error("Probe cart has no __lua__ section");
   const start = lua.index + lua[0].length;
   const remainder = text.slice(start).replace(/^\r?\n/, "");
-  if (/^__[a-z0-9_]+__\r?$/m.test(remainder)) {
-    throw new Error("Curved-raster candidate capture accepts only a source-only probe; decode resources explicitly for other probes");
+  const section = /^__([a-z0-9_]+)__\r?$/m.exec(remainder);
+  const source = section?.index === undefined ? remainder : remainder.slice(0, section.index);
+  const resources = section?.index === undefined ? "" : remainder.slice(section.index + section[0].length);
+  if (section && (section[1] !== "gfx" || resources.trim() !== "")) {
+    throw new Error("Curved-raster candidate capture accepts source-only probes or an empty __gfx__ terminator");
   }
-  if (remainder.trim() === "") throw new Error("Probe Lua source is empty");
-  return Buffer.from(remainder, "utf8");
+  if (source.trim() === "") throw new Error("Probe Lua source is empty");
+  return Buffer.from(source, "utf8");
 }
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const arguments_ = argumentsMap(process.argv.slice(2));
+const rawArguments = process.argv.slice(2);
+const visualOnly = rawArguments.includes("--visual-only");
+const arguments_ = argumentsMap(rawArguments.filter((argument) => argument !== "--visual-only"));
 const cartPath = path.resolve(arguments_.get("cart") ?? "");
 const outputPath = path.resolve(arguments_.get("output") ?? "");
 assert.ok(arguments_.get("cart"), "--cart is required");
@@ -99,8 +104,9 @@ try {
   assert.equal(kernel._aico8_initialization_complete(runtime), 1,
     "Curved-raster probe unexpectedly suspended during initialization");
   const diagnosticPointer = kernel._aico8_diagnostic_output(runtime);
-  const events = parseProbeEvents(diagnosticPointer ? kernel.UTF8ToString(diagnosticPointer) : "");
-  assert.ok(events.length > 0, "Curved-raster probe emitted no comparable events");
+  const diagnosticEvents = parseProbeEvents(diagnosticPointer ? kernel.UTF8ToString(diagnosticPointer) : "");
+  assert.ok(diagnosticEvents.length > 0, "Curved-raster probe emitted no capture-ready event");
+  const events = visualOnly ? [] : diagnosticEvents;
   const framebufferPointer = kernel._aico8_framebuffer(runtime);
   const framebufferSize = kernel._aico8_framebuffer_size();
   assert.equal(framebufferSize, 128 * 128, "Candidate framebuffer dimensions changed");
