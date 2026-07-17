@@ -44,7 +44,23 @@
       "revision": "5d927d086b6fec199bfa40614662e74a1169e4ac",
       "runId": 29545742718
     },
-    "namedSquareApi35Emulator": "implemented-ci-pending"
+    "namedSquareApi35Emulator": {
+      "status": "passed",
+      "revision": "1334536a84e3522450fdd41ba983c346ea82cfb1",
+      "runId": 29547551430,
+      "jobId": 87783023505,
+      "artifactId": 8394650066,
+      "artifactName": "android-square-api35-7332fc7c4b1a58367c8acd8ebf8ffb1fe93ab003",
+      "profileId": "aico8-square-api35",
+      "apiLevel": 35,
+      "physicalPixels": "1024x1024",
+      "densityDpi": 320,
+      "networkMode": "airplane-wifi-off-data-off",
+      "instrumentationTests": 2,
+      "instrumentationOutcome": "passed",
+      "readyHostScreenshot": "passed-1024x1024-png",
+      "coldLaunchMilliseconds": 1894
+    }
   },
   "localBuildEnvironment": {
     "javaRuntime": "missing-apple-command-shim-only",
@@ -56,7 +72,6 @@
     "gradleWrapperResult": "blocked-before-gradle-unable-to-locate-java-runtime"
   },
   "acceptanceStillRequired": [
-    "named API 35 1024-square emulator lifecycle, resume, offline local-host, touch, and storage result",
     "audio-focus interruption and recovery on a named physical device",
     "real controller, vendor WebView, and sustained gameplay performance evidence on named physical profiles",
     "release-key and store-policy decision independent of research CI signing"
