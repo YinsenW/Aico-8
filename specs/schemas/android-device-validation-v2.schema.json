@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aico8.dev/schemas/android-device-validation-v1.schema.json",
-  "title": "Aico 8 Android physical-device validation v1",
+  "$id": "https://aico8.dev/schemas/android-device-validation-v2.schema.json",
+  "title": "Aico 8 Android physical-device validation v2",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "capturedAt", "subject", "device", "automatedChecks", "artifacts", "manualReview", "status"],
@@ -12,17 +12,18 @@
     "manualStatus": { "enum": ["pending", "passed", "failed"] }
   },
   "properties": {
-    "schemaVersion": { "const": "aico8.android-device-validation.v1" },
+    "schemaVersion": { "const": "aico8.android-device-validation.v2" },
     "capturedAt": { "type": "string", "format": "date-time" },
     "subject": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["applicationId", "apkSha256", "androidWebLineageSha256", "targetProfileId"],
+      "required": ["applicationId", "apkSha256", "androidWebLineageSha256", "targetProfileId", "targetProfileSha256"],
       "properties": {
         "applicationId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$" },
         "apkSha256": { "$ref": "#/$defs/sha256" },
         "androidWebLineageSha256": { "$ref": "#/$defs/sha256" },
-        "targetProfileId": { "$ref": "#/$defs/id" }
+        "targetProfileId": { "$ref": "#/$defs/id" },
+        "targetProfileSha256": { "$ref": "#/$defs/sha256" }
       }
     },
     "device": {
@@ -65,25 +66,45 @@
     "automatedChecks": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["singleAuthorizedDevice", "physicalDevice", "apkInstalled", "offlineMode", "instrumentationPassed", "readyScreenshotCaptured", "controllerEnumerated", "coldLaunchMilliseconds"],
+      "required": ["singleAuthorizedDevice", "physicalDevice", "apkInstalled", "offlineMode", "instrumentationPassed", "orientationChangePassed", "readyScreenshotCaptured", "controllerEnumerated", "coldLaunchMilliseconds", "performance"],
       "properties": {
         "singleAuthorizedDevice": { "type": "boolean" },
         "physicalDevice": { "type": "boolean" },
         "apkInstalled": { "type": "boolean" },
         "offlineMode": { "type": "boolean" },
         "instrumentationPassed": { "type": "boolean" },
+        "orientationChangePassed": { "type": "boolean" },
         "readyScreenshotCaptured": { "type": "boolean" },
         "controllerEnumerated": { "type": "boolean" },
-        "coldLaunchMilliseconds": { "type": "number", "minimum": 0 }
+        "coldLaunchMilliseconds": { "type": "number", "minimum": 0 },
+        "performance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["captureSeconds", "warmupFrames", "requiredSampleFrames", "observedSampleFrames", "droppedFrameThresholdMilliseconds", "startupMillisecondsMax", "p95FrameMillisecondsMax", "droppedFrameRatioMax", "p95FrameMilliseconds", "droppedFrameRatio", "budgetPassed"],
+          "properties": {
+            "captureSeconds": { "type": "number", "minimum": 60 },
+            "warmupFrames": { "type": "integer", "minimum": 0 },
+            "requiredSampleFrames": { "type": "integer", "minimum": 1 },
+            "observedSampleFrames": { "type": "integer", "minimum": 0 },
+            "droppedFrameThresholdMilliseconds": { "type": "number", "exclusiveMinimum": 0 },
+            "startupMillisecondsMax": { "type": "number", "exclusiveMinimum": 0 },
+            "p95FrameMillisecondsMax": { "type": "number", "exclusiveMinimum": 0 },
+            "droppedFrameRatioMax": { "type": "number", "minimum": 0, "maximum": 1 },
+            "p95FrameMilliseconds": { "type": "number", "minimum": 0 },
+            "droppedFrameRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+            "budgetPassed": { "type": "boolean" }
+          }
+        }
       }
     },
     "artifacts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["screenshotSha256", "instrumentationSha256", "logcatSha256", "inputDevicesSha256", "gfxInfoSha256"],
+      "required": ["screenshotSha256", "instrumentationSha256", "orientationSha256", "logcatSha256", "inputDevicesSha256", "gfxInfoSha256"],
       "properties": {
         "screenshotSha256": { "$ref": "#/$defs/sha256" },
         "instrumentationSha256": { "$ref": "#/$defs/sha256" },
+        "orientationSha256": { "$ref": "#/$defs/sha256" },
         "logcatSha256": { "$ref": "#/$defs/sha256" },
         "inputDevicesSha256": { "$ref": "#/$defs/sha256" },
         "gfxInfoSha256": { "$ref": "#/$defs/sha256" }

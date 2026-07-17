@@ -1,7 +1,8 @@
 import type { ContractValidationResult } from "./release.js";
 
-export const ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION = "aico8.android-device-validation.v1" as const;
+export const ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION = "aico8.android-device-validation.v2" as const;
 export const ANDROID_DEVICE_MANUAL_DECISION_SCHEMA_VERSION = "aico8.android-device-manual-decision.v1" as const;
+export const ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS = 60 as const;
 export const ANDROID_DEVICE_MANUAL_CHECKS = [
   "audioFocusInterruptionRecovery",
   "controllerGameplay",
@@ -22,7 +23,7 @@ export interface AndroidDeviceManualDecisionV1 {
   readonly checks: Record<AndroidDeviceManualCheck, AndroidDeviceDecidedStatus>;
 }
 
-export interface AndroidPhysicalDeviceValidationV1 {
+export interface AndroidPhysicalDeviceValidationV2 {
   readonly schemaVersion: typeof ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION;
   readonly capturedAt: string;
   readonly subject: {
@@ -30,6 +31,7 @@ export interface AndroidPhysicalDeviceValidationV1 {
     readonly apkSha256: string;
     readonly androidWebLineageSha256: string;
     readonly targetProfileId: string;
+    readonly targetProfileSha256: string;
   };
   readonly device: {
     readonly profileId: string;
@@ -56,13 +58,28 @@ export interface AndroidPhysicalDeviceValidationV1 {
     readonly apkInstalled: boolean;
     readonly offlineMode: boolean;
     readonly instrumentationPassed: boolean;
+    readonly orientationChangePassed: boolean;
     readonly readyScreenshotCaptured: boolean;
     readonly controllerEnumerated: boolean;
     readonly coldLaunchMilliseconds: number;
+    readonly performance: {
+      readonly captureSeconds: number;
+      readonly warmupFrames: number;
+      readonly requiredSampleFrames: number;
+      readonly observedSampleFrames: number;
+      readonly droppedFrameThresholdMilliseconds: number;
+      readonly startupMillisecondsMax: number;
+      readonly p95FrameMillisecondsMax: number;
+      readonly droppedFrameRatioMax: number;
+      readonly p95FrameMilliseconds: number;
+      readonly droppedFrameRatio: number;
+      readonly budgetPassed: boolean;
+    };
   };
   readonly artifacts: {
     readonly screenshotSha256: string;
     readonly instrumentationSha256: string;
+    readonly orientationSha256: string;
     readonly logcatSha256: string;
     readonly inputDevicesSha256: string;
     readonly gfxInfoSha256: string;
@@ -119,6 +136,14 @@ function positiveInteger(value: unknown, path: string, errors: string[]): value 
   return true;
 }
 
+function nonNegativeInteger(value: unknown, path: string, errors: string[]): value is number {
+  if (!Number.isSafeInteger(value) || (value as number) < 0) {
+    errors.push(`${path} must be a non-negative integer`);
+    return false;
+  }
+  return true;
+}
+
 function booleanValue(value: unknown, path: string, errors: string[]): value is boolean {
   if (typeof value !== "boolean") {
     errors.push(`${path} must be a boolean`);
@@ -128,7 +153,7 @@ function booleanValue(value: unknown, path: string, errors: string[]): value is 
 }
 
 export function expectedAndroidDeviceValidationStatus(
-  value: Pick<AndroidPhysicalDeviceValidationV1, "device" | "automatedChecks" | "manualReview">,
+  value: Pick<AndroidPhysicalDeviceValidationV2, "device" | "automatedChecks" | "manualReview">,
 ): AndroidDeviceValidationStatus {
   const automated = value.automatedChecks;
   if (
@@ -138,8 +163,11 @@ export function expectedAndroidDeviceValidationStatus(
     || !automated.apkInstalled
     || !automated.offlineMode
     || !automated.instrumentationPassed
+    || !automated.orientationChangePassed
     || !automated.readyScreenshotCaptured
     || !automated.controllerEnumerated
+    || automated.coldLaunchMilliseconds > automated.performance.startupMillisecondsMax
+    || !automated.performance.budgetPassed
   ) return "failed";
   const manual = Object.values(value.manualReview.checks);
   if (manual.includes("failed")) return "failed";
@@ -161,11 +189,12 @@ export function validateAndroidPhysicalDeviceValidation(value: unknown): Contrac
 
   const subject = record(root.subject, "$.subject", errors);
   if (subject) {
-    exactKeys(subject, ["applicationId", "apkSha256", "androidWebLineageSha256", "targetProfileId"], "$.subject", errors);
+    exactKeys(subject, ["applicationId", "apkSha256", "androidWebLineageSha256", "targetProfileId", "targetProfileSha256"], "$.subject", errors);
     stringMatching(subject.applicationId, applicationIdPattern, "$.subject.applicationId", errors);
     stringMatching(subject.apkSha256, hashPattern, "$.subject.apkSha256", errors);
     stringMatching(subject.androidWebLineageSha256, hashPattern, "$.subject.androidWebLineageSha256", errors);
     stringMatching(subject.targetProfileId, idPattern, "$.subject.targetProfileId", errors);
+    stringMatching(subject.targetProfileSha256, hashPattern, "$.subject.targetProfileSha256", errors);
   }
 
   const device = record(root.device, "$.device", errors);
@@ -196,17 +225,69 @@ export function validateAndroidPhysicalDeviceValidation(value: unknown): Contrac
 
   const automated = record(root.automatedChecks, "$.automatedChecks", errors);
   if (automated) {
-    const keys = ["singleAuthorizedDevice", "physicalDevice", "apkInstalled", "offlineMode", "instrumentationPassed", "readyScreenshotCaptured", "controllerEnumerated", "coldLaunchMilliseconds"] as const;
+    const keys = ["singleAuthorizedDevice", "physicalDevice", "apkInstalled", "offlineMode", "instrumentationPassed", "orientationChangePassed", "readyScreenshotCaptured", "controllerEnumerated", "coldLaunchMilliseconds", "performance"] as const;
     exactKeys(automated, keys, "$.automatedChecks", errors);
-    for (const key of keys.slice(0, -1)) booleanValue(automated[key], `$.automatedChecks.${key}`, errors);
+    for (const key of ["singleAuthorizedDevice", "physicalDevice", "apkInstalled", "offlineMode", "instrumentationPassed", "orientationChangePassed", "readyScreenshotCaptured", "controllerEnumerated"] as const) {
+      booleanValue(automated[key], `$.automatedChecks.${key}`, errors);
+    }
     if (typeof automated.coldLaunchMilliseconds !== "number" || automated.coldLaunchMilliseconds < 0) {
       errors.push("$.automatedChecks.coldLaunchMilliseconds must be a non-negative number");
+    }
+    const performance = record(automated.performance, "$.automatedChecks.performance", errors);
+    if (performance) {
+      const performanceKeys = ["captureSeconds", "warmupFrames", "requiredSampleFrames", "observedSampleFrames", "droppedFrameThresholdMilliseconds", "startupMillisecondsMax", "p95FrameMillisecondsMax", "droppedFrameRatioMax", "p95FrameMilliseconds", "droppedFrameRatio", "budgetPassed"] as const;
+      exactKeys(performance, performanceKeys, "$.automatedChecks.performance", errors);
+      if (typeof performance.captureSeconds !== "number" || performance.captureSeconds < ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS) {
+        errors.push(`$.automatedChecks.performance.captureSeconds must be >= ${ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS}`);
+      }
+      nonNegativeInteger(performance.warmupFrames, "$.automatedChecks.performance.warmupFrames", errors);
+      positiveInteger(performance.requiredSampleFrames, "$.automatedChecks.performance.requiredSampleFrames", errors);
+      nonNegativeInteger(performance.observedSampleFrames, "$.automatedChecks.performance.observedSampleFrames", errors);
+      for (const key of ["droppedFrameThresholdMilliseconds", "startupMillisecondsMax", "p95FrameMillisecondsMax"] as const) {
+        if (typeof performance[key] !== "number" || !Number.isFinite(performance[key]) || (performance[key] as number) <= 0) {
+          errors.push(`$.automatedChecks.performance.${key} must be a positive finite number`);
+        }
+      }
+      if (
+        typeof performance.droppedFrameRatioMax !== "number"
+        || !Number.isFinite(performance.droppedFrameRatioMax)
+        || performance.droppedFrameRatioMax < 0
+        || performance.droppedFrameRatioMax > 1
+      ) errors.push("$.automatedChecks.performance.droppedFrameRatioMax must be between 0 and 1");
+      if (
+        typeof performance.p95FrameMilliseconds !== "number"
+        || !Number.isFinite(performance.p95FrameMilliseconds)
+        || performance.p95FrameMilliseconds < 0
+      ) errors.push("$.automatedChecks.performance.p95FrameMilliseconds must be a non-negative finite number");
+      if (
+        typeof performance.droppedFrameRatio !== "number"
+        || !Number.isFinite(performance.droppedFrameRatio)
+        || performance.droppedFrameRatio < 0
+        || performance.droppedFrameRatio > 1
+      ) errors.push("$.automatedChecks.performance.droppedFrameRatio must be between 0 and 1");
+      booleanValue(performance.budgetPassed, "$.automatedChecks.performance.budgetPassed", errors);
+      if (
+        Number.isSafeInteger(performance.requiredSampleFrames)
+        && Number.isSafeInteger(performance.observedSampleFrames)
+        && typeof performance.p95FrameMilliseconds === "number"
+        && typeof performance.p95FrameMillisecondsMax === "number"
+        && typeof performance.droppedFrameRatio === "number"
+        && typeof performance.droppedFrameRatioMax === "number"
+        && typeof performance.budgetPassed === "boolean"
+      ) {
+        const expectedBudgetPassed = (performance.observedSampleFrames as number) >= (performance.requiredSampleFrames as number)
+          && performance.p95FrameMilliseconds <= performance.p95FrameMillisecondsMax
+          && performance.droppedFrameRatio <= performance.droppedFrameRatioMax;
+        if (performance.budgetPassed !== expectedBudgetPassed) {
+          errors.push(`$.automatedChecks.performance.budgetPassed must equal derived value ${expectedBudgetPassed}`);
+        }
+      }
     }
   }
 
   const artifacts = record(root.artifacts, "$.artifacts", errors);
   if (artifacts) {
-    const keys = ["screenshotSha256", "instrumentationSha256", "logcatSha256", "inputDevicesSha256", "gfxInfoSha256"] as const;
+    const keys = ["screenshotSha256", "instrumentationSha256", "orientationSha256", "logcatSha256", "inputDevicesSha256", "gfxInfoSha256"] as const;
     exactKeys(artifacts, keys, "$.artifacts", errors);
     for (const key of keys) stringMatching(artifacts[key], hashPattern, `$.artifacts.${key}`, errors);
   }
@@ -244,7 +325,7 @@ export function validateAndroidPhysicalDeviceValidation(value: unknown): Contrac
   }
 
   if (errors.length === 0) {
-    const report = value as AndroidPhysicalDeviceValidationV1;
+    const report = value as AndroidPhysicalDeviceValidationV2;
     const expected = expectedAndroidDeviceValidationStatus(report);
     if (report.status !== expected) errors.push(`$.status must equal derived status ${expected}`);
   }

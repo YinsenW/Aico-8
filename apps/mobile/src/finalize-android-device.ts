@@ -2,7 +2,7 @@ import {
   validateAndroidDeviceManualDecision,
   validateAndroidPhysicalDeviceValidation,
   type AndroidDeviceManualDecisionV1,
-  type AndroidPhysicalDeviceValidationV1,
+  type AndroidPhysicalDeviceValidationV2,
 } from "@aico8/contracts";
 import fs from "node:fs";
 import path from "node:path";
@@ -29,7 +29,7 @@ const decisionValidation = validateAndroidDeviceManualDecision(decisionUnknown);
 if (!decisionValidation.ok) throw new Error(`Invalid device manual decision: ${decisionValidation.errors.join("; ")}`);
 
 const finalized = applyAndroidDeviceManualDecision(
-  reportUnknown as AndroidPhysicalDeviceValidationV1,
+  reportUnknown as AndroidPhysicalDeviceValidationV2,
   sha256(reportBytes),
   decisionUnknown as AndroidDeviceManualDecisionV1,
   sha256(decisionBytes),
