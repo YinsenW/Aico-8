@@ -6,7 +6,6 @@
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
 The complete browser remake unlocks Android; finish that shared-Web-host boundary before Linux. Collection, ESP32, and final Skill remain later unless focus changes.
-
 ## Implementation loop
 1. Write or adjust the smallest failing test/checkpoint that represents the exit.
 2. Change code behind the owning API or data contract.
@@ -24,7 +23,6 @@ Production Web, Android/Linux Web hosts, CLI, pipeline, presentation, and asset-
 C++ remains confined to the current compatibility kernel while the proposed Rust spike in ADR 0002 is evaluated.
 Implementation never changes a requirement's wording. If product intent must change, update the PRD first and update its contract references in the same PR.
 Architecture changes require an ADR.
-
 ## Selector catalog
 
 The exact catalog and availability are machine-owned by `governance/project.json`. Current top-level checks are:
@@ -33,8 +31,9 @@ The exact catalog and availability are machine-owned by `governance/project.json
 node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
-node --test scripts/lib/official-probe-capture.test.mjs scripts/lib/official-probe-comparison.test.mjs
+node --test scripts/lib/live-frame-normalization.test.mjs scripts/lib/official-probe-capture.test.mjs scripts/lib/official-probe-comparison.test.mjs
 make -C runtime/core wasm && node --test scripts/capture-implementation-curved-raster.test.mjs
+pnpm verify:official-raster-private
 node --test scripts/smoke-private-cart-native.test.mjs scripts/smoke-private-cart.test.mjs
 pnpm verify:rust
 pnpm verify:rust-spike
@@ -166,6 +165,7 @@ Local supervised research uses the project owner's explicit recorded decision; d
 
 - Compatibility mismatch: isolate update number, input trace, RAM/state snapshot, raster/audio checkpoint, then compare against authorized official evidence. Prefer
   Education Edition for Web/raster probes: record its single file-selection handoff, then automate staging, hashing, import, and comparison; use licensed desktop PICO-8 for native export or unsupported versions.
+  For exact live-frame evidence, capture the 128x128 canvas backing-store PNG before shell resume and require uniform integer scaling plus the canonical origin marker; reject JPEG, overlays, repairs, quantization, and browser-colour-transformed page PNGs from RGBA qualification.
 - Completion mismatch: first replay the unchanged cart using only recorded
   button masks. Keep hook-driven reachability separately labeled and never use it
   to close a level, ending, game, or qualification exit.

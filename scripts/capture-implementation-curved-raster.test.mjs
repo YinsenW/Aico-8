@@ -15,11 +15,12 @@ const expected = JSON.parse(fs.readFileSync(
   'utf8',
 ))
 
-function runCapture(output) {
+function runCapture(output, cart = 'tests/conformance/probes/curved_raster.p8', extra = []) {
   const result = spawnSync('corepack', [
     'pnpm', 'exec', 'tsx', 'scripts/capture-implementation-curved-raster.ts',
-    '--cart', 'tests/conformance/probes/curved_raster.p8',
+    '--cart', cart,
     '--output', output,
+    ...extra,
   ], { cwd: repository, encoding: 'utf8' })
   assert.equal(result.status, 0, result.stderr)
   return JSON.parse(fs.readFileSync(output, 'utf8'))
@@ -52,6 +53,28 @@ test('production Wasm emits a deterministic source-bound curved-raster candidate
     ))
     assert.equal(png.width, 128)
     assert.equal(png.height, 128)
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('visual-only capture accepts the Education-safe empty gfx terminator', () => {
+  const directory = path.join(
+    repository,
+    'captures/official',
+    `public-wasm-live-candidate-${process.pid}-${Date.now()}`,
+  )
+  try {
+    const output = path.join(directory, 'candidate.json')
+    const capture = runCapture(
+      output,
+      'tests/conformance/probes/curved_raster_live.p8',
+      ['--visual-only'],
+    )
+    assert.deepEqual(capture.events, [])
+    assert.equal(capture.attachments[0].sourceRelativePath, 'curved_raster.png')
+    assert.deepEqual(validateImplementationProbeCapture(capture), [])
+    assert.deepEqual(validateOfficialProbeArtifactFiles(capture, output), [])
   } finally {
     fs.rmSync(directory, { recursive: true, force: true })
   }

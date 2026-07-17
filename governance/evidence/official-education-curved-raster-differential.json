@@ -1,14 +1,14 @@
 {
   "schemaVersion": "aico8.official-differential-evidence.v1",
-  "recordedAt": "2026-07-17T14:07:00+08:00",
-  "status": "event-match-visual-recapture-required",
+  "recordedAt": "2026-07-17T16:15:00+08:00",
+  "status": "event-and-live-rgba-matched",
   "channel": {
     "provider": "Lexaloffle",
     "product": "PICO-8 Education Edition",
     "version": "0.2.7",
     "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
     "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
-    "browser": "Google Chrome 150.0.7871.125"
+    "browser": "Codex In-app Browser, Chromium 150.0.0.0"
   },
   "authorization": {
     "status": "granted",
@@ -18,7 +18,10 @@
   "probe": {
     "path": "tests/conformance/probes/curved_raster.p8",
     "sha256": "ff909e7942c68e459713deefb136e0c3ea379efe207d6e69895a3ee5f5d026e6",
-    "sanitizedExpectedEvents": "tests/conformance/expected/curved_raster.json"
+    "sanitizedExpectedEvents": "tests/conformance/expected/curved_raster.json",
+    "liveFramePath": "tests/conformance/probes/curved_raster_live.p8",
+    "liveFrameSha256": "57e7a65c861057668b45a1b729d6f64cc6052b1db04bb07508dd2c3820e57cf7",
+    "liveFrameBoundary": "An empty __gfx__ terminator closes the Lua function section for the Education drag/drop parser; it carries no game resources and changes no raster semantics."
   },
   "officialCapture": {
     "captureSha256": "24fd9880749f9140ed4864bfdafc8cf06e2bd5e0a427a536bcd7623843399d76",
@@ -46,22 +49,50 @@
     }
   },
   "visualDifferential": {
-    "status": "capture-ineligible-recapture-required",
-    "reason": "In the browser screenshot captured after the Education shell resumed, a two-logical-row registration offset and an overlay on rows 0..7 were observed, and the display palette may have reset. The cause of the offset is not established. The normalized PNG is retained only as pipeline/debug evidence and is not an official framebuffer golden.",
-    "diagnosticAlignment": "After applying only the observed two-row host offset, all pixels in the four base-palette oval, ovalfill, rrect, and rrectfill regions match the fixed candidate. This diagnoses geometry but is not accepted as an RGBA conformance result.",
-    "captureProcess": {
-      "devicePixelRatio": 2,
-      "physicalPixelsPerLogicalPixel": 12,
-      "sampling": "center sample of each 12x12 physical block",
-      "quantization": "nearest colour from the probe-declared base and extended palette set",
-      "normalizedRows": "0..7 replaced with cls(1) because of shell overlay"
+    "status": "matched",
+    "rejectedAttempt": {
+      "status": "ineligible",
+      "reason": "The first screenshot was captured after the Education shell resumed and contained a two-row registration offset, shell overlay, and possible display-palette reset. Its row replacement and palette quantization remain diagnostic only.",
+      "browserScreenshot": {
+        "sha256": "d24fea2811486010675202fa0404026ebe29a6a46e4fc4502489816adb317014",
+        "detectedMediaType": "image/jpeg",
+        "rejection": "Ordinary browser screenshots are lossy and cannot serve as exact RGBA evidence."
+      }
     },
-    "nextAction": "Capture a declared live cart frame with an origin marker while the display palette is active, then run the immutable exact RGBA comparator again."
+    "rejectedPageRenderedCapture": {
+      "status": "rejected-input-colour-transform",
+      "sha256": "af85e1bcb1e0bf8c05ffa041cf57bc6d24e157c6bf596e452d7a6fea162ab7ce",
+      "dimensions": [1280, 1280],
+      "physicalPixelsPerLogicalPixel": 10,
+      "reason": "CDP page rendering produced lossless PNG but applied the browser display colour transform; marker colour 8 became 255,0,68 and rendered extended 143 became 255,146,118. It is visual documentation, not the framebuffer oracle."
+    },
+    "acceptedLiveCapture": {
+      "status": "matched",
+      "delivery": "The public probe was supplied through the official page's documented drag/drop data path (p8_dropped_cart data URL followed by codo_command=9) and executed by Education 0.2.7.",
+      "capture": "The live 128x128 canvas backing store was read as image/png before shell resume; no page rendering, row repair, palette quantization, or pixel synthesis was applied.",
+      "rawCanvasPngSha256": "6fc3815f5bd29383dae6e3ce7d43ae911c42a44288dfa3ea58ad19a3b3cd2516",
+      "normalizedPngSha256": "31718eb4e4df1f760fb69c673260392eaa3bd434cc0cdf45758a8f2464938013",
+      "officialCaptureSha256": "135cae6d483d2d5df636089fcc4688fde84c8e9302dffccd26f5e2039641e5c0",
+      "candidateCaptureSha256": "d773b44f2a26a03302344f7768b15be638d10209b28c45b7ae417375d20ea92b",
+      "comparisonSha256": "268d894eda2482576649e3aba205bc0dac9d7f816cb82f032e0533ce95b99c50",
+      "dimensions": [128, 128],
+      "normalizationScale": 1,
+      "originMarker": {
+        "logicalPixels": [[0, 0], [1, 0], [0, 1], [1, 1]],
+        "paletteIndices": [8, 9, 10, 11],
+        "rgba": [[255, 0, 77, 255], [255, 163, 0, 255], [255, 236, 39, 255], [0, 228, 54, 255]]
+      },
+      "extendedPalette143Rgba": [255, 157, 129, 255],
+      "eventMismatchCount": 0,
+      "rgbaMismatchCount": 0,
+      "privateArtifactsCommitted": false
+    }
   },
   "claims": {
     "provesAuthorizedEducationReachability": true,
     "provesOfficialEventCompatibilityForThisProbe": true,
-    "provesOfficialPixelCompatibility": false,
+    "provesOfficialPixelCompatibilityForCurvedRasterScope": true,
+    "provesCompleteOfficialCompatibility": false,
     "provesAudioCompatibility": false,
     "provesBroaderStateInputPersistenceCompatibility": false,
     "grantsCartPublicationRights": false

@@ -11,6 +11,10 @@ export const OFFICIAL_ORACLE_CHANNELS = Object.freeze({
   education: 'education-web-authorized',
 })
 export const OFFICIAL_EDUCATION_PAGE_URL = 'https://www.pico-8-edu.com/'
+export const OFFICIAL_EDUCATION_LOAD_METHODS = Object.freeze([
+  'local-cart-file-selection',
+  'official-drag-drop-data-path',
+])
 const EVENT_PREFIX = 'p8probe|'
 
 export function sha256File(file) {
@@ -163,8 +167,8 @@ export function validateOfficialProbeCapture(capture, expectedEvents) {
         && path.posix.basename(url.pathname) === provenance?.runtimeAssetFilename
     } catch {}
     if (!trustedAsset) errors.push('Education runtime asset must use the official pico-8-edu.com/play/ origin')
-    if (provenance?.manualStep !== 'local-cart-file-selection') {
-      errors.push('Education capture must record the bounded local-cart-file-selection step')
+    if (!OFFICIAL_EDUCATION_LOAD_METHODS.includes(provenance?.manualStep)) {
+      errors.push('Education capture must record a bounded official cart-load method')
     }
     for (const field of ['runtimeAssetFilename', 'browserName', 'browserVersion', 'eventLogSha256']) {
       if (typeof provenance?.[field] !== 'string' || provenance[field].trim() === '') {
@@ -254,6 +258,7 @@ export function buildOfficialEducationProbeCapture({
   cartSha256,
   browserName,
   browserVersion,
+  loadMethod = 'local-cart-file-selection',
   eventLogSha256,
   output,
   attachments = [],
@@ -285,7 +290,7 @@ export function buildOfficialEducationProbeCapture({
       runtimeAssetFilename,
       browserName,
       browserVersion,
-      manualStep: 'local-cart-file-selection',
+      manualStep: loadMethod,
       eventLogSha256,
     },
   }

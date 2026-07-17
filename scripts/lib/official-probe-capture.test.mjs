@@ -135,7 +135,7 @@ test('rejects Education captures with untrusted origin or missing bounded declar
   assert.deepEqual(validateOfficialProbeCapture(capture), [
     'Education capture requires official-runtime and operator-artifact declarations',
     'Education runtime asset must use the official pico-8-edu.com/play/ origin',
-    'Education capture must record the bounded local-cart-file-selection step',
+    'Education capture must record a bounded official cart-load method',
   ])
 })
 
@@ -150,7 +150,11 @@ test('checked-in capture plans match the files emitted by raster and audio probe
   assert.match(curved.education_capture_command, /import:official-education-probe/)
   assert.match(curved.education_capture_command, /--operator-artifact-declaration/)
   assert.doesNotMatch(curved.education_capture_command, /--artifact/)
-  assert.match(curved.education_capture_scope, /events-only/)
+  assert.equal(curved.visual_probe, 'probes/curved_raster_live.p8')
+  assert.match(curved.education_capture_scope, /canvas backing-store PNG/)
+  assert.match(curved.visual_education_capture_command, /--load-method official-drag-drop-data-path/)
+  assert.match(curved.visual_education_capture_command, /--artifact curved_raster\.png/)
+  assert.match(curved.visual_candidate_command, /--visual-only/)
   const curvedProbe = fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/probes/curved_raster.p8'),
     'utf8',
@@ -274,6 +278,49 @@ test('Education CLI smoke imports a manually staged official Web capture end to 
     assert.deepEqual(capture.events, [['edge', 'ok']])
     assert.deepEqual(validateOfficialProbeCapture(capture), [])
     assert.deepEqual(validateOfficialProbeArtifactFiles(capture, output), [])
+  } finally {
+    fs.rmSync(captureDirectory, { recursive: true, force: true })
+    fs.rmSync(temporary, { recursive: true, force: true })
+  }
+})
+
+test('Education CLI accepts an artifact-free event capture and records the official drag/drop data path', () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'aico8-education-events-'))
+  const staging = path.join(temporary, 'staging')
+  const runtimeAsset = path.join(temporary, 'pico8_edu_0207.js')
+  const cart = path.join(temporary, 'probe.p8')
+  fs.mkdirSync(staging)
+  fs.writeFileSync(runtimeAsset, 'synthetic public contract fixture; not official evidence\n')
+  fs.writeFileSync(cart, 'pico-8 cartridge\nversion 43\n__lua__\n')
+  fs.writeFileSync(path.join(staging, 'events.txt'), 'p8probe|edge|ok\n')
+  const captureDirectory = path.join(
+    repositoryRoot,
+    'captures/official',
+    `education-event-cli-${process.pid}-${Date.now()}`,
+  )
+  const output = path.join(captureDirectory, 'probe.json')
+  try {
+    const result = spawnSync(process.execPath, [
+      path.join(repositoryRoot, 'scripts/import-official-education-probe.mjs'),
+      '--authorized-official-education-runtime',
+      '--operator-artifact-declaration',
+      '--runtime-version', '0.2.7-contract-smoke',
+      '--runtime-asset', runtimeAsset,
+      '--runtime-asset-url', 'https://www.pico-8-edu.com/play/pico8_edu_0207.js',
+      '--browser-name', 'synthetic-test-browser',
+      '--browser-version', '1',
+      '--load-method', 'official-drag-drop-data-path',
+      '--cart', cart,
+      '--source-dir', staging,
+      '--event-log', 'events.txt',
+      '--output', output,
+    ], { cwd: repositoryRoot, encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+    const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
+    assert.deepEqual(capture.events, [['edge', 'ok']])
+    assert.deepEqual(capture.attachments, [])
+    assert.equal(capture.educationProvenance.manualStep, 'official-drag-drop-data-path')
+    assert.deepEqual(validateOfficialProbeCapture(capture), [])
   } finally {
     fs.rmSync(captureDirectory, { recursive: true, force: true })
     fs.rmSync(temporary, { recursive: true, force: true })
