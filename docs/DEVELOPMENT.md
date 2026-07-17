@@ -132,7 +132,7 @@ qualification must reproduce the reviewed draft and atomically regenerate the
 accepted identity map/audit. Set
 `AICO8_WRITE_ATTESTATION=1` only when intentionally refreshing the reviewed
 sanitized public attestation.
-Official-runtime selectors remain pending until licensed captures are available.
+Official-runtime selectors remain in progress until a capability-scoped authorized capture is both imported and matched. A captured mismatch or host-contaminated artifact is evidence of remaining work, never completion.
 Accelerated replay must finish any `flip()`-driven initialization with neutral
 host input, drain its pre-replay PCM, and only then number canonical update zero.
 When startup motion itself needs review, capture its exact host-initialization

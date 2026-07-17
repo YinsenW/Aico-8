@@ -10,6 +10,10 @@ import { validateImplementationProbeCapture } from './lib/official-probe-compari
 import { decodePngRgba } from './lib/png-rgba.mjs'
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const expected = JSON.parse(fs.readFileSync(
+  path.join(repository, 'tests/conformance/expected/curved_raster.json'),
+  'utf8',
+))
 
 function runCapture(output) {
   const result = spawnSync('corepack', [
@@ -40,7 +44,9 @@ test('production Wasm emits a deterministic source-bound curved-raster candidate
     assert.equal(first.runtimeSha256, second.runtimeSha256)
     assert.deepEqual(first.events, second.events)
     assert.equal(first.attachments[0].sha256, second.attachments[0].sha256)
-    assert.ok(first.events.length >= 20)
+    assert.deepEqual(first.events, expected.events)
+    assert.equal(first.attachments.length, 1)
+    assert.equal(first.attachments[0].sourceRelativePath, 'curved_raster.png')
     const png = decodePngRgba(fs.readFileSync(
       path.join(path.dirname(firstPath), first.attachments[0].relativePath),
     ))

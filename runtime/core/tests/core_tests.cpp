@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
+#include <initializer_list>
+#include <limits>
 
 namespace {
 
@@ -640,33 +642,72 @@ void test_raster_embedded_colour_patterns_and_inverted_fills()
 void test_raster_ellipse_and_rounded_rectangle_primitives()
 {
     p8_core *core = p8_core_create();
+    const auto assert_row = [core](int x, int y,
+                                   std::initializer_list<uint8_t> expected) {
+        size_t index = 0;
+        for (const uint8_t color : expected) {
+            assert(p8_gfx_pget(core, x + static_cast<int>(index), y) == color);
+            ++index;
+        }
+    };
     p8_gfx_cls(core, 0);
-    p8_gfx_oval(core, 10, 10, 14, 12, 8);
-    assert(p8_gfx_pget(core, 12, 10) == 8);
-    assert(p8_gfx_pget(core, 10, 11) == 8);
-    assert(p8_gfx_pget(core, 14, 11) == 8);
-    assert(p8_gfx_pget(core, 12, 12) == 8);
-    assert(p8_gfx_pget(core, 12, 11) == 0);
+    p8_gfx_oval(core, 0, 0, 6, 4, 8);
+    assert_row(0, 0, {0, 0, 8, 8, 8, 0, 0});
+    assert_row(0, 1, {8, 8, 0, 0, 0, 8, 8});
+    assert_row(0, 2, {8, 0, 0, 0, 0, 0, 8});
+    assert_row(0, 3, {8, 8, 0, 0, 0, 8, 8});
+    assert_row(0, 4, {0, 0, 8, 8, 8, 0, 0});
 
-    p8_gfx_ovalfill(core, 20, 20, 26, 24, 9);
-    assert(p8_gfx_pget(core, 23, 20) == 9);
-    assert(p8_gfx_pget(core, 20, 22) == 9);
-    assert(p8_gfx_pget(core, 23, 22) == 9);
-    assert(p8_gfx_pget(core, 26, 22) == 9);
+    p8_gfx_cls(core, 0);
+    p8_gfx_oval(core, 8, 8, 47, 35, 8);
+    for (int x = 8; x <= 47; ++x) {
+        assert(p8_gfx_pget(core, x, 8) == (x >= 22 && x <= 33 ? 8 : 0));
+    }
+    assert(p8_gfx_pget(core, 15, 11) == 8);
+    assert(p8_gfx_pget(core, 40, 11) == 8);
+    assert(p8_gfx_pget(core, 14, 11) == 0);
+    assert(p8_gfx_pget(core, 16, 11) == 0);
 
-    p8_gfx_rrectfill(core, 30, 30, 6, 4, 2, 10);
-    assert(p8_gfx_pget(core, 30, 30) == 0);
-    assert(p8_gfx_pget(core, 31, 30) == 10);
-    assert(p8_gfx_pget(core, 34, 30) == 10);
-    assert(p8_gfx_pget(core, 35, 30) == 0);
-    assert(p8_gfx_pget(core, 30, 31) == 10);
-    assert(p8_gfx_pget(core, 35, 32) == 10);
+    p8_gfx_cls(core, 0);
+    p8_gfx_ovalfill(core, 0, 0, 6, 4, 10);
+    assert_row(0, 0, {0, 0, 10, 10, 10, 0, 0});
+    assert_row(0, 1, {10, 10, 10, 10, 10, 10, 10});
+    assert_row(0, 2, {10, 10, 10, 10, 10, 10, 10});
+    assert_row(0, 3, {10, 10, 10, 10, 10, 10, 10});
+    assert_row(0, 4, {0, 0, 10, 10, 10, 0, 0});
 
-    p8_gfx_rrect(core, 40, 30, 6, 4, 99, 11); // radius clamps to 2
-    assert(p8_gfx_pget(core, 40, 30) == 0);
-    assert(p8_gfx_pget(core, 41, 30) == 11);
-    assert(p8_gfx_pget(core, 40, 31) == 11);
-    assert(p8_gfx_pget(core, 42, 31) == 0);
+    p8_gfx_cls(core, 0);
+    p8_gfx_ovalfill(core, 56, 8, 95, 35, 10);
+    for (int x = 56; x <= 95; ++x) {
+        assert(p8_gfx_pget(core, x, 8) == (x >= 70 && x <= 81 ? 10 : 0));
+        assert(p8_gfx_pget(core, x, 16) == (x >= 57 && x <= 94 ? 10 : 0));
+    }
+
+    p8_gfx_cls(core, 0);
+    p8_gfx_rrectfill(core, 0, 0, 10, 8, 1, 12);
+    assert_row(0, 0, {0, 12, 12, 12, 12, 12, 12, 12, 12, 0});
+    p8_gfx_rrectfill(core, 12, 0, 10, 8, 2, 13);
+    assert_row(12, 0, {0, 0, 13, 13, 13, 13, 13, 13, 0, 0});
+    p8_gfx_rrectfill(core, 24, 0, 16, 16, 6, 14);
+    assert_row(24, 0, {0, 0, 0, 0, 0, 14, 14, 14, 14, 14, 14, 0, 0, 0, 0, 0});
+    assert_row(24, 1, {0, 0, 0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0, 0});
+    assert_row(24, 2, {0, 0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0, 0});
+    assert_row(24, 4, {0, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 0});
+
+    p8_gfx_rrect(core, 42, 0, 10, 8, 99, 7); // radius clamps to 4
+    assert_row(42, 0, {0, 0, 0, 7, 7, 7, 7, 0, 0, 0});
+    assert_row(42, 1, {0, 7, 7, 0, 0, 0, 0, 7, 7, 0});
+    assert_row(42, 2, {0, 7, 0, 0, 0, 0, 0, 0, 7, 0});
+    assert_row(42, 3, {7, 0, 0, 0, 0, 0, 0, 0, 0, 7});
+
+    // Direct C callers can supply values outside the VM's 16.16 domain. The
+    // draw must stay bounded while retaining the same midpoint corner shape.
+    p8_gfx_cls(core, 0);
+    p8_gfx_rrectfill(core, -32768, 0, std::numeric_limits<int>::max(),
+                     std::numeric_limits<int>::max(),
+                     std::numeric_limits<int>::max(), 5);
+    assert(p8_gfx_pget(core, 0, 0) == 5);
+    p8_gfx_cls(core, 0);
     p8_gfx_rrectfill(core, 50, 30, 0, 4, 2, 12);
     assert(p8_gfx_pget(core, 50, 30) == 0);
 

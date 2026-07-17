@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-17T14:07:00+08:00",
+  "status": "event-match-visual-recapture-required",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Google Chrome 150.0.7871.125"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only the public curved_raster probe; no private carts, workspaces, or game assets.",
+    "publicationRightsGranted": false
+  },
+  "probe": {
+    "path": "tests/conformance/probes/curved_raster.p8",
+    "sha256": "ff909e7942c68e459713deefb136e0c3ea379efe207d6e69895a3ee5f5d026e6",
+    "sanitizedExpectedEvents": "tests/conformance/expected/curved_raster.json"
+  },
+  "officialCapture": {
+    "captureSha256": "24fd9880749f9140ed4864bfdafc8cf06e2bd5e0a427a536bcd7623843399d76",
+    "eventCount": 38,
+    "eventLogSha256": "2da72a4d92b6fad64921ade66cd877fbc4aa5c0191dccde63164c6422d1f414e",
+    "normalizedPngSha256": "6b8b80022785dfa449aad9da8d9d41b5ffbf417450c2318884d8d839a863fb1c",
+    "privateArtifactsCommitted": false
+  },
+  "eventDifferential": {
+    "beforeFix": {
+      "status": "mismatch",
+      "mismatchCount": 13,
+      "firstMismatch": {
+        "name": "oval_odd_1",
+        "official": "8,8,0,0,0,8,8",
+        "candidate": "0,8,0,0,0,8,0"
+      }
+    },
+    "afterSharedRasterFix": {
+      "status": "matched",
+      "officialCount": 38,
+      "candidateCount": 38,
+      "candidateRuntimeSha256": "a00fc609ccb40cf1999c389ef956e2c62cf6e920ad4b2458e6060e7de4912ddc",
+      "publicRegressionFixture": "tests/conformance/expected/curved_raster.json"
+    }
+  },
+  "visualDifferential": {
+    "status": "capture-ineligible-recapture-required",
+    "reason": "In the browser screenshot captured after the Education shell resumed, a two-logical-row registration offset and an overlay on rows 0..7 were observed, and the display palette may have reset. The cause of the offset is not established. The normalized PNG is retained only as pipeline/debug evidence and is not an official framebuffer golden.",
+    "diagnosticAlignment": "After applying only the observed two-row host offset, all pixels in the four base-palette oval, ovalfill, rrect, and rrectfill regions match the fixed candidate. This diagnoses geometry but is not accepted as an RGBA conformance result.",
+    "captureProcess": {
+      "devicePixelRatio": 2,
+      "physicalPixelsPerLogicalPixel": 12,
+      "sampling": "center sample of each 12x12 physical block",
+      "quantization": "nearest colour from the probe-declared base and extended palette set",
+      "normalizedRows": "0..7 replaced with cls(1) because of shell overlay"
+    },
+    "nextAction": "Capture a declared live cart frame with an origin marker while the display palette is active, then run the immutable exact RGBA comparator again."
+  },
+  "claims": {
+    "provesAuthorizedEducationReachability": true,
+    "provesOfficialEventCompatibilityForThisProbe": true,
+    "provesOfficialPixelCompatibility": false,
+    "provesAudioCompatibility": false,
+    "provesBroaderStateInputPersistenceCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}
