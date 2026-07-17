@@ -2,6 +2,8 @@ name: ci
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -100,7 +102,7 @@ jobs:
           java-version: 21
       - uses: android-actions/setup-android@v3
       - name: Install pinned Android platform
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
       - name: Enable pnpm
         run: corepack enable
       - name: Install TypeScript workspace
@@ -127,3 +129,17 @@ jobs:
         run: |
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           jarsigner -verify -verbose -certs apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
+      - name: Enable Linux emulator acceleration
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+          fi
+      - name: Run named 1024-square API 35 emulator acceptance
+        run: scripts/run-android-square-emulator.sh apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk apps/mobile/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+      - name: Retain square-emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-square-api35-${{ github.sha }}
+          path: artifacts/test-reports/android-square-api35
+          if-no-files-found: error

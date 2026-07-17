@@ -54,6 +54,29 @@ describe("Capacitor Android host project", () => {
     expect(lifecycleTest).toContain("ActivityScenario.launch(MainActivity.class)");
     expect(lifecycleTest).toContain("Lifecycle.State.STARTED");
     expect(lifecycleTest).toContain("Lifecycle.State.RESUMED");
+
+    const squareTest = read("android/app/src/androidTest/java/dev/aico8/research/SquareEmulatorAcceptanceTest.java");
+    expect(squareTest).toContain("SQUARE_EDGE_PX = 1024");
+    expect(squareTest).toContain("location.hostname === 'localhost'");
+    expect(squareTest).toContain("localStorage.setItem('aico8-square-acceptance'");
+    expect(squareTest).toContain("onView(isAssignableFrom(WebView.class)).perform(click())");
+    expect(squareTest).toContain("document.addEventListener('touchstart'");
+    expect(squareTest).toContain("document.addEventListener('pointerdown'");
+    expect(squareTest).toContain("captureReadyHostEvidence(scenario)");
+    expect(squareTest).toContain("getUiAutomation()");
+    expect(squareTest).toContain('new File(activity.getFilesDir(), "square-host.png")');
+
+    const emulatorRunner = read("../../scripts/run-android-square-emulator.sh");
+    expect(emulatorRunner).toContain('profile_id="aico8-square-api35"');
+    expect(emulatorRunner).toContain('avdmanager list avd | awk');
+    expect(emulatorRunner).toContain('export ANDROID_AVD_HOME="$(dirname "$avd_path")"');
+    expect(emulatorRunner).toContain("adb shell wm size 1024x1024");
+    expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
+    expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
+    expect(emulatorRunner).toContain('instrumentation_outcome="passed"');
+    expect(emulatorRunner).toContain("adb exec-out run-as dev.aico8.research");
+    expect(emulatorRunner).toContain("PNG image data, 1024 x 1024");
+    expect(emulatorRunner).toContain("adb shell am start -W -n dev.aico8.research/.MainActivity");
   });
 
   it("pins Capacitor-generated Java and Gradle toolchain inputs", () => {
