@@ -15,6 +15,7 @@ import {
   pngDimensions,
   sha256,
   verifyAndroidDeviceEvidenceBindings,
+  verifyAndroidDeviceManualDecisionBinding,
 } from "./android-device-capture.js";
 import type {
   AndroidPhysicalDeviceValidationV2,
@@ -188,26 +189,50 @@ describe("Android physical-device capture helpers", () => {
     expect(report.device.serialSha256).toBe(sha256("private-serial"));
     expect(JSON.stringify(report)).not.toContain("private-serial");
 
-    const reportHash = sha256(`${JSON.stringify(report, null, 2)}\n`);
+    const pendingBytes = Buffer.from(`${JSON.stringify(report, null, 2)}\n`);
+    const reportHash = sha256(pendingBytes);
+    const decision = {
+      schemaVersion: "aico8.android-device-manual-decision.v1",
+      subjectReportSha256: reportHash,
+      reviewerId: "human-reviewer",
+      reviewedAt: "2026-07-17T01:00:00.000Z",
+      checks: {
+        audioFocusInterruptionRecovery: "passed",
+        controllerGameplay: "passed",
+        vendorWebViewGameplay: "passed",
+        sustainedGameplayPerformance: "passed",
+      },
+    } as const;
+    const decisionBytes = Buffer.from(`${JSON.stringify(decision, null, 2)}\n`);
     const finalized = applyAndroidDeviceManualDecision(
       report,
       reportHash,
-      {
-        schemaVersion: "aico8.android-device-manual-decision.v1",
-        subjectReportSha256: reportHash,
-        reviewerId: "human-reviewer",
-        reviewedAt: "2026-07-17T01:00:00.000Z",
-        checks: {
-          audioFocusInterruptionRecovery: "passed",
-          controllerGameplay: "passed",
-          vendorWebViewGameplay: "passed",
-          sustainedGameplayPerformance: "passed",
-        },
-      },
-      hash,
+      decision,
+      sha256(decisionBytes),
     );
     expect(finalized.status).toBe("passed");
-    expect(finalized.manualReview.decisionSha256).toBe(hash);
+    expect(finalized.manualReview.decisionSha256).toBe(sha256(decisionBytes));
+    expect(() => verifyAndroidDeviceManualDecisionBinding(
+      finalized,
+      pendingBytes,
+      report,
+      decisionBytes,
+      decision,
+    )).not.toThrow();
+    expect(() => verifyAndroidDeviceManualDecisionBinding(
+      { ...finalized, manualReview: { ...finalized.manualReview, reviewerId: "forged-reviewer" } },
+      pendingBytes,
+      report,
+      decisionBytes,
+      decision,
+    )).toThrow(/does not exactly match/);
+    expect(() => verifyAndroidDeviceManualDecisionBinding(
+      finalized,
+      pendingBytes,
+      report,
+      Buffer.from("tampered-decision"),
+      decision,
+    )).toThrow(/does not exactly match/);
   });
 
   it("recomputes APK, lineage, target-profile, and retained artifact bindings offline", () => {

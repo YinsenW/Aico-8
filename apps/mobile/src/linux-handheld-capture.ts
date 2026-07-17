@@ -6,6 +6,7 @@ import {
   type LinuxHandheldTargetProfileV1,
   type LinuxHandheldValidationV1,
 } from "@aico8/contracts";
+import { verifyFinalizedManualDecisionBinding } from "./manual-decision-binding.js";
 
 export function evaluateLinuxHandheldPerformance(
   frameDurationsMilliseconds: readonly number[],
@@ -95,4 +96,22 @@ export function applyLinuxHandheldManualDecision(
     },
   } as const;
   return { ...updated, status: expectedLinuxHandheldValidationStatus(updated) };
+}
+
+export function verifyLinuxHandheldManualDecisionBinding(
+  finalReport: LinuxHandheldValidationV1,
+  pendingReportBytes: Uint8Array,
+  pendingReport: LinuxHandheldValidationV1,
+  decisionBytes: Uint8Array,
+  decision: LinuxHandheldManualDecisionV1,
+): void {
+  verifyFinalizedManualDecisionBinding(
+    finalReport,
+    pendingReportBytes,
+    pendingReport,
+    decisionBytes,
+    decision,
+    applyLinuxHandheldManualDecision,
+    "Linux handheld",
+  );
 }
