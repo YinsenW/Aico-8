@@ -413,6 +413,38 @@ try {
   kernel._free(textSourcePointer);
 }
 
+const delayedTextRuntime = kernel._aico8_create();
+assert.notEqual(delayedTextRuntime, 0);
+const delayedTextSource = new TextEncoder().encode(
+  "function _init() local s=chr(6) local g=s..':ff818181818181ff' "
+  + "delayed_width=print(s..'d1'..g..g,0,0,7) end\n"
+  + "function _update60() end\n",
+);
+const delayedTextSourcePointer = copyToHeap(delayedTextSource);
+const delayedTextRomPointer = copyToHeap(new Uint8Array(0x8000));
+try {
+  assert.equal(kernel._aico8_load_cart(delayedTextRuntime, delayedTextRomPointer, 0x8000,
+    delayedTextSourcePointer, delayedTextSource.length), 1);
+  assert.equal(kernel._aico8_start(delayedTextRuntime), 1);
+  assert.equal(kernel._aico8_initialization_complete(delayedTextRuntime), 0);
+  let delayedFrame = kernel._aico8_framebuffer(delayedTextRuntime);
+  assert.equal(kernel.HEAPU8[delayedFrame], 7);
+  assert.equal(kernel.HEAPU8[delayedFrame + 8], 0,
+    "Wasm must suspend after the first delayed P8SCII glyph");
+  assert.equal(kernel._aico8_tick60(delayedTextRuntime, 0), 1);
+  assert.equal(kernel._aico8_initialization_complete(delayedTextRuntime), 0);
+  delayedFrame = kernel._aico8_framebuffer(delayedTextRuntime);
+  assert.equal(kernel.HEAPU8[delayedFrame + 8], 7,
+    "Wasm must resume the second P8SCII glyph on the next logical frame");
+  assert.equal(kernel._aico8_tick60(delayedTextRuntime, 0), 1);
+  assert.equal(kernel._aico8_initialization_complete(delayedTextRuntime), 1,
+    "Wasm print() must return only after the final declared character delay");
+} finally {
+  kernel._aico8_destroy(delayedTextRuntime);
+  kernel._free(delayedTextRomPointer);
+  kernel._free(delayedTextSourcePointer);
+}
+
 const secondaryPaletteRuntime = kernel._aico8_create();
 assert.notEqual(secondaryPaletteRuntime, 0);
 const secondaryPaletteSource = new TextEncoder().encode(

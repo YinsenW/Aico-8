@@ -299,6 +299,45 @@ void test_text_ir_is_versioned_lossless_and_conservative()
     p8_core_destroy(core);
 }
 
+void test_resumable_text_jobs_expose_exact_delay_budgets()
+{
+    p8_core *core = p8_core_create();
+    for (uint8_t command = '1'; command <= '9'; ++command) {
+        const uint8_t bytes[] = {6, command};
+        p8_text_job *job = p8_text_job_create(core, bytes, sizeof(bytes),
+                                               0, 0, 7, 0);
+        assert(job);
+        assert(p8_text_job_requires_frames(job));
+        assert(p8_text_job_unsupported(job) == P8_TEXT_UNSUPPORTED_NONE);
+        uint32_t wait_frames = 0;
+        p8_text_result result{};
+        assert(p8_text_job_step(job, &wait_frames, &result) == P8_TEXT_STEP_WAIT);
+        assert(wait_frames == (1u << static_cast<unsigned>(command - '1')));
+        assert(p8_text_job_step(job, &wait_frames, &result) == P8_TEXT_STEP_COMPLETE);
+        assert(wait_frames == 0);
+        p8_text_job_destroy(job);
+    }
+
+    constexpr uint8_t audio[] = {7, '1', '2'};
+    p8_core_poke(core, 0x5f25, 3);
+    p8_core_poke(core, 0x5f26, 9);
+    p8_core_poke(core, 0x5f27, 10);
+    p8_text_job *audio_job = p8_text_job_create(core, audio, sizeof(audio),
+                                                 0, 0, 7, 0);
+    assert(audio_job);
+    assert(!p8_text_job_requires_frames(audio_job));
+    assert(p8_text_job_unsupported(audio_job) == P8_TEXT_UNSUPPORTED_AUDIO);
+    uint32_t wait_frames = 0;
+    p8_text_result result{};
+    assert(p8_text_job_step(audio_job, &wait_frames, &result) == P8_TEXT_STEP_COMPLETE);
+    assert(result.unsupported == P8_TEXT_UNSUPPORTED_AUDIO);
+    assert(p8_core_peek(core, 0x5f25) == 3);
+    assert(p8_core_peek(core, 0x5f26) == 9);
+    assert(p8_core_peek(core, 0x5f27) == 10);
+    p8_text_job_destroy(audio_job);
+    p8_core_destroy(core);
+}
+
 void test_raster_pixel_layout_and_draw_state()
 {
     p8_core *core = p8_core_create();
@@ -963,6 +1002,7 @@ int main()
     test_scheduler();
     test_draw_stream();
     test_text_ir_is_versioned_lossless_and_conservative();
+    test_resumable_text_jobs_expose_exact_delay_budgets();
     test_raster_pixel_layout_and_draw_state();
     test_raster_sprite_alias_and_primitives();
     test_raster_sprite_map_palette_and_flip();
