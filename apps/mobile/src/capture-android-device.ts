@@ -1,6 +1,9 @@
 import {
+  ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS,
   validateAndroidPhysicalDeviceValidation,
+  validateTargetProfile,
   validateAndroidWebLineage,
+  type AndroidTargetProfileV1,
   type AndroidWebLineageV1,
 } from "@aico8/contracts";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -8,10 +11,13 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   buildPendingAndroidDeviceReport,
+  evaluateAndroidPerformance,
   instrumentationPassed,
+  orientationEvidencePassed,
   parseColdLaunchMilliseconds,
   parseConnectedAndroidDevices,
   parsePackageVersion,
+  parseGfxFrameDurationsMilliseconds,
   parsePhysicalDensity,
   parsePhysicalPixels,
   pngDimensions,
@@ -19,21 +25,30 @@ import {
 } from "./android-device-capture.js";
 
 const args = process.argv.slice(2).filter((argument) => argument !== "--");
-if (args.length !== 6) {
+if (args.length !== 8) {
   throw new Error(
     "Usage: pnpm --filter @aico8/mobile capture:device -- "
-      + "<debug-apk> <android-test-apk> <android-web-lineage.json> "
-      + "<device-profile-id> <controller-name> <evidence-output-directory>",
+      + "<debug-apk> <android-test-apk> <android-web-lineage.json> <target-profile.json> "
+      + "<device-profile-id> <controller-name> <performance-capture-seconds> <evidence-output-directory>",
   );
 }
 
-const [debugApkValue, testApkValue, lineageValue, profileId, controllerName, outputValue] = args as [string, string, string, string, string, string];
+const [debugApkValue, testApkValue, lineageValue, targetProfileValue, profileId, controllerName, performanceCaptureSecondsValue, outputValue]
+  = args as [string, string, string, string, string, string, string, string];
 const debugApk = path.resolve(debugApkValue);
 const testApk = path.resolve(testApkValue);
 const lineagePath = path.resolve(lineageValue);
+const targetProfilePath = path.resolve(targetProfileValue);
 const output = path.resolve(outputValue);
-for (const file of [debugApk, testApk, lineagePath]) {
+for (const file of [debugApk, testApk, lineagePath, targetProfilePath]) {
   if (!fs.statSync(file).isFile()) throw new Error(`Required capture input is not a file: ${file}`);
+}
+const performanceCaptureSeconds = Number(performanceCaptureSecondsValue);
+if (!Number.isSafeInteger(performanceCaptureSeconds) || performanceCaptureSeconds < ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS) {
+  throw new Error(`Performance capture must be an integer >= ${ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS} seconds`);
+}
+if (fs.existsSync(output) && fs.readdirSync(output).length > 0) {
+  throw new Error("Physical-device evidence output must be absent or empty");
 }
 fs.mkdirSync(output, { recursive: true });
 
@@ -64,6 +79,17 @@ const lineageValidation = validateAndroidWebLineage(lineageUnknown);
 if (!lineageValidation.ok) throw new Error(`Invalid Android Web lineage: ${lineageValidation.errors.join("; ")}`);
 const lineage = lineageUnknown as AndroidWebLineageV1;
 const applicationId = lineage.host.applicationId;
+fs.writeFileSync(path.join(output, "android-web-lineage.json"), lineageRaw);
+const targetProfileRaw = fs.readFileSync(targetProfilePath);
+const targetProfileUnknown: unknown = JSON.parse(targetProfileRaw.toString("utf8"));
+const targetProfileValidation = validateTargetProfile(targetProfileUnknown);
+if (!targetProfileValidation.ok) throw new Error(`Invalid Android target profile: ${targetProfileValidation.errors.join("; ")}`);
+const targetProfile = targetProfileUnknown as AndroidTargetProfileV1;
+if (targetProfile.target !== "android-webview") throw new Error("Physical capture requires an Android target profile");
+if (targetProfile.id !== lineage.targetProfile.id || sha256(targetProfileRaw) !== lineage.targetProfile.sha256) {
+  throw new Error("Android target profile does not match the lineage-bound profile bytes");
+}
+fs.writeFileSync(path.join(output, "target-profile.json"), targetProfileRaw);
 
 const connected = parseConnectedAndroidDevices(text("adb", ["devices", "-l"]));
 if (connected.length !== 1) {
@@ -90,6 +116,9 @@ const controllerEnumerated = inputDevices.toLocaleLowerCase().includes(controlle
 
 adb(["install", "-r", debugApk]);
 adb(["install", "-r", testApk]);
+if (!/^Success$/mu.test(adb(["shell", "pm", "clear", applicationId]))) {
+  throw new Error("Unable to clear prior application data before physical-device capture");
+}
 adb(["shell", "cmd", "connectivity", "airplane-mode", "enable"]);
 adb(["shell", "svc", "wifi", "disable"]);
 adb(["shell", "svc", "data", "disable"]);
@@ -111,22 +140,45 @@ const instrumentationSha256 = writeText("instrumentation.txt", instrumentationOu
 const passedInstrumentation = instrumentationPassed(instrumentationOutput, instrumentation.status);
 
 let screenshot: Uint8Array = new Uint8Array();
+let orientationEvidence = "";
 if (passedInstrumentation) {
-  screenshot = adbBinary(["exec-out", "run-as", applicationId, "cat", "files/physical-host.png"]);
+  try {
+    screenshot = adbBinary(["exec-out", "run-as", applicationId, "cat", "files/physical-host.png"]);
+  } catch {
+    screenshot = new Uint8Array();
+  }
+  try {
+    orientationEvidence = adb(["exec-out", "run-as", applicationId, "cat", "files/physical-orientation.json"]);
+  } catch {
+    orientationEvidence = "";
+  }
 }
+const orientationSha256 = writeText("physical-orientation.json", orientationEvidence);
+const orientationChangePassed = orientationEvidencePassed(orientationEvidence);
 const screenshotDimensions = pngDimensions(screenshot);
 const readyScreenshotCaptured = screenshotDimensions?.width === physicalPixels.width
   && screenshotDimensions.height === physicalPixels.height;
 const screenshotSha256 = writeBinary("physical-host.png", screenshot);
 
 adb(["shell", "am", "force-stop", applicationId]);
+adb(["shell", "dumpsys", "gfxinfo", applicationId, "reset"]);
 const launch = adb(["shell", "am", "start", "-W", "-n", `${applicationId}/.MainActivity`]);
 writeText("cold-launch.txt", launch);
 const coldLaunchMilliseconds = parseColdLaunchMilliseconds(launch);
+console.log(
+  `Play the lineage-bound game continuously with ${controllerName} for ${performanceCaptureSeconds} seconds; `
+    + "frame evidence is now being recorded.",
+);
+await new Promise<void>((resolve) => setTimeout(resolve, performanceCaptureSeconds * 1_000));
 const logcat = adb(["logcat", "-d", "-v", "threadtime"]);
 const gfxInfo = adb(["shell", "dumpsys", "gfxinfo", applicationId, "framestats"]);
 const logcatSha256 = writeText("logcat.txt", logcat);
 const gfxInfoSha256 = writeText("gfxinfo-framestats.txt", gfxInfo);
+const performance = evaluateAndroidPerformance(
+  parseGfxFrameDurationsMilliseconds(gfxInfo),
+  targetProfile,
+  performanceCaptureSeconds,
+);
 
 const report = buildPendingAndroidDeviceReport({
   capturedAt: new Date().toISOString(),
@@ -156,13 +208,16 @@ const report = buildPendingAndroidDeviceReport({
     apkInstalled: true,
     offlineMode,
     instrumentationPassed: passedInstrumentation,
+    orientationChangePassed,
     readyScreenshotCaptured,
     controllerEnumerated,
     coldLaunchMilliseconds,
+    performance,
   },
   artifactHashes: {
     screenshotSha256,
     instrumentationSha256,
+    orientationSha256,
     logcatSha256,
     inputDevicesSha256,
     gfxInfoSha256,

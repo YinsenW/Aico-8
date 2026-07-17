@@ -2,7 +2,8 @@ import {
   ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION,
   expectedAndroidDeviceValidationStatus,
   type AndroidDeviceManualDecisionV1,
-  type AndroidPhysicalDeviceValidationV1,
+  type AndroidPhysicalDeviceValidationV2,
+  type AndroidTargetProfileV1,
   type AndroidWebLineageV1,
 } from "@aico8/contracts";
 import crypto from "node:crypto";
@@ -66,11 +67,77 @@ export function instrumentationPassed(output: string, processStatus: number | nu
     && !/^FAILURES!!!$/mu.test(output);
 }
 
+export function orientationEvidencePassed(value: string): boolean {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return false;
+    const evidence = parsed as Record<string, unknown>;
+    return Object.keys(evidence).sort().join(",")
+        === "hostStatePreserved,requestedLandscape,requestedPortrait,schemaVersion"
+      && evidence.schemaVersion === "aico8.android-orientation-evidence.v1"
+      && evidence.requestedLandscape === true
+      && evidence.requestedPortrait === true
+      && evidence.hostStatePreserved === true;
+  } catch {
+    return false;
+  }
+}
+
 export function pngDimensions(value: Uint8Array): { width: number; height: number } | undefined {
   const bytes = Buffer.from(value);
   const signature = "89504e470d0a1a0a";
   if (bytes.length < 24 || bytes.subarray(0, 8).toString("hex") !== signature) return undefined;
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+export function parseGfxFrameDurationsMilliseconds(output: string): readonly number[] {
+  const durations: number[] = [];
+  for (const block of output.split("---PROFILEDATA---")) {
+    const lines = block.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
+    const headerIndex = lines.findIndex((line) => line.includes("IntendedVsync") && line.includes("FrameCompleted"));
+    if (headerIndex < 0) continue;
+    const header = lines[headerIndex]!.split(",");
+    const intendedVsyncIndex = header.indexOf("IntendedVsync");
+    const frameCompletedIndex = header.indexOf("FrameCompleted");
+    for (const line of lines.slice(headerIndex + 1)) {
+      if (!/^\d+(?:,\d+)+$/u.test(line)) break;
+      const values = line.split(",");
+      const intendedVsync = Number(values[intendedVsyncIndex]);
+      const frameCompleted = Number(values[frameCompletedIndex]);
+      const duration = (frameCompleted - intendedVsync) / 1_000_000;
+      if (Number.isFinite(duration) && duration >= 0) durations.push(duration);
+    }
+  }
+  return durations;
+}
+
+export function evaluateAndroidPerformance(
+  frameDurationsMilliseconds: readonly number[],
+  target: AndroidTargetProfileV1,
+  captureSeconds: number,
+): AndroidPhysicalDeviceValidationV2["automatedChecks"]["performance"] {
+  const { warmupFrames, sampleFrames, droppedFrameThresholdMilliseconds } = target.measurementEnvironment;
+  const sample = frameDurationsMilliseconds.slice(warmupFrames, warmupFrames + sampleFrames);
+  const sorted = [...sample].sort((left, right) => left - right);
+  const p95 = sorted.length === 0 ? 0 : sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)]!;
+  const dropped = sample.filter((duration) => duration > droppedFrameThresholdMilliseconds).length;
+  const droppedRatio = sample.length === 0 ? 1 : dropped / sample.length;
+  const observedSampleFrames = sample.length;
+  return {
+    captureSeconds,
+    warmupFrames,
+    requiredSampleFrames: sampleFrames,
+    observedSampleFrames,
+    droppedFrameThresholdMilliseconds,
+    startupMillisecondsMax: target.budgets.startupMillisecondsMax,
+    p95FrameMillisecondsMax: target.budgets.p95FrameMillisecondsMax,
+    droppedFrameRatioMax: target.budgets.droppedFrameRatioMax,
+    p95FrameMilliseconds: Number(p95.toFixed(3)),
+    droppedFrameRatio: Number(droppedRatio.toFixed(6)),
+    budgetPassed: observedSampleFrames >= sampleFrames
+      && p95 <= target.budgets.p95FrameMillisecondsMax
+      && droppedRatio <= target.budgets.droppedFrameRatioMax,
+  };
 }
 
 export interface AndroidDeviceReportInput {
@@ -91,11 +158,11 @@ export interface AndroidDeviceReportInput {
   readonly densityDpi: number;
   readonly webView: { readonly packageName: string; readonly versionName: string; readonly versionCode: string };
   readonly controllerName: string;
-  readonly automatedChecks: AndroidPhysicalDeviceValidationV1["automatedChecks"];
-  readonly artifactHashes: AndroidPhysicalDeviceValidationV1["artifacts"];
+  readonly automatedChecks: AndroidPhysicalDeviceValidationV2["automatedChecks"];
+  readonly artifactHashes: AndroidPhysicalDeviceValidationV2["artifacts"];
 }
 
-export function buildPendingAndroidDeviceReport(input: AndroidDeviceReportInput): AndroidPhysicalDeviceValidationV1 {
+export function buildPendingAndroidDeviceReport(input: AndroidDeviceReportInput): AndroidPhysicalDeviceValidationV2 {
   const base = {
     schemaVersion: ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION,
     capturedAt: input.capturedAt,
@@ -104,6 +171,7 @@ export function buildPendingAndroidDeviceReport(input: AndroidDeviceReportInput)
       apkSha256: input.apkSha256,
       androidWebLineageSha256: input.lineageSha256,
       targetProfileId: input.lineage.targetProfile.id,
+      targetProfileSha256: input.lineage.targetProfile.sha256,
     },
     device: {
       profileId: input.profileId,
@@ -138,11 +206,11 @@ export function buildPendingAndroidDeviceReport(input: AndroidDeviceReportInput)
 }
 
 export function applyAndroidDeviceManualDecision(
-  report: AndroidPhysicalDeviceValidationV1,
+  report: AndroidPhysicalDeviceValidationV2,
   reportSha256: string,
   decision: AndroidDeviceManualDecisionV1,
   decisionSha256: string,
-): AndroidPhysicalDeviceValidationV1 {
+): AndroidPhysicalDeviceValidationV2 {
   if (report.status !== "pending-human" || report.manualReview.decisionSha256 !== null) {
     throw new Error("Manual review may only finalize an unreviewed pending-human report");
   }

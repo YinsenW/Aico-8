@@ -9,6 +9,7 @@ export {
 export {
   ANDROID_DEVICE_MANUAL_CHECKS,
   ANDROID_DEVICE_MANUAL_DECISION_SCHEMA_VERSION,
+  ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS,
   ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION,
   expectedAndroidDeviceValidationStatus,
   validateAndroidDeviceManualDecision,
@@ -18,7 +19,7 @@ export {
   type AndroidDeviceManualCheck,
   type AndroidDeviceManualStatus,
   type AndroidDeviceValidationStatus,
-  type AndroidPhysicalDeviceValidationV1,
+  type AndroidPhysicalDeviceValidationV2,
 } from "./android-device-validation.js";
 
 export {

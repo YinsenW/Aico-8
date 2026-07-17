@@ -5,12 +5,12 @@ import {
   expectedAndroidDeviceValidationStatus,
   validateAndroidDeviceManualDecision,
   validateAndroidPhysicalDeviceValidation,
-  type AndroidPhysicalDeviceValidationV1,
+  type AndroidPhysicalDeviceValidationV2,
 } from "./android-device-validation.js";
 
 const hash = "a".repeat(64);
 
-function report(): AndroidPhysicalDeviceValidationV1 {
+function report(): AndroidPhysicalDeviceValidationV2 {
   return {
     schemaVersion: ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION,
     capturedAt: "2026-07-17T00:00:00.000Z",
@@ -19,6 +19,7 @@ function report(): AndroidPhysicalDeviceValidationV1 {
       apkSha256: hash,
       androidWebLineageSha256: hash,
       targetProfileId: "android-webview-private-research-v1",
+      targetProfileSha256: hash,
     },
     device: {
       profileId: "retroid-pocket-test",
@@ -41,13 +42,28 @@ function report(): AndroidPhysicalDeviceValidationV1 {
       apkInstalled: true,
       offlineMode: true,
       instrumentationPassed: true,
+      orientationChangePassed: true,
       readyScreenshotCaptured: true,
       controllerEnumerated: true,
       coldLaunchMilliseconds: 1200,
+      performance: {
+        captureSeconds: 60,
+        warmupFrames: 30,
+        requiredSampleFrames: 180,
+        observedSampleFrames: 180,
+        droppedFrameThresholdMilliseconds: 25,
+        startupMillisecondsMax: 4000,
+        p95FrameMillisecondsMax: 25,
+        droppedFrameRatioMax: 0.02,
+        p95FrameMilliseconds: 16.7,
+        droppedFrameRatio: 0.01,
+        budgetPassed: true,
+      },
     },
     artifacts: {
       screenshotSha256: hash,
       instrumentationSha256: hash,
+      orientationSha256: hash,
       logcatSha256: hash,
       inputDevicesSha256: hash,
       gfxInfoSha256: hash,
@@ -102,7 +118,7 @@ describe("Android physical-device validation", () => {
   });
 
   it("accepts completion only after every manual check passes", () => {
-    const value: AndroidPhysicalDeviceValidationV1 = {
+    const value: AndroidPhysicalDeviceValidationV2 = {
       ...report(),
       manualReview: {
         decisionSha256: hash,
@@ -121,7 +137,7 @@ describe("Android physical-device validation", () => {
   });
 
   it("rejects a passed claim with pending human work", () => {
-    const value: AndroidPhysicalDeviceValidationV1 = { ...report(), status: "passed" };
+    const value: AndroidPhysicalDeviceValidationV2 = { ...report(), status: "passed" };
     expect(validateAndroidPhysicalDeviceValidation(value).errors).toContain(
       "$.status must equal derived status pending-human",
     );
@@ -129,13 +145,46 @@ describe("Android physical-device validation", () => {
 
   it("rejects emulators and failed machine checks as physical acceptance", () => {
     const base = report();
-    const value: AndroidPhysicalDeviceValidationV1 = {
+    const value: AndroidPhysicalDeviceValidationV2 = {
       ...base,
       device: { ...base.device, emulator: true },
     };
     expect(expectedAndroidDeviceValidationStatus(value)).toBe("failed");
     expect(validateAndroidPhysicalDeviceValidation(value).errors).toContain(
       "$.status must equal derived status failed",
+    );
+  });
+
+  it("fails closed when orientation or measured performance is unproven", () => {
+    const base = report();
+    const missingOrientation: AndroidPhysicalDeviceValidationV2 = {
+      ...base,
+      automatedChecks: { ...base.automatedChecks, orientationChangePassed: false },
+      status: "failed",
+    };
+    expect(validateAndroidPhysicalDeviceValidation(missingOrientation)).toEqual({ ok: true, errors: [] });
+
+    const slowStartup: AndroidPhysicalDeviceValidationV2 = {
+      ...base,
+      automatedChecks: { ...base.automatedChecks, coldLaunchMilliseconds: 4001 },
+      status: "failed",
+    };
+    expect(validateAndroidPhysicalDeviceValidation(slowStartup)).toEqual({ ok: true, errors: [] });
+
+    const insufficientFrames: AndroidPhysicalDeviceValidationV2 = {
+      ...base,
+      automatedChecks: {
+        ...base.automatedChecks,
+        performance: {
+          ...base.automatedChecks.performance,
+          observedSampleFrames: 179,
+          budgetPassed: true,
+        },
+      },
+      status: "failed",
+    };
+    expect(validateAndroidPhysicalDeviceValidation(insufficientFrames).errors).toContain(
+      "$.automatedChecks.performance.budgetPassed must equal derived value false",
     );
   });
 });

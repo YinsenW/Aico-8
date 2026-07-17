@@ -72,6 +72,10 @@ describe("Capacitor Android host project", () => {
     expect(physicalTest).toContain("document.addEventListener('touchstart'");
     expect(physicalTest).toContain("scenario.recreate()");
     expect(physicalTest).toContain('"physical-host.png"');
+    expect(physicalTest).toContain("userOrientationRequestsPreserveHostState");
+    expect(physicalTest).toContain("SCREEN_ORIENTATION_LANDSCAPE");
+    expect(physicalTest).toContain("SCREEN_ORIENTATION_PORTRAIT");
+    expect(physicalTest).toContain('"physical-orientation.json"');
 
     const emulatorRunner = read("../../scripts/run-android-square-emulator.sh");
     expect(emulatorRunner).toContain('profile_id="aico8-square-api35"');

@@ -27,18 +27,23 @@ device with its controller attached, then run:
 
 ```sh
 pnpm --filter @aico8/mobile capture:device -- \
-  <debug-apk> <android-test-apk> <android-web-lineage.json> \
-  <device-profile-id> <controller-name> <evidence-output-directory>
+  <debug-apk> <android-test-apk> <android-web-lineage.json> <target-profile.json> \
+  <device-profile-id> <controller-name> <performance-capture-seconds> \
+  <evidence-output-directory>
 ```
 
 The collector installs the lineage-bound test build, disables networking,
 proves the local Web host, native touch, storage recreation, and a ready-screen
 capture, and records the physical display, vendor WebView, controller listing,
-cold launch, logcat, and frame stats. It hashes rather than stores the adb
-serial. A successful collection intentionally reports `pending-human`: audio
-interruption/recovery, controller gameplay, vendor-WebView gameplay, and
-sustained gameplay performance must all be reviewed before the contract permits
-`passed`.
+cold launch, user-orientation state preservation, logcat, and frame stats. The
+lineage-bound target profile supplies the warmup/sample counts and performance
+budgets. During the minimum 60-second measurement window, play continuously with
+the named controller; insufficient frames, an over-budget p95, excess dropped
+frames, or missing orientation evidence fails automatically. The collector
+hashes rather than stores the adb serial. A successful collection intentionally
+reports `pending-human`: audio interruption/recovery, controller gameplay,
+vendor-WebView gameplay, and sustained gameplay quality must all be reviewed
+before the contract permits `passed`.
 
 Record those four outcomes in an
 `aico8.android-device-manual-decision.v1` file whose
