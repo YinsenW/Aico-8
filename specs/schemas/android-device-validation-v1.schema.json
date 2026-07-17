@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/android-device-validation-v1.schema.json",
+  "title": "Aico 8 Android physical-device validation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "capturedAt", "subject", "device", "automatedChecks", "artifacts", "manualReview", "status"],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "nonEmpty": { "type": "string", "minLength": 1 },
+    "manualStatus": { "enum": ["pending", "passed", "failed"] }
+  },
+  "properties": {
+    "schemaVersion": { "const": "aico8.android-device-validation.v1" },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicationId", "apkSha256", "androidWebLineageSha256", "targetProfileId"],
+      "properties": {
+        "applicationId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$" },
+        "apkSha256": { "$ref": "#/$defs/sha256" },
+        "androidWebLineageSha256": { "$ref": "#/$defs/sha256" },
+        "targetProfileId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileId", "serialSha256", "manufacturer", "model", "product", "buildFingerprint", "apiLevel", "abi", "emulator", "physicalPixels", "densityDpi", "webView", "controllerName"],
+      "properties": {
+        "profileId": { "$ref": "#/$defs/id" },
+        "serialSha256": { "$ref": "#/$defs/sha256" },
+        "manufacturer": { "$ref": "#/$defs/nonEmpty" },
+        "model": { "$ref": "#/$defs/nonEmpty" },
+        "product": { "$ref": "#/$defs/nonEmpty" },
+        "buildFingerprint": { "$ref": "#/$defs/nonEmpty" },
+        "apiLevel": { "type": "integer", "minimum": 1 },
+        "abi": { "$ref": "#/$defs/nonEmpty" },
+        "emulator": { "type": "boolean" },
+        "physicalPixels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "densityDpi": { "type": "integer", "minimum": 1 },
+        "webView": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["packageName", "versionName", "versionCode"],
+          "properties": {
+            "packageName": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$" },
+            "versionName": { "$ref": "#/$defs/nonEmpty" },
+            "versionCode": { "$ref": "#/$defs/nonEmpty" }
+          }
+        },
+        "controllerName": { "$ref": "#/$defs/nonEmpty" }
+      }
+    },
+    "automatedChecks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["singleAuthorizedDevice", "physicalDevice", "apkInstalled", "offlineMode", "instrumentationPassed", "readyScreenshotCaptured", "controllerEnumerated", "coldLaunchMilliseconds"],
+      "properties": {
+        "singleAuthorizedDevice": { "type": "boolean" },
+        "physicalDevice": { "type": "boolean" },
+        "apkInstalled": { "type": "boolean" },
+        "offlineMode": { "type": "boolean" },
+        "instrumentationPassed": { "type": "boolean" },
+        "readyScreenshotCaptured": { "type": "boolean" },
+        "controllerEnumerated": { "type": "boolean" },
+        "coldLaunchMilliseconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["screenshotSha256", "instrumentationSha256", "logcatSha256", "inputDevicesSha256", "gfxInfoSha256"],
+      "properties": {
+        "screenshotSha256": { "$ref": "#/$defs/sha256" },
+        "instrumentationSha256": { "$ref": "#/$defs/sha256" },
+        "logcatSha256": { "$ref": "#/$defs/sha256" },
+        "inputDevicesSha256": { "$ref": "#/$defs/sha256" },
+        "gfxInfoSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "manualReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisionSha256", "reviewerId", "reviewedAt", "checks"],
+      "properties": {
+        "decisionSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+        "reviewerId": { "oneOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
+        "reviewedAt": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["audioFocusInterruptionRecovery", "controllerGameplay", "vendorWebViewGameplay", "sustainedGameplayPerformance"],
+          "properties": {
+            "audioFocusInterruptionRecovery": { "$ref": "#/$defs/manualStatus" },
+            "controllerGameplay": { "$ref": "#/$defs/manualStatus" },
+            "vendorWebViewGameplay": { "$ref": "#/$defs/manualStatus" },
+            "sustainedGameplayPerformance": { "$ref": "#/$defs/manualStatus" }
+          }
+        }
+      }
+    },
+    "status": { "enum": ["pending-human", "passed", "failed"] }
+  }
+}
