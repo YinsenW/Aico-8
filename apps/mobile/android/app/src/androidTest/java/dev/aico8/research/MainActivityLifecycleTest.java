@@ -15,7 +15,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public final class MainActivityLifecycleTest {
     @Test
-    public void hostSurvivesPauseResumeWithUserOrientation() {
+    public void hostSurvivesPauseResumeWithUserOrientation() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             scenario.onActivity(activity -> {
                 assertEquals(
@@ -25,6 +25,11 @@ public final class MainActivityLifecycleTest {
                 assertNotNull(activity.getBridge());
                 assertNotNull(activity.getBridge().getWebView());
             });
+
+            SquareEmulatorAcceptanceTest.awaitJavascriptTrue(
+                SquareEmulatorAcceptanceTest.captureWebView(scenario).get(),
+                "document.querySelector('.player-shell') !== null"
+            );
 
             scenario.moveToState(Lifecycle.State.STARTED);
             scenario.moveToState(Lifecycle.State.RESUMED);

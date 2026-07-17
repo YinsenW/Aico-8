@@ -54,6 +54,11 @@ describe("Capacitor Android host project", () => {
     expect(lifecycleTest).toContain("ActivityScenario.launch(MainActivity.class)");
     expect(lifecycleTest).toContain("Lifecycle.State.STARTED");
     expect(lifecycleTest).toContain("Lifecycle.State.RESUMED");
+    expect(lifecycleTest).toContain("SquareEmulatorAcceptanceTest.awaitJavascriptTrue");
+    expect(lifecycleTest).toContain("document.querySelector('.player-shell') !== null");
+    expect(lifecycleTest.indexOf("awaitJavascriptTrue")).toBeLessThan(
+      lifecycleTest.indexOf("Lifecycle.State.STARTED"),
+    );
 
     const squareTest = read("android/app/src/androidTest/java/dev/aico8/research/SquareEmulatorAcceptanceTest.java");
     expect(squareTest).toContain("SQUARE_EDGE_PX = 1024");
