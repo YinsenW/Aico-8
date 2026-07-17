@@ -7,6 +7,21 @@ export {
 } from "./android-host.js";
 
 export {
+  ANDROID_DEVICE_MANUAL_CHECKS,
+  ANDROID_DEVICE_MANUAL_DECISION_SCHEMA_VERSION,
+  ANDROID_DEVICE_VALIDATION_SCHEMA_VERSION,
+  expectedAndroidDeviceValidationStatus,
+  validateAndroidDeviceManualDecision,
+  validateAndroidPhysicalDeviceValidation,
+  type AndroidDeviceDecidedStatus,
+  type AndroidDeviceManualDecisionV1,
+  type AndroidDeviceManualCheck,
+  type AndroidDeviceManualStatus,
+  type AndroidDeviceValidationStatus,
+  type AndroidPhysicalDeviceValidationV1,
+} from "./android-device-validation.js";
+
+export {
   BATCH_SCHEMA_VERSION,
   acceptedBatchGameIds,
   batchWorkspaceId,

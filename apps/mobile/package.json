@@ -7,6 +7,8 @@
     "check": "tsc -p tsconfig.json",
     "test": "vitest run",
     "assemble:web": "tsx src/assemble-android-host.ts",
+    "capture:device": "tsx src/capture-android-device.ts",
+    "finalize:device": "tsx src/finalize-android-device.ts",
     "verify:lineage": "tsx src/verify-android-lineage.ts",
     "cap:copy": "cap copy android",
     "android:debug": "pnpm verify:lineage && cd android && ./gradlew assembleDebug",

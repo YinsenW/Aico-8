@@ -76,18 +76,21 @@ public final class SquareEmulatorAcceptanceTest {
                     "localStorage.getItem('aico8-square-acceptance')"
                 )
             );
-            captureReadyHostEvidence(scenario);
+            captureReadyHostEvidence(scenario, "square-host.png");
         }
     }
 
-    private static void captureReadyHostEvidence(ActivityScenario<MainActivity> scenario) {
+    static void captureReadyHostEvidence(
+        ActivityScenario<MainActivity> scenario,
+        String filename
+    ) {
         scenario.onActivity(activity -> {
             Bitmap screenshot = InstrumentationRegistry
                 .getInstrumentation()
                 .getUiAutomation()
                 .takeScreenshot();
             assertNotNull("Unable to capture the ready Android host", screenshot);
-            File output = new File(activity.getFilesDir(), "square-host.png");
+            File output = new File(activity.getFilesDir(), filename);
             try (FileOutputStream stream = new FileOutputStream(output)) {
                 assertTrue(
                     "Unable to encode the ready Android host screenshot",
@@ -101,21 +104,25 @@ public final class SquareEmulatorAcceptanceTest {
         });
     }
 
+    static AtomicReference<WebView> captureWebView(ActivityScenario<MainActivity> scenario) {
+        AtomicReference<WebView> webView = new AtomicReference<>();
+        scenario.onActivity(activity -> webView.set(activity.getBridge().getWebView()));
+        return webView;
+    }
+
     private static AtomicReference<WebView> captureSquareWebView(
         ActivityScenario<MainActivity> scenario
     ) {
-        AtomicReference<WebView> webView = new AtomicReference<>();
         scenario.onActivity(activity -> {
             DisplayMetrics metrics = new DisplayMetrics();
             activity.getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
             assertEquals(SQUARE_EDGE_PX, metrics.widthPixels);
             assertEquals(SQUARE_EDGE_PX, metrics.heightPixels);
-            webView.set(activity.getBridge().getWebView());
         });
-        return webView;
+        return captureWebView(scenario);
     }
 
-    private static void awaitJavascriptTrue(WebView webView, String expression) throws Exception {
+    static void awaitJavascriptTrue(WebView webView, String expression) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
         String result = "false";
         while (System.nanoTime() < deadline) {
@@ -126,7 +133,7 @@ public final class SquareEmulatorAcceptanceTest {
         assertTrue("JavaScript condition did not become true; last result=" + result, false);
     }
 
-    private static String evaluateJavascript(WebView webView, String script) throws Exception {
+    static String evaluateJavascript(WebView webView, String script) throws Exception {
         CountDownLatch completed = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->

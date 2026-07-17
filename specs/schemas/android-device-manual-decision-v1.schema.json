@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/android-device-manual-decision-v1.schema.json",
+  "title": "Aico 8 Android physical-device manual decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "subjectReportSha256", "reviewerId", "reviewedAt", "checks"],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "decision": { "enum": ["passed", "failed"] }
+  },
+  "properties": {
+    "schemaVersion": { "const": "aico8.android-device-manual-decision.v1" },
+    "subjectReportSha256": { "$ref": "#/$defs/sha256" },
+    "reviewerId": { "$ref": "#/$defs/id" },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audioFocusInterruptionRecovery", "controllerGameplay", "vendorWebViewGameplay", "sustainedGameplayPerformance"],
+      "properties": {
+        "audioFocusInterruptionRecovery": { "$ref": "#/$defs/decision" },
+        "controllerGameplay": { "$ref": "#/$defs/decision" },
+        "vendorWebViewGameplay": { "$ref": "#/$defs/decision" },
+        "sustainedGameplayPerformance": { "$ref": "#/$defs/decision" }
+      }
+    }
+  }
+}

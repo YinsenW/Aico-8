@@ -62,9 +62,16 @@ describe("Capacitor Android host project", () => {
     expect(squareTest).toContain("onView(isAssignableFrom(WebView.class)).perform(click())");
     expect(squareTest).toContain("document.addEventListener('touchstart'");
     expect(squareTest).toContain("document.addEventListener('pointerdown'");
-    expect(squareTest).toContain("captureReadyHostEvidence(scenario)");
+    expect(squareTest).toContain('captureReadyHostEvidence(scenario, "square-host.png")');
     expect(squareTest).toContain("getUiAutomation()");
-    expect(squareTest).toContain('new File(activity.getFilesDir(), "square-host.png")');
+    expect(squareTest).toContain("new File(activity.getFilesDir(), filename)");
+
+    const physicalTest = read("android/app/src/androidTest/java/dev/aico8/research/PhysicalDeviceAcceptanceTest.java");
+    expect(physicalTest).toContain("localHostTouchAndStorageSurviveOnDevice");
+    expect(physicalTest).toContain("location.hostname === 'localhost'");
+    expect(physicalTest).toContain("document.addEventListener('touchstart'");
+    expect(physicalTest).toContain("scenario.recreate()");
+    expect(physicalTest).toContain('"physical-host.png"');
 
     const emulatorRunner = read("../../scripts/run-android-square-emulator.sh");
     expect(emulatorRunner).toContain('profile_id="aico8-square-api35"');
