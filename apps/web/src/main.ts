@@ -19,6 +19,7 @@ import {
 } from "./runtime/package-url.js";
 import { KernelAudioOutput } from "./runtime/audio-output.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
+import { installPlatformLifecycle } from "./runtime/platform-host.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
 import { HD_RENDER_QUALITY } from "./runtime/render-quality.js";
 import { loadBundledTypography } from "./runtime/hd-typography.js";
@@ -345,6 +346,8 @@ const unlockAudio = (): void => {
 document.addEventListener("pointerdown", unlockAudio);
 document.addEventListener("keydown", unlockAudio);
 let paused = false;
+let hostSuspended = false;
+let resetHostTiming = (): void => undefined;
 let runtime: Aico8Kernel | undefined;
 let validationPlaybackStatus: string | undefined;
 let systemMenuOpen = false;
@@ -352,6 +355,29 @@ let priorSystemMenuMask = 0;
 let systemMenuButtons: HTMLButtonElement[] = [];
 const systemMenuInvocations = new WeakMap<HTMLButtonElement, (buttons: number) => void>();
 const privatePresentations = import.meta.glob<PrivatePresentationModule>("./private/*.ts");
+
+const platformLifecycle = await installPlatformLifecycle({
+  document,
+  window,
+  callbacks: {
+    suspend: async (reason) => {
+      hostSuspended = true;
+      resetHostTiming();
+      frame.dataset.platformSuspended = "true";
+      frame.dataset.platformSuspensionReason = reason;
+      await audioOutput.suspend();
+      syncAudioDiagnostics();
+    },
+    resume: async () => {
+      hostSuspended = false;
+      resetHostTiming();
+      frame.dataset.platformSuspended = "false";
+      delete frame.dataset.platformSuspensionReason;
+      await audioOutput.resumeAfterInterruption();
+      syncAudioDiagnostics();
+    },
+  },
+});
 
 function closeSystemMenu(): void {
   if (!systemMenuOpen) return;
@@ -673,6 +699,7 @@ try {
         : "");
   }
   let accumulator = 0;
+  resetHostTiming = () => { accumulator = 0; };
   const stepMilliseconds = 1000 / 60;
   app.ticker.add((ticker) => {
     if (input.consumeMenuRequest()) toggleSystemMenu();
@@ -680,7 +707,7 @@ try {
       processSystemMenuInput();
       return;
     }
-    if (paused || !runtime) return;
+    if (paused || hostSuspended || !runtime) return;
     accumulator = Math.min(accumulator + ticker.deltaMS, 250);
     while (accumulator >= stepMilliseconds) {
       accumulator -= stepMilliseconds;
@@ -693,10 +720,6 @@ try {
       }
     }
     hdRenderer?.animate(ticker.deltaMS);
-  });
-  document.addEventListener("visibilitychange", () => {
-    accumulator = 0;
-    syncAudioDiagnostics();
   });
   loadingCard.classList.add("hidden");
   loadingCard.setAttribute("aria-hidden", "true");
@@ -726,6 +749,7 @@ try {
 }
 
 window.addEventListener("pagehide", () => {
+  void platformLifecycle.remove();
   runtime?.destroy();
   void audioOutput.destroy();
 }, { once: true });

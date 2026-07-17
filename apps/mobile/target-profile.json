@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "aico8.target-profile.v1",
+  "id": "android-webview-private-research-v1",
+  "target": "android-webview",
+  "outputProfile": "hd-1024-square",
+  "measurementEnvironment": {
+    "class": "android-instrumented-device",
+    "viewport": { "width": 1024, "height": 1024 },
+    "warmupFrames": 30,
+    "sampleFrames": 180,
+    "droppedFrameThresholdMilliseconds": 25
+  },
+  "layoutProfiles": [
+    {
+      "id": "phone-portrait-390x844",
+      "class": "phone-portrait",
+      "viewport": { "width": 390, "height": 844 },
+      "minGameFrameCssPixels": 360,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "square-handheld-1024x1024",
+      "class": "square-handheld",
+      "viewport": { "width": 1024, "height": 1024 },
+      "minGameFrameCssPixels": 800,
+      "minTouchTargetCssPixels": 44
+    },
+    {
+      "id": "android-handheld-landscape-1280x720",
+      "class": "android-handheld-landscape",
+      "viewport": { "width": 1280, "height": 720 },
+      "minGameFrameCssPixels": 500,
+      "minTouchTargetCssPixels": 44
+    }
+  ],
+  "budgets": {
+    "artifactCountMax": 200,
+    "unpackedBytesMax": 30000000,
+    "largestArtifactBytesMax": 20000000,
+    "startupMillisecondsMax": 4000,
+    "p95FrameMillisecondsMax": 25,
+    "droppedFrameRatioMax": 0.02
+  },
+  "android": {
+    "applicationId": "dev.aico8.research",
+    "capacitorVersion": "8.4.2",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "compileSdk": 36,
+    "orientationPolicy": "user",
+    "webArtifactPolicy": "byte-identical-recursive-copy",
+    "signingPolicy": "external-release-key",
+    "requiredCapabilities": [
+      "audio-focus",
+      "controller",
+      "lifecycle",
+      "offline-assets",
+      "orientation",
+      "persistent-storage",
+      "touch"
+    ]
+  }
+}

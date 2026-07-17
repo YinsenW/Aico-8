@@ -1,21 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aico8.dev/schemas/target-profile-v1.schema.json",
-  "title": "Aico 8 Web target profile v1",
+  "title": "Aico 8 shared-Web target profile v1",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "target", "outputProfile", "measurementEnvironment", "layoutProfiles", "budgets"],
   "properties": {
     "schemaVersion": { "const": "aico8.target-profile.v1" },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "target": { "const": "web-pwa" },
+    "target": { "enum": ["web-pwa", "android-webview"] },
     "outputProfile": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "measurementEnvironment": {
       "type": "object",
       "additionalProperties": false,
       "required": ["class", "viewport", "warmupFrames", "sampleFrames", "droppedFrameThresholdMilliseconds"],
       "properties": {
-        "class": { "const": "local-http-active-browser" },
+        "class": { "enum": ["local-http-active-browser", "android-instrumented-device"] },
         "viewport": {
           "type": "object",
           "additionalProperties": false,
@@ -32,7 +32,7 @@
     },
     "layoutProfiles": {
       "type": "array",
-      "minItems": 4,
+      "minItems": 3,
       "maxItems": 4,
       "items": {
         "type": "object",
@@ -86,6 +86,56 @@
         "p95FrameMillisecondsMax": { "type": "number", "exclusiveMinimum": 0 },
         "droppedFrameRatioMax": { "type": "number", "minimum": 0, "maximum": 1 }
       }
+    },
+    "android": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicationId", "capacitorVersion", "minSdk", "targetSdk", "compileSdk", "orientationPolicy", "webArtifactPolicy", "signingPolicy", "requiredCapabilities"],
+      "properties": {
+        "applicationId": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$" },
+        "capacitorVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "minSdk": { "type": "integer", "minimum": 24 },
+        "targetSdk": { "type": "integer", "minimum": 24 },
+        "compileSdk": { "type": "integer", "minimum": 24 },
+        "orientationPolicy": { "const": "user" },
+        "webArtifactPolicy": { "const": "byte-identical-recursive-copy" },
+        "signingPolicy": { "const": "external-release-key" },
+        "requiredCapabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "enum": ["audio-focus", "controller", "lifecycle", "offline-assets", "orientation", "persistent-storage", "touch"]
+          }
+        }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "target": { "const": "web-pwa" } }, "required": ["target"] },
+      "then": {
+        "properties": {
+          "layoutProfiles": { "minItems": 4, "maxItems": 4 },
+          "measurementEnvironment": {
+            "properties": { "class": { "const": "local-http-active-browser" } }
+          }
+        },
+        "not": { "required": ["android"] }
+      }
+    },
+    {
+      "if": { "properties": { "target": { "const": "android-webview" } }, "required": ["target"] },
+      "then": {
+        "required": ["android"],
+        "properties": {
+          "layoutProfiles": { "minItems": 3, "maxItems": 3 },
+          "measurementEnvironment": {
+            "properties": { "class": { "const": "android-instrumented-device" } }
+          }
+        }
+      }
+    }
+  ]
 }

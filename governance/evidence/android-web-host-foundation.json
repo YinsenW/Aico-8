@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "aico8.governance-evidence.android-web-host-foundation.v1",
+  "requirementId": "REQ-PLATFORM-001",
+  "exitId": "EXIT-PLATFORM-ANDROID",
+  "status": "implementation-verified-device-acceptance-pending",
+  "observedAt": "2026-07-17",
+  "host": {
+    "applicationId": "dev.aico8.research",
+    "capacitorVersion": "8.4.2",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "compileSdk": 36,
+    "javaLanguageLevel": 21,
+    "signingPolicy": "external-release-key"
+  },
+  "realPrivateResearchWebLineage": {
+    "publicationPermission": false,
+    "sourceTargetProfileId": "web-pwa-private-research-v1",
+    "sourceTargetProfileSha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809",
+    "androidTargetProfileId": "android-webview-private-research-v1",
+    "androidTargetProfileSha256": "d056c1849fada0d7abb4d6cdf7b64b555fca4ce83b8dad97f725c9a56405f961",
+    "releaseManifestSha256": "bb926462b7b03fa5a17cc4e392a10692b94ce992ef1508d77984f8a4bdb91c7c",
+    "visualRuntimeSha256": "6adf442e7c22b39a8db8c36b00f3dc1d834d14d1fea58df25764d9ec2f772e73",
+    "webAssetTreeSha256": "c74098389c5bc16a9de3fa5449b4b9402f594aae1ff90d472c1b9d84dc422ef1",
+    "artifactCount": 46,
+    "unpackedBytes": 2443722,
+    "sourceToStageByteIdentity": true,
+    "stageToCapacitorAssetsByteIdentity": true,
+    "allowedGeneratedWebViewShims": ["cordova.js", "cordova_plugins.js"]
+  },
+  "automatedEvidence": {
+    "targetProfileValidation": "passed",
+    "targetProfileDriftRejection": "passed",
+    "lineageContractValidation": "passed",
+    "sourceDriftRejection": "passed",
+    "stagingDriftRejection": "passed",
+    "undeclaredNativeAssetRejection": "passed",
+    "symlinkRejection": "passed",
+    "overlappingLifecycleSuspension": "passed",
+    "nativeAudioFocusBoundary": "passed",
+    "externalSigningFailClosed": "passed",
+    "cleanSignedApkAabCi": "pending-exact-revision-ci"
+  },
+  "localBuildEnvironment": {
+    "javaRuntime": "missing-apple-command-shim-only",
+    "javacRuntime": "missing-apple-command-shim-only",
+    "adb": "missing",
+    "sdkmanager": "missing",
+    "apksigner": "missing",
+    "bundletool": "missing",
+    "gradleWrapperResult": "blocked-before-gradle-unable-to-locate-java-runtime"
+  },
+  "acceptanceStillRequired": [
+    "exact-revision CI clean build and signature verification",
+    "Android emulator or physical-device lifecycle and resume matrix",
+    "audio-focus interruption and recovery on a named device",
+    "controller, touch, orientation, storage, offline, and performance evidence on named profiles",
+    "release-key and store-policy decision independent of research CI signing"
+  ],
+  "completionClaim": false
+}

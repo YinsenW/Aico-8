@@ -12,8 +12,10 @@ class FakeContext implements AudioOutputContext {
   channels: Float32Array[] = [];
   sampleRates: number[] = [];
   resumeCalls = 0;
+  suspendCalls = 0;
 
   async resume(): Promise<void> { this.resumeCalls += 1; this.state = "running"; }
+  async suspend(): Promise<void> { this.suspendCalls += 1; this.state = "suspended"; }
   async close(): Promise<void> { this.state = "closed"; }
   createBuffer(_channels: number, length: number, sampleRate: number) {
     this.sampleRates.push(sampleRate);
@@ -88,6 +90,18 @@ describe("KernelAudioOutput", () => {
     await output.unlock();
     expect(context.resumeCalls).toBe(2);
     expect(context.channels).toHaveLength(1);
+  });
+
+  it("suspends and resumes an unlocked context across a native interruption", async () => {
+    const context = new FakeContext();
+    const output = new KernelAudioOutput(() => context);
+    await output.unlock();
+    await output.suspend();
+    expect(context.state).toBe("suspended");
+    expect(context.suspendCalls).toBe(1);
+    await output.resumeAfterInterruption();
+    expect(context.state).toBe("running");
+    expect(context.resumeCalls).toBe(2);
   });
 
   it("records a scheduler underrun and its missing duration", async () => {
