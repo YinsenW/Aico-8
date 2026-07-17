@@ -155,6 +155,11 @@ test('checked-in capture plans match the files emitted by raster and audio probe
   assert.match(curved.visual_education_capture_command, /--load-method official-drag-drop-data-path/)
   assert.match(curved.visual_education_capture_command, /--artifact curved_raster\.png/)
   assert.match(curved.visual_candidate_command, /--visual-only/)
+  for (const owner of ['docs/ARCHITECTURE.md', 'docs/CONTRACTS.md', 'docs/DEVELOPMENT.md']) {
+    const contract = fs.readFileSync(path.join(repositoryRoot, owner), 'utf8')
+    assert.match(contract, /local-cart-file-selection/)
+    assert.match(contract, /official-drag-drop-data-path/)
+  }
   const curvedProbe = fs.readFileSync(
     path.join(repositoryRoot, 'tests/conformance/probes/curved_raster.p8'),
     'utf8',

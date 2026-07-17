@@ -164,7 +164,7 @@ Local supervised research uses the project owner's explicit recorded decision; d
 ## Diagnosis
 
 - Compatibility mismatch: isolate update number, input trace, RAM/state snapshot, raster/audio checkpoint, then compare against authorized official evidence. Prefer
-  Education Edition for Web/raster probes: record its single file-selection handoff, then automate staging, hashing, import, and comparison; use licensed desktop PICO-8 for native export or unsupported versions.
+  Education Edition for Web/raster probes: record exactly one bounded cart-load method (`local-cart-file-selection` or `official-drag-drop-data-path`), then automate staging, hashing, import, and comparison; use licensed desktop PICO-8 for native export or unsupported versions.
   For exact live-frame evidence, capture the 128x128 canvas backing-store PNG before shell resume and require uniform integer scaling plus the canonical origin marker; reject JPEG, overlays, repairs, quantization, and browser-colour-transformed page PNGs from RGBA qualification.
 - Completion mismatch: first replay the unchanged cart using only recorded
   button masks. Keep hook-driven reachability separately labeled and never use it
