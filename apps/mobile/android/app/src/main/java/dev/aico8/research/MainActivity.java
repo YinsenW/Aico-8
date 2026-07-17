@@ -29,13 +29,13 @@ public class MainActivity extends BridgeActivity implements AudioManager.OnAudio
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         requestGameAudioFocus();
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         abandonGameAudioFocus();
         super.onPause();
     }

@@ -34,6 +34,8 @@ describe("Capacitor Android host project", () => {
     expect(activity).toContain("implements AudioManager.OnAudioFocusChangeListener");
     expect(activity).toContain("AudioAttributes.USAGE_GAME");
     expect(activity).toContain("aico8:audio-focus");
+    expect(activity).toContain("public void onResume()");
+    expect(activity).toContain("public void onPause()");
     expect(activity).toContain("requestGameAudioFocus();");
     expect(activity).toContain("abandonGameAudioFocus();");
 
