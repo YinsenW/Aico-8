@@ -49,12 +49,15 @@ Rules: APIs cross layers using versioned C ABI or serializable data. TypeScript 
 | DATA-TRANSFER-FINDINGS-001 | Reference-versus-trial findings classified as compatibility/runtime, reusable presentation, or source-relative semantic/art judgment; reusable claims require shared implementation plus regression evidence, while source-relative decisions remain attached to a named human stop | `specs/schemas/transfer-findings-v1.schema.json` and `packages/contracts/src/transfer-findings.ts` |
 | DATA-GAME-MODULE-001 | One remake's payload, mappings, assets, saves, provenance, runtime constraints, and pre-assembly canonical-replay plus accepted-HD evidence | `specs/schemas/game-module-v1.schema.json` and TypeScript validator |
 | DATA-COLLECTION-001 | Ordered validated module IDs and manifest hashes, launcher entry, save/reset isolation, per-module SPDX/notice bindings, target identity, and package/persistence budgets | `specs/schemas/fixed-collection-v1.schema.json` and `packages/contracts/src/fixed-collection.ts` |
+| DATA-COLLECTION-LAUNCHER-001 | Content-bound standalone Web package identities, safe launch directories, unique save namespaces, initial module, and mandatory whole-document replacement on every game switch | `specs/schemas/fixed-collection-launcher-v1.schema.json` and `packages/contracts/src/fixed-collection-launcher.ts` |
 | DATA-TARGET-PROFILE-001 | Browser Web/PWA phone, priority 1024-square-handheld, landscape-handheld, and wide-Web layout classes and minimum game/control dimensions, plus Android WebView and Linux handheld browser-first capabilities, budgets, byte-lineage policy, measured-gap shell policy, and future embedded capabilities | `specs/schemas/target-profile-v1.schema.json` and `packages/contracts/src/release.ts` |
 | DATA-ANDROID-WEB-LINEAGE-001 | Byte-identical validated Web release inventory, source/target profile identities, Capacitor host version, SDK floors, external signing policy, and the only two allowed generated WebView shim paths | `specs/schemas/android-web-lineage-v1.schema.json` and `packages/contracts/src/android-host.ts` |
 | DATA-VALIDATION-001 | Exit results, platform/build identities, diffs, evidence links, same-build static/temporal source-HD review boundaries, immutable human decision lineage, measured release budgets, active-browser layout measurements/screenshots, fail-closed named Android physical-device evidence, and named Linux browser evidence whose capability gaps exactly govern shell eligibility | `specs/schemas/hd-review-packet-v1.schema.json`, `specs/schemas/hd-review-decision-v1.schema.json`, `specs/schemas/release-validation-v1.schema.json`, `specs/schemas/android-device-validation-v2.schema.json`, `specs/schemas/android-device-manual-decision-v1.schema.json`, `specs/schemas/linux-handheld-validation-v1.schema.json`, `specs/schemas/linux-handheld-manual-decision-v1.schema.json`, and domain validators |
 | DATA-RELEASE-001 | Build profiles, complete artifact checksums, separate visual-runtime and replay-semantics identities, notices, provenance, and rights decision | `specs/schemas/release-manifest-v1.schema.json` and TypeScript validator |
 | DATA-GOVERNANCE-001 | Requirements, exits, owners, selectors, open items, current focus | `governance/schema.json` |
+
 JSON Schemas are required before a payload becomes a stable public contract. Research manifests without a schema are prototypes and cannot close a stable-contract exit.
+
 ## Pipeline Job graph
 
 | Job ID | Inputs | Outputs | Purpose |
@@ -69,7 +72,7 @@ JSON Schemas are required before a payload becomes a stable public contract. Res
 | JOB-TYPOGRAPHY-001 | Workspace, DATA-TEXT-RUN-001, accepted type direction | DATA-TEXT-INVENTORY-001, DATA-TYPOGRAPHY-001, font assets | Classify P8SCII, route identity artwork, regenerate hashed glyph metrics from pinned fonts, and prove coherent complete coverage |
 | JOB-INTEGRATE-001 | Workspace, HD map, asset pack | DATA-GAME-MODULE-001 draft | Bind HD presentation without state mutation |
 | JOB-VALIDATE-001 | Game module/builds, replay, checkpoints | DATA-HD-AUDIT-001, DATA-HD-QUALITY-001, DATA-VALIDATION-001 | Prove state/frame/audio/platform invariants plus static and temporal presentation evidence |
-| JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-TARGET-PROFILE-001 | Statically bound target build | `scripts/assemble-game-module.ts` implements the fail-closed single-game Web boundary; `scripts/assemble-fixed-collection.ts` materializes deterministic namespaced module/license trees and budget evidence, while real collection acceptance remains gated on three independently validated remakes plus launcher/runtime evidence |
+| JOB-ASSEMBLE-001 | Validated module(s), optional DATA-COLLECTION-001, DATA-COLLECTION-LAUNCHER-001, DATA-TARGET-PROFILE-001 | Statically bound target build | `scripts/assemble-game-module.ts` implements the fail-closed single-game Web boundary; `scripts/assemble-fixed-collection.ts` materializes deterministic namespaced module/license trees and budget evidence. The opt-in Web collection entry consumes bound package identities and replaces the complete child document on each switch; real acceptance still requires three independently validated remakes plus packaged browser/runtime evidence |
 | JOB-PACKAGE-001 | Validated target build and release profile | DATA-RELEASE-001 plus artifacts | Web packaging remains in `scripts/build-private-web.mjs`; `apps/mobile/src/assemble-android-host.ts` copies a validated Web release byte-for-byte and emits DATA-ANDROID-WEB-LINEAGE-001 before Capacitor may build Android artifacts |
 | JOB-RELEASE-001 | Artifacts, validation, rights evidence | Publication record | Enforce permission and publish approved builds |
 
@@ -174,14 +177,11 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
   package, performance, and rights selectors but satisfies none of them. Neither
   outcome is a DATA-RELEASE-001 rights decision or publication authority.
 - DATA-TRANSFER-FINDINGS-001 is the only reusable-learning record: shared findings require public implementation and regression evidence; source-relative findings require a human stop and forbid shared-rule claims. Classification never substitutes for the recorded human decision.
-- Cart-specific presentation adapters are injected from ignored private workspaces;
-  the Apache source tree owns only the interface, loader, diagnostic reference
-  renderer, and validators.
+- Cart-specific presentation adapters come from ignored private workspaces; Apache history owns only the interface, loader, diagnostic reference renderer, and validators.
 - A Web package resolves every resource from its deployment base; its service-worker cache and navigation fallback are isolated by registration scope.
 - Original P8SCII execution and `print()` metrics stay in the kernel; modern
   typography consumes results and cannot alter compatibility state.
-- Game modules are internal versioned build inputs. A single or fixed collection
-  is statically bound; no stable `.aico8` or dynamic Player contract exists yet.
+- Game modules are internal versioned build inputs. A single or fixed collection is statically bound; no stable `.aico8` or dynamic Player contract exists yet.
 - Batch execution isolates workspaces, failures, evidence, and retries. Assembly
   cannot include a module whose required validation exits are incomplete.
 - A canonical replay has contiguous real button input for every logical update,

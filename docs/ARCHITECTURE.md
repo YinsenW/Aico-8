@@ -20,8 +20,8 @@ outside the authority boundary. The local user channel records bounded project-o
 - An internal game module contains one remake's compatible payload, HD mapping,
   assets, typography/audio manifests, save namespace, provenance, and evidence.
 - A single-game build statically binds one validated module to the shared runtime.
-- A fixed collection binds several validated modules plus a launcher; switching
-  games resets runtime state and saves remain isolated by module and schema version.
+- A fixed collection binds several validated modules plus a launcher; each switch replaces the complete child document, destroying the prior Wasm runtime before the next starts.
+  Package hashes and unique save namespaces are bound before launch; saves remain isolated by module and schema version.
 - Internal modules are build inputs, not a promised public cartridge format.
 - Multi-cart requests create an immutable batch manifest and isolated per-game
   Job graphs. Assembly consumes only modules whose required exits pass.

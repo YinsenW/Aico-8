@@ -9,7 +9,8 @@
     "wasm:test": "make -C ../../runtime/core wasm-test",
     "check": "tsc -p tsconfig.json",
     "test": "vitest run --exclude service-worker.test.mjs",
-    "build": "pnpm wasm:build && vite build"
+    "build": "pnpm wasm:build && vite build",
+    "build:collection-shell": "pnpm wasm:build && AICO8_BUILD_COLLECTION_ENTRY=1 vite build"
   },
   "dependencies": {
     "@aico8/contracts": "workspace:*",
