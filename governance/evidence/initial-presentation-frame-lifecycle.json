@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "aico8.initial-presentation-frame-lifecycle.v1",
+  "status": "verified-public-contract-private-recapture-required",
+  "requirementId": "REQ-DELIVERY-001",
+  "exitId": "EXIT-DELIVERY-COLLECTION",
+  "rootCause": "The player exposed newly constructed presentation display objects before the compatibility kernel produced and rendered the cartridge's first complete source-authored frame. Yielding _init frames were also rendered only after ordinary logical updates, so startup animation state could be stale, incomplete, or invisible.",
+  "sharedCorrection": {
+    "implementation": [
+      "apps/web/src/runtime/presentation-lifecycle.ts",
+      "apps/web/src/main.ts"
+    ],
+    "properties": [
+      "reference and HD surfaces begin hidden",
+      "an incomplete yielding initialization frame remains behind the loading surface",
+      "the first complete source-authored frame is rendered and exposed atomically",
+      "initialization animation renders on host ticks before ordinary logical updates",
+      "a post-initialization render failure hides both surfaces and reports a terminal startup error"
+    ]
+  },
+  "publicRegression": {
+    "selector": "TEST-WEB-PUBLIC",
+    "test": "apps/web/src/runtime/presentation-lifecycle.test.ts",
+    "cases": 6
+  },
+  "privateDiagnostic": {
+    "distribution": "private-research-and-testing-only",
+    "tinyGolf": {
+      "priorPackageTreeSha256": "3cfa5c47853d3cd2eb0076fe21559d4575363b0226222ca8ebb38f0c083f7741",
+      "correctedPackageTreeSha256": "4a2bc383a35270daa43f3f1b32c5af03a6dbe96f958791ef7da397b78617b2bd",
+      "correctedVisualRuntimeSha256": "607a7fed1dff53599b1ec9cd84932337b57d04605ae41ae4dff9b69556d8d85f",
+      "observedCorrectedBoundaries": [
+        "host-initialization:tick:5:scene.initialization-coolmath",
+        "neutral-input-probe:updates:1:scene.menu"
+      ]
+    },
+    "steps": {
+      "priorPackageTreeSha256": "408ed5c29b253d22544a6c431f29b73e4590d0b1ce2eed36dc2645d7d8f90a54",
+      "correctedPackageTreeSha256": "0292d3c8719610df2a90bb0db5e74de6b174d0a35ec070cbb13e6e153eca8896",
+      "correctedVisualRuntimeSha256": "eb54f38bd9bc284ca9b60f20ba50efe2eabc5028c76b36ddf50585541963318c",
+      "observedCorrectedBoundaries": [
+        "canonical-replay:update:16:scene.gameplay"
+      ]
+    },
+    "packageVerification": "Both corrected standalone packages passed scripts/verify-web-package.mjs. These diagnostics do not replace fresh runtime-bound screenshots or human review."
+  },
+  "invalidatedEvidence": [
+    "Tiny Golf pending packet sha256:9e6603686f98f42e8a9c5d01b5b5d3e4ee32db610a51529de5f08c85e19d3b9e",
+    "Steps pending packet sha256:21b27e67f804e6cd0e09f628d6adf10b72c0cc6b3b69fa5bccd9e8b1735a1e0e"
+  ],
+  "remainingGate": "Recapture both complete browser evidence sets from the corrected visual-runtime identities, rebuild the hash-bound review packets, perform Agent pre-review of the unparameterized standalone startup and a non-title gameplay boundary, then request human review."
+}
