@@ -244,12 +244,19 @@ export function planFixedCollectionAssembly(
       errors.push(...single.errors.map((error) => `module ${entry.moduleId}: ${error}`));
       continue;
     }
-    for (const artifact of single.plan.artifacts.filter(({ packaged }) => packaged)) {
-      artifacts.push({
+    for (const artifact of single.plan.artifacts) {
+      artifacts.push(artifact.packaged ? {
         ...artifact,
         moduleId: entry.moduleId,
         source: "module-root",
         destination: `modules/${entry.moduleId}/${artifact.destination}`,
+      } : {
+        moduleId: entry.moduleId,
+        source: "module-root",
+        role: artifact.role,
+        path: artifact.path,
+        sha256: artifact.sha256,
+        packaged: false,
       });
     }
   }
@@ -262,7 +269,11 @@ export function planFixedCollectionAssembly(
     errors.push("collection declared persistent bytes exceed maxPersistentBytes");
   }
   if (errors.length > 0) return { ok: false, errors };
-  artifacts.sort((left, right) => left.destination!.localeCompare(right.destination!));
+  artifacts.sort((left, right) => {
+    const leftKey = `${left.moduleId}\0${left.packaged ? "0" : "1"}\0${left.destination ?? left.path}`;
+    const rightKey = `${right.moduleId}\0${right.packaged ? "0" : "1"}\0${right.destination ?? right.path}`;
+    return leftKey.localeCompare(rightKey);
+  });
   return {
     ok: true,
     errors: [],

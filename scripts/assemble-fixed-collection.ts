@@ -33,6 +33,8 @@ export interface FixedCollectionBuildEvidenceV1 {
   readonly maxPackagedBytes: number;
   readonly declaredPersistentBytes: number;
   readonly maxPersistentBytes: number;
+  readonly validatedEvidenceFiles: number;
+  readonly validatedEvidenceBytes: number;
   readonly resetCompatibilityStateOnSwitch: true;
   readonly isolatedSaveNamespaces: true;
 }
@@ -120,6 +122,8 @@ export async function assembleFixedCollection(
 
     const artifactBytes = new Map<string, Buffer>();
     let packagedArtifactBytes = 0;
+    let validatedEvidenceFiles = 0;
+    let validatedEvidenceBytes = 0;
     for (const artifact of planned.plan.artifacts) {
       let bytes: Buffer;
       if (artifact.source === "manifest") {
@@ -132,8 +136,14 @@ export async function assembleFixedCollection(
       if (sha256(bytes) !== artifact.sha256) {
         throw new Error(`Collection module artifact hash mismatch: ${artifact.moduleId}/${artifact.path}`);
       }
-      artifactBytes.set(artifact.destination!, bytes);
-      packagedArtifactBytes += bytes.byteLength;
+      if (artifact.packaged) {
+        if (!artifact.destination) throw new Error(`Packaged collection artifact has no destination: ${artifact.moduleId}/${artifact.path}`);
+        artifactBytes.set(artifact.destination, bytes);
+        packagedArtifactBytes += bytes.byteLength;
+      } else {
+        validatedEvidenceFiles += 1;
+        validatedEvidenceBytes += bytes.byteLength;
+      }
     }
     if (packagedArtifactBytes > planned.plan.budgets.maxPackagedBytes) {
       throw new Error(`Collection packaged artifact bytes ${packagedArtifactBytes} exceed maxPackagedBytes ${planned.plan.budgets.maxPackagedBytes}`);
@@ -150,6 +160,8 @@ export async function assembleFixedCollection(
       maxPackagedBytes: planned.plan.budgets.maxPackagedBytes,
       declaredPersistentBytes: planned.plan.budgets.declaredPersistentBytes,
       maxPersistentBytes: planned.plan.budgets.maxPersistentBytes,
+      validatedEvidenceFiles,
+      validatedEvidenceBytes,
       resetCompatibilityStateOnSwitch: true,
       isolatedSaveNamespaces: true,
     };

@@ -185,7 +185,10 @@ describe("fixed-collection assembly plan", () => {
     expect(new Set(Object.values(result.plan!.isolation.saveNamespaces)).size).toBe(3);
     expect(result.plan!.artifacts.filter(({ role }) => role === "license-notice")).toHaveLength(3);
     expect(result.plan!.artifacts.filter(({ role }) => role === "module-manifest")).toHaveLength(3);
-    expect(result.plan!.artifacts.every(({ destination }) => destination?.startsWith(`modules/${result.plan!.artifacts.find((candidate) => candidate.destination === destination)!.moduleId}/`))).toBe(true);
+    expect(result.plan!.artifacts.filter(({ packaged }) => !packaged)).toHaveLength(6);
+    expect(result.plan!.artifacts.every((artifact) => artifact.packaged
+      ? artifact.destination?.startsWith(`modules/${artifact.moduleId}/`) === true
+      : artifact.destination === undefined)).toBe(true);
   });
 
   it("fails closed on stale manifests, draft modules, target drift, budget overflow, or undeclared inputs", () => {

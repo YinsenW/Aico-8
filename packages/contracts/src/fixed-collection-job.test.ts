@@ -95,9 +95,11 @@ describe("JOB-ASSEMBLE-001 fixed-collection materializer", () => {
       moduleCount: 3,
       declaredPersistentBytes: 768,
       maxPersistentBytes: 768,
+      validatedEvidenceFiles: 6,
       resetCompatibilityStateOnSwitch: true,
       isolatedSaveNamespaces: true,
     });
+    expect(firstResult.evidence.validatedEvidenceBytes).toBeGreaterThan(0);
     const files = Object.keys(await treeHashes(first));
     for (const suffix of ["one", "two", "three"]) {
       expect(files).toContain(`modules/synthetic-${suffix}/module.json`);
@@ -105,6 +107,19 @@ describe("JOB-ASSEMBLE-001 fixed-collection materializer", () => {
       expect(files).toContain(`modules/synthetic-${suffix}/module/payload/source.rom`);
     }
     expect(files.some((file) => file.includes("/evidence/"))).toBe(false);
+  });
+
+  it("hash-verifies non-packaged replay and human-review evidence before publishing output", async () => {
+    const root = await temporaryRoot();
+    const prepared = await inputs(root);
+    await fs.appendFile(
+      path.join(prepared.modules[1]!.moduleRoot, "evidence/hd-review-decision.json"),
+      "tampered",
+    );
+    const outputDirectory = path.join(root, "tampered-evidence-output");
+    await expect(assembleFixedCollection({ ...prepared, targetProfilePath, outputDirectory }))
+      .rejects.toThrow(/artifact hash mismatch: synthetic-two\/evidence\/hd-review-decision\.json/);
+    await expect(fs.access(outputDirectory)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("rejects package-budget overflow and a changed license before publishing output", async () => {
