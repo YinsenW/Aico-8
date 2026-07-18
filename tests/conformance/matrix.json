@@ -26,12 +26,18 @@
       "id": "scheduler_30",
       "status": "executable",
       "probe": "probes/scheduler_30.p8",
+      "expected": "expected/scheduler_30_six_host_ticks.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/scheduler_30.p8 --output captures/official/0.2.7-education/scheduler_30-candidate.json --host-ticks 6",
+      "golden_status": "The source-bound production-Wasm candidate matches the manual-derived six-host-tick fixture. Authorized official runtime capture is still required before this becomes an event golden.",
       "covers": ["30 Hz update", "update/draw ordering", "time() progression"]
     },
     {
       "id": "scheduler_60",
       "status": "executable",
       "probe": "probes/scheduler_60.p8",
+      "expected": "expected/scheduler_60_six_host_ticks.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/scheduler_60.p8 --output captures/official/0.2.7-education/scheduler_60-candidate.json --host-ticks 6",
+      "golden_status": "The source-bound production-Wasm candidate matches the manual-derived six-host-tick fixture. Authorized official runtime capture is still required before this becomes an event golden.",
       "covers": ["60 Hz update", "update/draw ordering", "time() progression"]
     },
     {

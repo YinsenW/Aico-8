@@ -36,8 +36,14 @@ const persistenceInputPath = arguments_.get("persistence")
   ? path.resolve(arguments_.get("persistence")!) : undefined;
 const persistenceOutputPath = arguments_.get("persistence-output")
   ? path.resolve(arguments_.get("persistence-output")!) : undefined;
+const hostTicks = Number(arguments_.get("host-ticks") ?? "0");
+const buttonMask = Number(arguments_.get("button-mask") ?? "0");
 assert.ok(arguments_.get("cart"), "--cart is required");
 assert.ok(arguments_.get("output"), "--output is required");
+assert.ok(Number.isSafeInteger(hostTicks) && hostTicks >= 0 && hostTicks <= 1_000_000,
+  "--host-ticks must be an integer from 0 through 1000000");
+assert.ok(Number.isSafeInteger(buttonMask) && buttonMask >= 0 && buttonMask <= 0x3f,
+  "--button-mask must be an integer from 0 through 63");
 assert.ok(isPrivateOfficialCapturePath(repository, outputPath),
   "Implementation candidate captures must stay below ignored captures/official");
 assert.ok(!fs.existsSync(outputPath), "Implementation candidate capture already exists; captures are immutable");
@@ -95,6 +101,9 @@ try {
   assert.equal(kernel._aico8_start(runtime), 1, lastError(runtime));
   assert.equal(kernel._aico8_initialization_complete(runtime), 1,
     "Probe unexpectedly suspended during initialization");
+  for (let tick = 0; tick < hostTicks; tick += 1) {
+    assert.notEqual(kernel._aico8_tick60(runtime, buttonMask), -1, lastError(runtime));
+  }
   const diagnosticPointer = kernel._aico8_diagnostic_output(runtime);
   const events = parseProbeEvents(diagnosticPointer ? kernel.UTF8ToString(diagnosticPointer) : "");
   assert.ok(events.length > 0, "Probe emitted no diagnostic events");
