@@ -16,6 +16,7 @@ const valid = {
   presentationMode: "hd",
   sceneId: "scene.gameplay",
   stateBoundary: "canonical-replay:update:3:presentation-ms:0",
+  visualRuntimeSha256: "a".repeat(64),
 };
 
 test("accepts DOM-bound evidence captured only after the loading overlay is excluded", () => {
@@ -24,6 +25,7 @@ test("accepts DOM-bound evidence captured only after the loading overlay is excl
     presentationMode: valid.presentationMode,
     sceneId: valid.sceneId,
     stateBoundary: valid.stateBoundary,
+    visualRuntimeSha256: valid.visualRuntimeSha256,
   }), valid);
 });
 
@@ -46,4 +48,12 @@ test("rejects readiness copied from a different mode, scene, or state boundary",
     sceneId: "scene.win",
     stateBoundary: "canonical-replay:update:34:presentation-ms:0",
   }), /presentationMode.*sceneId.*stateBoundary/);
+});
+
+test("rejects readiness copied from another visual runtime", () => {
+  assert.throws(() => assertCaptureReadinessEvidence(valid, {
+    visualRuntimeSha256: "b".repeat(64),
+  }), /visualRuntimeSha256/);
+  assert.match(captureReadinessErrors({ ...valid, visualRuntimeSha256: undefined }).join("\n"),
+    /visualRuntimeSha256/);
 });

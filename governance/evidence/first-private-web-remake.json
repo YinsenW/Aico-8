@@ -32,7 +32,7 @@
     "quick_tap_latch": "pending-until-consumed-by-logical-update"
   },
   "presentation": {
-    "automated_audit_status": "accepted",
+    "automated_audit_status": "draft",
     "total_observed_updates": 9224,
     "source_tokens": 178,
     "unmapped_source_tokens": 0,
@@ -63,8 +63,8 @@
       "representativeViewportMatrixComplete": true,
       "requiredPartReviewAnchorsComplete": true
     },
-    "identity_human_review_accepted": true,
-    "identity_review_packet_status": "accepted",
+    "identity_human_review_accepted": false,
+    "identity_review_packet_status": "pending-human-side-by-side-review",
     "identity_review_elements": 20,
     "identity_review_static_pairs": 11,
     "identity_review_temporal_sequences": 6,
@@ -74,15 +74,15 @@
   "package": {
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
-    "artifact_count": 40,
-    "visual_runtime_sha256": "4fe05c056bbf68f3de0c60d1bd08b4f618fe922b84ebb3e427442c33af35ff32",
-    "validation_replay_semantics_sha256": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
+    "artifact_count": 46,
+    "visual_runtime_sha256": "d9dc3d810c02d11800a813be216873da132f70b7bdf0e1788aabe4e3e7cabd4f",
+    "validation_replay_semantics_sha256": "3508510dee6e978039fb8837104e32b0c835a4fd8086662a7df7bfd23901acb9",
     "two_builds_byte_identical": true
   },
   "release_technical": {
     "target_profile_id": "web-pwa-private-research-v1",
     "target_profile_sha256": "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809",
-    "unpacked_bytes": 2239906,
+    "unpacked_bytes": 2453019,
     "largest_artifact_bytes": 632022,
     "startup_milliseconds": 329.2,
     "sample_frames": 180,
@@ -96,11 +96,11 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "04e33d69dceb3adc3268f76ad2c39768a99fdb51e13427c4d2a600b93bd621bf",
-    "browser_validation_sha256": "9ec9672ab32e4b6413233f28261ade52bdbf2747df343b62310a9a5838a97840",
-    "hd_review_packet_sha256": "9f4e08aab2994d78780718fa843185e538c7720824770b89657ac02d0bf57e04",
-    "hd_review_document_sha256": "e146dbc93661ebd4da1574e441db7f525300b30f4f631a5d560a2400ca22eafe",
-    "hd_review_decision_sha256": "d3917c7a86543ab091f110097926e4799c6e5e9cfb6e75559c2a7f8b0ccf8ef8",
-    "input_surface_projection_sha256": "b9230af0a378fa1139af62d118fb1fc80c05d61aa74a12c3ac25b1f238048722"
+    "hd_presentation_audit_sha256": "b68002a05d21d512d069ce74edfe87cd58089401cec517b8b1d131d3ff3814fd",
+    "browser_validation_sha256": "1c295a994c6bc53a08bf9ecadb8ed41ff96e405aa5adba4e52d000282a3b9b12",
+    "hd_review_packet_sha256": "94fe6ca1fa247d73f7d853bf40c3c0002943a29ac599bec1dfb2384d460327cb",
+    "hd_review_document_sha256": "709b9739b1f7c56146e989969dc25a19403f28df9a1bb285c21d04dfc0138c73",
+    "hd_review_decision_sha256": null,
+    "input_surface_projection_sha256": "e3febf746e10ac0a711d7f790fdf38494e120aede03d2f098c0b8119a89ae440"
   }
 }

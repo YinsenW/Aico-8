@@ -1,4 +1,5 @@
 const identifierPattern = /^[a-z0-9][a-z0-9-]*$/;
+const sha256Pattern = /^[a-f0-9]{64}$/;
 
 export function captureReadinessErrors(record, expected = {}) {
   const errors = [];
@@ -19,6 +20,9 @@ export function captureReadinessErrors(record, expected = {}) {
     if (typeof record[field] !== "string" || record[field].length === 0) {
       errors.push(`${field} must be a non-empty string`);
     }
+  }
+  if (typeof record.visualRuntimeSha256 !== "string" || !sha256Pattern.test(record.visualRuntimeSha256)) {
+    errors.push("visualRuntimeSha256 must be a lowercase SHA-256 digest");
   }
   for (const [field, value] of Object.entries(expected)) {
     if (value !== undefined && record[field] !== value) {
