@@ -11,6 +11,7 @@ export interface FixedCollectionLauncherModuleV1 {
   readonly author: string;
   readonly launchPath: string;
   readonly saveNamespace: string;
+  readonly persistenceKey: string;
   readonly rightsProfile: string;
   readonly package: FixedCollectionLauncherPackageV1;
 }
@@ -79,6 +80,7 @@ export function validateFixedCollectionLauncher(value: unknown): FixedCollection
   const moduleIds = new Set<string>();
   const launchPaths = new Set<string>();
   const saveNamespaces = new Set<string>();
+  const persistenceKeys = new Set<string>();
   const releaseHashes = new Set<string>();
   const treeHashes = new Set<string>();
   if (!Array.isArray(value.modules) || value.modules.length < 3) {
@@ -87,7 +89,7 @@ export function validateFixedCollectionLauncher(value: unknown): FixedCollection
     const path = `$.modules[${index}]`;
     if (!object(module)) { errors.push(`${path} must be an object`); return; }
     exactKeys(module, [
-      "moduleId", "title", "author", "launchPath", "saveNamespace", "rightsProfile", "package",
+      "moduleId", "title", "author", "launchPath", "saveNamespace", "persistenceKey", "rightsProfile", "package",
     ], path, errors);
     if (!validString(module.moduleId, ID)) errors.push(`${path}.moduleId must be a valid id`);
     else if (moduleIds.has(module.moduleId)) errors.push(`${path}.moduleId must be unique`); else moduleIds.add(module.moduleId);
@@ -97,6 +99,8 @@ export function validateFixedCollectionLauncher(value: unknown): FixedCollection
     else if (launchPaths.has(module.launchPath)) errors.push(`${path}.launchPath must be unique`); else launchPaths.add(module.launchPath);
     if (!validString(module.saveNamespace)) errors.push(`${path}.saveNamespace must be a non-empty string`);
     else if (saveNamespaces.has(module.saveNamespace)) errors.push(`${path}.saveNamespace must be unique`); else saveNamespaces.add(module.saveNamespace);
+    if (!validString(module.persistenceKey)) errors.push(`${path}.persistenceKey must be a non-empty string`);
+    else if (persistenceKeys.has(module.persistenceKey)) errors.push(`${path}.persistenceKey must be unique`); else persistenceKeys.add(module.persistenceKey);
     if (!validString(module.rightsProfile, ID)) errors.push(`${path}.rightsProfile must be a valid id`);
     if (!object(module.package)) errors.push(`${path}.package must be an object`);
     else {

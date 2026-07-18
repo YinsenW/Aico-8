@@ -23,6 +23,7 @@ function launcher(): Record<string, any> {
       author: `Author ${suffix.toUpperCase()}`,
       launchPath: `games/module-${suffix}/`,
       saveNamespace: `module-${suffix}:aico8.game-module.v1`,
+      persistenceKey: `aico8.synthetic.module-${suffix}.progress.v1`,
       rightsProfile: "private-research",
       package: {
         releaseManifestSha256: String(index + 1).repeat(64),
@@ -43,6 +44,7 @@ describe("fixed collection launcher contract", () => {
     ["too few modules", true, (value: any) => { value.modules.pop(); }],
     ["unknown initial module", false, (value: any) => { value.initialModuleId = "missing"; }],
     ["shared save namespace", false, (value: any) => { value.modules[1].saveNamespace = value.modules[0].saveNamespace; }],
+    ["shared persistence key", false, (value: any) => { value.modules[1].persistenceKey = value.modules[0].persistenceKey; }],
     ["shared package tree", false, (value: any) => { value.modules[1].package.treeSha256 = value.modules[0].package.treeSha256; }],
     ["unsafe launch path", true, (value: any) => { value.modules[0].launchPath = "../outside/"; }],
     ["non-resetting switch", true, (value: any) => { value.resetMode = "reuse-runtime"; }],
