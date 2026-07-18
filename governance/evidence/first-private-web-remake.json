@@ -32,7 +32,7 @@
     "quick_tap_latch": "pending-until-consumed-by-logical-update"
   },
   "presentation": {
-    "automated_audit_status": "draft",
+    "automated_audit_status": "accepted",
     "total_observed_updates": 9224,
     "source_tokens": 178,
     "unmapped_source_tokens": 0,
@@ -63,8 +63,8 @@
       "representativeViewportMatrixComplete": true,
       "requiredPartReviewAnchorsComplete": true
     },
-    "identity_human_review_accepted": false,
-    "identity_review_packet_status": "pending-human-side-by-side-review",
+    "identity_human_review_accepted": true,
+    "identity_review_packet_status": "accepted",
     "identity_review_elements": 20,
     "identity_review_static_pairs": 11,
     "identity_review_temporal_sequences": 6,
@@ -75,6 +75,7 @@
     "target": "web-pwa",
     "output_profile": "hd-1024-square",
     "artifact_count": 46,
+    "release_manifest_sha256": "437d71f8fea4438e290fb5eba1e46505efd0ed38bf6358762e9c3742c30d8be3",
     "visual_runtime_sha256": "d9dc3d810c02d11800a813be216873da132f70b7bdf0e1788aabe4e3e7cabd4f",
     "validation_replay_semantics_sha256": "3508510dee6e978039fb8837104e32b0c835a4fd8086662a7df7bfd23901acb9",
     "two_builds_byte_identical": true
@@ -96,11 +97,11 @@
     "retained": true,
     "public_cart_or_derived_payload": false,
     "canonical_run_audit_sha256": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
-    "hd_presentation_audit_sha256": "b68002a05d21d512d069ce74edfe87cd58089401cec517b8b1d131d3ff3814fd",
+    "hd_presentation_audit_sha256": "3a8e940362c1864ab4984ac733cae9d7596357c2b3baf815c79deabc7718771d",
     "browser_validation_sha256": "1c295a994c6bc53a08bf9ecadb8ed41ff96e405aa5adba4e52d000282a3b9b12",
-    "hd_review_packet_sha256": "94fe6ca1fa247d73f7d853bf40c3c0002943a29ac599bec1dfb2384d460327cb",
-    "hd_review_document_sha256": "709b9739b1f7c56146e989969dc25a19403f28df9a1bb285c21d04dfc0138c73",
-    "hd_review_decision_sha256": null,
+    "hd_review_packet_sha256": "92b33ed01c7032fabde0e69195450ee148ec1e63fbe835bbc3b0c9b8f18de8e0",
+    "hd_review_document_sha256": "30e9296ecf55c85fc818baba2e6b45e5a3b76d4b70e6ccf884219e04f0b659a3",
+    "hd_review_decision_sha256": "20ae80cc5a641eaea43c7181c95abd1749f4964b662c1f0cd929486865580924",
     "input_surface_projection_sha256": "e3febf746e10ac0a711d7f790fdf38494e120aede03d2f098c0b8119a89ae440"
   }
 }
