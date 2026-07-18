@@ -1,8 +1,11 @@
 {
   "schemaVersion": "aico8.typography-accessibility-summary.v1",
   "gameId": "dust-bunny",
-  "status": "automated-pass-human-review-pending",
-  "privateAuditSha256": "8392fbe18a06bbfd8f3d8c19c1b9718f3e0daab07b4c24cbcb81edac3358b317",
+  "status": "accepted",
+  "privateAuditSha256": "488ea2228288ae4c80105f31c9770dde5e08a4ac74632751ce23592381aebd81",
+  "pendingAuditSha256": "8392fbe18a06bbfd8f3d8c19c1b9718f3e0daab07b4c24cbcb81edac3358b317",
+  "reviewPacketSha256": "f6e566ac3ecdf9b59f474969b9b40094b5e0e0aef8180c03b49af45bacb50fee",
+  "decisionSha256": "1a3ceacea8e100c5e76fb893f16ccb240ffef2387a2170612ae74c5ebf8a765b",
   "sourceSha256": "e51f17df87ae97226a5566a1980f386180a58eb068972b2b7c2348407954fb61",
   "typographyManifestSha256": "986fee76f9c6e471b3d0bc6751b276f857918c770174b1f87a966f2bd8cf3622",
   "textInventorySha256": "72c1fed10cb2b665a9d0e267ddecae5212bfb7cf3351eeeb3c8c994e236323b2",
@@ -20,5 +23,12 @@
   "missingAssistiveScenes": 0,
   "unprovenAssistiveDescriptions": 0,
   "compatibilityStateMutations": 0,
-  "manualReadability": "pending"
+  "manualReadability": "approved",
+  "reviewer": "project-owner-yinsenw",
+  "checks": {
+    "phoneTitleReadable": "passed",
+    "hudLabelsCrispAcrossProfiles": "passed",
+    "glyphsCompleteWithoutFallback": "passed",
+    "visualHierarchyPreserved": "passed"
+  }
 }
