@@ -41,17 +41,17 @@
     "externalSigningFailClosed": "passed",
     "cleanSignedApkAabCi": {
       "status": "passed",
-      "revision": "e645ef08cef90e2ba4170b798bd3a210c8868a90",
-      "runId": 29568008618
+      "revision": "13da172da283ce0b6399b256f06d22567d962013",
+      "runId": 29629721706
     },
     "namedSquareApi35Emulator": {
       "status": "passed",
-      "revision": "e645ef08cef90e2ba4170b798bd3a210c8868a90",
-      "runId": 29568008618,
-      "jobId": 87844963344,
-      "artifactId": 8402104120,
-      "artifactName": "android-square-api35-e645ef08cef90e2ba4170b798bd3a210c8868a90",
-      "artifactDigestSha256": "923857c65d8dddbf51aaa84b811c17c06a327840422f88961cbf8982432761f8",
+      "revision": "13da172da283ce0b6399b256f06d22567d962013",
+      "runId": 29629721706,
+      "jobId": 88040875818,
+      "artifactId": 8425130620,
+      "artifactName": "android-square-api35-13da172da283ce0b6399b256f06d22567d962013",
+      "artifactDigestSha256": "d5ed582f7720d5d25d09a5937392707eefcd65b9e47f092878dccb032d21594d",
       "profileId": "aico8-square-api35",
       "apiLevel": 35,
       "physicalPixels": "1024x1024",
@@ -60,8 +60,8 @@
       "instrumentationTests": 4,
       "instrumentationOutcome": "passed",
       "readyHostScreenshot": "passed-1024x1024-png",
-      "readyHostScreenshotSha256": "d94cd072f0b214707375a0104ea62fafd8c2044295cc420b36c689a148e8cfdb",
-      "coldLaunchMilliseconds": 1859
+      "readyHostScreenshotSha256": "a46f84b4a48a45027be19536dc7345f7b23e5c94f20e9e16640b007d1573c1e1",
+      "coldLaunchMilliseconds": 1463
     }
   },
   "localBuildEnvironment": {
