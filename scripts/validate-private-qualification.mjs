@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { validationReplaySemanticsSha256 } from "./lib/release-identities.mjs";
 import {
   assertInputTraceProvenance,
   inputTraceSha256,
 } from "./lib/input-trace-provenance.mjs";
+import { runPrivateTypeScript } from "./lib/private-typescript-runner.mjs";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceValue = process.env.AICO8_PRIVATE_WORKSPACE;
@@ -31,11 +31,10 @@ assert.equal(traceProvenance.traceSha256, inputTraceSha256(replay.trace),
   "input-trace provenance does not bind the exact canonical trace");
 
 function runPrivateCheck(script) {
-  const result = spawnSync(process.execPath, ["--experimental-strip-types", script], {
+  const result = runPrivateTypeScript({
+    script,
     cwd: workspace,
     env: { ...process.env, AICO8_REPO: repository },
-    encoding: "utf8",
-    stdio: "pipe",
   });
   process.stdout.write(result.stdout ?? "");
   process.stderr.write(result.stderr ?? "");
