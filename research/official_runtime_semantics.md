@@ -34,6 +34,9 @@ fixed-point overflow, memory aliasing, and small-address wrapping.
 - Defining `_update60()` instead of `_update()` requests 60 Hz for update and draw, with half the CPU budget per frame.
 - If drawing misses its deadline, the runtime can draw at 15/30 Hz while invoking update multiple times so simulation time catches up.
 - `time()`/`t()` is derived from update calls, not wall-clock time. Repeated reads during one update return the same value.
+- Authorized Education 0.2.7 captures show a fixed first-callback clock origin: the first 30 Hz update reports
+  `0.0667` and the first 60 Hz update reports `0.05`, each `1/30` later than an update-count-only clock. The matching
+  update/draw counts show this origin is clock state, not hidden gameplay callbacks; time inside `_init()` remains uncaptured.
 - `flip()` controls presentation in a custom main loop. A runtime may also present automatically at frame end.
 - `#include` is flattened when a cart is saved as PNG/ROM or exported; it is not a runtime module system.
 

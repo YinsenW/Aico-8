@@ -78,8 +78,8 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
 ## Cross-document invariants
 
 - `specs/display-profiles.json` owns `128 → 1024`, scale `8`, and tile `64` values.
-- The kernel is the only owner of fixed-point, memory, scheduler, raster, input
-  repeat, persistence, and reference audio semantics.
+- The kernel is the only owner of fixed-point, memory, scheduler, raster, input repeat, persistence, and reference audio semantics.
+- Cartridge clock origin is distinct from logical update count: the production host applies the official two-60-Hz-tick startup origin only after invoking `_init()`; callback cadence, input repeat, and synchronous `_init()` time remain independent of that origin.
 - The kernel exposes the manual-defined current music-pattern value through
   `stat(54)` and legacy alias `stat(24)`. This narrow capability does not imply
   licensed-official qualification of the remaining audio tick-history selectors.

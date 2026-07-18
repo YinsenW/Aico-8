@@ -24,20 +24,24 @@
     },
     {
       "id": "scheduler_30",
-      "status": "executable",
+      "status": "event_golden_matched",
       "probe": "probes/scheduler_30.p8",
       "expected": "expected/scheduler_30_six_host_ticks.json",
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/scheduler_30.p8 --source-dir /private/staging/scheduler-30 --event-log events.txt --output captures/official/0.2.7-education/scheduler_30.json",
       "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/scheduler_30.p8 --output captures/official/0.2.7-education/scheduler_30-candidate.json --host-ticks 6",
-      "golden_status": "The source-bound production-Wasm candidate matches the manual-derived six-host-tick fixture. Authorized official runtime capture is still required before this becomes an event golden.",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/scheduler_30.json --candidate captures/official/0.2.7-education/scheduler_30-candidate.json --output captures/official/0.2.7-education/scheduler_30-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 and the production-Wasm candidate match all six first-boundary events. The oracle exposed and closed a shared clock-origin defect without changing logical update count or update/draw cadence. This golden does not qualify input, missed-deadline catch-up, custom flip loops, delayed text, or audio timing.",
       "covers": ["30 Hz update", "update/draw ordering", "time() progression"]
     },
     {
       "id": "scheduler_60",
-      "status": "executable",
+      "status": "event_golden_matched",
       "probe": "probes/scheduler_60.p8",
       "expected": "expected/scheduler_60_six_host_ticks.json",
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/scheduler_60.p8 --source-dir /private/staging/scheduler-60 --event-log events.txt --output captures/official/0.2.7-education/scheduler_60.json",
       "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/scheduler_60.p8 --output captures/official/0.2.7-education/scheduler_60-candidate.json --host-ticks 6",
-      "golden_status": "The source-bound production-Wasm candidate matches the manual-derived six-host-tick fixture. Authorized official runtime capture is still required before this becomes an event golden.",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/scheduler_60.json --candidate captures/official/0.2.7-education/scheduler_60-candidate.json --output captures/official/0.2.7-education/scheduler_60-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 and the production-Wasm candidate match all twelve first-boundary events. Both 30 Hz and 60 Hz captures prove the same two-host-tick startup clock origin while retaining their distinct callback cadence. This golden does not qualify input, missed-deadline catch-up, custom flip loops, delayed text, or audio timing.",
       "covers": ["60 Hz update", "update/draw ordering", "time() progression"]
     },
     {
