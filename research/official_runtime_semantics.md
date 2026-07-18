@@ -302,8 +302,9 @@ language comparison first exposed an implementation defect in non-numeric
 same source-bound probe then matched 18/18. The sanitized hashes and bounded
 claims are retained in
 `governance/evidence/official-education-static-compatibility-differential.json`.
-This batch does not qualify scheduler timing, un-emitted state, input,
-persistence, or audio.
+That static batch alone does not qualify scheduler timing, un-emitted state,
+input, persistence, or audio; the capability-specific captures below qualify
+only their separately declared boundaries.
 
 The next authorized Education 0.2.7 capture qualified a bounded persistence
 path. A public write cart selected the named slot from `_init()`, observed a
@@ -319,6 +320,28 @@ goldens and bounded hashes are retained in
 This evidence does not qualify four-slot switching, `cstore/reload` external
 cart mutation, multi-cart parameters, pause-menu callbacks, serial/GPIO,
 historical versions, or publication rights.
+
+The scheduler probes then matched all 6 emitted 30 Hz events and all 12 emitted
+60 Hz events. They exposed a shared post-`_init()` clock-origin defect rather
+than an update-count defect; separating the captured clock origin from logical
+update count preserved cadence, update/draw order, input repeat state, audio
+ticks, and synchronous `_init()` time. The bounded hashes are retained in
+`governance/evidence/official-education-scheduler-differential.json`.
+
+The input probes use cart-emitted synchronization prompts: each cart stops
+advancing its logical counter until the requested player-zero host mask is
+observed. This makes automation latency irrelevant to the tested update. The
+official Education 0.2.7 host and production Wasm candidate match all 16 30 Hz
+events and all seven 60 Hz events, including held state, first edge,
+same-update `btnp()` reads, default 15/4 repeat, doubled 30/8 repeat, release
+clearing, and custom 3/2 repeat through `0x5f5c..0x5f5d`. The official capture
+changed only the page's player-zero host button bridge at the cart's declared
+ready/release/repress boundaries; it did not edit VM memory, logical counters,
+clock values, cart bytes, or emitted events. The exact qualified and deferred
+claims are retained in
+`governance/evidence/official-education-input-differential.json`. Other players,
+button chords, browser/physical-controller mapping, devkit mouse/keyboard, and
+pause-menu input remain unqualified.
 
 ### Scheduler
 

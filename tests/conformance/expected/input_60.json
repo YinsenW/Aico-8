@@ -1,0 +1,13 @@
+{
+  "probe": "input_60",
+  "source": "PICO-8 Education Edition v0.2.7 authorized official capture",
+  "events": [
+    ["ready", "press-left"],
+    ["btnp", "1"],
+    ["held", "true:1:1"],
+    ["btnp", "31"],
+    ["btnp", "39"],
+    ["btnp", "47"],
+    ["done", "50"]
+  ]
+}

@@ -22,6 +22,11 @@ const temporalProbes = [
   ['scheduler_60', 'scheduler_60_six_host_ticks', 6],
 ]
 
+const buttonTraceProbes = [
+  ['input_30', 'btnp_30'],
+  ['input_60', 'btnp_60'],
+]
+
 for (const probe of probes) {
   test(`production Wasm emits a deterministic source-bound ${probe} candidate`, () => {
     const expected = JSON.parse(fs.readFileSync(
@@ -78,6 +83,37 @@ for (const [probe, expectedName, hostTicks] of temporalProbes) {
       const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
       assert.deepEqual(validateImplementationProbeCapture(capture), [])
       assert.deepEqual(capture.events, expected.events)
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true })
+    }
+  })
+}
+
+for (const [probe, trace] of buttonTraceProbes) {
+  test(`production Wasm emits the official ${probe} button-trace events deterministically`, () => {
+    const expected = JSON.parse(fs.readFileSync(path.join(
+      repository, `tests/conformance/expected/${probe}.json`), 'utf8'))
+    const directory = path.join(
+      repository, 'captures/official',
+      `public-wasm-${probe}-${process.pid}-${Date.now()}`,
+    )
+    try {
+      const outputs = ['candidate-a.json', 'candidate-b.json'].map((name) => path.join(directory, name))
+      const captures = outputs.map((output) => {
+        const result = spawnSync('corepack', [
+          'pnpm', 'exec', 'tsx', 'scripts/capture-implementation-probe.ts',
+          '--cart', `tests/conformance/probes/${probe}.p8`,
+          '--output', output,
+          '--button-trace', `tests/conformance/input_traces/${trace}.json`,
+        ], { cwd: repository, encoding: 'utf8' })
+        assert.equal(result.status, 0, result.stderr)
+        return JSON.parse(fs.readFileSync(output, 'utf8'))
+      })
+      assert.deepEqual(validateImplementationProbeCapture(captures[0]), [])
+      assert.deepEqual(captures[0].events, expected.events)
+      assert.deepEqual(captures[1].events, expected.events)
+      assert.equal(captures[0].cartSha256, captures[1].cartSha256)
+      assert.equal(captures[0].runtimeSha256, captures[1].runtimeSha256)
     } finally {
       fs.rmSync(directory, { recursive: true, force: true })
     }

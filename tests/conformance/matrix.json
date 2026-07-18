@@ -134,18 +134,33 @@
     },
     {
       "id": "input",
-      "status": "capture_ready",
+      "status": "partially_executable",
       "probes": ["probes/input_30.p8", "probes/input_60.p8"],
       "traces": ["input_traces/btnp_30.json", "input_traces/btnp_60.json"],
-      "golden_status": "Official PICO-8 capture required; independent runtimes are not normative.",
+      "expected": ["expected/input_30.json", "expected/input_60.json"],
+      "candidate_commands": [
+        "pnpm capture:implementation-probe -- --cart tests/conformance/probes/input_30.p8 --output captures/official/0.2.7-education/input_30-candidate.json --button-trace tests/conformance/input_traces/btnp_30.json",
+        "pnpm capture:implementation-probe -- --cart tests/conformance/probes/input_60.p8 --output captures/official/0.2.7-education/input_60-candidate.json --button-trace tests/conformance/input_traces/btnp_60.json"
+      ],
+      "comparison_commands": [
+        "pnpm compare:official-probe -- --official captures/official/0.2.7-education/input_30.json --candidate captures/official/0.2.7-education/input_30-candidate.json --output captures/official/0.2.7-education/input_30-comparison.json",
+        "pnpm compare:official-probe -- --official captures/official/0.2.7-education/input_60.json --candidate captures/official/0.2.7-education/input_60-candidate.json --output captures/official/0.2.7-education/input_60-comparison.json"
+      ],
+      "golden_status": "Authorized Education 0.2.7 and the production-Wasm candidate match all 16 synchronized 30 Hz events and all seven synchronized 60 Hz events. The qualified boundary includes player-zero held state, first edge, same-update reads, default 15/4 repeat, 60 Hz doubled 30/8 repeat, release clearing, and custom 3/2 repeat. It does not qualify physical host mappings, other players/buttons, devkit mouse/keyboard, or pause-menu input.",
       "covers": [
         "btn held state",
         "btnp edge",
         "15/4 frame repeat",
         "60 Hz doubled delays",
         "custom repeat registers",
-        "multiple updates per draw",
-        "devkit mouse and keyboard"
+        "same-update btnp reads",
+        "synchronized release and repress"
+      ],
+      "deferred": [
+        "players one through seven and multi-button chords",
+        "devkit mouse and keyboard",
+        "pause-menu callbacks",
+        "browser gamepad mapping and physical controller delivery"
       ]
     },
     {
