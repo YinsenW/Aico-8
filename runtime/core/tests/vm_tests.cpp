@@ -1108,6 +1108,38 @@ function _draw() drawn+=1 end
     p8_core_destroy(core);
 }
 
+void test_cartdata_reports_host_restoration_before_initialization()
+{
+    constexpr char source[] = R"p8lua(
+function _init()
+ first=cartdata("aico8_compat_persistence")
+ second=cartdata("ignored_second_slot")
+end
+)p8lua";
+    p8_core *core = p8_core_create();
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@cartdata-loaded"));
+    assert(!p8_vm_cartdata_active(vm));
+    p8_vm_set_cartdata_loaded(vm, 1);
+    assert(p8_vm_call(vm, "_init"));
+    assert(p8_vm_cartdata_active(vm));
+    int value = -1;
+    assert(p8_vm_get_global_boolean(vm, "first", &value) && value == 1);
+    assert(p8_vm_get_global_boolean(vm, "second", &value) && value == 0);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+
+    core = p8_core_create();
+    vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@cartdata-clean"));
+    assert(p8_vm_call(vm, "_init"));
+    assert(p8_vm_get_global_boolean(vm, "first", &value) && value == 0);
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed()
 {
     constexpr char music_state_source[] = R"p8lua(
@@ -1186,6 +1218,7 @@ int main(int argc, char **argv)
     test_map_sprite_zero_read_overrides_and_extended_display_palette_reach_lua();
     test_ellipse_and_rounded_rectangle_apis_reach_raster_and_draw_stream();
     test_update_error_is_sticky_and_draw_is_skipped();
+    test_cartdata_reports_host_restoration_before_initialization();
     test_audio_stat_exposes_current_pattern_but_keeps_tick_history_fail_closed();
     if (argc == 2 && (std::string(argv[1]) == "--checkpoint"
                        || std::string(argv[1]) == "--custom-audio-checkpoint"

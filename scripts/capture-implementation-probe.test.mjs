@@ -52,3 +52,50 @@ for (const probe of probes) {
     }
   })
 }
+
+test('production Wasm preserves an official-compatible cartdata slot across runtime instances', () => {
+  const directory = path.join(
+    repository,
+    'captures/official',
+    `public-wasm-persistence-${process.pid}-${Date.now()}`,
+  )
+  const writeOutput = path.join(directory, 'write.json')
+  const readOutput = path.join(directory, 'read.json')
+  const persistence = path.join(directory, 'slot.bin')
+  const capture = (...arguments_) => spawnSync('corepack', [
+    'pnpm', 'exec', 'tsx', 'scripts/capture-implementation-probe.ts', ...arguments_,
+  ], { cwd: repository, encoding: 'utf8' })
+  try {
+    const write = capture(
+      '--cart', 'tests/conformance/probes/persistence_write.p8',
+      '--output', writeOutput,
+      '--persistence-output', persistence,
+    )
+    assert.equal(write.status, 0, write.stderr)
+    const read = capture(
+      '--cart', 'tests/conformance/probes/persistence_read.p8',
+      '--output', readOutput,
+      '--persistence', persistence,
+    )
+    assert.equal(read.status, 0, read.stderr)
+
+    const writeCapture = JSON.parse(fs.readFileSync(writeOutput, 'utf8'))
+    const readCapture = JSON.parse(fs.readFileSync(readOutput, 'utf8'))
+    const writeExpected = JSON.parse(fs.readFileSync(path.join(
+      repository, 'tests/conformance/expected/persistence_write_clean_home.json'), 'utf8'))
+    const readExpected = JSON.parse(fs.readFileSync(path.join(
+      repository, 'tests/conformance/expected/persistence_read_after_write.json'), 'utf8'))
+    assert.deepEqual(validateImplementationProbeCapture(writeCapture), [])
+    assert.deepEqual(validateImplementationProbeCapture(readCapture), [])
+    assert.deepEqual(writeCapture.events, writeExpected.events)
+    assert.deepEqual(readCapture.events, readExpected.events)
+    assert.equal(writeCapture.runtimeSha256, readCapture.runtimeSha256)
+
+    const bytes = fs.readFileSync(persistence)
+    assert.equal(bytes.length, 256)
+    assert.deepEqual([...bytes.subarray(0, 4)], [0x00, 0x80, 0x7b, 0x00])
+    assert.deepEqual([...bytes.subarray(252, 256)], [0x00, 0xc0, 0xfd, 0xff])
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})

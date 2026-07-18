@@ -32,11 +32,24 @@ const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 const arguments_ = argumentsMap(process.argv.slice(2).filter((argument) => argument !== "--"));
 const cartPath = path.resolve(arguments_.get("cart") ?? "");
 const outputPath = path.resolve(arguments_.get("output") ?? "");
+const persistenceInputPath = arguments_.get("persistence")
+  ? path.resolve(arguments_.get("persistence")!) : undefined;
+const persistenceOutputPath = arguments_.get("persistence-output")
+  ? path.resolve(arguments_.get("persistence-output")!) : undefined;
 assert.ok(arguments_.get("cart"), "--cart is required");
 assert.ok(arguments_.get("output"), "--output is required");
 assert.ok(isPrivateOfficialCapturePath(repository, outputPath),
   "Implementation candidate captures must stay below ignored captures/official");
 assert.ok(!fs.existsSync(outputPath), "Implementation candidate capture already exists; captures are immutable");
+for (const persistencePath of [persistenceInputPath, persistenceOutputPath]) {
+  if (!persistencePath) continue;
+  assert.ok(isPrivateOfficialCapturePath(repository, persistencePath),
+    "Implementation persistence bytes must stay below ignored captures/official");
+}
+if (persistenceOutputPath) {
+  assert.ok(!fs.existsSync(persistenceOutputPath),
+    "Implementation persistence output already exists; captures are immutable");
+}
 
 const cart = fs.readFileSync(cartPath);
 const source = extractSourceOnlyProbe(cart);
@@ -66,10 +79,19 @@ const runtime = kernel._aico8_create();
 assert.notEqual(runtime, 0, "Wasm runtime creation failed");
 const romPointer = copyToHeap(rom);
 const sourcePointer = copyToHeap(source);
+const persistenceInput = persistenceInputPath ? fs.readFileSync(persistenceInputPath) : undefined;
+const persistenceInputPointer = persistenceInput ? copyToHeap(persistenceInput) : undefined;
+const persistenceScratchPointer = persistenceOutputPath ? kernel._malloc(256) : undefined;
 const temporaryOutput = `${outputPath}.tmp-${process.pid}`;
+const temporaryPersistenceOutput = persistenceOutputPath
+  ? `${persistenceOutputPath}.tmp-${process.pid}` : undefined;
 try {
   assert.equal(kernel._aico8_load_cart(runtime, romPointer, rom.length, sourcePointer, source.length),
     1, lastError(runtime));
+  if (persistenceInput && persistenceInputPointer !== undefined) {
+    assert.equal(kernel._aico8_load_persistent(runtime, persistenceInputPointer,
+      persistenceInput.length), 1, lastError(runtime));
+  }
   assert.equal(kernel._aico8_start(runtime), 1, lastError(runtime));
   assert.equal(kernel._aico8_initialization_complete(runtime), 1,
     "Probe unexpectedly suspended during initialization");
@@ -93,11 +115,24 @@ try {
   assert.deepEqual(errors, [], errors.join("\n"));
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(temporaryOutput, `${JSON.stringify(capture, null, 2)}\n`, { flag: "wx" });
+  if (persistenceOutputPath && persistenceScratchPointer !== undefined
+      && temporaryPersistenceOutput) {
+    assert.equal(kernel._aico8_copy_persistent(runtime, persistenceScratchPointer, 256), 256,
+      "Unable to copy implementation persistence bytes");
+    fs.mkdirSync(path.dirname(persistenceOutputPath), { recursive: true });
+    fs.writeFileSync(temporaryPersistenceOutput,
+      kernel.HEAPU8.slice(persistenceScratchPointer, persistenceScratchPointer + 256),
+      { flag: "wx" });
+    fs.renameSync(temporaryPersistenceOutput, persistenceOutputPath);
+  }
   fs.renameSync(temporaryOutput, outputPath);
   process.stdout.write(`Aico 8 implementation probe captured: ${events.length} events\n`);
 } finally {
+  if (persistenceScratchPointer !== undefined) kernel._free(persistenceScratchPointer);
+  if (persistenceInputPointer !== undefined) kernel._free(persistenceInputPointer);
   kernel._free(sourcePointer);
   kernel._free(romPointer);
   kernel._aico8_destroy(runtime);
   fs.rmSync(temporaryOutput, { force: true });
+  if (temporaryPersistenceOutput) fs.rmSync(temporaryPersistenceOutput, { force: true });
 }

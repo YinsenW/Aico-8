@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-18T15:11:55+08:00",
+  "status": "cross-reload-events-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "officialPageUrl": "https://www.pico-8-edu.com/",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser Chromium 150.0.0.0"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only the two public persistence probes to the authorized Education page.",
+    "publicationRightsGranted": false
+  },
+  "sequence": {
+    "profile": "one unchanged browser profile",
+    "steps": [
+      "Select persistence_write.p8 through the official page's local-cart file path and run it.",
+      "Observe and retain the official cartdata file, then reload the official page.",
+      "Select persistence_read.p8 through the same path and run it in the same browser profile."
+    ],
+    "writeCart": {
+      "path": "tests/conformance/probes/persistence_write.p8",
+      "sha256": "973872243087d06b4a37fac784aa425ba3be06af31ceb155cd57374bee08f214",
+      "eventCount": 6,
+      "officialCaptureSha256": "b86f4a877da8a628b24b72c8aaaaee6c6d179e49b05f787551d940f5d47280db",
+      "candidateCaptureSha256": "8327e15cd0cfe8abc6a6e8287d6e346f230583c4a7cb577aefd496b4ed3f155f",
+      "comparisonSha256": "93e35aaaa535cf187990b580aae32723677780599d9c9cef3ac29803221b0ccc",
+      "eventLogSha256": "aeeffacd12318c8572f3bba857296f3bad3090046c6a56eacd1cacf3de7eed45"
+    },
+    "readCart": {
+      "path": "tests/conformance/probes/persistence_read.p8",
+      "sha256": "e42c858b7a3a7f5c67c0a41e6a229c4148f8a168c9da73b8b04268fdd755372f",
+      "eventCount": 4,
+      "officialCaptureSha256": "efd1c23392087daa67fc83c36c6041fe4b71ed25abf20cd256ff4ea7f89b08b8",
+      "candidateCaptureSha256": "c800a1dc2a11a23658b8c3f7a87521246f2280e79ab8943e8ed929ffa42dc6ab",
+      "comparisonSha256": "a55d0b7828131adfab95b158782356895e8619a3953f458bc4b2a8c681ed6a39",
+      "eventLogSha256": "b518669b60f9bbad29a3a1b14097be86223be80d78ae95533cab192627f1c758"
+    },
+    "officialCartdata": {
+      "filename": "aico8_compat_persistence_20260718_v2.p8d.txt",
+      "textBytesWithoutTrailingNewline": 519,
+      "textSha256WithoutTrailingNewline": "b9ec3de1348a94cdf967f63a37057867708279c3bb6e723a387adbe107a366b3"
+    },
+    "candidatePersistentBytes": {
+      "bytes": 256,
+      "sha256": "3a671073e745d28f6494db005454810495f3f6933b97fcdc6ce99e98fdee2c77"
+    }
+  },
+  "defectAndFix": {
+    "officiallyExposedDefect": "The production host restored the 256 persistent bytes but api_cartdata always reported false on the first call.",
+    "sharedFix": "The host now tells the VM whether persistent bytes were restored before _init(), and restart preserves the active/restored status without changing cart memory semantics.",
+    "candidateRuntimeSha256": "505a1b52c1d5bed11295d32b4c97f3cf55533b98be2084fde73d1108b1f83d69",
+    "writeComparison": { "status": "matched", "eventCount": 6 },
+    "readComparison": { "status": "matched", "eventCount": 4 }
+  },
+  "qualified": [
+    "first cartdata() result for an absent versus restored named slot",
+    "dset/dget signed 16:16 values at indices 0 and 63",
+    "0x5e00 mapping for the first persistent value",
+    "one named slot restored across an official page reload in the same browser profile"
+  ],
+  "notQualified": [
+    "four-slot switching",
+    "cstore/reload external-cart mutation",
+    "multi-cart load parameters",
+    "pause-menu callbacks",
+    "serial/GPIO adaptation",
+    "historical versions",
+    "publication rights"
+  ],
+  "privateArtifactsCommitted": false,
+  "claims": {
+    "provesOfficialCompatibilityForQualifiedPersistenceScope": true,
+    "provesCompleteOfficialCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}
