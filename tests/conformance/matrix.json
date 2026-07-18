@@ -176,18 +176,20 @@
     },
     {
       "id": "persistence_host",
-      "status": "partially_executable",
+      "status": "event_golden_matched",
       "probes": ["probes/persistence_write.p8", "probes/persistence_read.p8"],
       "expected": ["expected/persistence_write_clean_home.json", "expected/persistence_read_after_write.json"],
+      "education_capture_command": "Run persistence_write.p8 in official Education 0.2.7 through local cart file selection, reload the same browser profile, then run persistence_read.p8; import both event logs with pnpm import:official-education-probe.",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/persistence_write.p8 --output captures/official/0.2.7-education/persistence-write-candidate.json --persistence-output captures/official/0.2.7-education/persistence.bin; pnpm capture:implementation-probe -- --cart tests/conformance/probes/persistence_read.p8 --output captures/official/0.2.7-education/persistence-read-candidate.json --persistence captures/official/0.2.7-education/persistence.bin",
+      "comparison_command": "pnpm compare:official-probe separately for the write and reloaded-read official/candidate records",
+      "golden_status": "Authorized Education 0.2.7 and production Wasm match all 6 write-phase and 4 reloaded-read events. The official page reload preserved the named slot, cartdata() returned false before creation and true after restoration, dget/dset retained signed 16:16 values at indices 0 and 63, and 0x5e00 mapped the first value. This qualifies one named-slot cross-reload path only.",
       "covers": [
         "cartdata/dget/dset",
-        "cstore/reload",
-        "multi-cart parameters",
-        "pause menu callbacks",
-        "serial and GPIO adaptation",
-        "host lifecycle"
+        "0x5e00 persistent-memory mapping",
+        "same-profile page reload",
+        "host restoration before _init()"
       ],
-      "deferred": ["cstore/reload external-cart mutation", "multi-cart load parameters", "pause menu callbacks", "serial/GPIO"]
+      "deferred": ["cstore/reload external-cart mutation", "multi-cart load parameters and four-slot switching", "pause menu callbacks", "serial/GPIO"]
     }
   ]
 }

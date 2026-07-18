@@ -280,6 +280,7 @@ struct p8_vm {
     std::string diagnostic_output;
     std::string cartdata_id;
     bool cartdata_active = false;
+    bool cartdata_loaded = false;
     bool has_update60 = false;
     bool restart_requested = false;
     bool faulted = false;
@@ -638,7 +639,7 @@ int api_cartdata(lua_State *state)
     }
     vm->cartdata_id.assign(id, size);
     vm->cartdata_active = true;
-    lua_pushboolean(state, 0); // new in-memory slot; no prior file was loaded
+    lua_pushboolean(state, vm->cartdata_loaded ? 1 : 0);
     return 1;
 }
 
@@ -1600,6 +1601,18 @@ const char *p8_vm_active_function(const p8_vm *vm)
 int p8_vm_frame_held(const p8_vm *vm)
 {
     return vm && vm->frame_held ? 1 : 0;
+}
+
+void p8_vm_set_cartdata_loaded(p8_vm *vm, int loaded)
+{
+    if (vm && !vm->cartdata_active) {
+        vm->cartdata_loaded = loaded != 0;
+    }
+}
+
+int p8_vm_cartdata_active(const p8_vm *vm)
+{
+    return vm && vm->cartdata_active ? 1 : 0;
 }
 
 const char *p8_vm_last_error(const p8_vm *vm)

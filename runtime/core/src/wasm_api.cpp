@@ -28,6 +28,7 @@ struct aico8_runtime {
     bool loaded = false;
     bool started = false;
     bool initialization_complete = false;
+    bool persistent_loaded = false;
     uint32_t audio_diagnostic_mask = 0;
     uint32_t audio_diagnostic_used_flags = 0;
 };
@@ -43,6 +44,8 @@ bool restart_cart(aico8_runtime *runtime)
             runtime->core, static_cast<uint16_t>(kPersistentBase + index));
     }
 
+    runtime->persistent_loaded = runtime->persistent_loaded
+        || p8_vm_cartdata_active(runtime->vm);
     p8_vm_destroy(runtime->vm);
     runtime->vm = nullptr;
     if (!p8_core_load_rom(runtime->core, runtime->rom.data(), runtime->rom.size())) {
@@ -59,6 +62,7 @@ bool restart_cart(aico8_runtime *runtime)
     }
 
     runtime->vm = p8_vm_create(runtime->core);
+    p8_vm_set_cartdata_loaded(runtime->vm, runtime->persistent_loaded ? 1 : 0);
     runtime->loaded = runtime->vm
         && p8_vm_load_source(runtime->vm, runtime->source.data(), runtime->source.size(),
                              "@aico8-cart");
@@ -111,6 +115,7 @@ int aico8_load_cart(aico8_runtime *runtime, const uint8_t *rom, size_t rom_size,
     runtime->source.assign(source, source_size);
     runtime->started = false;
     runtime->initialization_complete = false;
+    runtime->persistent_loaded = false;
     runtime->audio_diagnostic_mask = 0;
     runtime->audio_diagnostic_used_flags = 0;
     return runtime->loaded ? 1 : 0;
@@ -125,6 +130,8 @@ int aico8_load_persistent(aico8_runtime *runtime, const uint8_t *data, size_t si
     for (size_t i = 0; i < count; ++i) {
         p8_core_poke(runtime->core, static_cast<uint16_t>(kPersistentBase + i), data[i]);
     }
+    runtime->persistent_loaded = size > 0;
+    p8_vm_set_cartdata_loaded(runtime->vm, runtime->persistent_loaded ? 1 : 0);
     return 1;
 }
 

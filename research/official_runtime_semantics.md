@@ -302,6 +302,21 @@ claims are retained in
 This batch does not qualify scheduler timing, un-emitted state, input,
 persistence, or audio.
 
+The next authorized Education 0.2.7 capture qualified a bounded persistence
+path. A public write cart selected the named slot from `_init()`, observed a
+clean `cartdata()` result, wrote signed 16:16 values at indices 0 and 63, and
+confirmed the first value through `0x5e00`. After reloading the official page in
+the same browser profile, a separate public read cart observed `cartdata()` as
+loaded and recovered both values plus the mapped-memory value. The production
+Wasm host initially restored the 256 bytes but incorrectly returned `false`
+from `cartdata()`; the shared VM/host restoration contract was corrected and
+the two candidates now match all 6 write and 4 read events. The source-bound
+goldens and bounded hashes are retained in
+`governance/evidence/official-education-persistence-differential.json`.
+This evidence does not qualify four-slot switching, `cstore/reload` external
+cart mutation, multi-cart parameters, pause-menu callbacks, serial/GPIO,
+historical versions, or publication rights.
+
 ### Scheduler
 
 - 30 Hz and 60 Hz callbacks.

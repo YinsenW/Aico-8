@@ -23,6 +23,9 @@ int p8_vm_draw(p8_vm *vm);
 int p8_vm_call_pending(const p8_vm *vm);
 const char *p8_vm_active_function(const p8_vm *vm);
 int p8_vm_frame_held(const p8_vm *vm);
+/* The host calls this before _init() when a cartdata slot was restored. */
+void p8_vm_set_cartdata_loaded(p8_vm *vm, int loaded);
+int p8_vm_cartdata_active(const p8_vm *vm);
 
 const char *p8_vm_last_error(const p8_vm *vm);
 /* Newline-delimited output from printh() without granting host file access. */
