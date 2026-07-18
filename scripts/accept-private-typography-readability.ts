@@ -67,25 +67,42 @@ const { packetSha256 } = verifyTypographyReadabilityReviewPacket({
   expectedCheckCount: TYPOGRAPHY_READABILITY_CHECKS.length,
 });
 const pendingAuditSha256 = sha256Bytes(pendingAuditBytes);
-const decision: TypographyReadabilityDecisionV1 = {
-  schemaVersion: TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION,
-  gameId: pendingAudit.gameId,
-  decision: TYPOGRAPHY_READABILITY_CHECKS.every((check) => checks[check] === "passed") ? "approved" : "rejected",
-  reviewer,
-  reviewedAt: new Date().toISOString(),
-  subject: {
-    pendingAuditSha256,
-    reviewPacketSha256: packetSha256,
-    sourceSha256: pendingAudit.sourceSha256,
-    typographyManifestSha256: pendingAudit.typographyManifestSha256,
-    textInventorySha256: pendingAudit.textInventorySha256,
-  },
-  checks,
-  notes,
-};
-const decisionValidation = validateTypographyReadabilityDecision(decision, pendingAudit);
-assert.equal(decisionValidation.valid, true, decisionValidation.errors.join("\n"));
-const decisionBytes = Buffer.from(`${JSON.stringify(decision, null, 2)}\n`);
+let decision: TypographyReadabilityDecisionV1;
+let decisionBytes: Buffer;
+if (fs.existsSync(decisionPath)) {
+  decisionBytes = fs.readFileSync(decisionPath);
+  const existingDecisionUnknown: unknown = JSON.parse(decisionBytes.toString("utf8"));
+  const existingValidation = validateTypographyReadabilityDecision(existingDecisionUnknown, pendingAudit);
+  assert.equal(existingValidation.valid, true, existingValidation.errors.join("\n"));
+  decision = existingDecisionUnknown as TypographyReadabilityDecisionV1;
+  assert.equal(decision.subject.pendingAuditSha256, pendingAuditSha256,
+    "Existing decision does not bind the current pending audit bytes");
+  assert.equal(decision.subject.reviewPacketSha256, packetSha256,
+    "Existing decision does not bind the current review packet bytes");
+  assert.equal(decision.reviewer, reviewer, "Existing decision reviewer differs from this replay request");
+  assert.deepEqual(decision.checks, checks, "Existing decision checks differ from this replay request");
+  assert.equal(decision.notes, notes, "Existing decision notes differ from this replay request");
+} else {
+  decision = {
+    schemaVersion: TYPOGRAPHY_READABILITY_DECISION_SCHEMA_VERSION,
+    gameId: pendingAudit.gameId,
+    decision: TYPOGRAPHY_READABILITY_CHECKS.every((check) => checks[check] === "passed") ? "approved" : "rejected",
+    reviewer,
+    reviewedAt: new Date().toISOString(),
+    subject: {
+      pendingAuditSha256,
+      reviewPacketSha256: packetSha256,
+      sourceSha256: pendingAudit.sourceSha256,
+      typographyManifestSha256: pendingAudit.typographyManifestSha256,
+      textInventorySha256: pendingAudit.textInventorySha256,
+    },
+    checks,
+    notes,
+  };
+  const decisionValidation = validateTypographyReadabilityDecision(decision, pendingAudit);
+  assert.equal(decisionValidation.valid, true, decisionValidation.errors.join("\n"));
+  decisionBytes = Buffer.from(`${JSON.stringify(decision, null, 2)}\n`);
+}
 const decisionSha256 = sha256Bytes(decisionBytes);
 const finalAudit = applyTypographyReadabilityDecision({
   pendingAudit,
