@@ -1,8 +1,25 @@
 :root {
   color: #f7f2f5;
   background: #070912;
-  font-family: "Aico Sans", system-ui, sans-serif;
+  font-family: "Aico Sans";
+  font-synthesis: none;
   color-scheme: dark;
+}
+
+@font-face {
+  font-family: "Aico Sans";
+  src: url("/fonts/AtkinsonHyperlegible-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Aico Sans";
+  src: url("/fonts/AtkinsonHyperlegible-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
 }
 
 * { box-sizing: border-box; }
