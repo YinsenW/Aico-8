@@ -115,6 +115,13 @@ can advance logical frames. P8SCII audio remains
 fail-closed until its dynamic synthesis and licensed-official PCM path is
 qualified. Effectful timing runs remain review-required for HD presentation.
 
+The authorized Education 0.2.7 channel and the production-Wasm candidate match
+all 14 events in the static P8SCII probe. This qualifies only the sampled
+metrics, inline/custom pixels, cursor and colour/background state,
+repeat/termination, raw writes, outline, and underline. Complete built-in font
+bitmaps, exact delayed scheduling, additional memory checkpoints, and audio/PCM
+remain licensed-desktop evidence boundaries.
+
 The same source targets native, WebAssembly, and ESP-IDF builds. A TypeScript
 host consumes the indexed frame; it does not duplicate compatibility raster rules.
 
