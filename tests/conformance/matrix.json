@@ -5,8 +5,13 @@
   "areas": [
     {
       "id": "numeric_memory",
-      "status": "executable",
+      "status": "event_golden_matched",
       "probe": "probes/numeric_memory.p8",
+      "expected": "expected/numeric_memory.json",
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/numeric_memory.p8 --source-dir /private/staging/numeric-memory --event-log events.txt --output captures/official/0.2.7-education/numeric_memory.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/numeric_memory.p8 --output captures/official/0.2.7-education/numeric_memory-candidate.json",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/numeric_memory.json --candidate captures/official/0.2.7-education/numeric_memory-candidate.json --output captures/official/0.2.7-education/numeric_memory-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 matches all 10 emitted events from the production-Wasm candidate. This closes the sampled static fixed-point, trigonometric, endian, and shared-memory values only; scheduler and un-emitted memory state remain outside this golden.",
       "covers": [
         "16:16 overflow",
         "divide-by-zero saturation",
@@ -31,8 +36,13 @@
     },
     {
       "id": "raster_state",
-      "status": "executable",
+      "status": "event_golden_matched",
       "probe": "probes/raster_state.p8",
+      "expected": "expected/raster_state.json",
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/raster_state.p8 --source-dir /private/staging/raster-state --event-log events.txt --output captures/official/0.2.7-education/raster_state.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/raster_state.p8 --output captures/official/0.2.7-education/raster_state-candidate.json",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/raster_state.json --candidate captures/official/0.2.7-education/raster_state-candidate.json --output captures/official/0.2.7-education/raster_state-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 matches all 10 emitted events from the production-Wasm candidate for camera, clip, palette, sprite transparency, and map-layer state. The comparison is event-level; exact live RGBA is separately qualified by curved_raster_live.",
       "covers": [
         "pset/pget",
         "camera",
@@ -45,9 +55,13 @@
     },
     {
       "id": "advanced_raster",
-      "status": "executable",
+      "status": "event_golden_matched",
       "probe": "probes/advanced_raster.p8",
       "expected": "expected/advanced_raster.json",
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/advanced_raster.p8 --source-dir /private/staging/advanced-raster --event-log events.txt --output captures/official/0.2.7-education/advanced_raster.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/advanced_raster.p8 --output captures/official/0.2.7-education/advanced_raster-candidate.json",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/advanced_raster.json --candidate captures/official/0.2.7-education/advanced_raster-candidate.json --output captures/official/0.2.7-education/advanced_raster-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 matches all 21 emitted events from the production-Wasm candidate for fill patterns, secondary colours, inversion, tline precision, and remapped video/map memory. Exact live RGBA remains owned by the curved-raster visual golden.",
       "covers": [
         "secondary palette",
         "fillp on primitives",
@@ -144,9 +158,13 @@
     },
     {
       "id": "language",
-      "status": "executable",
+      "status": "event_golden_matched",
       "probe": "probes/language.p8",
       "expected": "expected/language.json",
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/language.p8 --source-dir /private/staging/language --event-log events.txt --output captures/official/0.2.7-education/language.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/language.p8 --output captures/official/0.2.7-education/language-candidate.json",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/language.json --candidate captures/official/0.2.7-education/language-candidate.json --output captures/official/0.2.7-education/language-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 matches all 18 emitted events from the production-Wasm candidate. The oracle exposed and now guards the rule that a non-numeric third sub() argument behaves like an omitted end position. The source cart's legacy diagnostic comment is retained byte-for-byte for official-capture hash identity; the captured event and expected fixture supersede that assumption. This static golden does not qualify scheduler or host lifecycle semantics.",
       "covers": [
         "PICO shorthand syntax",
         "one-based table helpers",

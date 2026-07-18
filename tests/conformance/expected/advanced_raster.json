@@ -1,6 +1,6 @@
 {
   "probe": "advanced_raster",
-  "source": "PICO-8 v0.2.7 official manual",
+  "source": "PICO-8 v0.2.7 official Education runtime and manual",
   "events": [
     ["fillp_row_0", "8,8,8,8"],
     ["fillp_row_1", "8,8,8,14"],

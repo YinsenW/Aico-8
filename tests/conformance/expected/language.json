@@ -1,6 +1,6 @@
 {
   "probe": "language",
-  "source": "PICO-8 v0.2.7 official manual",
+  "source": "PICO-8 v0.2.7 official Education runtime and manual",
   "events": [
     ["shorthand", "0x0003.0000"],
     ["add_return", "0x0028.0000"],
@@ -19,6 +19,6 @@
     ["coroutine_first", "true,7,suspended"],
     ["coroutine_second", "true,8,dead"],
     ["bit_expression", "0x0032.0000"],
-    ["sub_single", "b"]
+    ["sub_single", "bcd"]
   ]
 }

@@ -1,6 +1,6 @@
 {
   "probe": "raster_state",
-  "source": "PICO-8 v0.2.7 official manual",
+  "source": "PICO-8 v0.2.7 official Education runtime and manual",
   "events": [
     ["pset_pget", "8"],
     ["camera_offset", "9"],

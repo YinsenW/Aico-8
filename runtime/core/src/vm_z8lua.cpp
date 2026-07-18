@@ -217,7 +217,10 @@ end
 
 local __host_sub=string.sub
 function sub(value,first,last)
- if last!=nil and type(last)!="number" then last=first end
+ -- PICO-8 treats a non-numeric third argument like an omitted end position.
+ -- Do not coerce it to `first`: official 0.2.7 returns "bcd" for
+ -- sub("abcd",2,true), while an explicit numeric end still selects a range.
+ if last!=nil and type(last)!="number" then last=nil end
  return __host_sub(value,first,last)
 end
 

@@ -5,6 +5,7 @@ local function emit(name,value)
  printh("p8probe|"..name.."|"..tostr(value))
 end
 
+function _init()
 cls(0)
 pset(2,2,8)
 emit("pset_pget",pget(2,2))
@@ -46,6 +47,8 @@ map(0,0,30,30,1,1,2)
 emit("map_layer_rejected",pget(30,30))
 map(0,0,30,30,1,1,1)
 emit("map_layer_accepted",pget(30,30))
+end
 
 function _draw()
 end
+__gfx__

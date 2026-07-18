@@ -5,6 +5,7 @@ local function emit(name,value)
  printh("p8probe|"..name.."|"..tostr(value,true))
 end
 
+function _init()
 local shorthand=0
 if (true) shorthand+=1
 while (shorthand<3) shorthand+=1
@@ -55,6 +56,8 @@ emit("bit_expression",(0xf0 & 0x3c) | 0x2)
 -- Current PICO-8 accepts any non-number third argument as "one character".
 -- Keep this last so an older runtime that rejects it does not hide other results.
 emit("sub_single",sub("abcd",2,true))
+end
 
 function _draw()
 end
+__gfx__

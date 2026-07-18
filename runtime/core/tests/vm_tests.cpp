@@ -317,6 +317,37 @@ end
     p8_core_destroy(core);
 }
 
+void test_sub_ignores_a_non_numeric_end_position()
+{
+    constexpr char source[] = R"p8lua(
+function _init()
+ local explicit_range=sub("abcd",2,2)
+ local truthy_end=sub("abcd",2,true)
+ local falsey_end=sub("abcd",2,false)
+ explicit_range_length=#explicit_range
+ truthy_end_length=#truthy_end
+ falsey_end_length=#falsey_end
+ truthy_end_last=ord(truthy_end,3)
+ falsey_end_last=ord(falsey_end,3)
+end
+)p8lua";
+    p8_core *core = p8_core_create();
+    p8_vm *vm = p8_vm_create(core);
+    assert(vm);
+    assert(p8_vm_load_source(vm, source, sizeof(source) - 1, "@sub-end-test"));
+    assert(p8_vm_call(vm, "_init"));
+
+    int32_t value = 0;
+    assert(p8_vm_get_global_raw(vm, "explicit_range_length", &value) && value == 1 << 16);
+    assert(p8_vm_get_global_raw(vm, "truthy_end_length", &value) && value == 3 << 16);
+    assert(p8_vm_get_global_raw(vm, "falsey_end_length", &value) && value == 3 << 16);
+    assert(p8_vm_get_global_raw(vm, "truthy_end_last", &value) && value == ('d' << 16));
+    assert(p8_vm_get_global_raw(vm, "falsey_end_last", &value) && value == ('d' << 16));
+
+    p8_vm_destroy(vm);
+    p8_core_destroy(core);
+}
+
 void test_holdframe_defers_presentation_until_the_next_host_frame()
 {
     constexpr char source[] = R"p8lua(
@@ -1141,6 +1172,7 @@ int main(int argc, char **argv)
         test_text_ir_fixture_is_canonical_and_hashable();
     test_pico_button_glyph_constants_map_to_all_six_buttons();
     test_unicode_source_glyphs_execute_as_p8scii_byte_strings();
+    test_sub_ignores_a_non_numeric_end_position();
     test_holdframe_defers_presentation_until_the_next_host_frame();
     test_flip_suspends_and_resumes_initialization_at_frame_boundaries();
     test_menu_items_register_filter_invoke_update_and_remove();
