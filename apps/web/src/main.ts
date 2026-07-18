@@ -21,6 +21,10 @@ import { KernelAudioOutput } from "./runtime/audio-output.js";
 import { sampleFrameIntervals, summarizeFrameIntervals } from "./runtime/performance.js";
 import { installPlatformLifecycle } from "./runtime/platform-host.js";
 import type { PrivatePresentationModule, PresentationRenderer } from "./runtime/presentation.js";
+import {
+  activateInitialPresentationFrame,
+  attemptInitialPresentationFrame,
+} from "./runtime/presentation-lifecycle.js";
 import { HD_RENDER_QUALITY } from "./runtime/render-quality.js";
 import { loadBundledTypography } from "./runtime/hd-typography.js";
 import { ReferenceRenderer } from "./runtime/reference-renderer.js";
@@ -578,8 +582,8 @@ try {
     hdRenderer = (await loadPresentation()).createPresentation(app);
   }
   let showHd = Boolean(hdRenderer);
-  referenceRenderer.setVisible(!showHd);
-  hdRenderer?.setVisible(showHd);
+  referenceRenderer.setVisible(false);
+  hdRenderer?.setVisible(false);
   frame.dataset.presentationMode = showHd ? "hd" : "reference";
   displayButton.disabled = !hdRenderer;
   displayButton.textContent = showHd ? "Original view" : "HD view";
@@ -613,11 +617,39 @@ try {
       if (announcer.textContent !== description.text) announcer.textContent = description.text;
     }
   };
+  let initialPresentationFrameCommitted = false;
+  let startupConfigurationComplete = false;
+  let startupUiRevealed = false;
+  const revealStartupUi = (): void => {
+    if (startupUiRevealed) return;
+    startupUiRevealed = true;
+    loadingCard.classList.add("hidden");
+    loadingCard.setAttribute("aria-hidden", "true");
+    pauseButton.disabled = false;
+    status.textContent = validationPlaybackStatus
+      ?? (manifest.researchOnly ? "Playing · research build" : "Playing");
+    measureReleasePerformance(targetProfile);
+    beginCaptureReadiness();
+  };
+  const commitCurrentFrame = (): void => {
+    if (initialPresentationFrameCommitted) {
+      renderCurrentFrame();
+      return;
+    }
+    activateInitialPresentationFrame(
+      referenceRenderer,
+      hdRenderer,
+      showHd,
+      renderCurrentFrame,
+    );
+    initialPresentationFrameCommitted = true;
+    if (startupConfigurationComplete) revealStartupUi();
+  };
 
   if (requestedInitializationHostTick !== undefined) {
     const playback = playInitializationToHostTick(loadedRuntime, requestedInitializationHostTick);
     advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
-    renderCurrentFrame();
+    commitCurrentFrame();
     paused = true;
     frame.dataset.validationInitializationHostTick = String(playback.hostTicksExecuted);
     frame.dataset.validationInitializationAudioSamples = String(playback.discardedAudioSamples);
@@ -633,7 +665,7 @@ try {
       loadedRuntime.readAudio();
     });
     advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
-    renderCurrentFrame();
+    commitCurrentFrame();
     paused = true;
     frame.dataset.validationInitializationHostTicks = String(initialization.hostTicks);
     frame.dataset.validationInitializationAudioSamples = String(initialization.discardedAudioSamples);
@@ -685,7 +717,7 @@ try {
           options,
         );
     advancePresentationTime(requestedPresentationMilliseconds, (delta) => hdRenderer?.animate(delta));
-    renderCurrentFrame();
+    commitCurrentFrame();
     paused = true;
     frame.dataset.validationReplayId = playback.replayId;
     if ("milestoneId" in playback) frame.dataset.validationReplayMilestone = playback.milestoneId;
@@ -709,25 +741,45 @@ try {
     }
     if (paused || hostSuspended || !runtime) return;
     accumulator = Math.min(accumulator + ticker.deltaMS, 250);
-    while (accumulator >= stepMilliseconds) {
-      accumulator -= stepMilliseconds;
-      const updated = loadedRuntime.tick60(input.mask());
-      audioOutput.enqueue(loadedRuntime.readAudio());
-      syncAudioDiagnostics();
-      if (updated) {
-        input.commitLogicalUpdate();
-        renderCurrentFrame();
+    try {
+      while (accumulator >= stepMilliseconds) {
+        accumulator -= stepMilliseconds;
+        const updated = loadedRuntime.tick60(input.mask());
+        const initializing = !loadedRuntime.initializationComplete();
+        audioOutput.enqueue(loadedRuntime.readAudio());
+        syncAudioDiagnostics();
+        if (updated) input.commitLogicalUpdate();
+
+        if (!initialPresentationFrameCommitted) {
+          initialPresentationFrameCommitted = attemptInitialPresentationFrame(
+            !initializing,
+            commitCurrentFrame,
+          );
+        } else if (initializing || updated) {
+          // Source-authored _init animation advances on host ticks even when
+          // no ordinary logical update is reported.
+          renderCurrentFrame();
+        }
       }
+    } catch (error) {
+      paused = true;
+      referenceRenderer.setVisible(false);
+      hdRenderer?.setVisible(false);
+      const message = error instanceof Error ? error.message : String(error);
+      loadingTitle.textContent = "The game could not start";
+      loadingDetail.textContent = message;
+      loadingCard.classList.remove("hidden");
+      loadingCard.removeAttribute("aria-hidden");
+      loadingCard.classList.add("error");
+      status.textContent = "Start failed";
+      captureFrame.dataset.captureStatus = "failed";
+      captureFrame.dataset.captureError = message;
+      return;
     }
     hdRenderer?.animate(ticker.deltaMS);
   });
-  loadingCard.classList.add("hidden");
-  loadingCard.setAttribute("aria-hidden", "true");
-  pauseButton.disabled = false;
-  status.textContent = validationPlaybackStatus
-    ?? (manifest.researchOnly ? "Playing · research build" : "Playing");
-  measureReleasePerformance(targetProfile);
-  beginCaptureReadiness();
+  startupConfigurationComplete = true;
+  if (initialPresentationFrameCommitted) revealStartupUi();
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("game manifest (404)")) {

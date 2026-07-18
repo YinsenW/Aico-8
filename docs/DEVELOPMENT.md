@@ -96,9 +96,9 @@ through an active browser and bind its no-overflow, clipping, game/control bound
 font, safe-area, screenshot, and visual-runtime results into release validation.
 Any visual-runtime change invalidates and requires recapture of all retained
 identity and layout screenshots; hashes may never be relabeled across builds.
-Review HTML must use verified screenshot SHA-256 URL keys. Before handoff, open
-loopback HTTP with the current document hash, verify build identities, and inspect
-a non-title gameplay pair. Mutable `file://` paths and old tabs are not evidence.
+Review HTML must use verified screenshot SHA-256 URL keys. Before handoff, use loopback HTTP with the current document hash, verify build identities, and inspect
+a non-title gameplay pair. Also launch the unparameterized standalone package and
+inspect its game identity plus first complete frame because validation-only routes cannot prove normal startup. Mutable `file://` paths and old tabs are not evidence.
 Capture automation must wait for `data-capture-status="ready"` and record the
 matching DOM readiness fields for every screenshot. A timeout alone, a hidden
 class alone, or a screenshot hash without the readiness record is insufficient;
