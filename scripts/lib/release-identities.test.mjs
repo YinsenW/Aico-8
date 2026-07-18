@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  packageTreeSha256,
   validationReplaySemanticsSha256,
   visualRuntimeSha256,
 } from "./release-identities.mjs";
@@ -70,4 +71,42 @@ test("visual runtime identity excludes only the declared replay artifact", () =>
     visualRuntimeSha256(artifacts, "private/game/validation-replay.json"),
     visualRuntimeSha256(changedRuntime, "private/game/validation-replay.json"),
   );
+});
+
+test("package tree identity is order independent and binds the release manifest", () => {
+  const artifacts = [
+    { path: "assets/app.js", sha256: "1".repeat(64), bytes: 10 },
+    { path: "index.html", sha256: "2".repeat(64), bytes: 20 },
+  ];
+  const manifest = Buffer.from('{"schema_version":1}\n');
+  assert.equal(
+    packageTreeSha256(manifest, artifacts),
+    packageTreeSha256(manifest, [...artifacts].reverse()),
+  );
+  assert.notEqual(
+    packageTreeSha256(manifest, artifacts),
+    packageTreeSha256(Buffer.from('{"schema_version":2}\n'), artifacts),
+  );
+});
+
+test("package tree identity binds artifact bytes, hashes, and paths", () => {
+  const manifest = Buffer.from("manifest");
+  const artifact = { path: "index.html", sha256: "2".repeat(64), bytes: 20 };
+  for (const changed of [
+    { ...artifact, path: "main.html" },
+    { ...artifact, sha256: "3".repeat(64) },
+    { ...artifact, bytes: 21 },
+  ]) {
+    assert.notEqual(
+      packageTreeSha256(manifest, [artifact]),
+      packageTreeSha256(manifest, [changed]),
+    );
+  }
+});
+
+test("package tree identity rejects ambiguous artifact declarations", () => {
+  const artifact = { path: "index.html", sha256: "2".repeat(64), bytes: 20 };
+  assert.throws(() => packageTreeSha256(Buffer.from("manifest"), [artifact, artifact]), /Duplicate/);
+  assert.throws(() => packageTreeSha256(Buffer.from("manifest"), [{ ...artifact, path: "/index.html" }]), /Unsafe/);
+  assert.throws(() => packageTreeSha256(Buffer.from("manifest"), [{ ...artifact, path: "assets/../index.html" }]), /Unsafe/);
 });
