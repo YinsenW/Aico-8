@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   RAW_BROWSER_CROP_METHOD,
   crossSceneDuplicateGroups,
+  crossSceneNearDuplicatePairs,
   deriveReviewScreenshot,
   sha256File,
 } from "./lib/review-screenshot-lineage.mjs";
@@ -52,11 +53,12 @@ try {
     pending.push({ record, derivedPath, ...derived });
   }
 
-  const candidateRecords = pending.map(({ record, derivedPath, clipSha256, derivedSha256, rawDimensions }) => ({
+  const candidateRecords = pending.map(({ record, derivedPath, clipSha256, derivedSha256, perceptualDHash, rawDimensions }) => ({
     ...record,
     clipSha256,
     derivedPath,
     derivedSha256,
+    perceptualDHash,
     derivation: {
       method: RAW_BROWSER_CROP_METHOD,
       coordinateSpace: "retained-raw-browser-pixels",
@@ -70,6 +72,13 @@ try {
     const details = duplicateGroups.map((group) => group.map(({ id, sceneId }) => `${id}:${sceneId}`).join(", ")).join("\n");
     throw new Error(`Derived screenshots are byte-identical across declared scenes:\n${details}`);
   }
+  const nearDuplicatePairs = crossSceneNearDuplicatePairs(candidateRecords);
+  if (nearDuplicatePairs.length > 0) {
+    const details = nearDuplicatePairs
+      .map(({ left, right, distance }) => `${left.id}:${left.sceneId}, ${right.id}:${right.sceneId} (dHash distance ${distance})`)
+      .join("\n");
+    throw new Error(`Derived screenshots are perceptually indistinguishable across declared scenes:\n${details}`);
+  }
 
   for (const item of pending) {
     fs.renameSync(item.temporaryClip, item.record.clipPath);
@@ -82,6 +91,7 @@ try {
     outputDimensions: { width: outputSize, height: outputSize },
     resizeKernel: "ffmpeg-lanczos",
     crossSceneDuplicatePolicy: "fail-closed-unless-explicitly-declared",
+    crossScenePerceptualDuplicatePolicy: "dhash-1024-hamming-distance-greater-than-4-unless-explicitly-declared",
   };
   const temporarySession = `${sessionPath}.tmp-${process.pid}`;
   fs.writeFileSync(temporarySession, `${JSON.stringify(session, null, 2)}\n`);

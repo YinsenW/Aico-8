@@ -54,6 +54,49 @@ export function crossSceneDuplicateGroups(records) {
   return [...byModeAndHash.values()].filter((group) => new Set(group.map(({ sceneId }) => sceneId)).size > 1);
 }
 
+export function hammingDistanceHex(left, right) {
+  if (
+    !/^[0-9a-f]+$/u.test(left)
+    || !/^[0-9a-f]+$/u.test(right)
+    || left.length !== right.length
+    || left.length % 2 !== 0
+  ) {
+    throw new Error("Perceptual hashes must be equal-length lowercase hexadecimal strings");
+  }
+  let distance = 0;
+  for (let index = 0; index < left.length; index += 2) {
+    let difference = Number.parseInt(left.slice(index, index + 2), 16)
+      ^ Number.parseInt(right.slice(index, index + 2), 16);
+    while (difference !== 0) {
+      distance += difference & 1;
+      difference >>>= 1;
+    }
+  }
+  return distance;
+}
+
+export function crossSceneNearDuplicatePairs(records, maximumHammingDistance = 4) {
+  if (!Number.isSafeInteger(maximumHammingDistance) || maximumHammingDistance < 0) {
+    throw new Error("Perceptual duplicate threshold must be a non-negative safe integer");
+  }
+  const pairs = [];
+  for (let leftIndex = 0; leftIndex < records.length; leftIndex += 1) {
+    const left = records[leftIndex];
+    if (left.allowCrossSceneDuplicate === true) continue;
+    for (let rightIndex = leftIndex + 1; rightIndex < records.length; rightIndex += 1) {
+      const right = records[rightIndex];
+      if (
+        right.allowCrossSceneDuplicate === true
+        || left.mode !== right.mode
+        || left.sceneId === right.sceneId
+      ) continue;
+      const distance = hammingDistanceHex(left.perceptualDHash, right.perceptualDHash);
+      if (distance <= maximumHammingDistance) pairs.push({ left, right, distance });
+    }
+  }
+  return pairs;
+}
+
 function runFfmpeg(ffmpeg, input, filter, output) {
   const result = spawnSync(ffmpeg, [
     "-nostdin", "-y", "-loglevel", "error", "-i", input,
@@ -62,6 +105,27 @@ function runFfmpeg(ffmpeg, input, filter, output) {
   if (result.status !== 0) {
     throw new Error(`ffmpeg failed for ${path.basename(input)}: ${result.stderr || `status ${result.status}`}`);
   }
+}
+
+export function perceptualDHash(file, ffmpeg = "ffmpeg") {
+  const result = spawnSync(ffmpeg, [
+    "-nostdin", "-loglevel", "error", "-i", file,
+    "-vf", "scale=33:32:flags=area,format=gray", "-frames:v", "1",
+    "-f", "rawvideo", "-pix_fmt", "gray", "-",
+  ], { encoding: null, maxBuffer: 1024 * 1024 });
+  if (result.status !== 0) {
+    throw new Error(`ffmpeg perceptual hash failed for ${path.basename(file)}: ${result.stderr?.toString() || `status ${result.status}`}`);
+  }
+  if (result.stdout.length !== 1056) throw new Error(`${file}: expected 1056 grayscale bytes for perceptual hash`);
+  const bytes = Buffer.alloc(128);
+  for (let row = 0; row < 32; row += 1) {
+    for (let column = 0; column < 32; column += 1) {
+      if (result.stdout[(row * 33) + column] > result.stdout[(row * 33) + column + 1]) {
+        bytes[(row * 4) + (column >> 3)] |= 1 << (7 - (column & 7));
+      }
+    }
+  }
+  return bytes.toString("hex");
 }
 
 export function deriveReviewScreenshot({
@@ -92,6 +156,7 @@ export function deriveReviewScreenshot({
       temporaryDerived,
       clipSha256: sha256File(temporaryClip),
       derivedSha256: sha256File(temporaryDerived),
+      perceptualDHash: perceptualDHash(temporaryDerived, ffmpeg),
       rawDimensions,
     };
   } catch (error) {
