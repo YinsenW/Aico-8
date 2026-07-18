@@ -27,10 +27,11 @@
     "test_hooks": false
   },
   "private_artifact_sha256": {
-    "canonical_replay_semantics_v1": "ace0917747451a23085b96131a1dd8c91ef632ab132ce4b421824d3da67dddbd",
+    "canonical_replay_semantics_v1": "3508510dee6e978039fb8837104e32b0c835a4fd8086662a7df7bfd23901acb9",
     "canonical_run_audit": "766d271975953447623dafc3296037d7effe5677df11d1d252d6824a19562910",
     "solver_differential": "8bf533b9e77d06a4e91fe27d5db9786ac3255e01db9a5f64a0ba5fb303e7e727",
-    "solver_invariants": "d8266636778909c9a86da1415b15ce0b977367b33d297faeea9d906cf918d26b"
+    "solver_invariants": "d8266636778909c9a86da1415b15ce0b977367b33d297faeea9d906cf918d26b",
+    "input_trace_provenance": "613146950bb1d09e3be6528f16d041895bfd1df10fa5ed7226eaa65eea18cfd9"
   },
   "selector": "TEST-QUALIFICATION-PRIVATE"
 }

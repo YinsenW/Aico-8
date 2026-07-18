@@ -131,12 +131,29 @@ if [[ "$instrumentation_outcome" == "passed" ]]; then
   fi
 fi
 
+# The instrumentation result and the lineage-bound 1024-square screenshot are
+# the acceptance boundary. These commands collect post-acceptance diagnostics;
+# an adb transport closing while logcat drains must remain visible in evidence,
+# but must not relabel four successful instrumentation tests as a product
+# failure.
+set +e
 adb shell am start -W -n dev.aico8.research/.MainActivity > "$evidence_dir/host-launch.txt"
+host_launch_status=$?
 sleep 3
 
 adb shell dumpsys window displays > "$evidence_dir/window-displays.txt"
+window_displays_status=$?
 adb shell dumpsys activity activities > "$evidence_dir/activities.txt"
+activities_status=$?
 adb logcat -d -v threadtime > "$evidence_dir/logcat.txt"
+logcat_status=$?
+set -e
+
+diagnostics_outcome="complete"
+if [[ $host_launch_status -ne 0 || $window_displays_status -ne 0 \
+  || $activities_status -ne 0 || $logcat_status -ne 0 ]]; then
+  diagnostics_outcome="partial"
+fi
 {
   echo "profile_id=$profile_id"
   echo "avd_name=$avd_name"
@@ -147,8 +164,15 @@ adb logcat -d -v threadtime > "$evidence_dir/logcat.txt"
   echo "network_mode=airplane-wifi-off-data-off"
   echo "instrumentation_process_status=$instrumentation_process_status"
   echo "instrumentation_outcome=$instrumentation_outcome"
+  echo "diagnostics_outcome=$diagnostics_outcome"
+  echo "host_launch_status=$host_launch_status"
+  echo "window_displays_status=$window_displays_status"
+  echo "activities_status=$activities_status"
+  echo "logcat_status=$logcat_status"
 } > "$evidence_dir/device-profile.txt"
 
 if [[ "$instrumentation_outcome" != "passed" ]]; then
   exit 1
 fi
+
+exit 0
