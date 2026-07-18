@@ -142,6 +142,9 @@ record('traceability_acceptance', 'verified exits have implementation evidence a
 record('traceability_acceptance', 'active requirements retain explicit open work',
   project.requirements.filter((item) => item.status === 'in_progress' || item.status === 'planned')
     .every((item) => item.open_item_ids.length > 0 && item.open_item_ids.every((id) => openItems.has(id))))
+record('traceability_acceptance', 'every unverified exit retains direct open work',
+  project.exits.filter((item) => item.status !== 'verified')
+    .every((item) => project.open_items.some((openItem) => openItem.exit_id === item.id)))
 record('traceability_acceptance', 'open items link the same requirement and exit',
   project.open_items.every((item) => requirements.has(item.requirement_id) && exits.has(item.exit_id) &&
     exits.get(item.exit_id).requirement_id === item.requirement_id && requirements.get(item.requirement_id).open_item_ids.includes(item.id)))
