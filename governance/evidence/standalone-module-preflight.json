@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "subject": "two real standalone Web/PWA module candidates",
-  "status": "machine-preflight-and-current-review-recapture-passed-human-review-open",
+  "status": "machine-preflight-and-raw-pixel-review-recapture-passed-human-review-open",
   "rights_scope": "Private research and testing evidence only; neither candidate is authorized for formal release by this record.",
   "method": {
     "selector": "scripts/preflight-private-standalone-module.mjs",
@@ -14,7 +14,9 @@
       "1024 by 1024 square-handheld target profile",
       "byte-stable clean builds",
       "content-addressed package tree",
-      "exact review-runtime and replay binding"
+      "exact review-runtime and replay binding",
+      "raw-browser-pixel crop lineage with retained-source hash binding",
+      "cross-scene duplicate screenshot rejection"
     ]
   },
   "candidates": [
@@ -32,9 +34,11 @@
       "current_visual_runtime_sha256": "178bc8416412adad2df94670e32ed952d1f875173cf976027d08f83d6acfc3ff",
       "superseded_review_visual_runtime_sha256": "fbd93fc9f8d0bb6568b539fef44b4b01e061c8cf596c699a59b717cdce6dd891",
       "packet_visual_runtime_sha256": "178bc8416412adad2df94670e32ed952d1f875173cf976027d08f83d6acfc3ff",
-      "current_browser_evidence_sha256": "a19e73bd37fefc2fe89e81db5c4fa3d34055fe43b6f09e1fc68918d35cd8539a",
-      "current_review_packet_sha256": "94fe70e05eb1ee15d63f8bcfa2d7e8eb82f4cf31ebbbbc2afbf62d37f0e54196",
-      "current_review_document_sha256": "ab7235f6ef41e01471e571f1fe035471207bdab66b4d91f79af30021524bae19",
+      "rejected_crop_lineage_review_packet_sha256": "94fe70e05eb1ee15d63f8bcfa2d7e8eb82f4cf31ebbbbc2afbf62d37f0e54196",
+      "rejected_crop_lineage_reason": "CSS/raw-pixel coordinate mismatch repeatedly captured the host title region instead of the requested game surface; this packet is invalid evidence and must never satisfy review.",
+      "current_browser_evidence_sha256": "bc1bb9fa3e766657beae298627946722f102f2fd60ec1d801eb9f602d831ff34",
+      "current_review_packet_sha256": "1969d3e506537270cac200f42b0c6089b9767680a35ba8885bd92f3693ed4b8c",
+      "current_review_document_sha256": "393081ad5c048c6322dccdc72e29d70d3c7400e32a0fe33d22de24ee89c5699f",
       "current_review_screenshots": 38,
       "packet_replay_matches": true,
       "packet_runtime_matches": true,
@@ -56,9 +60,11 @@
       "superseded_review_replay_semantics_sha256": "c0ac853133d2e4265890e1cca3a723c058e117a06d1d7036ac82be407db0467a",
       "packet_visual_runtime_sha256": "b1d2d76a6ec443bc0c36fbf38a961c68418d711ec02ad3a909a9b185fcbb6d65",
       "packet_replay_semantics_sha256": "63df38a25cd2d079e9278fe96d9afb074ad634fdc47bf0465225966d3394dede",
-      "current_browser_evidence_sha256": "06fe64ea42172e2f72927123e7e3f26922698801d0073fbf1f1c447fb4c24935",
-      "current_review_packet_sha256": "5bc6dbf8182dd3ee3d19549537474c42c3794d624d41491b2b86a415b548610d",
-      "current_review_document_sha256": "e6d725dae5b5bca5c8225adde87b4632af38f5fdfb98eca8f02af80cdf08f188",
+      "rejected_crop_lineage_review_packet_sha256": "5bc6dbf8182dd3ee3d19549537474c42c3794d624d41491b2b86a415b548610d",
+      "rejected_crop_lineage_reason": "CSS/raw-pixel coordinate mismatch repeatedly captured the host title region instead of the requested game surface; this packet is invalid evidence and must never satisfy review.",
+      "current_browser_evidence_sha256": "075c0ae1f6cbb7bac6e824518484253273133ec3e088349e403ce2456fff301c",
+      "current_review_packet_sha256": "48558933da612cbd61ada2cb764015f58d6e52c0d4d5998f5a14762f2e2be9aa",
+      "current_review_document_sha256": "6208d1ed69d151c142e2ce7ce1792ebbdb7d1a462c6aaac4fe99bdee1acf755b",
       "current_review_screenshots": 34,
       "packet_replay_matches": true,
       "packet_runtime_matches": true,
@@ -69,8 +75,8 @@
     "validated_modules": 1,
     "required_modules": 3,
     "remaining": [
-      "obtain Tiny Golf's exact ordered human decision against packet sha256:94fe70e05eb1ee15d63f8bcfa2d7e8eb82f4cf31ebbbbc2afbf62d37f0e54196",
-      "obtain Steps' exact ordered human decision against packet sha256:5bc6dbf8182dd3ee3d19549537474c42c3794d624d41491b2b86a415b548610d",
+      "obtain Tiny Golf's exact ordered human decision against corrected raw-pixel-lineage packet sha256:1969d3e506537270cac200f42b0c6089b9767680a35ba8885bd92f3693ed4b8c",
+      "obtain Steps' exact ordered human decision against corrected raw-pixel-lineage packet sha256:48558933da612cbd61ada2cb764015f58d6e52c0d4d5998f5a14762f2e2be9aa",
       "materialize both validated module manifests",
       "assemble and browser-validate the three-game collection with isolated saves and measured switching"
     ]
