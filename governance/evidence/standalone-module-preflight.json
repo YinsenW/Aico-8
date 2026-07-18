@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "subject": "two real standalone Web/PWA module candidates",
+  "status": "machine-preflight-passed-current-review-recapture-open",
+  "rights_scope": "Private research and testing evidence only; neither candidate is authorized for formal release by this record.",
+  "method": {
+    "selector": "scripts/preflight-private-standalone-module.mjs",
+    "clean_builds_per_candidate": 2,
+    "package_identity_schema": "aico8.package-tree-identity.v1",
+    "validated_properties": [
+      "unchanged-cart canonical completion",
+      "keyboard controller and touch trace identity",
+      "complete Web/PWA package manifest",
+      "1024 by 1024 square-handheld target profile",
+      "byte-stable clean builds",
+      "content-addressed package tree",
+      "exact review-runtime and replay binding"
+    ]
+  },
+  "candidates": [
+    {
+      "package_id": "tiny-golf-puzzles",
+      "review_game_id": "tiny-golf-puzzles-private-research",
+      "canonical_boundary": "32 of 32 courses",
+      "logical_updates": 5679,
+      "mutations_rejected": 4,
+      "package_files": 46,
+      "unpacked_bytes": 1667767,
+      "release_manifest_sha256": "e0b27e4b197f4c4845fa9b5ac44cf810521ac7ea7b32bfa3ca88a781ea62a5db",
+      "package_tree_sha256": "1f71576b3f772eccd0e82a7a0b8a6f55664b8bddaf0264b3b98effab75892f23",
+      "canonical_replay_semantics_sha256": "41b8da670e06d84983799f9dde6608c5bb3e83c92cd1ce7ded261055f56db786",
+      "current_visual_runtime_sha256": "1154de4c4408300bb5b75adc08068e0e2ce8c56479f157ff2ecfe9ad5d94a51d",
+      "reviewed_visual_runtime_sha256": "fbd93fc9f8d0bb6568b539fef44b4b01e061c8cf596c699a59b717cdce6dd891",
+      "reviewed_replay_matches": true,
+      "reviewed_runtime_matches": false,
+      "status": "pending-current-package-recapture-and-human-review"
+    },
+    {
+      "package_id": "steps-private-research",
+      "review_game_id": "steps-private-research",
+      "canonical_boundary": "13 of 13 checkpoints",
+      "logical_updates": 1781,
+      "mutations_rejected": 3,
+      "package_files": 45,
+      "unpacked_bytes": 1468178,
+      "release_manifest_sha256": "d176a3c455d1045fb60c102fc9d198a8daaf4f0b762f6e4e0d91134f3d2fb685",
+      "package_tree_sha256": "408ed5c29b253d22544a6c431f29b73e4590d0b1ce2eed36dc2645d7d8f90a54",
+      "canonical_replay_semantics_sha256": "63df38a25cd2d079e9278fe96d9afb074ad634fdc47bf0465225966d3394dede",
+      "current_visual_runtime_sha256": "b1d2d76a6ec443bc0c36fbf38a961c68418d711ec02ad3a909a9b185fcbb6d65",
+      "reviewed_visual_runtime_sha256": "6450dabea1ea2c497e9fefa38c60582148a835a1b6236986428c8f86a45eb3cc",
+      "reviewed_replay_semantics_sha256": "c0ac853133d2e4265890e1cca3a723c058e117a06d1d7036ac82be407db0467a",
+      "reviewed_replay_matches": false,
+      "reviewed_runtime_matches": false,
+      "status": "pending-current-package-and-replay-recapture-and-human-review"
+    }
+  ],
+  "collection_gate": {
+    "validated_modules": 1,
+    "required_modules": 3,
+    "remaining": [
+      "recapture current Tiny Golf review evidence and obtain its exact ordered human decision",
+      "recapture current Steps review evidence against its regenerated canonical replay and obtain its exact ordered human decision",
+      "materialize both validated module manifests",
+      "assemble and browser-validate the three-game collection with isolated saves and measured switching"
+    ]
+  }
+}

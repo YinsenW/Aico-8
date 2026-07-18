@@ -5,7 +5,7 @@
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "runtime": {
     "id": "aico8-core-wasm",
-    "revision": "551b8c25a395b355d4087fb064403c3f1347581bfe8fe0b60e32364537a3d5ad"
+    "revision": "a9bb1f7a66f1242862f48b9043f72240002dbdba809e7990404f925fc815f14d"
   },
   "observations": {
     "boundary_kind": "course",
@@ -32,8 +32,8 @@
     "wallClockAcceleration": true
   },
   "private_artifact_sha256": {
-    "replay_v1": "6a62532691f29a1d117ac9a9272012d1ada355a1b62a2f75f262d74a55331873",
-    "differential": "afd88dd3a582c07af8e0bf87c6e8f3db1e72d9f7dedf11b682521a87900f67ce",
+    "replay_v1": "8e8a88307f58e3eef7d803601a87d0bd69e5d8053253c217295679d464f0a9a7",
+    "differential": "a78bc8763977910c8a7bbe93b1d756fe70b16c8a6288cdf556f690572aa5e801",
     "input_projection": "d32a559ddd6f8d2ea25a6797d672448169c2ab3e865df65810e39e356ef859b3",
     "input_trace_provenance": "ba1c6977635e1c58f182d770415392141555f787f1185e0d37da29a147df4fdf"
   },

@@ -53,3 +53,27 @@ export function visualRuntimeSha256(artifacts, validationReplayArtifactPath) {
     artifacts: visualArtifacts,
   });
 }
+
+export function packageTreeSha256(releaseManifestBytes, artifacts) {
+  if (!(releaseManifestBytes instanceof Uint8Array)) {
+    throw new TypeError("releaseManifestBytes must be bytes");
+  }
+  const paths = new Set();
+  const normalizedArtifacts = artifacts.map(({ path, sha256, bytes }) => {
+    const segments = typeof path === "string" ? path.split("/") : [];
+    if (typeof path !== "string" || path.length === 0 || path.includes("\\") || path.startsWith("/")
+      || segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
+      throw new Error(`Unsafe package artifact path: ${String(path)}`);
+    }
+    if (paths.has(path)) throw new Error(`Duplicate package artifact path: ${path}`);
+    paths.add(path);
+    if (!/^[a-f0-9]{64}$/.test(sha256)) throw new Error(`Invalid package artifact sha256: ${path}`);
+    if (!Number.isSafeInteger(bytes) || bytes < 0) throw new Error(`Invalid package artifact byte count: ${path}`);
+    return { path, sha256, bytes };
+  }).sort((left, right) => left.path.localeCompare(right.path));
+  return canonicalSha256({
+    schemaVersion: "aico8.package-tree-identity.v1",
+    releaseManifestSha256: createHash("sha256").update(releaseManifestBytes).digest("hex"),
+    artifacts: normalizedArtifacts,
+  });
+}
