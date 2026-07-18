@@ -1,0 +1,72 @@
+:root {
+  color: #f7f2f5;
+  background: #070912;
+  font-family: "Aico Sans";
+  font-synthesis: none;
+  color-scheme: dark;
+}
+
+@font-face {
+  font-family: "Aico Sans";
+  src: url("/fonts/AtkinsonHyperlegible-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Aico Sans";
+  src: url("/fonts/AtkinsonHyperlegible-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+* { box-sizing: border-box; }
+html, body, #collection-app { width: 100%; min-height: 100%; margin: 0; }
+body { min-height: 100vh; min-height: 100dvh; }
+
+.collection-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 102, 155, 0.16), transparent 42%),
+    #070912;
+}
+
+.collection-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.collection-eyebrow { margin: 0 0 4px; color: #ff79a8; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; }
+h1 { margin: 0; font-size: clamp(24px, 4vw, 42px); }
+#collection-status { margin: 6px 0 0; color: #b9bfd0; }
+.collection-games { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
+.collection-games button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  color: inherit;
+  background: rgba(255,255,255,0.08);
+  font: inherit;
+}
+.collection-games button[aria-current="page"] { border-color: #ff79a8; background: rgba(255, 89, 150, 0.2); }
+.collection-games button:disabled { opacity: 0.55; }
+.collection-stage { min-height: 0; border: 1px solid rgba(255,255,255,0.14); border-radius: 22px; overflow: hidden; background: #05060b; }
+.collection-game-frame { display: block; width: 100%; height: 100%; min-height: min(78vh, 1024px); border: 0; background: #05060b; }
+
+@media (max-width: 760px) {
+  .collection-header { align-items: stretch; flex-direction: column; }
+  .collection-games { justify-content: start; overflow-x: auto; flex-wrap: nowrap; }
+  .collection-games button { flex: 0 0 auto; }
+  .collection-stage { border-radius: 14px; }
+}

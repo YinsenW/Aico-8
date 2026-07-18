@@ -112,8 +112,8 @@ a fixed collection with isolated saves and licenses. Do not publish a general
 external-cart Player or freeze `.aico8` before repeated multi-game evidence.
 
 Contracts: `API-GAME-MODULE-001`, `DATA-GAME-MODULE-001`,
-`DATA-COLLECTION-001`, `DATA-TARGET-PROFILE-001`, `JOB-ASSEMBLE-001`,
-`JOB-PACKAGE-001`.
+`DATA-COLLECTION-001`, `DATA-COLLECTION-LAUNCHER-001`,
+`DATA-TARGET-PROFILE-001`, `JOB-ASSEMBLE-001`, `JOB-PACKAGE-001`.
 
 ### REQ-BATCH-001 — Isolated multi-cart conversion
 

@@ -90,6 +90,15 @@ export {
   type FixedCollectionValidationResult,
 } from "./fixed-collection.js";
 export {
+  FIXED_COLLECTION_LAUNCHER_SCHEMA_VERSION,
+  assertFixedCollectionLauncher,
+  validateFixedCollectionLauncher,
+  type FixedCollectionLauncherModuleV1,
+  type FixedCollectionLauncherPackageV1,
+  type FixedCollectionLauncherV1,
+  type FixedCollectionLauncherValidationResult,
+} from "./fixed-collection-launcher.js";
+export {
   CART_INPUT_SCHEMA_VERSION,
   CART_WORKSPACE_SCHEMA_VERSION,
   assertCartInput,

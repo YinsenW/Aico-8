@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/fixed-collection-launcher-v1.schema.json",
+  "title": "Aico 8 fixed collection launcher v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "collectionId", "title", "targetProfile", "initialModuleId", "resetMode", "modules"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.fixed-collection-launcher.v1" },
+    "collectionId": { "$ref": "#/$defs/id" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "targetProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "initialModuleId": { "$ref": "#/$defs/id" },
+    "resetMode": { "const": "document-replacement" },
+    "modules": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["moduleId", "title", "author", "launchPath", "saveNamespace", "rightsProfile", "package"],
+        "properties": {
+          "moduleId": { "$ref": "#/$defs/id" },
+          "title": { "type": "string", "minLength": 1 },
+          "author": { "type": "string", "minLength": 1 },
+          "launchPath": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?:[A-Za-z0-9._-]+/)+$" },
+          "saveNamespace": { "type": "string", "minLength": 1 },
+          "rightsProfile": { "$ref": "#/$defs/id" },
+          "package": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["releaseManifestSha256", "treeSha256"],
+            "properties": {
+              "releaseManifestSha256": { "$ref": "#/$defs/sha256" },
+              "treeSha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
