@@ -1,0 +1,2 @@
+Synthetic public fixture for Aico 8 contract tests.
+Licensed under the Apache License, Version 2.0.

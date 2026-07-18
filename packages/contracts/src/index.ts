@@ -81,6 +81,15 @@ export {
   type GameModuleValidationResult,
 } from "./game-module.js";
 export {
+  FIXED_COLLECTION_SCHEMA_VERSION,
+  assertFixedCollection,
+  validateFixedCollection,
+  type FixedCollectionLicenseV1,
+  type FixedCollectionModuleV1,
+  type FixedCollectionV1,
+  type FixedCollectionValidationResult,
+} from "./fixed-collection.js";
+export {
   CART_INPUT_SCHEMA_VERSION,
   CART_WORKSPACE_SCHEMA_VERSION,
   assertCartInput,

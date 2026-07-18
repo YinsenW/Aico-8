@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { ASSEMBLY_PLAN_SCHEMA_VERSION, planAcceptedBatchAssemblies, planSingleGameAssembly } from "./assembly.js";
+import { ASSEMBLY_PLAN_SCHEMA_VERSION, planAcceptedBatchAssemblies, planFixedCollectionAssembly, planSingleGameAssembly } from "./assembly.js";
+import { gameModuleSaveNamespace } from "./game-module.js";
 import { BATCH_SCHEMA_VERSION, batchWorkspaceId, type BatchV1 } from "./batch.js";
 
 const moduleFixture = (): any => JSON.parse(fs.readFileSync(
@@ -14,6 +16,39 @@ const targetProfileBytes = (): Buffer => fs.readFileSync(
   new URL("../../../apps/web/public/target-profile.json", import.meta.url),
 );
 const profileHash = "22a36b7376de290dc4b7fdfa720b0777fdcbb8ed15a0c2b23f883920525eb809";
+const sha256 = (bytes: Uint8Array | string): string => createHash("sha256").update(bytes).digest("hex");
+
+function fixedCollectionInputs(): { collection: any; modules: Map<string, { manifestBytes: Buffer }> } {
+  const modules = new Map<string, { manifestBytes: Buffer }>();
+  const entries = ["one", "two", "three"].map((suffix, index) => {
+    const module = moduleFixture();
+    module.moduleId = `synthetic-${suffix}`;
+    module.save.namespace = gameModuleSaveNamespace(module.moduleId);
+    module.provenance.sourceCartSha256 = String(index + 1).repeat(64);
+    const manifestBytes = Buffer.from(`${JSON.stringify(module, null, 2)}\n`);
+    modules.set(module.moduleId, { manifestBytes });
+    return {
+      moduleId: module.moduleId,
+      manifestSha256: sha256(manifestBytes),
+      saveNamespace: module.save.namespace,
+      rightsProfile: module.provenance.rightsProfile,
+      license: { spdxExpression: "Apache-2.0", notice: { path: "LICENSE.txt", sha256: sha256("synthetic license\n") } },
+    };
+  });
+  return {
+    modules,
+    collection: {
+      schemaVersion: "aico8.fixed-collection.v1",
+      collectionId: "synthetic-trilogy",
+      metadata: { title: "Synthetic Trilogy" },
+      targetProfile: { id: targetProfile().id, sha256: profileHash },
+      launcher: { initialModuleId: entries[0]!.moduleId },
+      isolation: { resetCompatibilityStateOnSwitch: true, isolatedSaveNamespaces: true },
+      budgets: { maxPackagedBytes: 10_000_000, maxPersistentBytes: 768 },
+      modules: entries,
+    },
+  };
+}
 
 describe("single-game assembly plan", () => {
   it("creates one deterministic Web/PWA plan from a validated module", () => {
@@ -132,5 +167,56 @@ describe("single-game assembly plan", () => {
       new Map([["synthetic-orbit", moduleFixture()]]),
       new Map([[targetProfile().id, staleCallerInput]]),
     )).toThrow(/targetProfileSha256 must match target profile bytes/);
+  });
+});
+
+describe("fixed-collection assembly plan", () => {
+  it("binds three independently validated manifests, isolated saves, licenses, target bytes, and budgets", () => {
+    const { collection, modules } = fixedCollectionInputs();
+    const result = planFixedCollectionAssembly(collection, modules, targetProfileBytes());
+    expect(result.ok).toBe(true);
+    expect(result.plan).toMatchObject({
+      kind: "fixed-collection-web-pwa",
+      collectionId: "synthetic-trilogy",
+      launcher: { orderedModuleIds: ["synthetic-one", "synthetic-two", "synthetic-three"] },
+      isolation: { resetCompatibilityStateOnSwitch: true },
+      budgets: { declaredPersistentBytes: 768, maxPersistentBytes: 768 },
+    });
+    expect(new Set(Object.values(result.plan!.isolation.saveNamespaces)).size).toBe(3);
+    expect(result.plan!.artifacts.filter(({ role }) => role === "license-notice")).toHaveLength(3);
+    expect(result.plan!.artifacts.filter(({ role }) => role === "module-manifest")).toHaveLength(3);
+    expect(result.plan!.artifacts.every(({ destination }) => destination?.startsWith(`modules/${result.plan!.artifacts.find((candidate) => candidate.destination === destination)!.moduleId}/`))).toBe(true);
+  });
+
+  it("fails closed on stale manifests, draft modules, target drift, budget overflow, or undeclared inputs", () => {
+    const stale = fixedCollectionInputs();
+    stale.collection.modules[0].manifestSha256 = "f".repeat(64);
+    expect(planFixedCollectionAssembly(stale.collection, stale.modules, targetProfileBytes()).errors.join("\n"))
+      .toMatch(/manifestSha256 must match manifest bytes/);
+
+    const draft = fixedCollectionInputs();
+    const draftInput = JSON.parse(draft.modules.get("synthetic-one")!.manifestBytes.toString("utf8"));
+    draftInput.status = "draft";
+    draftInput.validation = { status: "pending", evidence: [] };
+    const draftBytes = Buffer.from(`${JSON.stringify(draftInput, null, 2)}\n`);
+    draft.modules.set("synthetic-one", { manifestBytes: draftBytes });
+    draft.collection.modules[0].manifestSha256 = sha256(draftBytes);
+    expect(planFixedCollectionAssembly(draft.collection, draft.modules, targetProfileBytes()).errors.join("\n"))
+      .toMatch(/must be independently validated/);
+
+    const targetDrift = fixedCollectionInputs();
+    targetDrift.collection.targetProfile.sha256 = "e".repeat(64);
+    expect(planFixedCollectionAssembly(targetDrift.collection, targetDrift.modules, targetProfileBytes()).errors.join("\n"))
+      .toMatch(/targetProfile\.sha256 must match/);
+
+    const overflow = fixedCollectionInputs();
+    overflow.collection.budgets.maxPersistentBytes = 767;
+    expect(planFixedCollectionAssembly(overflow.collection, overflow.modules, targetProfileBytes()).errors.join("\n"))
+      .toMatch(/persistent bytes exceed/);
+
+    const undeclared = fixedCollectionInputs();
+    undeclared.modules.set("poison", { manifestBytes: Buffer.from("{}") });
+    expect(planFixedCollectionAssembly(undeclared.collection, undeclared.modules, targetProfileBytes()).errors.join("\n"))
+      .toMatch(/undeclared input/);
   });
 });
