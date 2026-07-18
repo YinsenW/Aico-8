@@ -25,6 +25,8 @@ function fixedCollectionInputs(): { collection: any; modules: Map<string, { mani
     module.moduleId = `synthetic-${suffix}`;
     module.save.namespace = gameModuleSaveNamespace(module.moduleId);
     module.provenance.sourceCartSha256 = String(index + 1).repeat(64);
+    module.validation.evidence[0].sha256 = String(index + 4).repeat(64);
+    module.validation.evidence[1].sha256 = String(index + 7).repeat(64);
     const manifestBytes = Buffer.from(`${JSON.stringify(module, null, 2)}\n`);
     modules.set(module.moduleId, { manifestBytes });
     return {
@@ -221,5 +223,23 @@ describe("fixed-collection assembly plan", () => {
     undeclared.modules.set("poison", { manifestBytes: Buffer.from("{}") });
     expect(planFixedCollectionAssembly(undeclared.collection, undeclared.modules, targetProfileBytes()).errors.join("\n"))
       .toMatch(/undeclared input/);
+
+    for (const [field, message] of [
+      ["sourceCartSha256", /source cart must be unique/],
+      ["canonical-replay", /canonical-replay evidence must be independently content-bound/],
+      ["hd-review-decision", /hd-review-decision evidence must be independently content-bound/],
+    ] as const) {
+      const repeated = fixedCollectionInputs();
+      const first = JSON.parse(repeated.modules.get("synthetic-one")!.manifestBytes.toString("utf8"));
+      const second = JSON.parse(repeated.modules.get("synthetic-two")!.manifestBytes.toString("utf8"));
+      if (field === "sourceCartSha256") second.provenance.sourceCartSha256 = first.provenance.sourceCartSha256;
+      else second.validation.evidence.find((entry: any) => entry.kind === field).sha256 =
+        first.validation.evidence.find((entry: any) => entry.kind === field).sha256;
+      const secondBytes = Buffer.from(`${JSON.stringify(second, null, 2)}\n`);
+      repeated.modules.set("synthetic-two", { manifestBytes: secondBytes });
+      repeated.collection.modules[1].manifestSha256 = sha256(secondBytes);
+      expect(planFixedCollectionAssembly(repeated.collection, repeated.modules, targetProfileBytes()).errors.join("\n"))
+        .toMatch(message);
+    }
   });
 });

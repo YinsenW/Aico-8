@@ -26,13 +26,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["moduleId", "title", "author", "launchPath", "saveNamespace", "rightsProfile", "package"],
+        "required": ["moduleId", "title", "author", "launchPath", "saveNamespace", "persistenceKey", "rightsProfile", "package"],
         "properties": {
           "moduleId": { "$ref": "#/$defs/id" },
           "title": { "type": "string", "minLength": 1 },
           "author": { "type": "string", "minLength": 1 },
           "launchPath": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?:[A-Za-z0-9._-]+/)+$" },
           "saveNamespace": { "type": "string", "minLength": 1 },
+          "persistenceKey": { "type": "string", "minLength": 1 },
           "rightsProfile": { "$ref": "#/$defs/id" },
           "package": {
             "type": "object",

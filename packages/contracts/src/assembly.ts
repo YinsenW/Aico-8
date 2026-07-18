@@ -196,6 +196,9 @@ export function planFixedCollectionAssembly(
 
   const artifacts: FixedCollectionAssemblyArtifactV1[] = [];
   const saveNamespaces: Record<string, string> = {};
+  const sourceCartHashes = new Set<string>();
+  const canonicalReplayHashes = new Set<string>();
+  const hdReviewDecisionHashes = new Set<string>();
   let declaredPersistentBytes = 0;
   for (const entry of collection.modules) {
     const input = modulesById.get(entry.moduleId);
@@ -215,6 +218,24 @@ export function planFixedCollectionAssembly(
     }
     if (module.save.namespace !== entry.saveNamespace) errors.push(`module ${entry.moduleId}: saveNamespace must match manifest`);
     if (module.provenance.rightsProfile !== entry.rightsProfile) errors.push(`module ${entry.moduleId}: rightsProfile must match manifest`);
+    if (sourceCartHashes.has(module.provenance.sourceCartSha256)) {
+      errors.push(`module ${entry.moduleId}: source cart must be unique within the collection`);
+    }
+    sourceCartHashes.add(module.provenance.sourceCartSha256);
+    for (const [kind, identities] of [
+      ["canonical-replay", canonicalReplayHashes],
+      ["hd-review-decision", hdReviewDecisionHashes],
+    ] as const) {
+      const evidence = module.validation.evidence.find((candidate) => candidate.kind === kind);
+      if (!evidence) {
+        errors.push(`module ${entry.moduleId}: ${kind} evidence is required for collection assembly`);
+        continue;
+      }
+      if (identities.has(evidence.sha256)) {
+        errors.push(`module ${entry.moduleId}: ${kind} evidence must be independently content-bound`);
+      }
+      identities.add(evidence.sha256);
+    }
     const binding = module.runtime.targetBindings[0];
     if (binding.targetProfileId !== profile.id || binding.targetProfileSha256 !== targetProfileSha256) {
       errors.push(`module ${entry.moduleId}: target binding must match collection target profile bytes`);

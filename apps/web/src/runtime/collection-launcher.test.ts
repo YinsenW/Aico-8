@@ -22,6 +22,7 @@ function manifest(): any {
       author: `Author ${suffix}`,
       launchPath: `games/module-${suffix}/`,
       saveNamespace: `module-${suffix}:aico8.game-module.v1`,
+      persistenceKey: `aico8.synthetic.module-${suffix}.progress.v1`,
       rightsProfile: "private-research",
       package: {
         releaseManifestSha256: String(index + 1).repeat(64),

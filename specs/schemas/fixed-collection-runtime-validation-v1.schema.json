@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/fixed-collection-runtime-validation-v1.schema.json",
+  "title": "Aico 8 fixed collection runtime validation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "subject", "browser", "measurementMethod", "modules", "failedSwitches", "budgets", "status"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.fixed-collection-runtime-validation.v1" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collectionId", "collectionManifestSha256", "collectionLauncherSha256", "targetProfileSha256", "assembledTreeSha256"],
+      "properties": {
+        "collectionId": { "$ref": "#/$defs/id" },
+        "collectionManifestSha256": { "$ref": "#/$defs/hash" },
+        "collectionLauncherSha256": { "$ref": "#/$defs/hash" },
+        "targetProfileSha256": { "$ref": "#/$defs/hash" },
+        "assembledTreeSha256": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "measurementMethod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timing", "heap", "identity", "storage"],
+      "properties": {
+        "timing": { "enum": ["performance.now"] },
+        "heap": { "enum": ["performance.memory.usedJSHeapSize"] },
+        "identity": { "enum": ["child-handshake-token"] },
+        "storage": { "enum": ["namespaced-local-storage-round-trip"] }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["moduleId", "startup", "switch", "save"],
+        "properties": {
+          "moduleId": { "$ref": "#/$defs/id" },
+          "startup": { "$ref": "#/$defs/activation" },
+          "switch": { "$ref": "#/$defs/switchActivation" },
+          "save": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["logicalKey", "namespace", "writtenValue", "restoredValue"],
+            "properties": {
+              "logicalKey": { "$ref": "#/$defs/text" },
+              "namespace": { "$ref": "#/$defs/text" },
+              "writtenValue": { "$ref": "#/$defs/text" },
+              "restoredValue": { "$ref": "#/$defs/text" }
+            }
+          }
+        }
+      }
+    },
+    "failedSwitches": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fromModuleId", "toModuleId", "errorCode", "milliseconds", "activeModuleIdAfterFailure", "activeDocumentIdentityAfterFailure", "activeRuntimeIdentityAfterFailure"],
+        "properties": {
+          "fromModuleId": { "$ref": "#/$defs/id" },
+          "toModuleId": { "$ref": "#/$defs/id" },
+          "errorCode": { "$ref": "#/$defs/token" },
+          "milliseconds": { "$ref": "#/$defs/milliseconds" },
+          "activeModuleIdAfterFailure": { "type": "null" },
+          "activeDocumentIdentityAfterFailure": { "type": "null" },
+          "activeRuntimeIdentityAfterFailure": { "type": "null" }
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limits", "observed", "passed"],
+      "properties": {
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["startupMillisecondsMax", "switchMillisecondsMax", "jsHeapBytesMax"],
+          "properties": {
+            "startupMillisecondsMax": { "$ref": "#/$defs/positiveNumber" },
+            "switchMillisecondsMax": { "$ref": "#/$defs/positiveNumber" },
+            "jsHeapBytesMax": { "$ref": "#/$defs/positiveInteger" }
+          }
+        },
+        "observed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxStartupMilliseconds", "maxSwitchMilliseconds", "maxJsHeapBytes"],
+          "properties": {
+            "maxStartupMilliseconds": { "$ref": "#/$defs/milliseconds" },
+            "maxSwitchMilliseconds": { "$ref": "#/$defs/milliseconds" },
+            "maxJsHeapBytes": { "$ref": "#/$defs/positiveInteger" }
+          }
+        },
+        "passed": { "type": "boolean" }
+      }
+    },
+    "status": { "enum": ["passed", "failed"] }
+  },
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "token": { "type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "milliseconds": { "type": "number", "minimum": 0 },
+    "positiveNumber": { "type": "number", "exclusiveMinimum": 0 },
+    "positiveInteger": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documentIdentity", "runtimeIdentity", "milliseconds", "jsHeapBytes"],
+      "properties": {
+        "documentIdentity": { "$ref": "#/$defs/token" },
+        "runtimeIdentity": { "$ref": "#/$defs/token" },
+        "milliseconds": { "$ref": "#/$defs/milliseconds" },
+        "jsHeapBytes": { "$ref": "#/$defs/positiveInteger" }
+      }
+    },
+    "switchActivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fromModuleId", "documentIdentity", "runtimeIdentity", "milliseconds", "jsHeapBytes"],
+      "properties": {
+        "fromModuleId": { "$ref": "#/$defs/id" },
+        "documentIdentity": { "$ref": "#/$defs/token" },
+        "runtimeIdentity": { "$ref": "#/$defs/token" },
+        "milliseconds": { "$ref": "#/$defs/milliseconds" },
+        "jsHeapBytes": { "$ref": "#/$defs/positiveInteger" }
+      }
+    }
+  }
+}
