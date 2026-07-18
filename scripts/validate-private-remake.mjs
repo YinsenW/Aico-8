@@ -490,6 +490,7 @@ try {
       target: release.target,
       output_profile: release.output_profile,
       artifact_count: release.measurements.artifact_count,
+      release_manifest_sha256: sha256(path.join(outputA, "release-manifest.json")),
       visual_runtime_sha256: release.identities.visual_runtime_sha256,
       validation_replay_semantics_sha256: release.identities.validation_replay_semantics_sha256,
       two_builds_byte_identical: true,

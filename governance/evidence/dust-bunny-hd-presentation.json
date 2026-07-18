@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "subject": "Dust Bunny HD presentation qualification",
-  "status": "draft-pending-human-side-by-side-review",
+  "status": "accepted-human-side-by-side-review",
   "rights_scope": "Research and test evidence only; no formal game release is authorized by this record.",
   "observations": {
     "identity_elements": 20,
@@ -21,14 +21,14 @@
     "coverage_mutation_rejected": true
   },
   "review": {
-    "identity_map_accepted": false,
-    "reviewer": "pending-human-side-by-side-review",
-    "review_decision_sha256": null,
+    "identity_map_accepted": true,
+    "reviewer": "private-review-record",
+    "review_decision_sha256": "20ae80cc5a641eaea43c7181c95abd1749f4964b662c1f0cd929486865580924",
     "acceptance_may_not_be_inferred_from_code_or_automated_audit": true
   },
   "private_artifact_sha256": {
-    "hd_identity_map": "b1f16c14090a5a06c571e7683ba6c3b1463695fa7c0ad13b3c105626598afbb1",
-    "hd_presentation_audit": "b68002a05d21d512d069ce74edfe87cd58089401cec517b8b1d131d3ff3814fd"
+    "hd_identity_map": "ec276eb1a84d819b8da16a1d640f1b4dfcef7f003a3d9424e2bf466968a1011e",
+    "hd_presentation_audit": "3a8e940362c1864ab4984ac733cae9d7596357c2b3baf815c79deabc7718771d"
   },
   "selector": "TEST-QUALIFICATION-PRIVATE"
 }
