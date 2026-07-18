@@ -32,7 +32,7 @@ node scripts/verify-governance.mjs
 pnpm verify:governance
 pnpm verify:public
 node --test scripts/lib/live-frame-normalization.test.mjs scripts/lib/official-probe-capture.test.mjs scripts/lib/official-probe-comparison.test.mjs
-make -C runtime/core wasm && node --test scripts/capture-implementation-curved-raster.test.mjs
+make -C runtime/core wasm && node --test scripts/capture-implementation-curved-raster.test.mjs scripts/capture-implementation-probe.test.mjs
 pnpm verify:official-raster-private
 node --test scripts/smoke-private-cart-native.test.mjs scripts/smoke-private-cart.test.mjs
 pnpm verify:rust

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-18T13:09:42+08:00",
+  "status": "static-event-subset-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser, Chromium 150.0.0.0"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only the public p8scii probe; no private carts, workspaces, or game assets.",
+    "publicationRightsGranted": false
+  },
+  "probe": {
+    "path": "tests/conformance/probes/p8scii.p8",
+    "sha256": "334b687a2ca60b2e39297aec6a99125b1926a510be794bf18bbbb31ae8a5fa1a",
+    "sanitizedExpectedEvents": "tests/conformance/expected/p8scii.json",
+    "lifecycleBoundary": "The static probe executes from _init() and an empty __gfx__ terminator closes the Education cart source; neither changes text semantics or provides resource data."
+  },
+  "officialCapture": {
+    "captureSha256": "ef2e518918fa4b98a0be768c58bcf2bf3b98de80811347ad231aa440d07b89a2",
+    "eventCount": 14,
+    "eventLogSha256": "5b29eacefecdf5c2f203e9a9fbf74e6fa5a3c0587cb67389380dbf17f1e90c42",
+    "privateArtifactsCommitted": false
+  },
+  "differential": {
+    "status": "matched",
+    "officialCount": 14,
+    "candidateCount": 14,
+    "candidateBackend": "aico8-production-wasm",
+    "candidateRuntimeSha256": "93df19d74cd5cfd1412921a8b77372c8927fd4240aa3c88a24e6d0dbab46228a",
+    "candidateCaptureSha256": "a34095f50ff3a56dfd15da15fc73ee2b7c5711b5cca3dc5eaed48ab68913c5f0",
+    "comparisonSha256": "477cd53a34be5fa9a3bcd38d82fa6786b493bc5cee3a8f391bb473bc8ce234a1",
+    "eventMismatchCount": 0,
+    "publicRegressionFixture": "tests/conformance/expected/p8scii.json"
+  },
+  "claims": {
+    "provesAuthorizedEducationReachability": true,
+    "provesOfficialStaticEventCompatibilityForThisProbe": true,
+    "provesCompleteP8sciiCompatibility": false,
+    "provesDelayedPrintingCompatibility": false,
+    "provesCompleteBuiltInFontBitmapCompatibility": false,
+    "provesAudioOrPcmCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}

@@ -97,7 +97,16 @@
         "outlines",
         "custom fonts"
       ],
-      "deferred": ["frame-delayed printing", "P8SCII audio commands"]
+      "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/p8scii.p8 --source-dir /private/staging/p8scii --event-log events.txt --output captures/official/0.2.7-education/p8scii.json",
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/p8scii.p8 --output captures/official/0.2.7-education/p8scii-candidate.json",
+      "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/p8scii.json --candidate captures/official/0.2.7-education/p8scii-candidate.json --output captures/official/0.2.7-education/p8scii-comparison.json",
+      "golden_status": "Authorized Education 0.2.7 matches all 14 static events from the production-Wasm candidate: metrics, inline/custom pixels, cursor and colour/background state, repeat/termination, raw writes, outline, and underline. The probe executes from _init() and uses an empty __gfx__ terminator to satisfy the Education cart lifecycle without changing text semantics. Delayed execution, exact built-in font bitmaps beyond the sampled metrics, runtime memory checkpoints beyond emitted values, and PCM/audio commands still require licensed desktop evidence.",
+      "deferred": [
+        "frame-delayed printing and exact scheduler timing",
+        "complete built-in font bitmap fixtures",
+        "non-emitted memory checkpoints",
+        "P8SCII audio commands and PCM"
+      ]
     },
     {
       "id": "input",
