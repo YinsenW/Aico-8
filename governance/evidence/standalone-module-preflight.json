@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "subject": "two real standalone Web/PWA module candidates",
-  "status": "machine-preflight-passed-current-review-recapture-open",
+  "status": "machine-preflight-and-current-review-recapture-passed-human-review-open",
   "rights_scope": "Private research and testing evidence only; neither candidate is authorized for formal release by this record.",
   "method": {
     "selector": "scripts/preflight-private-standalone-module.mjs",
@@ -25,15 +25,20 @@
       "logical_updates": 5679,
       "mutations_rejected": 4,
       "package_files": 46,
-      "unpacked_bytes": 1667767,
-      "release_manifest_sha256": "e0b27e4b197f4c4845fa9b5ac44cf810521ac7ea7b32bfa3ca88a781ea62a5db",
-      "package_tree_sha256": "1f71576b3f772eccd0e82a7a0b8a6f55664b8bddaf0264b3b98effab75892f23",
+      "unpacked_bytes": 1667759,
+      "release_manifest_sha256": "8afcb2ce40ac579d5155c3067254ad1d9451ecacdad95b565e13bdf4dd3331af",
+      "package_tree_sha256": "3cfa5c47853d3cd2eb0076fe21559d4575363b0226222ca8ebb38f0c083f7741",
       "canonical_replay_semantics_sha256": "41b8da670e06d84983799f9dde6608c5bb3e83c92cd1ce7ded261055f56db786",
-      "current_visual_runtime_sha256": "1154de4c4408300bb5b75adc08068e0e2ce8c56479f157ff2ecfe9ad5d94a51d",
-      "reviewed_visual_runtime_sha256": "fbd93fc9f8d0bb6568b539fef44b4b01e061c8cf596c699a59b717cdce6dd891",
-      "reviewed_replay_matches": true,
-      "reviewed_runtime_matches": false,
-      "status": "pending-current-package-recapture-and-human-review"
+      "current_visual_runtime_sha256": "178bc8416412adad2df94670e32ed952d1f875173cf976027d08f83d6acfc3ff",
+      "superseded_review_visual_runtime_sha256": "fbd93fc9f8d0bb6568b539fef44b4b01e061c8cf596c699a59b717cdce6dd891",
+      "packet_visual_runtime_sha256": "178bc8416412adad2df94670e32ed952d1f875173cf976027d08f83d6acfc3ff",
+      "current_browser_evidence_sha256": "a19e73bd37fefc2fe89e81db5c4fa3d34055fe43b6f09e1fc68918d35cd8539a",
+      "current_review_packet_sha256": "94fe70e05eb1ee15d63f8bcfa2d7e8eb82f4cf31ebbbbc2afbf62d37f0e54196",
+      "current_review_document_sha256": "ab7235f6ef41e01471e571f1fe035471207bdab66b4d91f79af30021524bae19",
+      "current_review_screenshots": 38,
+      "packet_replay_matches": true,
+      "packet_runtime_matches": true,
+      "status": "pending-exact-human-hd-review"
     },
     {
       "package_id": "steps-private-research",
@@ -47,19 +52,25 @@
       "package_tree_sha256": "408ed5c29b253d22544a6c431f29b73e4590d0b1ce2eed36dc2645d7d8f90a54",
       "canonical_replay_semantics_sha256": "63df38a25cd2d079e9278fe96d9afb074ad634fdc47bf0465225966d3394dede",
       "current_visual_runtime_sha256": "b1d2d76a6ec443bc0c36fbf38a961c68418d711ec02ad3a909a9b185fcbb6d65",
-      "reviewed_visual_runtime_sha256": "6450dabea1ea2c497e9fefa38c60582148a835a1b6236986428c8f86a45eb3cc",
-      "reviewed_replay_semantics_sha256": "c0ac853133d2e4265890e1cca3a723c058e117a06d1d7036ac82be407db0467a",
-      "reviewed_replay_matches": false,
-      "reviewed_runtime_matches": false,
-      "status": "pending-current-package-and-replay-recapture-and-human-review"
+      "superseded_review_visual_runtime_sha256": "6450dabea1ea2c497e9fefa38c60582148a835a1b6236986428c8f86a45eb3cc",
+      "superseded_review_replay_semantics_sha256": "c0ac853133d2e4265890e1cca3a723c058e117a06d1d7036ac82be407db0467a",
+      "packet_visual_runtime_sha256": "b1d2d76a6ec443bc0c36fbf38a961c68418d711ec02ad3a909a9b185fcbb6d65",
+      "packet_replay_semantics_sha256": "63df38a25cd2d079e9278fe96d9afb074ad634fdc47bf0465225966d3394dede",
+      "current_browser_evidence_sha256": "06fe64ea42172e2f72927123e7e3f26922698801d0073fbf1f1c447fb4c24935",
+      "current_review_packet_sha256": "5bc6dbf8182dd3ee3d19549537474c42c3794d624d41491b2b86a415b548610d",
+      "current_review_document_sha256": "e6d725dae5b5bca5c8225adde87b4632af38f5fdfb98eca8f02af80cdf08f188",
+      "current_review_screenshots": 34,
+      "packet_replay_matches": true,
+      "packet_runtime_matches": true,
+      "status": "pending-exact-human-hd-review"
     }
   ],
   "collection_gate": {
     "validated_modules": 1,
     "required_modules": 3,
     "remaining": [
-      "recapture current Tiny Golf review evidence and obtain its exact ordered human decision",
-      "recapture current Steps review evidence against its regenerated canonical replay and obtain its exact ordered human decision",
+      "obtain Tiny Golf's exact ordered human decision against packet sha256:94fe70e05eb1ee15d63f8bcfa2d7e8eb82f4cf31ebbbbc2afbf62d37f0e54196",
+      "obtain Steps' exact ordered human decision against packet sha256:5bc6dbf8182dd3ee3d19549537474c42c3794d624d41491b2b86a415b548610d",
       "materialize both validated module manifests",
       "assemble and browser-validate the three-game collection with isolated saves and measured switching"
     ]
