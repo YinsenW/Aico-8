@@ -46,6 +46,7 @@ struct p8_core {
     unsigned update_rate = 30;
     unsigned host_phase = 0;
     uint64_t update_count = 0;
+    uint32_t time_origin_ticks60 = 0;
     uint32_t draw_sequence = 0;
     uint32_t text_ir_sequence = 0;
     std::vector<p8_draw_command> draw_commands;
@@ -215,6 +216,7 @@ void p8_core_reset(p8_core *core)
     core->update_rate = 30;
     core->host_phase = 0;
     core->update_count = 0;
+    core->time_origin_ticks60 = 0;
     core->draw_sequence = 0;
     core->draw_commands.clear();
     core->draw_payload.clear();
@@ -461,9 +463,28 @@ uint64_t p8_core_get_update_count(const p8_core *core)
     return core ? core->update_count : 0;
 }
 
+void p8_core_set_time_origin_ticks60(p8_core *core, uint32_t ticks60)
+{
+    if (core) {
+        core->time_origin_ticks60 = ticks60;
+    }
+}
+
+int32_t p8_core_time_raw(const p8_core *core)
+{
+    if (!core || core->update_rate == 0) {
+        return 0;
+    }
+    const uint64_t update_raw = (core->update_count * 0x10000ull) / core->update_rate;
+    const uint64_t origin_raw = (static_cast<uint64_t>(core->time_origin_ticks60)
+                                 * 0x10000ull) / 60;
+    return static_cast<int32_t>(static_cast<uint32_t>(update_raw + origin_raw));
+}
+
 double p8_core_time(const p8_core *core)
 {
-    return core ? static_cast<double>(core->update_count) / core->update_rate : 0.0;
+    return core ? static_cast<double>(core->update_count) / core->update_rate
+        + static_cast<double>(core->time_origin_ticks60) / 60.0 : 0.0;
 }
 
 int p8_core_host_tick60(p8_core *core, int allow_draw)

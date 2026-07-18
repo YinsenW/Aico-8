@@ -107,6 +107,8 @@ void p8_core_set_callbacks(p8_core *core, const p8_core_callbacks *callbacks);
 void p8_core_set_update_rate(p8_core *core, unsigned updates_per_second);
 unsigned p8_core_get_update_rate(const p8_core *core);
 uint64_t p8_core_get_update_count(const p8_core *core);
+void p8_core_set_time_origin_ticks60(p8_core *core, uint32_t ticks60);
+int32_t p8_core_time_raw(const p8_core *core);
 double p8_core_time(const p8_core *core);
 
 /* Called by a 60 Hz host. Returns 1 when an update was executed. */

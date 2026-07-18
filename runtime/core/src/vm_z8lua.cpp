@@ -1261,10 +1261,7 @@ int api_printh(lua_State *state)
 int api_time(lua_State *state)
 {
     p8_vm *vm = p8_vm::from(state);
-    const uint64_t updates = p8_core_get_update_count(vm->core);
-    const unsigned rate = p8_core_get_update_rate(vm->core);
-    const uint64_t raw = rate == 0 ? 0 : (updates * 0x10000ull) / rate;
-    lua_pushnumber(state, lua_Number::frombits(static_cast<int32_t>(raw)));
+    lua_pushnumber(state, lua_Number::frombits(p8_core_time_raw(vm->core)));
     return 1;
 }
 

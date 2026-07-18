@@ -17,6 +17,11 @@ const probes = [
   'advanced_raster',
 ]
 
+const temporalProbes = [
+  ['scheduler_30', 'scheduler_30_six_host_ticks', 6],
+  ['scheduler_60', 'scheduler_60_six_host_ticks', 6],
+]
+
 for (const probe of probes) {
   test(`production Wasm emits a deterministic source-bound ${probe} candidate`, () => {
     const expected = JSON.parse(fs.readFileSync(
@@ -47,6 +52,32 @@ for (const probe of probes) {
       assert.deepEqual(captures[0].events, captures[1].events)
       assert.deepEqual(captures[0].events, expected.events)
       assert.deepEqual(captures[0].attachments, [])
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true })
+    }
+  })
+}
+
+for (const [probe, expectedName, hostTicks] of temporalProbes) {
+  test(`production Wasm emits a deterministic ${probe} host-tick candidate`, () => {
+    const expected = JSON.parse(fs.readFileSync(path.join(
+      repository, `tests/conformance/expected/${expectedName}.json`), 'utf8'))
+    const directory = path.join(
+      repository, 'captures/official',
+      `public-wasm-${probe}-${process.pid}-${Date.now()}`,
+    )
+    const output = path.join(directory, 'candidate.json')
+    try {
+      const result = spawnSync('corepack', [
+        'pnpm', 'exec', 'tsx', 'scripts/capture-implementation-probe.ts',
+        '--cart', `tests/conformance/probes/${probe}.p8`,
+        '--output', output,
+        '--host-ticks', String(hostTicks),
+      ], { cwd: repository, encoding: 'utf8' })
+      assert.equal(result.status, 0, result.stderr)
+      const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
+      assert.deepEqual(validateImplementationProbeCapture(capture), [])
+      assert.deepEqual(capture.events, expected.events)
     } finally {
       fs.rmSync(directory, { recursive: true, force: true })
     }

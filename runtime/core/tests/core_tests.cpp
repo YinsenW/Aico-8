@@ -205,13 +205,19 @@ void test_scheduler()
     assert(p8_core_get_update_count(core) == 3);
     assert(std::abs(p8_core_time(core) - 0.1) < 1e-12);
 
+    p8_core_set_time_origin_ticks60(core, 2);
+    assert(p8_core_get_update_count(core) == 3);
+    assert(std::abs(p8_core_time(core) - (0.1 + 1.0 / 30.0)) < 1e-12);
+    assert(p8_core_time_raw(core) == static_cast<int32_t>((3ull * 0x10000ull) / 30
+        + (2ull * 0x10000ull) / 60));
+
     p8_core_set_update_rate(core, 60);
     for (unsigned i = 0; i < 6; ++i) {
         p8_core_host_tick60(core, i != 2);
     }
     assert(trace.updates == 3 && trace.updates60 == 6 && trace.draws == 8);
     assert(p8_core_get_update_count(core) == 9);
-    assert(std::abs(p8_core_time(core) - 0.15) < 1e-12);
+    assert(std::abs(p8_core_time(core) - (0.15 + 1.0 / 30.0)) < 1e-12);
     p8_core_destroy(core);
 }
 

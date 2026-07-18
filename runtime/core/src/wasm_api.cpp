@@ -16,6 +16,7 @@ namespace {
 
 constexpr uint16_t kPersistentBase = 0x5e00;
 constexpr size_t kPersistentSize = 64 * sizeof(uint32_t);
+constexpr uint32_t kOfficialStartupClockTicks60 = 2;
 
 } // namespace
 
@@ -67,6 +68,9 @@ bool restart_cart(aico8_runtime *runtime)
         && p8_vm_load_source(runtime->vm, runtime->source.data(), runtime->source.size(),
                              "@aico8-cart");
     runtime->started = runtime->loaded && p8_vm_call(runtime->vm, "_init");
+    if (runtime->started) {
+        p8_core_set_time_origin_ticks60(runtime->core, kOfficialStartupClockTicks60);
+    }
     runtime->initialization_complete = runtime->started
         && !(p8_vm_call_pending(runtime->vm)
              && std::string(p8_vm_active_function(runtime->vm)) == "_init");
@@ -141,6 +145,7 @@ int aico8_start(aico8_runtime *runtime)
         return 0;
     }
     runtime->started = true;
+    p8_core_set_time_origin_ticks60(runtime->core, kOfficialStartupClockTicks60);
     runtime->initialization_complete = !(p8_vm_call_pending(runtime->vm)
         && std::string(p8_vm_active_function(runtime->vm)) == "_init");
     return 1;

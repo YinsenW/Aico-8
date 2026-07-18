@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-18T16:11:30+08:00",
+  "status": "scheduler-events-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "officialPageUrl": "https://www.pico-8-edu.com/",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser Chromium 150.0.0.0"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only the two public scheduler probes to the authorized Education page.",
+    "publicationRightsGranted": false
+  },
+  "captureBoundary": {
+    "loadMethod": "Official local-cart input, onchange handler, FileReader, and codo data path",
+    "startMethod": "Click the official visible start surface before selecting the cart",
+    "runMethod": "Enqueue the four run-command key bytes through the official codo key buffer after the cart load completed",
+    "stdoutMethod": "Bind Module.print before the official runtime asset initializes and retain only p8probe events",
+    "repeatability": "scheduler_30 was repeated in a fresh page and produced the same first four update/draw pairs byte-for-byte",
+    "mutationExclusion": "No cart bytes, runtime logic, clock values, or emitted events were injected or rewritten"
+  },
+  "candidate": {
+    "backend": "aico8-production-wasm",
+    "revision": "1973a4eb8f04d28a0456a24076422aaf0e7538d4",
+    "runtimeSha256": "a9bb1f7a66f1242862f48b9043f72240002dbdba809e7990404f925fc815f14d"
+  },
+  "probes": [
+    {
+      "id": "scheduler_30",
+      "path": "tests/conformance/probes/scheduler_30.p8",
+      "cartSha256": "e97761af9a02fa2d3a89b542049c83846a0380824083134a1b3df493d0ad8129",
+      "publicExpected": "tests/conformance/expected/scheduler_30_six_host_ticks.json",
+      "eventCount": 6,
+      "eventLogSha256": "bb31a4bceda2f1b1569db6cc9543baad8ade27a7532ac0713044fb7fa44fef75",
+      "officialCaptureSha256": "bc0e439dc6b632d2a8f8a01f1420c5a59cb38f9ce7b94a7ae918f79ac89fdae4",
+      "candidateCaptureSha256": "17f0ba1a9b7053931e2c89bc2fd081fe62f393f822914433085c9bdefa232d01",
+      "comparisonSha256": "d354122de80b5cfebf4b070c240910b8e1cab35b31b1b05f0f4f2b22b24d9317",
+      "comparisonStatus": "matched"
+    },
+    {
+      "id": "scheduler_60",
+      "path": "tests/conformance/probes/scheduler_60.p8",
+      "cartSha256": "5025a1e025868c1ddbb93a2c592382e9146f74e3c7e17135f2f3eb01217cfeb5",
+      "publicExpected": "tests/conformance/expected/scheduler_60_six_host_ticks.json",
+      "eventCount": 12,
+      "eventLogSha256": "3bd27c72d4bf2f0cca2ba2467fc2e79cde1aeee13a1890bd49c27e8a9f3d04b1",
+      "officialCaptureSha256": "d39a30154b32150b8058ecefaca5c53db76bd6258d4cc3a8f970c2a4ab6a8c4f",
+      "candidateCaptureSha256": "cd6a7b6506b4c94851b55459e923f1ada2c5b77fdcbf104e3df6b30f05273bff",
+      "comparisonSha256": "60719606c5a8699ae482f4482be604c10d4ec60f95155bf5dcf66988bd1d75d6",
+      "comparisonStatus": "matched"
+    }
+  ],
+  "defectAndFix": {
+    "officiallyExposedDefect": "The implementation clock started at the first executed update, while the captured first Education 0.2.7 callbacks were consistently one thirtieth of a second later than that update-count-only origin.",
+    "sharedRootCause": "Logical update count was incorrectly used as both gameplay callback count and the complete cartridge clock origin.",
+    "sharedFix": "The core now keeps the captured startup clock origin separate from logical update count. The Wasm/native host applies the two-tick origin only after _init has been invoked, so the existing synchronous _init clock remains unchanged while the first 30 Hz and 60 Hz callbacks report the captured values.",
+    "preservedInvariants": [
+      "logical update count",
+      "30/60 Hz callback cadence",
+      "update-before-draw ordering",
+      "button repeat state",
+      "audio host ticks",
+      "synchronous _init time() value"
+    ]
+  },
+  "qualified": [
+    "first six host ticks of 30 Hz update/draw ordering",
+    "first six host ticks of 60 Hz update/draw ordering",
+    "captured 1/30-second first-callback clock origin",
+    "time() progression over the captured boundaries"
+  ],
+  "notQualified": [
+    "button and btnp input timing",
+    "missed-deadline catch-up and draw suppression",
+    "custom flip loops",
+    "time() values observed inside _init or during a suspended _init",
+    "delayed P8SCII coroutine timing",
+    "audio tick-history or PCM",
+    "historical or licensed desktop runtime versions",
+    "publication rights"
+  ],
+  "privateArtifactsCommitted": false,
+  "claims": {
+    "provesOfficialSchedulerCompatibilityForCapturedBoundaries": true,
+    "provesCompleteOfficialCompatibility": false,
+    "provesInputOrAudioCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}

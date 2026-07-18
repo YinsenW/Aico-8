@@ -13,3 +13,4 @@ function _draw()
  draws+=1
  printh("p8probe|draw|"..draws..":"..updates)
 end
+__gfx__

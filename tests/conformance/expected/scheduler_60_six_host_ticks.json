@@ -1,18 +1,18 @@
 {
   "probe": "scheduler_60_six_host_ticks",
-  "source": "PICO-8 v0.2.7 official manual",
+  "source": "PICO-8 Education Edition v0.2.7 authorized official capture",
   "events": [
-    ["update60", "1:0.0167"],
+    ["update60", "1:0.05"],
     ["draw", "1:1"],
-    ["update60", "2:0.0333"],
+    ["update60", "2:0.0667"],
     ["draw", "2:2"],
-    ["update60", "3:0.05"],
+    ["update60", "3:0.0833"],
     ["draw", "3:3"],
-    ["update60", "4:0.0667"],
+    ["update60", "4:0.1"],
     ["draw", "4:4"],
-    ["update60", "5:0.0833"],
+    ["update60", "5:0.1167"],
     ["draw", "5:5"],
-    ["update60", "6:0.1"],
+    ["update60", "6:0.1333"],
     ["draw", "6:6"]
   ]
 }
