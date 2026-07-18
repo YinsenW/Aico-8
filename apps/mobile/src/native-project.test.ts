@@ -67,6 +67,8 @@ describe("Capacitor Android host project", () => {
     expect(squareTest).toContain("onView(isAssignableFrom(WebView.class)).perform(click())");
     expect(squareTest).toContain("document.addEventListener('touchstart'");
     expect(squareTest).toContain("document.addEventListener('pointerdown'");
+    expect(squareTest).toContain('result = observed == null ? "<callback-timeout>" : observed');
+    expect(squareTest).toContain("tryEvaluateJavascript(webView, expression, 5, TimeUnit.SECONDS)");
     expect(squareTest).toContain('captureReadyHostEvidence(scenario, "square-host.png")');
     expect(squareTest).toContain("getUiAutomation()");
     expect(squareTest).toContain("new File(activity.getFilesDir(), filename)");

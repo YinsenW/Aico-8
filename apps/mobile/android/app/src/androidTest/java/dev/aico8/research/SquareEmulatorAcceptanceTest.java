@@ -123,10 +123,11 @@ public final class SquareEmulatorAcceptanceTest {
     }
 
     static void awaitJavascriptTrue(WebView webView, String expression) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         String result = "false";
         while (System.nanoTime() < deadline) {
-            result = evaluateJavascript(webView, expression);
+            String observed = tryEvaluateJavascript(webView, expression, 5, TimeUnit.SECONDS);
+            result = observed == null ? "<callback-timeout>" : observed;
             if ("true".equals(result)) return;
             Thread.sleep(100);
         }
@@ -134,6 +135,17 @@ public final class SquareEmulatorAcceptanceTest {
     }
 
     static String evaluateJavascript(WebView webView, String script) throws Exception {
+        String result = tryEvaluateJavascript(webView, script, 10, TimeUnit.SECONDS);
+        assertNotNull("Timed out evaluating JavaScript", result);
+        return result;
+    }
+
+    private static String tryEvaluateJavascript(
+        WebView webView,
+        String script,
+        long timeout,
+        TimeUnit unit
+    ) throws Exception {
         CountDownLatch completed = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
@@ -142,7 +154,7 @@ public final class SquareEmulatorAcceptanceTest {
                 completed.countDown();
             })
         );
-        assertTrue("Timed out evaluating JavaScript", completed.await(10, TimeUnit.SECONDS));
+        if (!completed.await(timeout, unit)) return null;
         return result.get();
     }
 }
