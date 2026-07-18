@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aico8.dev/schemas/fixed-collection-v1.schema.json",
+  "title": "Aico 8 fixed collection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "collectionId", "metadata", "targetProfile", "launcher", "isolation", "budgets", "modules"],
+  "properties": {
+    "schemaVersion": { "const": "aico8.fixed-collection.v1" },
+    "collectionId": { "$ref": "#/$defs/id" },
+    "metadata": {
+      "type": "object", "additionalProperties": false, "required": ["title"],
+      "properties": { "title": { "type": "string", "minLength": 1, "maxLength": 120 } }
+    },
+    "targetProfile": {
+      "type": "object", "additionalProperties": false, "required": ["id", "sha256"],
+      "properties": { "id": { "$ref": "#/$defs/id" }, "sha256": { "$ref": "#/$defs/hash" } }
+    },
+    "launcher": {
+      "type": "object", "additionalProperties": false, "required": ["initialModuleId"],
+      "properties": { "initialModuleId": { "$ref": "#/$defs/id" } }
+    },
+    "isolation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resetCompatibilityStateOnSwitch", "isolatedSaveNamespaces"],
+      "properties": {
+        "resetCompatibilityStateOnSwitch": { "const": true },
+        "isolatedSaveNamespaces": { "const": true }
+      }
+    },
+    "budgets": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxPackagedBytes", "maxPersistentBytes"],
+      "properties": {
+        "maxPackagedBytes": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+        "maxPersistentBytes": { "type": "integer", "minimum": 1, "maximum": 16777216 }
+      }
+    },
+    "modules": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/module" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "safePath": { "type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)(?:\\.{1,2})(?:/|$))(?!.*//)[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$" },
+    "file": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+      "properties": { "path": { "$ref": "#/$defs/safePath" }, "sha256": { "$ref": "#/$defs/hash" } }
+    },
+    "license": {
+      "type": "object", "additionalProperties": false, "required": ["spdxExpression", "notice"],
+      "properties": {
+        "spdxExpression": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9.+()\\- ]+$" },
+        "notice": { "$ref": "#/$defs/file" }
+      }
+    },
+    "module": {
+      "type": "object", "additionalProperties": false,
+      "required": ["moduleId", "manifestSha256", "saveNamespace", "rightsProfile", "license"],
+      "properties": {
+        "moduleId": { "$ref": "#/$defs/id" },
+        "manifestSha256": { "$ref": "#/$defs/hash" },
+        "saveNamespace": { "type": "string", "minLength": 1 },
+        "rightsProfile": { "$ref": "#/$defs/id" },
+        "license": { "$ref": "#/$defs/license" }
+      }
+    }
+  }
+}
