@@ -144,7 +144,22 @@ test("records and re-verifies an immutable all-pass typography decision", () => 
     assert.match(verification.stdout, /Private typography accessibility: PASS/);
 
     const decisionPath = path.join(workspace, "evidence/typography-readability-decision.json");
+    const decisionBytes = fs.readFileSync(decisionPath);
     const decision = JSON.parse(fs.readFileSync(decisionPath, "utf8"));
+    const pendingAuditPath = path.join(
+      workspace,
+      `evidence/readability-reviews/${decision.subject.reviewPacketSha256}/pending-typography-accessibility-audit.json`,
+    );
+    fs.copyFileSync(pendingAuditPath, path.join(workspace, "validation/typography-accessibility-audit.json"));
+    const replay = accept(workspace);
+    assert.equal(replay.status, 0, replay.stderr);
+    assert.deepEqual(fs.readFileSync(decisionPath), decisionBytes,
+      "replaying an exact decision must not rewrite its immutable bytes");
+    const replayedAudit = JSON.parse(fs.readFileSync(
+      path.join(workspace, "validation/typography-accessibility-audit.json"), "utf8",
+    ));
+    assert.equal(replayedAudit.status, "accepted");
+
     decision.reviewer = "forged-reviewer";
     fs.writeFileSync(decisionPath, `${JSON.stringify(decision, null, 2)}\n`);
     const forged = spawnSync(tsx, [verifyScript], {
