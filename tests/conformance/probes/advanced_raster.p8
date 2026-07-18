@@ -14,6 +14,7 @@ local function row(y,x0,x1)
  return out
 end
 
+function _init()
 -- fill pattern orientation and transparency
 cls(0)
 fillp(0b0000000100110111)
@@ -125,6 +126,8 @@ poke(0x5f57,16)
 emit("upper_ram_map_read",tostr(mget(0,0))..","..tostr(mget(1,0)))
 mset(1,0,44)
 emit("upper_ram_map_write",peek(0x8001))
+end
 
 function _draw()
 end
+__gfx__

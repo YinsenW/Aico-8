@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-18T14:03:21+08:00",
+  "status": "static-event-batch-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser, Chromium 150.0.0.0",
+    "loadMethod": "Official page local-cart file selection",
+    "automationBoundary": "The page's existing hidden #p8_file_chooser was temporarily made visible so a real browser file-chooser event could select each public probe. The official onchange/FileReader/codo load path executed unchanged; no cart bytes, runtime logic, or emitted events were injected. The capture tab was closed after collection."
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only the four public numeric_memory, language, raster_state, and advanced_raster probes; no private carts, workspaces, or game assets.",
+    "publicationRightsGranted": false
+  },
+  "candidate": {
+    "backend": "aico8-production-wasm",
+    "runtimeSha256": "80ce1b5ba8022c5fc56493f418c2295bc93d80e6d8260c1d3c79dd85c6d8abc8",
+    "baseRevision": "bd3fa2c4267fee7da5cd119ed5112a9e13f31b88"
+  },
+  "probes": [
+    {
+      "id": "numeric_memory",
+      "path": "tests/conformance/probes/numeric_memory.p8",
+      "cartSha256": "b759ad76af5d8f14e9f61ac7f04ed830d23686240d3634a67989f1cc3238b78e",
+      "publicExpected": "tests/conformance/expected/numeric_memory.json",
+      "eventCount": 10,
+      "eventLogSha256": "23863294b712b28ae8b4154cdc56f1afbd7affedfb5c5a76e939e66602771679",
+      "officialCaptureSha256": "2dff1c7545c82b8baa6fb36846f9396cc3437d03162e48d21b63093a044ff945",
+      "candidateCaptureSha256": "8930f3245bb16b36301ee4115ac000f7784fd49f591a11dee4dcfe330f4c12a8",
+      "comparisonSha256": "9398d2c57a09dc3900170afe7e7e99bbcdcfd6d12ef2988f3a7cb4cae3460b5c",
+      "mismatchCount": 0
+    },
+    {
+      "id": "language",
+      "path": "tests/conformance/probes/language.p8",
+      "cartSha256": "d1745b346253fccef2110f0c32fc58e63362dbd0bdb564e6b512de1e4c879a21",
+      "publicExpected": "tests/conformance/expected/language.json",
+      "eventCount": 18,
+      "eventLogSha256": "46ac76ed035b676b19f5cabbe0a32993825cf97b0223c626d94dbd7d1f150f3e",
+      "officialCaptureSha256": "21486ca21ccf2b70e9ddcd07902b6f2100ba875d514f3a64f7a9db3d57686dec",
+      "candidateCaptureSha256": "59099d9619da9b8492ebcfdaef1234e7cea45d05143995b9e17d848ee0a1fd6c",
+      "comparisonSha256": "7c6a9790e3c3eb5c7ed1e7c9ade93b12606fa1a6f9b3e15e21ccb0a758e074df",
+      "mismatchCount": 0,
+      "probeNote": "The probe's legacy inline comment states the pre-capture assumption and is retained byte-for-byte so the published cart SHA-256 remains identical to the official run. The official event, expected fixture, compatibility prelude, and regression test are authoritative for the corrected behavior.",
+      "remediation": {
+        "finding": "The first candidate returned b for sub(\"abcd\",2,true); Education 0.2.7 returned bcd.",
+        "rootCause": "The compatibility prelude coerced a non-numeric third argument to the start index instead of treating it as an omitted end position.",
+        "implementation": "runtime/core/src/vm_z8lua.cpp",
+        "regression": "runtime/core/tests/vm_tests.cpp"
+      }
+    },
+    {
+      "id": "raster_state",
+      "path": "tests/conformance/probes/raster_state.p8",
+      "cartSha256": "518b7b4455fe8243cc8c9b74a969fde360db83ebf6ac08be5c804fa7b07b9468",
+      "publicExpected": "tests/conformance/expected/raster_state.json",
+      "eventCount": 10,
+      "eventLogSha256": "e553d4cd08f067c2f3928e75a93be212abd98202e3c42745f6f38ddf997aef70",
+      "officialCaptureSha256": "0a7750efb653571bfa384e9b8ac103254074565583f536d3f9895f453a84cf5a",
+      "candidateCaptureSha256": "afcf7988bd594f2b08b06e73bc916b73104dd544c08f3b961085165a783698f0",
+      "comparisonSha256": "3dd38c3e580753405447ba19178634b82a9b5f63e83ffdc5fe8fb569c989ef67",
+      "mismatchCount": 0
+    },
+    {
+      "id": "advanced_raster",
+      "path": "tests/conformance/probes/advanced_raster.p8",
+      "cartSha256": "630b415c449aa7951dfbe0b98f38afa323f01597767241739c1adc62a2d1b506",
+      "publicExpected": "tests/conformance/expected/advanced_raster.json",
+      "eventCount": 21,
+      "eventLogSha256": "b48e11cc58549a09ad60ad89124fca1221a9803fe0a5c3a9a2dfbd5418eeffc4",
+      "officialCaptureSha256": "43f2d40c423b9459f19a1944bce33d3e8ef7fabe0e7f6910e019b75b09e53bbf",
+      "candidateCaptureSha256": "3b056216af9a9f7c6cdb3f8e10ddec57c1fd2a084dcb250e980f4dc009c1cbd5",
+      "comparisonSha256": "3980e9b8f6d8cc6c69183a48a2b3c62940d13f8f061544b4b4fd4f35260b3b77",
+      "mismatchCount": 0
+    }
+  ],
+  "privateArtifactsCommitted": false,
+  "claims": {
+    "provesAuthorizedEducationReachability": true,
+    "provesOfficialStaticEventCompatibilityForTheseFourProbes": true,
+    "provesCompleteOfficialCompatibility": false,
+    "provesSchedulerOrInputCompatibility": false,
+    "provesPersistenceCompatibility": false,
+    "provesAudioOrPcmCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}

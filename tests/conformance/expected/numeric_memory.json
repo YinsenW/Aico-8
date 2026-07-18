@@ -1,6 +1,6 @@
 {
   "probe": "numeric_memory",
-  "source": "PICO-8 v0.2.7 official manual",
+  "source": "PICO-8 v0.2.7 official Education runtime and manual",
   "events": [
     ["wrap_positive", "0x8000.0000"],
     ["wrap_negative", "0x7fff.ffff"],

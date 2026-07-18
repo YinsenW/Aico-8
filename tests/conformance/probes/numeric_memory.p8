@@ -5,6 +5,7 @@ local function emit(name,value)
  printh("p8probe|"..name.."|"..tostr(value,true))
 end
 
+function _init()
 emit("wrap_positive",0x7fff.ffff+0x0.0001)
 emit("wrap_negative",0x8000-0x0.0001)
 emit("divide_positive_zero",1/0)
@@ -19,6 +20,8 @@ emit("peek2_little_endian",peek2(0x4300))
 
 sset(0,64,3)
 emit("gfx_map_shared_alias",mget(0,32))
+end
 
 function _draw()
 end
+__gfx__

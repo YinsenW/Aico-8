@@ -61,6 +61,7 @@ logic port. A compatibility path must provide explicit 16:16 operations and conv
 - Lua tables are mixed key/value maps; array helpers assume contiguous one-based integer indexes.
 - `add`, `del`, `deli`, `count`, `all`, `foreach`, and `pairs` have PICO-specific edge behavior.
 - Strings are byte strings in P8SCII. String indexing, `sub`, `ord`, `chr`, `split`, and number coercion must remain byte-oriented.
+- In v0.2.7, a non-numeric third argument to `sub(value, first, last)` behaves like an omitted end position; it does not request a one-character range.
 - PICO shorthand includes single-line `if`/`while`, compound assignments, `!=`, `?` print, binary literals, and custom bit operators.
 - Metatables, varargs, and coroutines are supported. Errors inside `coresume()` are returned rather than automatically stopping the cart.
 - Most API names are local bindings in current PICO-8 unless `-global_api 1` is used.
@@ -290,6 +291,17 @@ line endings. Version 1 permits no tolerance. Matched reports remain private and
 immutable, and do not verify an exit until their authorized official provenance and
 coverage are recorded in governance.
 
+The authorized Education 0.2.7 channel has also qualified the emitted static
+subsets of `numeric_memory`, `language`, `raster_state`, and
+`advanced_raster`: all 59 events match the production-Wasm candidates. The
+language comparison first exposed an implementation defect in non-numeric
+`sub()` end handling; the shared compatibility prelude was corrected and the
+same source-bound probe then matched 18/18. The sanitized hashes and bounded
+claims are retained in
+`governance/evidence/official-education-static-compatibility-differential.json`.
+This batch does not qualify scheduler timing, un-emitted state, input,
+persistence, or audio.
+
 ### Scheduler
 
 - 30 Hz and 60 Hz callbacks.
@@ -301,7 +313,7 @@ coverage are recorded in governance.
 
 - Decimal rounding, overflow, underflow, and divide-by-zero saturation.
 - Turn-based inverted trig, `atan2` order, `sgn(0)`, integer division, and all bit operators.
-- One-based table helpers, deletion during `all()`, coercions, P8SCII string indexes, metatables, and coroutines.
+- One-based table helpers, deletion during `all()`, coercions, P8SCII string indexes, non-numeric `sub()` end handling, metatables, and coroutines.
 
 ### Memory
 
