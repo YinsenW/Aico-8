@@ -1,0 +1,22 @@
+{
+  "probe": "input_30",
+  "source": "PICO-8 Education Edition v0.2.7 authorized official capture",
+  "events": [
+    ["ready", "press-left-default"],
+    ["btnp", "1:true:true:true:1"],
+    ["held", "true:1:1"],
+    ["btnp", "16:true:true:true:1"],
+    ["btnp", "20:true:true:true:1"],
+    ["btnp", "24:true:true:true:1"],
+    ["prompt", "release-left"],
+    ["released", "false:false:0"],
+    ["prompt", "press-left-custom"],
+    ["btnp", "26:true:true:true:1"],
+    ["btnp", "29:true:true:true:1"],
+    ["btnp", "31:true:true:true:1"],
+    ["btnp", "33:true:true:true:1"],
+    ["btnp", "35:true:true:true:1"],
+    ["btnp", "37:true:true:true:1"],
+    ["done", "38"]
+  ]
+}

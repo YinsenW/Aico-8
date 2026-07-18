@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-18T17:36:35+08:00",
+  "status": "input-events-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "officialPageUrl": "https://www.pico-8-edu.com/",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser Chromium 150.0.0.0"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only the two public input probes to the authorized Education page.",
+    "publicationRightsGranted": false
+  },
+  "captureBoundary": {
+    "loadMethod": "Official local-cart input, onchange handler, FileReader, and codo data path",
+    "startMethod": "Click the official visible start surface before selecting each cart in a fresh page",
+    "runMethod": "Enqueue the four run-command key bytes through the official codo key buffer after the cart load completed",
+    "stdoutMethod": "Bind Module.print before the official runtime asset initializes and retain only p8probe events",
+    "inputMethod": "Write only player zero's documented host button mask through the official page's pico8_buttons[0] bridge at cart-emitted ready, release, and repress synchronization boundaries",
+    "synchronization": "The cart emits a prompt and stops advancing its logical counter until the requested host mask is observed, so wall-clock automation delay cannot shift a tested update boundary",
+    "mutationExclusion": "No cart bytes, official runtime logic, VM memory, clock values, logical counters, or emitted events were injected or rewritten; only the official host button slot changed at declared boundaries"
+  },
+  "candidate": {
+    "backend": "aico8-production-wasm",
+    "revision": "268fd0ad88fd3b8897e11aa4c99cb18b27b4e232",
+    "runtimeSha256": "a9bb1f7a66f1242862f48b9043f72240002dbdba809e7990404f925fc815f14d"
+  },
+  "probes": [
+    {
+      "id": "input_30",
+      "path": "tests/conformance/probes/input_30.p8",
+      "trace": "tests/conformance/input_traces/btnp_30.json",
+      "cartSha256": "33a5ea6211016a56fc4f15b586f8addb3907de3d5b14d9998bca077a2c51ab45",
+      "publicExpected": "tests/conformance/expected/input_30.json",
+      "eventCount": 16,
+      "eventLogSha256": "1bb1c83af8c7620f0bc2163549bb81a8f499da073bf25fbb02e3673c97687913",
+      "officialCaptureSha256": "5fbbcf3c4063d09aaf002222ade6096c50dd3fdcbf7b02ed4df3eb18d4de2858",
+      "candidateCaptureSha256": "30672a86ce2594b94e9bc40b333438847056ab65201a00a1345652058c61db99",
+      "comparisonSha256": "3236558ca3b88c12948f6dc7c37b37ab354f54419e253ddd1ae33f2701188bc3",
+      "comparisonStatus": "matched"
+    },
+    {
+      "id": "input_60",
+      "path": "tests/conformance/probes/input_60.p8",
+      "trace": "tests/conformance/input_traces/btnp_60.json",
+      "cartSha256": "0f839751518f21dd83f5137d46f5d5a7c48a7035d30403b1ec6e852337ed4f3f",
+      "publicExpected": "tests/conformance/expected/input_60.json",
+      "eventCount": 7,
+      "eventLogSha256": "7187a8e569d7875efb68e9aca671cacaf104f684fc9058b1aece54635a1ed4c8",
+      "officialCaptureSha256": "87c00bd3141952f1690dde67f8dd62ef5786fd3c4b18bbb667966cc30f367987",
+      "candidateCaptureSha256": "3509523047183d48b467454d332ff2d3e2bec0fc9c62fba86c5aaf3988b7abc1",
+      "comparisonSha256": "225b78608f00d28332abf591b01981973080f3ccbc6bec2fc6b084a6696d0063",
+      "comparisonStatus": "matched"
+    }
+  ],
+  "qualified": [
+    "player-zero btn() held state and aggregate btn() mask at the captured boundaries",
+    "first-edge btnp() behavior and same-update repeat reads",
+    "default 15-update delay and four-update repeat cadence at 30 Hz",
+    "default doubled 30-update delay and eight-update repeat cadence at 60 Hz",
+    "custom 3-update delay and two-update repeat cadence selected through 0x5f5c..0x5f5d",
+    "release clearing of btn(), btnp(), and 0x5f4c at the synchronized boundary"
+  ],
+  "notQualified": [
+    "players one through seven",
+    "simultaneous multi-button chords beyond the captured left-button mask",
+    "devkit mouse, keyboard text, wheel, relative movement, or pointer lock",
+    "pause-menu callback input",
+    "gamepad browser mapping or physical-controller event delivery",
+    "missed-deadline catch-up and draw suppression",
+    "historical or licensed desktop runtime versions",
+    "publication rights"
+  ],
+  "privateArtifactsCommitted": false,
+  "claims": {
+    "provesOfficialInputCompatibilityForCapturedBoundaries": true,
+    "provesCompleteOfficialInputCompatibility": false,
+    "provesCompleteOfficialCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}
