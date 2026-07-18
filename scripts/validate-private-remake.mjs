@@ -284,6 +284,7 @@ try {
       presentationMode: screenshot.presentationMode,
       sceneId: screenshot.sceneId,
       stateBoundary: screenshot.stateBoundary,
+      visualRuntimeSha256: browser.build.visualRuntimeSha256,
     });
   }
   assert.equal(captureReadinessById.size, browser.screenshots.length,
@@ -294,6 +295,7 @@ try {
       presentationMode: "hd",
       sceneId: "scene.title",
       stateBoundary: "canonical-replay:update:9206:presentation-ms:0",
+      visualRuntimeSha256: browser.build.visualRuntimeSha256,
     });
   }
   assert.equal(layoutCaptureReadinessById.size, browser.layoutQualification.profiles.length,

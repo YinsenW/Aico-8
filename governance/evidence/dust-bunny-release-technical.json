@@ -3,7 +3,7 @@
   "subject": {
     "gameId": "dust-bunny-private-research",
     "target": "web-pwa",
-    "visualRuntimeSha256": "4fe05c056bbf68f3de0c60d1bd08b4f618fe922b84ebb3e427442c33af35ff32"
+    "visualRuntimeSha256": "d9dc3d810c02d11800a813be216873da132f70b7bdf0e1788aabe4e3e7cabd4f"
   },
   "targetProfile": {
     "id": "web-pwa-private-research-v1",
@@ -18,8 +18,8 @@
     }
   },
   "package": {
-    "artifactCount": 40,
-    "unpackedBytes": 2239906,
+    "artifactCount": 46,
+    "unpackedBytes": 2453019,
     "largestArtifactBytes": 632022
   },
   "runtime": {
@@ -57,7 +57,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "d9dfc5c7e077f2f51e2a299899abd7007c6a99622643e58de77b593d4df40281"
+      "screenshotSha256": "ef9179c5d625e5c929ab1e3fc829dab5bb805794c614a25dd7cf21e88cdd0554"
     },
     {
       "class": "square-handheld",
@@ -71,8 +71,8 @@
         "scrollHeight": 1024
       },
       "gameFrame": {
-        "width": 814,
-        "height": 814
+        "width": 812,
+        "height": 812
       },
       "minimumTouchTarget": {
         "width": 50,
@@ -86,7 +86,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "6f29acae999038d4287fae900b9e36d8e8ecd09ea063477374e7c575ca5cafe0"
+      "screenshotSha256": "94ee8c799c7262a71b2a474f53be2e0273d1909c399c7e1fe8d5694b3503efdd"
     },
     {
       "class": "android-handheld-landscape",
@@ -100,8 +100,8 @@
         "scrollHeight": 720
       },
       "gameFrame": {
-        "width": 510,
-        "height": 510
+        "width": 508,
+        "height": 508
       },
       "minimumTouchTarget": {
         "width": 50,
@@ -115,7 +115,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "7ed6f3bd64b9c9c20efb6b2317651966aec085a2b377958aa055d29984c5bba0"
+      "screenshotSha256": "71b11804fbb1c058d161190953bfc8b4c4965004fc0c5e1591647747386ec446"
     },
     {
       "class": "wide-web",
@@ -129,8 +129,8 @@
         "scrollHeight": 900
       },
       "gameFrame": {
-        "width": 690,
-        "height": 690
+        "width": 688,
+        "height": 688
       },
       "minimumTouchTarget": {
         "width": 50,
@@ -144,7 +144,7 @@
         "fontsLoaded": true,
         "safeAreaContract": true
       },
-      "screenshotSha256": "088146e6c37d893f9ab384bfa808da633e8b4139a8a47d3c0de93caf73c90927"
+      "screenshotSha256": "19f7aff21fa6bc1f4af45c52a661cb1ee60a42abe55766c075fbd543b07ef262"
     }
   ],
   "checks": {

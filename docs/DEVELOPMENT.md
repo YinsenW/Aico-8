@@ -208,7 +208,7 @@ Local supervised research uses the project owner's explicit recorded decision; d
 - HD omission: capture the raw scene-contextual token before render dispatch,
   fix the shared classification/render rule, then add a deleted-mapping mutation
   that must fail. Do not patch one level, coordinate, or tile occurrence, and do
-  not let renderer fallthrough masquerade as intentional empty space.
+  not let renderer fallthrough masquerade as intentional empty space. Bind every screenshot/layout readiness record to the exact visual-runtime identity.
 - Documentation mismatch: locate the concept owner, remove duplicate claims, and
   update references/manifest edges rather than patching every copy.
 - Rights uncertainty: keep build/test private and leave release/publication exit open.
