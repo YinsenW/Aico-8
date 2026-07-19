@@ -7,10 +7,7 @@ export default defineConfig({
     manifest: "asset-manifest.json",
     rollupOptions: {
       input: process.env.AICO8_BUILD_COLLECTION_ENTRY === "1"
-        ? {
-            player: resolve(import.meta.dirname, "index.html"),
-            collection: resolve(import.meta.dirname, "collection.html"),
-          }
+        ? resolve(import.meta.dirname, "collection.html")
         : resolve(import.meta.dirname, "index.html"),
     },
   },

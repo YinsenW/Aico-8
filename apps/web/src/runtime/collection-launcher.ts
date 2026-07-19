@@ -68,6 +68,14 @@ export class IframeCollectionDocumentHost implements CollectionDocumentHost {
     return this.#resetCount;
   }
 
+  get activeIdentity(): { documentIdentity: string; runtimeIdentity: string } | undefined {
+    if (!this.#frame?.dataset.documentIdentity || !this.#frame.dataset.runtimeIdentity) return undefined;
+    return {
+      documentIdentity: this.#frame.dataset.documentIdentity,
+      runtimeIdentity: this.#frame.dataset.runtimeIdentity,
+    };
+  }
+
   async clear(): Promise<void> {
     if (!this.#frame) return;
     const previous = this.#frame;
@@ -89,12 +97,63 @@ export class IframeCollectionDocumentHost implements CollectionDocumentHost {
     frame.title = module.title;
     frame.allow = "autoplay; fullscreen; gamepad";
     frame.dataset.moduleId = module.moduleId;
-    frame.src = new URL(module.launchPath, window.location.href).href;
+    const launchUrl = new URL(module.launchPath, window.location.href);
+    frame.src = launchUrl.href;
     this.#frame = frame;
     this.#mount.replaceChildren(frame);
     return new Promise((resolve, reject) => {
-      frame.addEventListener("load", () => resolve(), { once: true });
-      frame.addEventListener("error", () => reject(new Error(`Unable to open ${module.title}`)), { once: true });
+      let readinessPoll: number | undefined;
+      const finish = (error?: Error): void => {
+        window.removeEventListener("message", onMessage);
+        clearTimeout(timeout);
+        if (readinessPoll !== undefined) clearTimeout(readinessPoll);
+        if (error) reject(error); else resolve();
+      };
+      const onMessage = (event: MessageEvent): void => {
+        const value = event.data as Record<string, unknown> | null;
+        if (event.origin !== launchUrl.origin || event.source !== frame.contentWindow
+          || !value || value.schemaVersion !== "aico8.collection-child-ready.v1"
+          || value.moduleId !== module.moduleId
+          || typeof value.documentIdentity !== "string"
+          || typeof value.runtimeIdentity !== "string") return;
+        frame.dataset.documentIdentity = value.documentIdentity;
+        frame.dataset.runtimeIdentity = value.runtimeIdentity;
+        finish();
+      };
+      const timeout = window.setTimeout(
+        () => {
+          const capture = frame.contentDocument?.querySelector<HTMLElement>("#game-frame");
+          const detail = capture
+            ? ` (capture ${capture.dataset.captureStatus ?? "unknown"}: ${capture.dataset.captureError ?? "no error"})`
+            : ` (child ${frame.contentDocument?.body?.innerText.slice(0, 240) ?? "document unavailable"})`;
+          finish(new Error(`Timed out waiting for ${module.title} runtime handshake${detail}`));
+        },
+        15_000,
+      );
+      window.addEventListener("message", onMessage);
+      frame.addEventListener("load", () => {
+        const pollChildReadiness = (): void => {
+          try {
+            const capture = frame.contentDocument?.querySelector<HTMLElement>("#game-frame");
+            if (capture?.dataset.captureStatus === "failed") {
+              finish(new Error(capture.dataset.captureError ?? `${module.title} runtime failed`));
+              return;
+            }
+            if (capture?.dataset.captureStatus === "ready" && frame.contentWindow) {
+              frame.dataset.documentIdentity = `document:${frame.contentWindow.crypto.randomUUID()}`;
+              frame.dataset.runtimeIdentity = `runtime:${frame.contentWindow.crypto.randomUUID()}`;
+              finish();
+              return;
+            }
+          } catch {
+            // A declared collection package must stay same-origin. The bounded
+            // timeout below fails closed if the child cannot be inspected.
+          }
+          readinessPoll = window.setTimeout(pollChildReadiness, 16);
+        };
+        pollChildReadiness();
+      }, { once: true });
+      frame.addEventListener("error", () => finish(new Error(`Unable to open ${module.title}`)), { once: true });
     });
   }
 }

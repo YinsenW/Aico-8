@@ -83,6 +83,7 @@ const packetSha256 = sha256Bytes(packetBytes);
 const archiveDirectory = `evidence/reviews/${packetSha256}`;
 const archivedPacketRelativePath = `${archiveDirectory}/identity-review-packet.json`;
 const archivedDocumentRelativePath = `${archiveDirectory}/identity-review-packet.html`;
+const archivedIdentityMapRelativePath = `${archiveDirectory}/hd-identity-map.json`;
 const decision = {
   schemaVersion: HD_REVIEW_DECISION_SCHEMA_VERSION,
   gameId: packet.gameId,
@@ -117,9 +118,12 @@ function writeImmutable(file: string, bytes: Buffer, label: string): void {
 fs.mkdirSync(workspacePath(archiveDirectory), { recursive: true });
 writeImmutable(workspacePath(archivedPacketRelativePath), packetBytes, "review packet archive");
 writeImmutable(workspacePath(archivedDocumentRelativePath), documentBytes, "review document archive");
+writeImmutable(workspacePath(archivedIdentityMapRelativePath), fs.readFileSync(identityMapPath),
+  "reviewed identity map archive");
 writeImmutable(decisionPath, decisionBytes, "identity-review decision");
 assert.equal(sha256(workspacePath(archivedPacketRelativePath)), decision.reviewedPacket.sha256);
 assert.equal(sha256(workspacePath(archivedDocumentRelativePath)), decision.reviewedPacket.documentSha256);
+assert.equal(sha256(workspacePath(archivedIdentityMapRelativePath)), decision.reviewedPacket.identityMapSha256);
 assert.equal(sha256(decisionPath), sha256Bytes(decisionBytes));
 process.stdout.write(
   `HD review decision recorded for ${packet.gameId}: ${reviewer}; packet ${packetSha256}\n`,

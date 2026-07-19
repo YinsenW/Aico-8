@@ -90,20 +90,39 @@ describe("fixed collection launcher controller", () => {
 
   it("navigates the old iframe to an empty document before removing and replacing it", async () => {
     const events: string[] = [];
+    const messageListeners = new Set<(event: any) => void>();
     class FakeFrame {
       className = "";
       title = "";
       allow = "";
       dataset: Record<string, string> = {};
+      contentWindow = {};
       #listeners = new Map<string, () => void>();
       set src(value: string) {
         events.push(`src:${value}`);
-        queueMicrotask(() => this.#listeners.get("load")?.());
+        queueMicrotask(() => {
+          this.#listeners.get("load")?.();
+          if (value !== "about:blank") for (const listener of messageListeners) listener({
+            origin: "https://example.test",
+            source: this.contentWindow,
+            data: {
+              schemaVersion: "aico8.collection-child-ready.v1",
+              moduleId: this.dataset.moduleId,
+              documentIdentity: `document:${this.dataset.moduleId}`,
+              runtimeIdentity: `runtime:${this.dataset.moduleId}`,
+            },
+          });
+        });
       }
       addEventListener(type: string, listener: () => void): void { this.#listeners.set(type, listener); }
       remove(): void { events.push("remove"); }
     }
-    vi.stubGlobal("window", { location: { href: "https://example.test/collection/" } });
+    vi.stubGlobal("window", {
+      location: { href: "https://example.test/collection/" },
+      setTimeout,
+      addEventListener: (_type: string, listener: (event: any) => void) => messageListeners.add(listener),
+      removeEventListener: (_type: string, listener: (event: any) => void) => messageListeners.delete(listener),
+    });
     vi.stubGlobal("document", { createElement: () => new FakeFrame() });
     const mount = { replaceChildren: () => events.push("mount") } as unknown as HTMLElement;
     const host = new IframeCollectionDocumentHost(mount);

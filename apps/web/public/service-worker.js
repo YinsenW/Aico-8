@@ -101,11 +101,37 @@ async function cachePrivateModule(cache) {
   }
 }
 
+async function cacheFixedCollection(cache) {
+  const launcherUrl = resolveScopeAsset("collection-runtime.json");
+  const response = await fetch(launcherUrl, { cache: "no-store" });
+  if (response.status === 404) return;
+  if (!response.ok) throw new Error(`Unable to load collection-runtime.json (${response.status})`);
+  await cache.put(launcherUrl, response.clone());
+  const launcher = await response.json();
+  for (const module of launcher.modules ?? []) {
+    if (typeof module.launchPath !== "string" || !module.launchPath.startsWith("games/")) continue;
+    const moduleBase = new URL("./", resolveScopeAsset(`${module.launchPath}index.html`));
+    const releaseUrl = resolveScopeAsset("release-manifest.json", moduleBase);
+    const releaseResponse = await fetch(releaseUrl, { cache: "no-store" });
+    if (!releaseResponse.ok) throw new Error(`Unable to load ${module.launchPath}release-manifest.json`);
+    await cache.put(releaseUrl, releaseResponse.clone());
+    const release = await releaseResponse.json();
+    for (const relative of ["index.html", ...(release.artifacts ?? []).map((artifact) => artifact.path)]) {
+      if (typeof relative !== "string") continue;
+      const url = resolveScopeAsset(relative, moduleBase);
+      const asset = await fetch(url, { cache: "no-store" });
+      if (!asset.ok) throw new Error(`Unable to load collection game asset ${module.launchPath}${relative}`);
+      await cache.put(url, asset);
+    }
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cacheBuiltShell(cache);
     await cachePrivateModule(cache);
+    await cacheFixedCollection(cache);
     await self.skipWaiting();
   })());
 });

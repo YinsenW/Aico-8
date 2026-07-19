@@ -174,6 +174,12 @@ test("acceptance archives exact evidence and is idempotent", () => {
       decision.reviewedPacket.sha256);
     assert.equal(sha256(fs.readFileSync(path.join(workspace, decision.reviewedPacket.documentPath))),
       decision.reviewedPacket.documentSha256);
+    const archivedIdentityMapPath = path.join(
+      path.dirname(path.join(workspace, decision.reviewedPacket.path)),
+      "hd-identity-map.json",
+    );
+    assert.equal(sha256(fs.readFileSync(archivedIdentityMapPath)),
+      decision.reviewedPacket.identityMapSha256);
     const second = accept(workspace);
     assert.equal(second.status, 0, second.stderr);
     assert.deepEqual(fs.readFileSync(decisionPath), firstDecisionBytes);
