@@ -1,7 +1,9 @@
 #include "p8/text.h"
 
+#include "p8/audio.h"
 #include "p8/raster.h"
 
+#include "audio_internal.h"
 #include "core_internal.h"
 
 #include <algorithm>
@@ -18,6 +20,8 @@ constexpr uint16_t kCursorX = 0x5f26;
 constexpr uint16_t kCursorY = 0x5f27;
 constexpr uint16_t kPrintAttributes = 0x5f58;
 constexpr uint16_t kCustomFont = 0x5600;
+constexpr uint16_t kSfxBase = 0x3200;
+constexpr size_t kSfxSize = 68;
 
 enum print_mode : uint8_t {
     mode_wide = 1u << 0,
@@ -28,10 +32,42 @@ enum print_mode : uint8_t {
     mode_custom = 1u << 5,
 };
 
-// The byte table is the MIT-licensed FAKE-08/tac08 compatibility font, stored
-// as hex to keep the generated data auditable and independent of host fonts.
+// Clean-room compatibility table, stored as hex so every byte is deterministic,
+// auditable, and independent of host fonts. The complete printable raster is
+// qualified by the public p8scii_full probe against an authorized official run.
 constexpr char kBuiltinFontHex[] =
-    "040805000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007070707070000000007070700000000000705070000000000050205000000000005000500000000000505050000000004060706040000000103070301000000070101010000000000040404070000000507020702000000000002000000000000000001020000000000000303000000050500000000000002050200000000000000000000000000020202000200000005050000000000000507050705000000070306070200000005040201050000000303030507000000020100000000000002010101020000000204040402000000050207020500000000020702000000000000000201000000000007000000000000000000020000000402020201000000070505050700000003020202070000000704070107000000070406040700000005050704040000000701070407000000010107050700000007040404040000000705070507000000070507040400000000020002000000000002000201000000040201020400000000070007000000000102040201000000070406000200000002050501060000000007050705000000000303050700000000070101070000000003050503000000000703010700000000070301010000000007010507000000000505070500000000070202070000000007020203000000000503050500000000010101070000000007070505000000000305050500000000060505030000000007050701000000000205030600000000070503050000000006010403000000000702020200000000050505060000000005050702000000000505070700000000050205050000000005070407000000000704010700000003010101030000000102020204000000060404040600000002050000000000000000000007000000020400000000000007050705050000000705030507000000060101010600000003050505070000000701030107000000070103010100000006010105070000000505070505000000070202020700000007020202030000000505030505000000010101010700000007070505050000000305050505000000060505050300000007050701010000000205050306000000070503050500000006010704030000000702020202000000050505050600000005050507020000000505050707000000050502050500000005050704070000000704020107000000060203020600000002020202020000000302060203000000000407010000000000020505070000007f7f7f7f7f000000552a552a55000000417f5d5d3e0000003e6363773e0000001144114411000000043c1c1e100000001c2e3e3e1c000000363e3e1c080000001c3677361c0000001c1c3e1c140000001c3e7f2a3a0000003e6763673e0000007f5d7f417f0000003808080e0e0000003e636b633e000000081c3e1c0800000000005500000000003e7363733e000000081c7f3e220000003e1c081c3e0000003e7763633e000000000552200000000000112a44000000003e6b776b3e0000007f007f007f00000055555555550000000e041e2d2600000001112125020000001c003e2018000000081e08241a0000004e043e4526000000225f12120a0000001c3e1c021c000000300c020c30000000227a2222120000000e1000023c0000003e080e011e000000020202221c000000083e080c08000000123e12021c0000003c107e0870000000040e340272000000043f1c301e0000003c434020180000003e10080810000000083804023c000000620f2239580000007a42020a72000000093e4b6d66000000324b4663620000003c4a494926000000123a123a5a000000236222221c0000000c00082a4d000000000c1221400000003d113d196d0000001c3e081e2c00000006247e2610000000244e04463c0000000a3c5a46300000001e041e4438000000247e6408080000003a565230080000000838081e2600000008023e201c00000002222224100000003c107c723000000004362c26640000003c107c4230000000324b4623120000000e641c2878000000020e12513100000000000e1008000000000a1f1a0400000000040f150d00000000020e021d0000003e20140402000000300e080808000000083e20100c0000001c0808083e000000107e181618000000043e242232000000041e083e08000000043c221008000000047c1210080000003e2020203e000000247e242010000000081204601c0000003e20101826000000047e24043800000022242010080000007c445260100000001c083e08040000004a4a20100c0000001c003e080400000004041c2404000000083e080804000000001c00003e0000003e2028300c000000083e205f080000002020100806000000102424424200000002320e023c0000003e2020100c0000000c12214000000000083e082a4d0000003e201408100000003c003e001e000000080424625e00000040281068060000003e087e0870000000744e240808000000784020207c0000001e103e101e0000001c003e201800000024242420180000001414145432000000020202320e0000007e4242427e0000003e222010080000003e203e20180000000102100807000000001510080600000000021f120400000000000e081e000000000e1e080e00000008046310080000000810630408000000";
+    "04080500000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    "07070707070000000007070700000000000705070000000000050205000000000005000500000000000505050000000004060706040000000103070301000000"
+    "07010101000000000004040407000000050702070200000000000200000000000000000102000000000000030300000005050000000000000205020000000000"
+    "00000000000000000202020002000000050500000000000005070507050000000703060702000000050402010500000003030605070000000201000000000000"
+    "02010101020000000204040402000000050207020500000000020702000000000000000201000000000007000000000000000000020000000402020201000000"
+    "07050505070000000302020207000000070407010700000007040604070000000505070404000000070107040700000001010705070000000704040404000000"
+    "07050705070000000705070404000000000200020000000000020002010000000402010204000000000700070000000001020402010000000704060002000000"
+    "02050501060000000006050705000000000303050700000000060101060000000003050503000000000703010600000000070301010000000006010507000000"
+    "00050507050000000007020207000000000702020300000000050305050000000001010106000000000707050500000000030505050000000006050503000000"
+    "00060507010000000002050306000000000305030500000000060104030000000007020202000000000505050600000000050507020000000005050707000000"
+    "00050202050000000005070403000000000704010700000003010101030000000102020204000000060404040600000002050000000000000000000007000000"
+    "02040000000000000705070505000000070503050700000006010101060000000305050507000000070103010700000007010301010000000601010507000000"
+    "05050705050000000702020207000000070202020300000005050305050000000101010107000000070705050500000003050505050000000605050503000000"
+    "07050701010000000205050306000000070503050500000006010704030000000702020202000000050505050600000005050507020000000505050707000000"
+    "05050205050000000505070407000000070402010700000006020302060000000202020202000000030206020300000000040701000000000002050200000000"
+    "7f7f7f7f7f000000552a552a55000000417f5d5d3e0000003e6363773e0000001144114411000000043c1c1e100000001c2e3e3e1c000000363e3e1c08000000"
+    "1c3677361c0000001c1c3e1c140000001c3e7f2a3a0000003e6763673e0000007f5d7f417f0000003808080e0e0000003e636b633e000000081c3e1c08000000"
+    "00005500000000003e7363733e000000081c7f3e220000003e1c081c3e0000003e7763633e000000000552200000000000112a44000000003e6b776b3e000000"
+    "7f007f007f00000055555555550000000e041e2d2600000011212125020000000c1e20201c000000081e08241a0000004e043e4526000000225f12120a000000"
+    "1e083c1106000000100c020c10000000227a2222120000001e2000023c000000083c10020c000000020202221c000000083e080c08000000123f12021c000000"
+    "3c107e043800000002073202320000000f020e101c0000003e404020180000003e10080810000000083804023c00000032071278180000007a42020a72000000"
+    "093e4b6d660000001a272273320000003c4a494946000000123a123a1a000000236222221c0000000c00082a4d000000000c1221400000007d79113d5d000000"
+    "3e3c081e2e00000006247e2610000000244e04463c0000000a3c5a46300000001e041e4438000000143e2408080000003a56523008000000041c041e06000000"
+    "08023e201c00000022222620180000003e1824723000000004362c26640000003e182442300000001a272223120000000e641c28780000000402062b19000000"
+    "00000e1008000000000a1f120400000000040f150d00000000040c060e0000003e2014040200000030080e0808000000083e2220180000003e0808083e000000"
+    "107e181412000000043e242232000000083e083e080000003c24221008000000047c1210080000003e2020203e000000247e242010000000062026100c000000"
+    "3e20101826000000043e240438000000222420100c0000003e222d300c0000001c083e08040000002a2a20100c0000001c003e080400000004041c2404000000"
+    "083e080804000000001c00003e0000003e2028102c000000083e305e08000000202020100e0000001024244442000000021e02021c0000003e2020100c000000"
+    "0c12214000000000083e082a2a0000003e201408100000003c003e001e000000080424427e00000040281068060000001e041e043c000000043e240404000000"
+    "1c1010103e0000001e101e101e0000003e003e201800000024242420100000001414145432000000020222120e0000003e2222223e0000003e2220100c000000"
+    "3e203c2018000000062020100e000000001510080600000000041e140400000000000c081e000000001c18101c00000008046310080000000810630408000000";
 static_assert(sizeof(kBuiltinFontHex) == 2048u * 2u + 1u,
               "compatibility font table must contain exactly 2 KiB");
 
@@ -57,6 +93,127 @@ int parameter(uint8_t value)
     if (value >= 'a' && value <= 'z') return value - 'a' + 10;
     if (value >= 'A' && value <= 'Z') return value - 'A' + 10;
     return 0;
+}
+
+enum class audio_command_kind { invalid, existing, generated };
+
+struct audio_command {
+    audio_command_kind kind = audio_command_kind::invalid;
+    size_t length = 1;
+    int existing_sfx = -1;
+    std::array<uint8_t, kSfxSize> generated{};
+};
+
+void write_audio_note(std::array<uint8_t, kSfxSize> &sfx, size_t note,
+                      int key, int instrument, int volume, int effect)
+{
+    sfx[note * 2] = static_cast<uint8_t>((key & 0x3f)
+        | ((instrument & 0x03) << 6));
+    sfx[note * 2 + 1] = static_cast<uint8_t>(((instrument >> 2) & 0x01)
+        | ((volume & 0x07) << 1) | ((effect & 0x07) << 4));
+}
+
+audio_command parse_audio_command(const uint8_t *bytes, size_t size, size_t index)
+{
+    audio_command parsed{};
+    if (!bytes || index >= size || bytes[index] != 7) return parsed;
+    if (index + 2 < size && bytes[index + 1] >= '0' && bytes[index + 1] <= '9'
+        && bytes[index + 2] >= '0' && bytes[index + 2] <= '9') {
+        const int sfx = (bytes[index + 1] - '0') * 10 + bytes[index + 2] - '0';
+        if (sfx > 63) return parsed;
+        parsed.kind = audio_command_kind::existing;
+        parsed.length = 3;
+        parsed.existing_sfx = sfx;
+        return parsed;
+    }
+
+    parsed.kind = audio_command_kind::generated;
+    parsed.length = size - index;
+    parsed.generated[65] = 16;
+    int instrument = 5;
+    int volume = 5;
+    int effect = 0;
+    int octave = 3;
+    size_t note = 0;
+    size_t cursor = index + 1;
+    bool has_command_data = false;
+    while (cursor < size && bytes[cursor] != 0) {
+        has_command_data = true;
+        const uint8_t value = bytes[cursor++];
+        auto take_parameter = [&](int &destination) {
+            if (cursor >= size || bytes[cursor] == 0) return false;
+            destination = parameter(bytes[cursor++]);
+            return true;
+        };
+        if (value == 's') {
+            int speed = 0;
+            if (!take_parameter(speed)) return {};
+            parsed.generated[65] = static_cast<uint8_t>(std::max(1, speed));
+        } else if (value == 'l') {
+            int start = 0, end = 0;
+            if (!take_parameter(start) || !take_parameter(end)
+                || start > 32 || end > 32) return {};
+            parsed.generated[66] = static_cast<uint8_t>(start);
+            parsed.generated[67] = static_cast<uint8_t>(end);
+        } else if (value == 'i') {
+            if (!take_parameter(instrument) || instrument > 7) return {};
+        } else if (value == 'v') {
+            if (!take_parameter(volume) || volume > 7) return {};
+        } else if (value == 'x') {
+            if (!take_parameter(effect) || effect > 7) return {};
+        } else if (value == '<' || value == '>') {
+            volume = std::clamp(volume + (value == '>' ? 1 : -1), 0, 7);
+        } else if (value == '.') {
+            if (note >= 32) return {};
+            write_audio_note(parsed.generated, note++, 0, instrument, 0, effect);
+        } else {
+            if (value < 'a' || value > 'g' || note >= 32) return {};
+            static constexpr std::array<int, 7> semitone = {9, 11, 0, 2, 4, 5, 7};
+            int key_offset = semitone[static_cast<size_t>(value - 'a')];
+            if (cursor < size && (bytes[cursor] == '#' || bytes[cursor] == '-')) {
+                key_offset += bytes[cursor++] == '#' ? 1 : -1;
+            }
+            if (cursor < size && bytes[cursor] >= '0' && bytes[cursor] <= '5') {
+                octave = bytes[cursor++] - '0';
+            }
+            const int key = octave * 12 + key_offset;
+            if (key < 0 || key > 63) return {};
+            write_audio_note(parsed.generated, note++, key, instrument, volume, effect);
+        }
+    }
+    if (!has_command_data) {
+        write_audio_note(parsed.generated, 0, 46, 0, volume, effect);
+    }
+    if (cursor < size && bytes[cursor] == 0) parsed.length = cursor - index;
+    return parsed;
+}
+
+int select_generated_sfx(const p8_core *core)
+{
+    for (int sfx = 63; sfx >= 60; --sfx) {
+        bool active = false;
+        for (unsigned channel = 0; channel < 4; ++channel) {
+            active |= p8_audio_current_sfx(core, channel) == sfx;
+        }
+        if (!active) return sfx;
+    }
+    return -1;
+}
+
+bool execute_audio_command(p8_core *core, const audio_command &command)
+{
+    int sfx = command.existing_sfx;
+    if (command.kind == audio_command_kind::generated) {
+        sfx = select_generated_sfx(core);
+        if (sfx < 0) return false;
+        const uint16_t address = static_cast<uint16_t>(kSfxBase + sfx * kSfxSize);
+        for (size_t offset = 0; offset < command.generated.size(); ++offset) {
+            p8_core_poke(core, static_cast<uint16_t>(address + offset),
+                         command.generated[offset]);
+        }
+    }
+    return command.kind != audio_command_kind::invalid
+        && p8_audio_sfx(core, sfx, -1, 0, 0) >= 0;
 }
 
 struct text_state {
@@ -242,7 +399,7 @@ void apply_wrap(text_state &state)
     }
 }
 
-uint32_t unsupported_controls(const uint8_t *bytes, size_t size)
+uint32_t unsupported_controls(p8_core *core, const uint8_t *bytes, size_t size)
 {
     uint32_t unsupported = 0;
     for (size_t index = 0; index < size; ++index) {
@@ -256,7 +413,13 @@ uint32_t unsupported_controls(const uint8_t *bytes, size_t size)
         } else if (character == 5 || character == 11) {
             index = std::min(size, index + 2u);
         } else if (character == 7) {
-            unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+            const audio_command audio = parse_audio_command(bytes, size, index);
+            if (audio.kind == audio_command_kind::invalid
+                || (audio.kind == audio_command_kind::existing
+                    && !p8_audio_validate_sfx_internal(core, audio.existing_sfx))) {
+                unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+            }
+            index = std::min(size, index + audio.length - 1u);
         } else if (character == 6 && index + 1u < size) {
             const uint8_t command = bytes[++index];
             if (command >= '1' && command <= '9') {
@@ -416,7 +579,11 @@ token_description describe_token(const uint8_t *bytes, size_t size, size_t index
             token.effects = P8_TEXT_EFFECT_RENDER_STATE;
         }
     } else if (character == 7) {
-        token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+        const audio_command audio = parse_audio_command(bytes, size, index);
+        token.length = bounded_token_size(audio.length, remaining);
+        if (audio.kind == audio_command_kind::invalid) {
+            token.reasons |= P8_TEXT_REASON_UNSUPPORTED;
+        }
         token.effects = P8_TEXT_EFFECT_AUDIO;
     } else if (character == 11) {
         token.length = bounded_token_size(3, remaining);
@@ -569,7 +736,11 @@ bool take_job(p8_text_job &job, uint8_t &value)
 
 void complete_job(p8_text_job &job, p8_text_result &result)
 {
-    if (job.append_newline && !job.terminated) {
+    // Official print() advances the memory-backed console cursor to the next
+    // line even when x/y were supplied. Its numeric return remains the
+    // rightmost rendered x. A P8SCII terminator is the only case that suppresses
+    // this final cursor advance.
+    if (!job.terminated) {
         job.state.x = job.state.home_x;
         job.state.y += job.state.line_height;
     }
@@ -762,7 +933,13 @@ int advance_job(p8_text_job &job, uint32_t &wait_frames, p8_text_result &result)
                     job.state.unsupported |= P8_TEXT_UNSUPPORTED_RENDER_MODE;
                 }
             } else if (character == 7) {
-                job.state.unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+                const audio_command audio = parse_audio_command(
+                    job.bytes.data(), job.bytes.size(), job.index - 1u);
+                if (audio.kind == audio_command_kind::invalid
+                    || !execute_audio_command(job.state.core, audio)) {
+                    job.state.unsupported |= P8_TEXT_UNSUPPORTED_AUDIO;
+                }
+                job.index = std::min(job.bytes.size(), job.index - 1u + audio.length);
             } else if (character == 8) {
                 job.state.x -= 4;
             } else if (character == 9) {
@@ -834,7 +1011,7 @@ p8_text_job *p8_text_job_create(p8_core *core, const uint8_t *bytes, size_t size
     job->state.previous_y = y;
     job->state.max_x = x;
     job->state.foreground = job->foreground_in;
-    const uint32_t unsupported = unsupported_controls(bytes, size);
+    const uint32_t unsupported = unsupported_controls(core, bytes, size);
     job->requires_frames = (unsupported & P8_TEXT_UNSUPPORTED_DELAY) != 0;
     job->state.unsupported = unsupported
         & ~static_cast<uint32_t>(P8_TEXT_UNSUPPORTED_DELAY);
@@ -878,7 +1055,7 @@ int p8_text_print(p8_core *core, const uint8_t *bytes, size_t size,
                   p8_text_result *result)
 {
     if (!core || (!bytes && size != 0) || !result) return 0;
-    const uint32_t unsupported = unsupported_controls(bytes, size);
+    const uint32_t unsupported = unsupported_controls(core, bytes, size);
     const uint8_t foreground_in = static_cast<uint8_t>(foreground & 0x0f);
     const uint8_t defaults = p8_core_peek(core, kPrintAttributes);
     if (unsupported != 0) {

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "aico8.official-audio-differential-evidence.v1",
+  "recordedAt": "2026-07-19T20:10:00+08:00",
+  "status": "capability-qualified-web-audio-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser, Chromium 150.0.0.0"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only public compatibility probes; no private carts, workspaces, or game assets.",
+    "publicationRightsGranted": false
+  },
+  "captureBoundary": {
+    "probe": "tests/conformance/probes/audio_web.p8",
+    "probeSha256": "754f8c7ed5797265e5c68bea6861b00b39b8d392becb868f1e64e7231f1fd796",
+    "sampleRate": 22050,
+    "channels": 1,
+    "sampleFormat": "signed PCM16",
+    "officialInstrumentation": "A throwaway official-page tab forced the AudioContext request to 22050 Hz and copied channel zero after the official ScriptProcessor handler. Collection was enabled by the probe's audio_0 console record and disabled by audio_150. Runtime synthesis and cart bytes were not replaced. The tab was closed after collection.",
+    "callbackBoundary": "Official capture length is callback-block bounded; the first stable single-channel window is compared independently of block-tail length.",
+    "privateArtifactsCommitted": false
+  },
+  "statusTrace": {
+    "selectors": [24, 54, 57],
+    "logicalUpdates": 150,
+    "officialEventCount": 151,
+    "candidateEventCount": 151,
+    "eventMismatchCount": 0,
+    "officialEventLogSha256": "2327b614746a8d0b270d33d70caacbb606f8b8e0919059ac58261030daee580f",
+    "candidateCaptureSha256": "93491b2047539d27faa6f6c48145cbd84f8a2a63d871d374904b852275a1fa73"
+  },
+  "pcm": {
+    "officialRawPcmSha256": "25995b7a5d2f61d23ad2318baeaadb43cc5c9a7649bbf81f6ca7ac88797a898b",
+    "candidateWavSha256": "a428ebf29a83b1cb6f0813191c4980315f703ea234ba98e786db0c8d6349dd78",
+    "candidateRuntimeSha256": "ab4806b3ea118009ab6e6240dd9a7228cd96240a1a127fd2d9633974d47485e0",
+    "officialCapturedSamples": 54272,
+    "candidateLogicalSamples": 55125,
+    "analysisWindow": { "startSample": 500, "sampleCount": 3000 },
+    "official": { "zeroCrossings": 71, "estimatedFrequencyHz": 260.925, "peak": 12094, "rms": 6971.964355760864 },
+    "candidate": { "zeroCrossings": 71, "estimatedFrequencyHz": 260.925, "peak": 12285, "rms": 7097.279994523723 },
+    "tolerances": { "zeroCrossings": 1, "frequencyRelative": 0.01, "peakRelative": 0.03, "rmsRelative": 0.03 },
+    "status": "matched"
+  },
+  "remediation": [
+    {
+      "rootCause": "Integer fade steps truncated 500ms fade-out to roughly 600ms.",
+      "fix": "Interpolate volume over the exact requested sample count.",
+      "regression": "runtime/core/tests/core_tests.cpp"
+    },
+    {
+      "rootCause": "The shared music/SFX output gain was 1/2 while the official stable waveform measured the 3/4 gain envelope.",
+      "fix": "Use the official-qualified shared 3/4 gain before channel mixing.",
+      "regression": "scripts/lib/audio-pcm-analysis.test.mjs"
+    }
+  ],
+  "qualified": ["music start/stop", "500ms fade boundary", "live SFX RAM copy", "explicit channel playback", "stat(24)", "stat(54)", "stat(57)", "built-in triangle pitch and level"],
+  "failClosed": ["stat(46..56)", "filters", "custom instruments", "custom waveforms", "desktop exporters"],
+  "claims": {
+    "provesCapabilityQualifiedWebAudioCompatibility": true,
+    "provesAllPico8AudioFeatures": false,
+    "provesDesktopExporterCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}

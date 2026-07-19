@@ -767,18 +767,27 @@ end
            && raw("custom_10") == 0 && raw("custom_77") == 6);
     assert(raw("outline_outer") == 8 && raw("outline_inner") == 3);
     assert(raw("underline_pixel") == 3);
+    assert(p8_core_peek(core, 0x5f26) == 60);
+    assert(p8_core_peek(core, 0x5f27) == 7);
     p8_vm_destroy(vm);
     p8_core_destroy(core);
 
-    constexpr char unsupported_source[] = R"p8lua(
-function reject_audio_text() print(chr(7).."12",0,0,7) end
+    constexpr char audio_source[] = R"p8lua(
+function play_audio_text() print(chr(7).."12",0,0,7) end
+function reject_malformed_audio_text() print(chr(7).."s",0,0,7) end
 )p8lua";
     core = p8_core_create();
     vm = p8_vm_create(core);
-    assert(vm && p8_vm_load_source(vm, unsupported_source,
-        sizeof(unsupported_source) - 1, "@p8scii-unsupported"));
+    assert(vm && p8_vm_load_source(vm, audio_source,
+        sizeof(audio_source) - 1, "@p8scii-audio"));
     p8_gfx_pset(core, 0, 0, 5);
-    assert(!p8_vm_call(vm, "reject_audio_text"));
+    assert(p8_vm_call(vm, "play_audio_text"));
+    bool played_sfx_12 = false;
+    for (unsigned channel = 0; channel < 4; ++channel) {
+        played_sfx_12 |= p8_audio_current_sfx(core, channel) == 12;
+    }
+    assert(played_sfx_12);
+    assert(!p8_vm_call(vm, "reject_malformed_audio_text"));
     assert(std::strstr(p8_vm_last_error(vm), "not conformance-qualified") != nullptr);
     assert(p8_gfx_pget(core, 0, 0) == 5);
     p8_vm_destroy(vm);

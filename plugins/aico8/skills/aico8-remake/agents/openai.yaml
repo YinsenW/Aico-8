@@ -1,0 +1,4 @@
+interface:
+  display_name: "Aico 8 Remake"
+  short_description: "Human-guided PICO-8 HD Web and Android remakes"
+  default_prompt: "Use $aico8-remake to remake my attached authorized PICO-8 cart in HD. Ask whether I want Web, Android APK, or both, and keep technical commands hidden unless something blocks you."

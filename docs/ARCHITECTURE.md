@@ -10,10 +10,10 @@ Delivery is internally modular and externally standalone. ADR 0003 owns the
 decision to ship a statically bound single game first, add fixed collections
 after multi-game proof, and defer a public external-cart Player and `.aico8`.
 
-The future Skill is intentionally outside the trust boundary of simulation. It
-may select carts, run analysis, propose mappings, generate assets, and launch
+The maintained Skill and installable Agent package are outside the simulation
+trust boundary. They may select carts, analyze, propose mappings, generate assets, and launch
 tests, but only versioned tools and deterministic runtime code decide whether a
-remake is compatible. The maintained `skills/aico8-remake/` package is likewise
+remake is compatible. The maintained `plugins/aico8/skills/aico8-remake/` package is likewise
 outside the authority boundary. The local user channel records bounded project-owner decisions in durable evidence; detached signatures remain optional for future remote review, and neither mode grants release.
 ## Delivery topology
 

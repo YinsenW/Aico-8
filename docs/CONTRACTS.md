@@ -86,6 +86,8 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
 - The kernel exposes the manual-defined current music-pattern value through
   `stat(54)` and legacy alias `stat(24)`. This narrow capability does not imply
   licensed-official qualification of the remaining audio tick-history selectors.
+- Education Web owns browser-observable PCM and stable `stat(24/54/57)` goldens; callback-block length and `stat(46..56)` history are not logical-update-exact contracts.
+  Unsupported filters, custom synthesis, and desktop exporters remain fail-closed.
 - Custom-instrument and custom-waveform diagnostic playback is disabled unless
   the host opts in before execution. Opt-in never sets a conformance capability;
   use sets sticky queryable flags and an event-ledger record. Canonical gameplay
@@ -241,9 +243,7 @@ Jobs are idempotent for identical declared inputs, non-interactive in CI, and mu
   every declared level, ending, and progression boundary through ordinary input,
   accepted HD review, and reproducible Web-package hashes. The ordinary-input
   route may be recorded by a human and replayed deterministically.
-- DATA-QUALIFICATION-PLAN-001 keeps the former fixed-corpus inventory for optional
-  diagnostics; selection, boot, solver progress, or collection grants no claim.
-- Save keys are namespaced by game-module ID and schema version; collection
-  switching resets compatibility state before another module starts.
+- DATA-QUALIFICATION-PLAN-001 keeps the former fixed-corpus inventory for optional diagnostics; selection, boot, solver progress, or collection grants no claim.
+- Save keys are namespaced by game-module ID and schema version; collection switching resets compatibility state before another module starts.
 - A rights decision is data in DATA-RELEASE-001, never inferred from technical success.
 - Each requirement references contract IDs; the governance verifier rejects missing or orphaned IDs.

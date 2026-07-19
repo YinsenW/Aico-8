@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "aico8.agent-plugin-product-evidence.v1",
+  "subject": {
+    "plugin": "aico8",
+    "version": "0.1.0",
+    "marketplace": "aico8",
+    "engineRepository": "https://github.com/YinsenW/Aico-8.git",
+    "engineRef": "v0.1.0"
+  },
+  "sourceIdentities": {
+    "marketplaceSha256": "7e1fb405277d329a1bb50e78aeb12487dab1d470ba458c9a967209fb97124efc",
+    "manifestSha256": "c3afe8aa85bc5cb201aa326422d197088a5bbd0b7a655ba4d5310dd021bf106c",
+    "engineDescriptorSha256": "2290723ef93a85be4e324034c1464af7b26396dcc79389e56aa24ffedeaea63c",
+    "bootstrapSha256": "d92ded47b1a2e0dd43c77ec79fd582d6532e4a16b03aecb2693fde22cd01c990",
+    "skillSha256": "b85d950151c6f96dfae2f6c913a0d473d3f87eeb96c9877132541ec91b67d974",
+    "agentEntrySha256": "c726137e22ce17e46acee569a972c7858b0323817dcf592e5d158d0f03c609af",
+    "packagerSha256": "b8133ee6f1c5e0870645f56821da9adf1ae94ccb215214de7a1b290620dde712"
+  },
+  "checks": {
+    "officialPluginValidator": "passed",
+    "repositoryMarketplaceDiscovery": "passed",
+    "isolatedCodexInstall": "passed",
+    "installedCacheIdentity": "passed",
+    "isolatedEngineBootstrap": "passed",
+    "webTargetDoctor": "passed",
+    "privateAttachmentIntake": "passed",
+    "targetBoundArtifactHandoff": "passed",
+    "governance": "passed",
+    "skillSelector": "passed"
+  },
+  "privacy": {
+    "sourcePathsRetainedInSession": false,
+    "publicationAuthorityGranted": false,
+    "privateOrGeneratedPathsInPlugin": false
+  },
+  "limitations": [
+    "The Git marketplace install was proven from an isolated local checkout; the pinned public GitHub ref can be tested only after these changes are merged, pushed, and tagged.",
+    "Synthetic attachment and artifact handoff prove the product boundary but do not replace the existing per-game human review and complete-game validation exits."
+  ],
+  "status": "passed-with-release-followup"
+}
