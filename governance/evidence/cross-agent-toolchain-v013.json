@@ -1,12 +1,12 @@
 {
   "schemaVersion": "aico8.cross-agent-toolchain-evidence.v1",
   "candidateVersion": "0.1.3",
-  "status": "local-qualified",
+  "status": "passed",
   "supersedes": "governance/evidence/portable-agent-skill-v012.json",
   "reason": "The v0.1.2 probe ran on a development host that already exposed native compiler tools and therefore did not prove the clean ordinary-Agent boundary.",
   "agentSkillsInstall": {
     "cli": "skills@1.5.19",
-    "source": "local candidate repository",
+    "source": "https://github.com/YinsenW/Aico-8/tree/v0.1.3",
     "skill": "aico8-remake",
     "requestedAgents": ["claude-code", "codex", "opencode"],
     "result": "passed",
@@ -26,5 +26,23 @@
     "wasmSha256": "96b86f326e55edb0e2ead47e2a3b7ee708603eee4512dc21818a96518ab02f75",
     "tamperRejection": "covered by scripts/agent/aico8-agent.test.mjs"
   },
-  "remainingBoundary": "Remote tag installation and release-asset qualification must pass before EXIT-SKILL-INSTALLABLE returns to verified."
+  "publicRelease": {
+    "tag": "v0.1.3",
+    "commit": "fb09af35a2b38aedbb8fd222fdff508ceab30759",
+    "release": "https://github.com/YinsenW/Aico-8/releases/tag/v0.1.3",
+    "asset": "https://github.com/YinsenW/Aico-8/releases/download/v0.1.3/aico8-remake.zip",
+    "assetBytes": 8989,
+    "assetSha256": "eedd89bc7f74adc6e441ad86190f46eea07912a08ef3a1c93043470840cfe7d5"
+  },
+  "remoteTagProbe": {
+    "skillsInstall": "passed from the public v0.1.3 GitHub tag for Claude Code, Codex, and OpenCode",
+    "installedDiscoveryPaths": ["~/.claude/skills/aico8-remake/SKILL.md", "~/.agents/skills/aico8-remake/SKILL.md"],
+    "engineBootstrap": "passed by cloning the public v0.1.3 tag into an empty temporary HOME",
+    "dependencyBootstrap": "passed without a globally installed pnpm",
+    "webDoctor": "passed without Codex, Claude Code, OpenCode, make, C++, or Emscripten",
+    "productionWebBuild": "passed from the remotely bootstrapped engine",
+    "releaseZipLayout": "passed with SKILL.md, executable bootstrap, and engine ref v0.1.3",
+    "mainCi": "passed: https://github.com/YinsenW/Aico-8/actions/runs/29686070805"
+  },
+  "remainingBoundary": null
 }
