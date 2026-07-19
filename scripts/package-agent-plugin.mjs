@@ -24,7 +24,7 @@ async function verifyPlugin(directory) {
   if (path.basename(directory) !== manifest.name) errors.push("package folder must match plugin name");
   if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(manifest.version ?? "")) errors.push("plugin version must be semver");
   if (manifest.skills !== "./skills/") errors.push("plugin must expose ./skills/");
-  for (const required of ["engine.json", ".codex-plugin/plugin.json", "skills/aico8-remake/SKILL.md", "skills/aico8-remake/agents/openai.yaml", "skills/aico8-remake/references/job-catalog.md", "scripts/bootstrap.mjs"]) {
+  for (const required of ["engine.json", ".codex-plugin/plugin.json", "skills/aico8-remake/SKILL.md", "skills/aico8-remake/agents/openai.yaml", "skills/aico8-remake/engine.json", "skills/aico8-remake/references/job-catalog.md", "skills/aico8-remake/scripts/bootstrap.mjs", "scripts/bootstrap.mjs"]) {
     try {
       if (!(await stat(path.join(directory, required))).isFile()) errors.push(`required file is not regular: ${required}`);
     } catch {
@@ -39,6 +39,8 @@ async function verifyPlugin(directory) {
   }
   const engine = JSON.parse(await readFile(path.join(directory, "engine.json"), "utf8"));
   if (engine.repository !== "https://github.com/YinsenW/Aico-8.git") errors.push("engine repository is not the public Aico 8 source");
+  const portableEngine = JSON.parse(await readFile(path.join(directory, "skills", "aico8-remake", "engine.json"), "utf8"));
+  if (engine.ref !== portableEngine.ref || manifest.version !== portableEngine.version) errors.push("Codex wrapper and portable Skill versions differ");
   if (errors.length > 0) throw new Error(errors.join("\n"));
   return manifest;
 }

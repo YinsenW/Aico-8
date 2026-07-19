@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const REQUIRED_FILES = [
   "agents/openai.yaml",
+  "engine.json",
   "references/job-catalog.md",
+  "scripts/bootstrap.mjs",
   "SKILL.md",
 ];
 const STOP_IDS = [
@@ -77,6 +79,9 @@ export function verifySkillPackage(skillDirectory) {
   }
   if (markdown.split("\n").length > 220) errors.push("SKILL.md exceeds the 220-line context budget");
   if (!markdown.includes("references/job-catalog.md")) errors.push("SKILL.md must route detailed commands to the Job catalog");
+  if (!markdown.includes("scripts/bootstrap.mjs") || markdown.includes("Use when Codex")) {
+    errors.push("Skill must use its bundled host-neutral bootstrap");
+  }
   if (!markdown.includes("Never ask the user to run a command") || !markdown.includes("private intake command")) {
     errors.push("Skill must preserve the non-technical attachment entry");
   }
@@ -115,6 +120,11 @@ export function verifySkillPackage(skillDirectory) {
   ]) if (!catalog.includes(command)) errors.push(`Job catalog must include ${command}`);
   if (!catalog.includes("cannot approve") || !catalog.includes("signs outside the Agent")) {
     errors.push("Job catalog must preserve the human authority boundary");
+  }
+
+  const engine = JSON.parse(fs.readFileSync(path.join(root, "engine.json"), "utf8"));
+  if (engine.ref !== `v${engine.version}` || engine.repository !== "https://github.com/YinsenW/Aico-8.git") {
+    errors.push("portable Skill engine descriptor must pin its matching public tag");
   }
 
   const interfaceYaml = fs.readFileSync(path.join(root, "agents/openai.yaml"), "utf8");

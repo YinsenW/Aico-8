@@ -220,9 +220,9 @@ publish any generated remake.
 Contracts: `DATA-GOVERNANCE-001`, `DATA-RELEASE-001`.
 
 ### REQ-SKILL-001 — Human-guided orchestration after supervised transfer
-Create the final Skill only after trials stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for human approval of semantics, art direction,
+Create the final Skill only after trials stabilize reusable Jobs and pause contracts. Distribute one host-neutral Agent Skills package plus optional client-specific convenience wrappers. It invokes versioned Jobs, pauses for human approval of semantics, art direction,
 gameplay, and scope, and cannot self-accept or self-release. Runtime and policy
-stay in software. Its installable Agent package accepts an attached cart, hides
+stay in software. Its portable Skill accepts an attached cart, hides
 paths and commands, asks only for output and human art choices, checks its environment, and returns Web/APK artifacts. A proposal-bound owner
 decision may advance recorded research; no approval grants publication rights.
 Contracts: all `JOB-*` pipeline contracts, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
