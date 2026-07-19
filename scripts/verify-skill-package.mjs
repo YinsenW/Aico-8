@@ -109,10 +109,10 @@ export function verifySkillPackage(skillDirectory) {
   const catalog = fs.readFileSync(path.join(root, "references/job-catalog.md"), "utf8");
   for (const id of REQUIRED_JOB_IDS) if (!catalog.includes(id)) errors.push(`Job catalog must include ${id}`);
   for (const command of [
-    "pnpm verify:governance",
-    "pnpm verify:supervised-transfer",
-    "pnpm verify:web-package",
-    "pnpm verify:skill",
+    "scripts/agent/pnpm.mjs verify:governance",
+    "scripts/agent/pnpm.mjs verify:supervised-transfer",
+    "scripts/agent/pnpm.mjs verify:web-package",
+    "scripts/agent/pnpm.mjs verify:skill",
     "scripts/bootstrap.mjs",
     "aico8-agent.mjs doctor",
     "aico8-agent.mjs intake",

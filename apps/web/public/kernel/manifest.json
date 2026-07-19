@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "aico8.web-kernel.v1",
+  "artifacts": {
+    "aico8-kernel.js": {
+      "bytes": 18349,
+      "sha256": "b3d6ffb174ba8fbafbccd6369ffd7932dfc34f3fb87043b2d8f27f11b81b5193"
+    },
+    "aico8-kernel.wasm": {
+      "bytes": 309296,
+      "sha256": "96b86f326e55edb0e2ead47e2a3b7ee708603eee4512dc21818a96518ab02f75"
+    }
+  }
+}

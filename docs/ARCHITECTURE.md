@@ -6,15 +6,14 @@ The product is TypeScript-first. C++ is restricted to a small deterministic
 kernel compiled both natively and to WebAssembly. The reasoning and proof gates
 are recorded in `docs/decisions/0001-language-boundary.md`.
 
-Delivery is internally modular and externally standalone. ADR 0003 owns the
-decision to ship a statically bound single game first, add fixed collections
-after multi-game proof, and defer a public external-cart Player and `.aico8`.
+Delivery is internally modular and externally standalone. ADR 0003 owns the decision to ship a statically bound single game first, add fixed collections after multi-game proof, and defer a public external-cart Player and `.aico8`.
 
 The maintained portable Skill and optional host-specific installation wrappers are outside the simulation
 trust boundary. They may select carts, analyze, propose mappings, generate assets, and launch
 tests, but only versioned tools and deterministic runtime code decide whether a
 remake is compatible. The host-neutral package rooted at `plugins/aico8/skills/aico8-remake/` is likewise
-outside the authority boundary. The local user channel records bounded project-owner decisions in durable evidence; detached signatures remain optional for future remote review, and neither mode grants release.
+outside the authority boundary. The local user channel records bounded project-owner decisions in durable evidence; detached signatures remain optional for future remote review, and neither mode grants release. Ordinary Web remake hosts hash-verify the versioned `apps/web/public/kernel/` JavaScript/Wasm pair; C++ and Emscripten are maintainer-only dependencies for kernel changes. Android reuses those bytes and activates Java/SDK checks only for APK output.
+
 ## Delivery topology
 
 - An internal game module contains one remake's compatible payload, HD mapping,

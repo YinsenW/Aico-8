@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "aico8.cross-agent-toolchain-evidence.v1",
+  "candidateVersion": "0.1.3",
+  "status": "local-qualified",
+  "supersedes": "governance/evidence/portable-agent-skill-v012.json",
+  "reason": "The v0.1.2 probe ran on a development host that already exposed native compiler tools and therefore did not prove the clean ordinary-Agent boundary.",
+  "agentSkillsInstall": {
+    "cli": "skills@1.5.19",
+    "source": "local candidate repository",
+    "skill": "aico8-remake",
+    "requestedAgents": ["claude-code", "codex", "opencode"],
+    "result": "passed",
+    "observedDiscovery": ["Claude Code", "Codex", "OpenCode"]
+  },
+  "isolatedWebProbe": {
+    "availableCommands": ["node", "npm", "npx", "git", "sh", "sed", "dirname", "uname"],
+    "forbiddenCommandsConfirmedAbsent": ["pnpm", "make", "c++", "em++"],
+    "dependencyBootstrap": "passed via pinned pnpm provisioned by npx",
+    "doctorTarget": "web",
+    "doctorStatus": "passed",
+    "webBuild": "passed",
+    "outputKernelSha256": "96b86f326e55edb0e2ead47e2a3b7ee708603eee4512dc21818a96518ab02f75"
+  },
+  "prebuiltKernel": {
+    "javascriptSha256": "b3d6ffb174ba8fbafbccd6369ffd7932dfc34f3fb87043b2d8f27f11b81b5193",
+    "wasmSha256": "96b86f326e55edb0e2ead47e2a3b7ee708603eee4512dc21818a96518ab02f75",
+    "tamperRejection": "covered by scripts/agent/aico8-agent.test.mjs"
+  },
+  "remainingBoundary": "Remote tag installation and release-asset qualification must pass before EXIT-SKILL-INSTALLABLE returns to verified."
+}

@@ -4,8 +4,8 @@ import { access, cp, mkdir, readFile, rename, rm, stat, writeFile } from "node:f
 import { constants as fsConstants } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { executable, packageManager, spawnPackageManager } from "../lib/package-manager.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const targets = new Set(["web", "android", "both"]);
@@ -65,13 +65,23 @@ async function writeJson(file, value) {
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`, { flag: "wx" });
 }
 
-function executable(command, args = ["--version"]) {
-  const result = spawnSync(command, args, { encoding: "utf8", timeout: 10_000 });
-  return {
-    command,
-    available: !result.error && result.status === 0,
-    version: `${result.stdout ?? ""}${result.stderr ?? ""}`.trim().split("\n")[0] ?? "",
-  };
+async function verifyWebKernel(root) {
+  const kernelRoot = path.join(root, "apps", "web", "public", "kernel");
+  const manifestPath = path.join(kernelRoot, "manifest.json");
+  if (!(await exists(manifestPath))) return { passed: false, detail: "missing apps/web/public/kernel/manifest.json" };
+  try {
+    const manifest = await json(manifestPath);
+    if (manifest.schemaVersion !== "aico8.web-kernel.v1") throw new Error("unsupported manifest schema");
+    for (const name of ["aico8-kernel.js", "aico8-kernel.wasm"]) {
+      const expected = manifest.artifacts?.[name];
+      if (!expected) throw new Error(`missing ${name} identity`);
+      const actual = await sha256File(path.join(kernelRoot, name));
+      if (actual.bytes !== expected.bytes || actual.sha256 !== expected.sha256) throw new Error(`${name} identity mismatch`);
+    }
+    return { passed: true, detail: "prebuilt Web/Wasm kernel hashes match" };
+  } catch (error) {
+    return { passed: false, detail: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 function assertTarget(value = "web") {
@@ -93,15 +103,23 @@ async function doctor(options) {
     { id: "governance", required: true, passed: await exists(path.join(root, "governance", "project.json")), detail: "governance/project.json" },
     { id: "lockfile", required: true, passed: await exists(path.join(root, "pnpm-lock.yaml")), detail: "pnpm-lock.yaml" },
   ];
-  for (const [id, command] of [["pnpm", "pnpm"], ["make", "make"], ["cxx", "c++"], ["emscripten", "em++"]]) {
-    const result = executable(command);
-    checks.push({ id, required: true, passed: result.available, detail: result.version || command });
-  }
-  const java = executable("java", ["-version"]);
-  const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || path.join(homedir(), "Library", "Android", "sdk");
+  const manager = packageManager();
+  checks.push({ id: "package-manager", required: true, passed: manager.available, detail: manager.version || manager.command });
+  const webKernel = await verifyWebKernel(root);
+  checks.push({ id: "prebuilt-web-kernel", required: true, ...webKernel });
   const needsAndroid = target !== "web";
-  checks.push({ id: "java", required: needsAndroid, passed: java.available, detail: java.version || "java" });
-  checks.push({ id: "android-sdk", required: needsAndroid, passed: await exists(androidHome), detail: androidHome });
+  if (needsAndroid) {
+    const java = executable("java", ["-version"]);
+    const defaultAndroidHome = process.platform === "darwin"
+      ? path.join(homedir(), "Library", "Android", "sdk")
+      : process.platform === "win32"
+        ? path.join(process.env.LOCALAPPDATA ?? homedir(), "Android", "Sdk")
+        : path.join(homedir(), "Android", "Sdk");
+    const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || defaultAndroidHome;
+    checks.push({ id: "java", required: true, passed: java.available, detail: java.version || "Java 21 is required for Android" });
+    checks.push({ id: "android-sdk", required: true, passed: await exists(androidHome), detail: androidHome });
+    checks.push({ id: "android-platform-36", required: true, passed: await exists(path.join(androidHome, "platforms", "android-36")), detail: path.join(androidHome, "platforms", "android-36") });
+  }
   const blockers = checks.filter((check) => check.required && !check.passed).map((check) => check.id);
   const report = { schemaVersion: "aico8.agent-doctor.v1", target, engineRoot: root, status: blockers.length === 0 ? "passed" : "blocked", blockers, checks };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
@@ -116,7 +134,6 @@ function copyFilter(source) {
   if (parts.some((part) => excludedNames.has(part))) return false;
   if (relative === path.join("captures", "official")) return false;
   if (relative === path.join("runtime", "core", "build")) return false;
-  if (relative === path.join("apps", "web", "public", "kernel")) return false;
   return true;
 }
 
@@ -144,7 +161,9 @@ async function bootstrap(options) {
       // The Agent CLI is a JSON protocol. Dependency-manager progress must not
       // leak into stdout, because the lightweight plugin parses this command's
       // complete stdout as one JSON document.
-      const install = spawnSync("pnpm", ["install", "--frozen-lockfile"], { cwd: stage, encoding: "utf8" });
+      const manager = packageManager();
+      if (!manager.available) throw new Error("pnpm is unavailable and neither corepack nor npx can provision it");
+      const install = spawnPackageManager(["install", "--frozen-lockfile"], { cwd: stage, encoding: "utf8" });
       if (install.error || install.status !== 0) {
         const detail = (install.stderr || install.stdout || install.error?.message || "unknown error").trim();
         throw new Error(`dependency installation failed: ${detail}`);
