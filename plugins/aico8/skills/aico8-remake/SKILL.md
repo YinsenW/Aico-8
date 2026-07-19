@@ -1,6 +1,6 @@
 ---
 name: aico8-remake
-description: Guide an authorized PICO-8 cart through the Aico 8 human-reviewed HD remake workflow and package a private Web/PWA build, Android APK, or both. Use when Codex must inspect a cart workspace, preserve unchanged-cart gameplay, create source-relative HD presentation, collect representative evidence, pause for human semantic and art decisions, or produce and verify Web or Android research artifacts.
+description: Guide an authorized PICO-8 cart through the Aico 8 human-reviewed HD remake workflow and package a private Web/PWA build, Android APK, or both. Use when a coding Agent must inspect a cart workspace, preserve unchanged-cart gameplay, create source-relative HD presentation, collect representative evidence, pause for human semantic and art decisions, or produce and verify Web or Android research artifacts.
 ---
 
 # Aico 8 remake
@@ -16,7 +16,8 @@ path, install a compiler, or locate a generated artifact. Run the product entry
 commands from [references/job-catalog.md](references/job-catalog.md) yourself and
 translate blockers into one short, actionable explanation.
 
-1. Resolve the plugin root containing `.codex-plugin/plugin.json` from this Skill.
+1. Resolve this Skill's own directory and run its bundled
+   `scripts/bootstrap.mjs`; do not assume a host-specific plugin root.
 2. Ask only when the output target or private-research authorization is missing.
 3. Bootstrap the isolated engine and retain the returned `engineRoot`.
 4. Run the target-aware doctor. Repair safe local prerequisites yourself; if an

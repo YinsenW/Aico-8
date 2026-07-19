@@ -1,103 +1,94 @@
 # Aico 8
 
-把你有权使用的 PICO-8 卡带重制成现代高清游戏。玩法、操作、时序、
-音乐和音效保持不变；画面以 1024×1024 为主要目标重新设计。
+[简体中文](docs/README.zh-CN.md)
 
-主要输出：
+Aico 8 turns an authorized PICO-8 cart into a modern HD game while preserving
+its gameplay, controls, timing, music, and sound. The primary presentation
+target is a square 1024×1024 display.
 
-- **Web 版**：在浏览器中直接玩，也可作为 PWA 安装。
-- **Android APK**：安装到安卓手机或安卓掌机。
-- **两种都要**：Web 与 APK 使用同一套游戏内核和资源。
+Outputs:
 
-> Aico 8 只处理你有权研究或改编的卡带。生成物默认用于私人研究，
-> 不会自动上传或公开发布。
+- **Web/PWA** — runs in a browser and can be installed for offline play.
+- **Android APK** — runs on Android phones and handhelds.
+- **Both** — the Web and Android builds share the same game kernel and assets.
 
-## 先回答最容易混淆的问题
+> Use only carts that you are authorized to research or adapt. Outputs remain
+> private by default and are never uploaded or published automatically.
 
-**Aico 8 不只是一个 Skill。**
+## One portable Agent Skill
 
-可以把它理解为一台机器：
+Aico 8 is not tied to one model or coding client. Its portable
+`aico8-remake.zip` follows the Agent Skills `SKILL.md` convention and is the
+default distribution. The same package works with Claude Code, Codex, OpenCode,
+and Cherry Studio; only the one-time import screen or destination folder differs.
 
-- **Skill 是操作面板**：让你用自然语言告诉 Agent 要重制哪个游戏。
-- **工具链是机器本体**：负责读取卡带、改写代码、重绘、验证和打包。
-- **运行时是游戏内核**：保证原来的玩法、手感和声音不被高清画面改变。
+Download the latest `aico8-remake.zip` from
+[Releases](https://github.com/YinsenW/Aico-8/releases/latest), then install it:
 
-所以最终发布物应当是一个“可安装的 Aico 8 Agent 包”。用户从 Skill
-进入，但真正完成重制的是包内的工具链和运行时，不是一段提示词。
+| Agent host | Install the same ZIP |
+| --- | --- |
+| [Claude Code](https://code.claude.com/docs/en/slash-commands#where-skills-live) | Extract as `~/.claude/skills/aico8-remake/` |
+| Codex | Extract as `~/.agents/skills/aico8-remake/` |
+| [OpenCode](https://opencode.ai/docs/skills/#place-files) | Extract as `~/.config/opencode/skills/aico8-remake/`; it also discovers the two paths above |
+| [Cherry Studio](https://docs.cherry-ai.com/docs/en-us/advanced-basic/agent) | Library → Add Skill → Local import → select `aico8-remake.zip` |
 
-## 普通用户应该怎样使用
-
-使用过程只有三步：
-
-1. 安装公开的 **Aico 8 v0.1.1**。如果 Agent 还没有“从 GitHub 安装
-   插件”的按钮，只需把下面两行复制到终端执行一次：
+Codex users may alternatively install the native Codex plugin wrapper:
 
 ```sh
-codex plugin marketplace add YinsenW/Aico-8 --ref v0.1.1
+codex plugin marketplace add YinsenW/Aico-8 --ref v0.1.2
 codex plugin add aico8@aico8
 ```
 
-2. 新建一个 Agent 任务，把 `.p8` 或 `.p8.png` 卡带拖进去。
-3. 对 Agent 说：
+Those commands are a Codex convenience, not a requirement of Aico 8 or the
+portable Skill.
+
+## Remake a cart
+
+Start a new Agent task, attach one `.p8` or `.p8.png` cart, and say:
 
 ```text
-用 Aico 8 重制这个卡带，输出 Web 版。
+Use Aico 8 to remake this authorized cart for Web.
 ```
 
-也可以说：
+Or:
 
 ```text
-用 Aico 8 重制这个卡带，输出 Web 版和 Android APK。
+Use Aico 8 to remake this authorized cart for Web and Android APK.
 ```
 
-Agent 会加载 Skill，自己寻找文件、运行工具、使用浏览器或安卓模拟器
-验证，并把最终文件交给你。除首次安装的两行命令外，普通用户不需要
-输入路径或运行开发命令，也不需要了解 TypeScript、C++、Wasm、Gradle
-或 Android Studio。
+The Agent loads the Skill, installs the versioned engine in private local state,
+runs browser or Android-emulator validation, and returns the finished artifacts.
+The user should not need repository paths, build commands, TypeScript, C++, Wasm,
+Gradle, or Android Studio knowledge.
 
-## 你仍然需要参与什么
+## Human review remains mandatory
 
-高清重制不是机械放大。Agent 会在关键节点给你看原版与高清版的对照，
-请你依次确认：
+HD remaking is not mechanical upscaling. For each game, the Agent must show
+source/HD comparisons and obtain approval in this order:
 
-1. **神似还原**：角色、物体、场景和玩法有没有认错或变味。
-2. **画质跃升**：是否真正消除了粗糙像素感，并增加了合理的细节。
-3. **审美进化**：色彩、材质、光影和整体风格是否适合现代玩家。
+1. **Spirit fidelity** — identities, atmosphere, gameplay, and meaning remain recognizable.
+2. **Quality leap** — resolution, contours, materials, animation, and detail genuinely improve.
+3. **Aesthetic evolution** — color, lighting, composition, and finish meet modern expectations without redesigning the source identity.
 
-如果你指出问题，Agent 应先修复，再生成新的对照页。它不能替你批准
-美术，也不能因为“代码已经写完”就宣称游戏已经完成。
+Agent-driven compatibility, building, and evidence collection are automated.
+Semantic interpretation, art direction, representative gameplay, and final scope
+remain explicit human decisions.
 
-## 当前能不能直接这样用
+## What Aico 8 contains
 
-**可以。公开版本是 v0.1.1。**
+- The **Skill** is the portable natural-language control surface.
+- The **toolchain** ingests carts, integrates HD presentation, validates, and packages.
+- The **runtime** preserves the authoritative original behavior beneath the HD layer.
 
-它已从一个全新的 Codex 用户目录通过公开 GitHub 标签完成市场发现、
-插件安装、依赖启动、附件导入、Web 环境自检、生产构建和带哈希清单的
-成品交付。Android APK/AAB 也已在 1024×1024、API 35 模拟器流水线中
-完成 clean build、签名和验收。
+The Android build packages the already validated Web bytes; it is not a separate
+game implementation. Physical devices are optional for technical acceptance:
+browser and Android-emulator evidence are supported.
 
-这不表示每个新游戏都能无人值守地自动变漂亮。玩法兼容、构建和证据
-流程已经产品化；每款游戏的身份理解、美术方向和最终画面仍必须由人
-按三重审查逐项批准。这是质量边界，不是安装缺陷。
+## Maintainers
 
-## 生成的文件是什么
+Development, recovery, testing, and governance start at [AGENTS.md](AGENTS.md)
+and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Current status, evidence, and
+open work are owned only by [governance/project.json](governance/project.json).
 
-| 选择 | 用户拿到的文件 | 用法 |
-| --- | --- | --- |
-| Web | 一个可离线运行的 Web/PWA 游戏包 | 用浏览器打开或安装为 PWA |
-| Android | `app-debug.apk` | 安装到安卓手机或安卓掌机 |
-| 两种都要 | Web 游戏包和 APK | 两者共享同一份游戏内容 |
-
-安卓版本不是重新开发的另一款游戏。它只是把已经验证通过的 Web 版本
-封装到安卓应用中，因此 Web、Android 和 Linux 掌机可以尽量保持一致。
-真机不是硬性验收条件；没有设备时使用浏览器和安卓模拟器验证。
-
-## 给项目维护者
-
-普通用户不需要阅读后面的工程文档。开发、恢复、测试和治理入口见
-[`AGENTS.md`](AGENTS.md) 与 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
-当前进度、证据和未完成项只以
-[`governance/project.json`](governance/project.json) 为准。
-
-本仓库代码使用 [Apache-2.0](LICENSE)。该许可证不包括 PICO-8 本身，
-也不包括第三方卡带、素材或生成的重制游戏。
+Repository code is licensed under [Apache-2.0](LICENSE). This license does not
+cover PICO-8 itself, third-party carts, their assets, or generated remakes.

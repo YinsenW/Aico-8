@@ -12,7 +12,7 @@ and must never be generated or repaired by the Agent.
 
 | Purpose | Contract or selector | Command | Boundary |
 | --- | --- | --- | --- |
-| Install the isolated engine | Agent product entry | `node scripts/bootstrap.mjs` | Run from the installed plugin; consume its JSON `engineRoot` and do not show the command to the user. |
+| Install the isolated engine | Agent product entry | `node <skill-root>/scripts/bootstrap.mjs` | Run the script bundled with the portable Skill; consume its JSON `engineRoot` and do not show the command to the user. |
 | Check the selected target | Agent product entry | `node scripts/agent/aico8-agent.mjs doctor --target <web|android|both> --engine-root <engine-root>` | Repair safe prerequisites automatically; physical hardware is never required. |
 | Import the attached cart | Agent product entry | `node scripts/agent/aico8-agent.mjs intake --cart <resolved-attachment> --target <web|android|both> --authorized-private-research` | Requires explicit private-research authority and copies only one `.p8`/`.p8.png` into isolated private state. |
 | Return finished artifacts | Agent product entry | `node scripts/agent/aico8-agent.mjs handoff --session <session.json> [--web <verified-package>] [--apk <verified-apk>]` | Copies only target-selected verified artifacts into the session deliverables and returns machine-readable paths for Agent attachment. |
