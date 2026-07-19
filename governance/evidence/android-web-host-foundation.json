@@ -2,7 +2,7 @@
   "schemaVersion": "aico8.governance-evidence.android-web-host-foundation.v1",
   "requirementId": "REQ-PLATFORM-001",
   "exitId": "EXIT-PLATFORM-ANDROID",
-  "status": "implementation-verified-device-acceptance-pending",
+  "status": "enhanced-emulator-acceptance-pending-ci",
   "observedAt": "2026-07-19",
   "host": {
     "applicationId": "dev.aico8.research",
@@ -29,6 +29,7 @@
     "allowedGeneratedWebViewShims": ["cordova.js", "cordova_plugins.js"]
   },
   "automatedEvidence": {
+    "acceptancePolicy": "named-api35-1024-square-emulator-sufficient-physical-optional",
     "targetProfileValidation": "passed",
     "targetProfileDriftRejection": "passed",
     "lineageContractValidation": "passed",
@@ -80,9 +81,10 @@
     "gradleWrapperResult": "blocked-before-gradle-unable-to-locate-java-runtime"
   },
   "acceptanceStillRequired": [
-    "audio-focus interruption and recovery on a named physical device",
-    "real controller, vendor WebView, and sustained gameplay performance evidence on named physical profiles",
-    "release-key and store-policy decision independent of research CI signing"
+    "passing CI artifact from the enhanced named API 35 1024-square emulator with simulated DPAD, simulated audio-focus recovery, and a 60-second frame budget"
+  ],
+  "optionalCompatibilityFollowUp": [
+    "repeat controller, audio-focus, vendor-WebView, and sustained-play checks on physical Android handhelds when hardware becomes available"
   ],
   "completionClaim": false
 }

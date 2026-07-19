@@ -8,6 +8,7 @@ import {
   evaluateAndroidPerformance,
   instrumentationPassed,
   orientationEvidencePassed,
+  parseAndroidFrameDurationCsv,
   parseColdLaunchMilliseconds,
   parseAndroidNetworkState,
   parseConnectedAndroidDevices,
@@ -187,6 +188,12 @@ describe("Android physical-device capture helpers", () => {
       droppedFrameRatio: 0.333333,
       budgetPassed: false,
     });
+  });
+
+  it("parses retained emulator frame-duration CSV fail-closed", () => {
+    expect(parseAndroidFrameDurationCsv("duration_milliseconds\n16.7\n18\n")).toEqual([16.7, 18]);
+    expect(() => parseAndroidFrameDurationCsv("wrong_header\n16.7\n")).toThrow(/header/);
+    expect(() => parseAndroidFrameDurationCsv("duration_milliseconds\nNaN\n")).toThrow(/duration/);
   });
 
   it("builds pending-human evidence and hashes the private serial", () => {

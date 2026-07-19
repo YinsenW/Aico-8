@@ -290,6 +290,18 @@ export function parseGfxFrameDurationsMilliseconds(output: string): readonly num
   return durations;
 }
 
+export function parseAndroidFrameDurationCsv(output: string): readonly number[] {
+  const lines = output.split(/\r?\n/u);
+  if (lines.shift() !== "duration_milliseconds") {
+    throw new Error("Android frame evidence has an invalid CSV header");
+  }
+  const durations = lines.filter((value) => value.length > 0).map(Number);
+  if (durations.some((value) => !Number.isFinite(value) || value < 0)) {
+    throw new Error("Android frame evidence contains an invalid duration");
+  }
+  return durations;
+}
+
 export function evaluateAndroidPerformance(
   frameDurationsMilliseconds: readonly number[],
   target: AndroidTargetProfileV1,

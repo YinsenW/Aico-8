@@ -70,6 +70,10 @@ describe("Capacitor Android host project", () => {
     expect(squareTest).toContain('result = observed == null ? "<callback-timeout>" : observed');
     expect(squareTest).toContain("tryEvaluateJavascript(webView, expression, 5, TimeUnit.SECONDS)");
     expect(squareTest).toContain('captureReadyHostEvidence(scenario, "square-host.png")');
+    expect(squareTest).toContain("simulatedDpadReachesTheWebInputBoundary");
+    expect(squareTest).toContain("KeyEvent.KEYCODE_DPAD_LEFT");
+    expect(squareTest).toContain("simulatedAudioFocusLossAndRecoveryReachTheWebHost");
+    expect(squareTest).toContain("AudioManager.AUDIOFOCUS_LOSS_TRANSIENT");
     expect(squareTest).toContain("getUiAutomation()");
     expect(squareTest).toContain("new File(activity.getFilesDir(), filename)");
 
@@ -92,12 +96,24 @@ describe("Capacitor Android host project", () => {
     expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
     expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
     expect(emulatorRunner).toContain('instrumentation_outcome="passed"');
+    expect(emulatorRunner).toContain("SquareEmulatorPerformanceTest");
+    expect(emulatorRunner).toContain("emulator-frame-durations.csv");
+    expect(emulatorRunner).toContain("verify:emulator-performance");
     expect(emulatorRunner).toContain("adb exec-out run-as dev.aico8.research");
     expect(emulatorRunner).toContain("PNG image data, 1024 x 1024");
     expect(emulatorRunner).toContain("adb shell am start -W -n dev.aico8.research/.MainActivity");
     expect(emulatorRunner).toContain('diagnostics_outcome="partial"');
     expect(emulatorRunner).toContain('echo "logcat_status=$logcat_status"');
     expect(emulatorRunner).toContain("exit 0");
+
+    const performanceTest = read("android/app/src/androidTest/java/dev/aico8/research/SquareEmulatorPerformanceTest.java");
+    expect(performanceTest).toContain("CAPTURE_MILLISECONDS = 60_000");
+    expect(performanceTest).toContain("window.__aico8PerformanceFrames");
+    expect(performanceTest).toContain("frames >= 210");
+    expect(performanceTest).toContain("FrameMetrics.TOTAL_DURATION");
+    const performanceVerifier = read("src/verify-android-emulator-performance.ts");
+    expect(performanceVerifier).toContain("evaluateAndroidPerformance");
+    expect(performanceVerifier).toContain("startupBudgetPassed");
   });
 
   it("pins Capacitor-generated Java and Gradle toolchain inputs", () => {
