@@ -17,30 +17,29 @@ Outputs:
 
 ## One portable Agent Skill
 
-Aico 8 is not tied to one model or coding client. Its portable
-`aico8-remake.zip` follows the Agent Skills `SKILL.md` convention and is the
-default distribution. The same package works with Claude Code, Codex, OpenCode,
-and Cherry Studio; only the one-time import screen or destination folder differs.
+Aico 8 is not tied to one model or coding client. The same `aico8-remake` Skill
+bootstraps the pinned full toolchain in Claude Code, Codex, OpenCode, and Cherry
+Studio. It is not an instruction-only prompt and it does not require the Codex
+CLI. Web remakes use the bundled, hash-verified Wasm kernel, so users do not need
+C++, Emscripten, or Android Studio.
 
-Download the latest `aico8-remake.zip` from
-[Releases](https://github.com/YinsenW/Aico-8/releases/latest), then install it:
+For a terminal-based Agent, copy the matching one-line installer:
 
-| Agent host | Install the same ZIP |
+| Agent host | One-line install |
 | --- | --- |
-| [Claude Code](https://code.claude.com/docs/en/slash-commands#where-skills-live) | Extract as `~/.claude/skills/aico8-remake/` |
-| Codex | Extract as `~/.agents/skills/aico8-remake/` |
-| [OpenCode](https://opencode.ai/docs/skills/#place-files) | Extract as `~/.config/opencode/skills/aico8-remake/`; it also discovers the two paths above |
-| [Cherry Studio](https://docs.cherry-ai.com/docs/en-us/advanced-basic/agent) | Library → Add Skill → Local import → select `aico8-remake.zip` |
+| Claude Code | `npx skills add https://github.com/YinsenW/Aico-8/tree/v0.1.3 -g -a claude-code -s aico8-remake -y` |
+| Codex | `npx skills add https://github.com/YinsenW/Aico-8/tree/v0.1.3 -g -a codex -s aico8-remake -y` |
+| OpenCode | `npx skills add https://github.com/YinsenW/Aico-8/tree/v0.1.3 -g -a opencode -s aico8-remake -y` |
 
-Codex users may alternatively install the native Codex plugin wrapper:
+This installs directly from GitHub; no skills registry entry is required. For
+[Cherry Studio](https://docs.cherry-ai.com/docs/en-us/advanced-basic/agent),
+download `aico8-remake.zip` from
+[Releases](https://github.com/YinsenW/Aico-8/releases/latest), then choose
+**Library → Add Skill → Local import**. The ZIP is the same Skill, not a reduced
+edition.
 
-```sh
-codex plugin marketplace add YinsenW/Aico-8 --ref v0.1.2
-codex plugin add aico8@aico8
-```
-
-Those commands are a Codex convenience, not a requirement of Aico 8 or the
-portable Skill.
+An optional Codex plugin wrapper also exists, but it is not the default product
+and is not needed by any other Agent.
 
 ## Remake a cart
 
@@ -56,8 +55,9 @@ Or:
 Use Aico 8 to remake this authorized cart for Web and Android APK.
 ```
 
-The Agent loads the Skill, installs the versioned engine in private local state,
-runs browser or Android-emulator validation, and returns the finished artifacts.
+The Agent loads the Skill, installs the complete versioned engine in private
+local state, verifies the prebuilt Web/Wasm kernel, runs browser or
+Android-emulator validation, and returns the finished artifacts.
 The user should not need repository paths, build commands, TypeScript, C++, Wasm,
 Gradle, or Android Studio knowledge.
 

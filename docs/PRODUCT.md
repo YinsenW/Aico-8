@@ -223,7 +223,7 @@ Contracts: `DATA-GOVERNANCE-001`, `DATA-RELEASE-001`.
 Create the final Skill only after trials stabilize reusable Jobs and pause contracts. Distribute one host-neutral Agent Skills package plus optional client-specific convenience wrappers. It invokes versioned Jobs, pauses for human approval of semantics, art direction,
 gameplay, and scope, and cannot self-accept or self-release. Runtime and policy
 stay in software. Its portable Skill accepts an attached cart, hides
-paths and commands, asks only for output and human art choices, checks its environment, and returns Web/APK artifacts. A proposal-bound owner
+paths and commands, asks only for output and human art choices, checks its environment, and returns Web/APK artifacts. Web installation consumes a hash-verified prebuilt Wasm kernel and must not require a native compiler; Android-only prerequisites remain target-scoped. A proposal-bound owner
 decision may advance recorded research; no approval grants publication rights.
 Contracts: all `JOB-*` pipeline contracts, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
 ## Private Dust Bunny acceptance boundary

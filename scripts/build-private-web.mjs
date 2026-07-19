@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -15,6 +14,7 @@ import {
 import { validateHdSurfaceLineage } from "./lib/hd-surface-lineage.mjs";
 import { validateSourceContourLineage } from "./lib/source-contour-lineage.mjs";
 import { validateSourceVisualStructureLineage } from "./lib/source-visual-structure-lineage.mjs";
+import { spawnPackageManager } from "./lib/package-manager.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -180,7 +180,7 @@ const gameManifest = {
 };
 fs.writeFileSync(path.join(privateRoot, "game.json"), `${JSON.stringify(gameManifest, null, 2)}\n`);
 
-const build = spawnSync("pnpm", ["--filter", "@aico8/web", "build"], {
+const build = spawnPackageManager(["--filter", "@aico8/web", "build"], {
   cwd: root,
   env: { ...process.env, SOURCE_DATE_EPOCH: "0", TZ: "UTC" },
   stdio: "inherit",

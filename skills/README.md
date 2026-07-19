@@ -1,6 +1,6 @@
 # Aico 8 Skill boundary
 
-The installable Aico 8 plugin exposes the maintained human-guided
+The host-neutral Agent Skill and optional Codex plugin wrapper expose the maintained human-guided
 [aico8-remake](../plugins/aico8/skills/aico8-remake/SKILL.md) entry. A non-technical user attaches one
 authorized cart and asks for Web, Android APK, or both; the Agent owns bootstrap,
 private intake, Jobs, validation, and artifact handoff.
@@ -17,6 +17,8 @@ The Skill is a thin operator for the Aico 8 CLI and manifests. It may:
 Android is a packaging target over the exact validated Web/Wasm bytes, not a
 second remake implementation. Release signing and publication remain separate.
 
-It will not contain the runtime, cart decoder, renderer, platform packagers, or
-test oracle. Those remain ordinary versioned software in this repository so
-they can be built, reviewed, tested, and reused without an agent.
+It does not duplicate runtime, decoder, renderer, platform packager, or oracle
+logic. Its bootstrap installs the pinned full repository engine, including the
+hash-verified prebuilt Web/Wasm kernel, into private local state. Therefore the
+same Skill controls the real toolchain outside Codex instead of degrading into
+an instruction-only document.

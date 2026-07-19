@@ -64,9 +64,55 @@ test("bootstrap produces a reusable isolated engine without private input", () =
   assert.equal(first.status, "ready");
   assert.equal(first.reused, false);
   assert.equal(readFileSync(path.join(engine, "plugins", "aico8", ".codex-plugin", "plugin.json"), "utf8").includes('"name": "aico8"'), true);
+  assert.equal(readFileSync(path.join(engine, "apps", "web", "public", "kernel", "manifest.json"), "utf8").includes("aico8.web-kernel.v1"), true);
   assert.equal(spawnSync("test", ["-e", path.join(engine, "private")]).status, 1);
   const second = run(["bootstrap", "--engine-root", engine, "--skip-dependencies"]);
   assert.equal(second.reused, true);
+});
+
+test("Web doctor consumes the verified prebuilt kernel without native compilers", () => {
+  if (process.platform === "win32") return;
+  const directory = mkdtempSync(path.join(tmpdir(), "aico8-agent-web-doctor-"));
+  const bin = path.join(directory, "bin");
+  mkdirSync(bin);
+  const fakeNpx = path.join(bin, "npx");
+  writeFileSync(fakeNpx, "#!/bin/sh\necho 11.9.0\n");
+  chmodSync(fakeNpx, 0o755);
+  const result = JSON.parse(execFileSync(process.execPath, [cli, "doctor", "--target", "web"], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, PATH: bin },
+  }));
+  assert.equal(result.status, "passed");
+  assert.deepEqual(result.blockers, []);
+  assert.equal(result.checks.find(({ id }) => id === "prebuilt-web-kernel")?.passed, true);
+  assert.equal(result.checks.some(({ id }) => ["make", "cxx", "emscripten"].includes(id)), false);
+  assert.equal(result.checks.some(({ id }) => id.startsWith("android-") || id === "java"), false);
+});
+
+test("doctor rejects drifted prebuilt kernel bytes", () => {
+  const directory = mkdtempSync(path.join(tmpdir(), "aico8-agent-kernel-drift-"));
+  const engine = path.join(directory, "engine");
+  run(["bootstrap", "--engine-root", engine, "--skip-dependencies"]);
+  writeFileSync(path.join(engine, "apps", "web", "public", "kernel", "aico8-kernel.wasm"), "drifted");
+  const result = spawnSync(process.execPath, [cli, "doctor", "--target", "web", "--engine-root", engine], { encoding: "utf8" });
+  assert.equal(result.status, 2);
+  const report = JSON.parse(result.stdout);
+  assert.deepEqual(report.blockers, ["prebuilt-web-kernel"]);
+});
+
+test("Android doctor scopes Java and API 36 checks without native compiler checks", () => {
+  const directory = mkdtempSync(path.join(tmpdir(), "aico8-agent-android-doctor-"));
+  const result = spawnSync(process.execPath, [cli, "doctor", "--target", "android"], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, ANDROID_HOME: path.join(directory, "sdk") },
+  });
+  assert.equal(result.status, 2);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.blockers.includes("android-sdk"), true);
+  assert.equal(report.blockers.includes("android-platform-36"), true);
+  assert.equal(report.checks.some(({ id }) => ["make", "cxx", "emscripten"].includes(id)), false);
 });
 
 test("bootstrap keeps dependency-manager progress out of its JSON protocol", () => {

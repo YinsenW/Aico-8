@@ -43,7 +43,7 @@ translate blockers into one short, actionable explanation.
    file is inaccessible, escapes the allowed workspace after resolution, or is
    a directory. Confirm authorization for private research and the requested
    packaging scope; publication always requires a separate explicit decision.
-5. Run `pnpm verify:governance` before changing code.
+5. Run `node scripts/agent/pnpm.mjs verify:governance` before changing code.
 6. Ask in plain language whether the user wants Web, Android APK, or both.
    Default to Web when they do not request Android. Android always derives from
    the already-validated Web package; never build a separate game implementation.

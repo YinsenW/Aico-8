@@ -12,7 +12,8 @@ runtime/third_party/z8lua/*.o
 runtime/third_party/z8lua/*.a
 runtime/third_party/z8lua/z8lua
 runtime/third_party/z8lua/lua
-apps/web/public/kernel/
+# The Web kernel is a versioned release input. Ordinary remake users consume
+# these verified bytes and do not need a local C++/Emscripten toolchain.
 
 # User-provided and extracted cartridge content is never published by default.
 pico8_carts/
