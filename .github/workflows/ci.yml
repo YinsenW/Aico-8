@@ -86,6 +86,42 @@ jobs:
       - name: Verify human-guided Skill package
         run: pnpm verify:skill
 
+  linux-handheld:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.2
+          actions-cache-folder: emsdk-cache
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install TypeScript workspace
+        run: pnpm install --frozen-lockfile
+      - name: Verify Linux contracts and capture derivation
+        run: pnpm verify:linux-handheld
+      - name: Build unchanged public Web host
+        run: pnpm --filter @aico8/web build
+      - name: Run named 1024-square Linux Chromium simulator
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+          AICO8_CHROME_HEADFUL: "1"
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1024x1024x24 -ac +extension GLX +render -noreset" pnpm capture:linux-web-simulator -- --product apps/web/dist --target apps/mobile/target-profile.linux.json --evidence artifacts/test-reports/linux-square
+      - name: Independently verify retained Linux simulator evidence
+        run: pnpm verify:linux-web-simulator -- artifacts/test-reports/linux-square/linux-handheld-simulator.json apps/web/dist apps/mobile/target-profile.linux.json artifacts/test-reports/linux-square
+      - name: Retain Linux square-simulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-square-chromium-${{ github.sha }}
+          path: artifacts/test-reports/linux-square
+          if-no-files-found: error
+
   android-host:
     runs-on: ubuntu-latest
     steps:

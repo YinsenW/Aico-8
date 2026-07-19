@@ -5,7 +5,7 @@
   "outputProfile": "hd-1024-square",
   "measurementEnvironment": {
     "class": "linux-handheld-browser",
-    "viewport": { "width": 1280, "height": 800 },
+    "viewport": { "width": 1024, "height": 1024 },
     "warmupFrames": 30,
     "sampleFrames": 180,
     "droppedFrameThresholdMilliseconds": 25
