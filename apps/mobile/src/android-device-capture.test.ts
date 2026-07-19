@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   ANDROID_DEVICE_ARTIFACT_FILES,
+  androidNetworkRestoreCommands,
+  androidNetworkStateIsOffline,
   applyAndroidDeviceManualDecision,
   buildPendingAndroidDeviceReport,
   evaluateAndroidPerformance,
   instrumentationPassed,
   orientationEvidencePassed,
   parseColdLaunchMilliseconds,
+  parseAndroidNetworkState,
   parseConnectedAndroidDevices,
   parsePackageVersion,
   parseGfxFrameDurationsMilliseconds,
@@ -15,6 +18,7 @@ import {
   pngDimensions,
   sha256,
   verifyAndroidDeviceEvidenceBindings,
+  verifyAndroidApkWebAssets,
   verifyAndroidDeviceManualDecisionBinding,
 } from "./android-device-capture.js";
 import type {
@@ -81,12 +85,64 @@ const targetProfile = {
   },
 } as AndroidTargetProfileV1;
 
+function storedZip(files: Readonly<Record<string, Uint8Array>>): Buffer {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let localOffset = 0;
+  for (const [name, value] of Object.entries(files)) {
+    const nameBytes = Buffer.from(name);
+    const bytes = Buffer.from(value);
+    const local = Buffer.alloc(30 + nameBytes.length + bytes.length);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt32LE(bytes.length, 18);
+    local.writeUInt32LE(bytes.length, 22);
+    local.writeUInt16LE(nameBytes.length, 26);
+    nameBytes.copy(local, 30);
+    bytes.copy(local, 30 + nameBytes.length);
+    locals.push(local);
+
+    const central = Buffer.alloc(46 + nameBytes.length);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt32LE(bytes.length, 20);
+    central.writeUInt32LE(bytes.length, 24);
+    central.writeUInt16LE(nameBytes.length, 28);
+    central.writeUInt32LE(localOffset, 42);
+    nameBytes.copy(central, 46);
+    centrals.push(central);
+    localOffset += local.length;
+  }
+  const centralBytes = Buffer.concat(centrals);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(centrals.length, 8);
+  end.writeUInt16LE(centrals.length, 10);
+  end.writeUInt32LE(centralBytes.length, 12);
+  end.writeUInt32LE(localOffset, 16);
+  return Buffer.concat([...locals, centralBytes, end]);
+}
+
 describe("Android physical-device capture helpers", () => {
   it("requires one explicitly connected adb device", () => {
     const devices = parseConnectedAndroidDevices(
       "List of devices attached\nABC123\tdevice product:odin model:Handheld transport_id:1\noffline\toffline\n",
     );
     expect(devices).toEqual([{ serial: "ABC123", attributes: { product: "odin", model: "Handheld", transport_id: "1" } }]);
+  });
+
+  it("requires a proven offline triad and restores the exact initial network state", () => {
+    const initial = parseAndroidNetworkState({ airplaneMode: "0\n", wifi: "1\n", mobileData: "0\n" });
+    expect(androidNetworkStateIsOffline(initial)).toBe(false);
+    expect(androidNetworkStateIsOffline({ airplaneMode: 1, wifi: 0, mobileData: 0 })).toBe(true);
+    expect(androidNetworkRestoreCommands(initial)).toEqual([
+      ["shell", "cmd", "connectivity", "airplane-mode", "disable"],
+      ["shell", "svc", "wifi", "enable"],
+      ["shell", "svc", "data", "disable"],
+    ]);
+    expect(() => parseAndroidNetworkState({ airplaneMode: "null", wifi: "1", mobileData: "0" }))
+      .toThrow(/airplane mode/);
   });
 
   it("parses physical display, WebView, launch, instrumentation, and PNG evidence", () => {
@@ -237,12 +293,23 @@ describe("Android physical-device capture helpers", () => {
 
   it("recomputes APK, lineage, target-profile, and retained artifact bindings offline", () => {
     const targetBytes = Buffer.from(`${JSON.stringify(targetProfile, null, 2)}\n`);
+    const indexBytes = Buffer.from("<!doctype html><title>lineage-bound</title>");
     const boundLineage = {
       ...lineage,
       targetProfile: { id: targetProfile.id, sha256: sha256(targetBytes) },
+      webAssets: {
+        ...lineage.webAssets,
+        artifactCount: 1,
+        unpackedBytes: indexBytes.length,
+        files: [{ path: "index.html", bytes: indexBytes.length, sha256: sha256(indexBytes) }],
+      },
     };
     const lineageBytes = Buffer.from(`${JSON.stringify(boundLineage, null, 2)}\n`);
-    const apkBytes = Buffer.from("lineage-bound-debug-apk");
+    const apkBytes = storedZip({
+      "assets/public/index.html": indexBytes,
+      "assets/public/cordova.js": Buffer.from("generated shim"),
+      "AndroidManifest.xml": Buffer.from("binary manifest placeholder"),
+    });
     const artifactBytes = Object.fromEntries(
       Object.keys(ANDROID_DEVICE_ARTIFACT_FILES).map((field) => [field, Buffer.from(`evidence:${field}`)]),
     ) as unknown as Record<keyof typeof ANDROID_DEVICE_ARTIFACT_FILES, Uint8Array>;
@@ -302,7 +369,16 @@ describe("Android physical-device capture helpers", () => {
       artifacts,
     );
     expect(() => verify(apkBytes)).not.toThrow();
-    expect(() => verify(Buffer.from("different-apk"))).toThrow(/APK bytes/);
+    const unrelatedApk = storedZip({ "assets/public/index.html": Buffer.from("unrelated") });
+    expect(() => verify(unrelatedApk)).toThrow(/APK bytes/);
+    expect(() => verifyAndroidApkWebAssets(unrelatedApk, boundLineage)).toThrow(/index\.html/);
+    expect(() => verifyAndroidApkWebAssets(
+      storedZip({
+        "assets/public/index.html": indexBytes,
+        "assets/public/undeclared.js": Buffer.from("surprise"),
+      }),
+      boundLineage,
+    )).toThrow(/count|undeclared/);
     expect(() => verifyAndroidDeviceEvidenceBindings(
       report,
       apkBytes,

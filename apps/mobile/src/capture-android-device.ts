@@ -11,11 +11,14 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   ANDROID_DEVICE_ARTIFACT_FILES,
+  androidNetworkRestoreCommands,
+  androidNetworkStateIsOffline,
   buildPendingAndroidDeviceReport,
   evaluateAndroidPerformance,
   instrumentationPassed,
   orientationEvidencePassed,
   parseColdLaunchMilliseconds,
+  parseAndroidNetworkState,
   parseConnectedAndroidDevices,
   parsePackageVersion,
   parseGfxFrameDurationsMilliseconds,
@@ -23,6 +26,7 @@ import {
   parsePhysicalPixels,
   pngDimensions,
   sha256,
+  verifyAndroidApkWebAssets,
 } from "./android-device-capture.js";
 
 const args = process.argv.slice(2).filter((argument) => argument !== "--");
@@ -45,6 +49,12 @@ for (const file of [debugApk, testApk, lineagePath, targetProfilePath]) {
   if (!fs.statSync(file).isFile()) throw new Error(`Required capture input is not a file: ${file}`);
 }
 const performanceCaptureSeconds = Number(performanceCaptureSecondsValue);
+if (profileId.trim().length === 0 || profileId !== profileId.trim()) {
+  throw new Error("Physical-device profile ID must be a non-empty trimmed value");
+}
+if (controllerName.trim().length === 0 || controllerName !== controllerName.trim()) {
+  throw new Error("Controller name must be a non-empty trimmed value");
+}
 if (!Number.isSafeInteger(performanceCaptureSeconds) || performanceCaptureSeconds < ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS) {
   throw new Error(`Performance capture must be an integer >= ${ANDROID_MIN_PERFORMANCE_CAPTURE_SECONDS} seconds`);
 }
@@ -79,6 +89,8 @@ const lineageUnknown: unknown = JSON.parse(lineageRaw.toString("utf8"));
 const lineageValidation = validateAndroidWebLineage(lineageUnknown);
 if (!lineageValidation.ok) throw new Error(`Invalid Android Web lineage: ${lineageValidation.errors.join("; ")}`);
 const lineage = lineageUnknown as AndroidWebLineageV1;
+const debugApkBytes = fs.readFileSync(debugApk);
+verifyAndroidApkWebAssets(debugApkBytes, lineage);
 const applicationId = lineage.host.applicationId;
 fs.writeFileSync(path.join(output, "android-web-lineage.json"), lineageRaw);
 const targetProfileRaw = fs.readFileSync(targetProfilePath);
@@ -115,15 +127,39 @@ const inputDevices = adb(["shell", "dumpsys", "input"]);
 const inputDevicesSha256 = writeText(ANDROID_DEVICE_ARTIFACT_FILES.inputDevicesSha256, inputDevices);
 const controllerEnumerated = inputDevices.toLocaleLowerCase().includes(controllerName.toLocaleLowerCase());
 
+const readNetworkState = () => parseAndroidNetworkState({
+  airplaneMode: adb(["shell", "settings", "get", "global", "airplane_mode_on"]),
+  wifi: adb(["shell", "settings", "get", "global", "wifi_on"]),
+  mobileData: adb(["shell", "settings", "get", "global", "mobile_data"]),
+});
+const waitForNetworkState = async (
+  predicate: (state: ReturnType<typeof readNetworkState>) => boolean,
+  label: string,
+): Promise<ReturnType<typeof readNetworkState>> => {
+  let state = readNetworkState();
+  for (let attempt = 0; attempt < 20 && !predicate(state); attempt += 1) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 250));
+    state = readNetworkState();
+  }
+  if (!predicate(state)) throw new Error(`Android network state did not reach ${label}`);
+  return state;
+};
+const initialNetworkState = readNetworkState();
+let networkStateChanged = false;
+let captureFailure: unknown;
+
+try {
 adb(["install", "-r", debugApk]);
 adb(["install", "-r", testApk]);
 if (!/^Success$/mu.test(adb(["shell", "pm", "clear", applicationId]))) {
   throw new Error("Unable to clear prior application data before physical-device capture");
 }
+networkStateChanged = true;
 adb(["shell", "cmd", "connectivity", "airplane-mode", "enable"]);
 adb(["shell", "svc", "wifi", "disable"]);
 adb(["shell", "svc", "data", "disable"]);
-const offlineMode = adb(["shell", "settings", "get", "global", "airplane_mode_on"]).trim() === "1";
+await waitForNetworkState(androidNetworkStateIsOffline, "airplane-mode offline isolation");
+const offlineMode = true;
 adb(["logcat", "-c"]);
 
 const instrumentation = spawnSync(
@@ -185,7 +221,7 @@ const report = buildPendingAndroidDeviceReport({
   capturedAt: new Date().toISOString(),
   lineage,
   lineageSha256: sha256(lineageRaw),
-  apkSha256: sha256(fs.readFileSync(debugApk)),
+  apkSha256: sha256(debugApkBytes),
   profileId,
   serial,
   manufacturer: property("ro.product.manufacturer"),
@@ -235,3 +271,20 @@ console.log(
   `Android physical-device evidence captured for ${report.device.profileId}; `
     + "status remains pending-human until all four manual checks pass.",
 );
+} catch (error) {
+  captureFailure = error;
+  throw error;
+} finally {
+  if (networkStateChanged) {
+    try {
+      for (const command of androidNetworkRestoreCommands(initialNetworkState)) adb(command);
+      await waitForNetworkState(
+        (state) => JSON.stringify(state) === JSON.stringify(initialNetworkState),
+        "the pre-capture state",
+      );
+    } catch (restorationError) {
+      if (captureFailure === undefined) throw restorationError;
+      console.error(`Android capture also failed to restore the pre-capture network state: ${String(restorationError)}`);
+    }
+  }
+}

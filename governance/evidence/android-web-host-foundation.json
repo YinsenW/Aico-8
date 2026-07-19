@@ -3,7 +3,7 @@
   "requirementId": "REQ-PLATFORM-001",
   "exitId": "EXIT-PLATFORM-ANDROID",
   "status": "implementation-verified-device-acceptance-pending",
-  "observedAt": "2026-07-17",
+  "observedAt": "2026-07-19",
   "host": {
     "applicationId": "dev.aico8.research",
     "capacitorVersion": "8.4.2",
@@ -39,6 +39,12 @@
     "overlappingLifecycleSuspension": "passed",
     "nativeAudioFocusBoundary": "passed",
     "externalSigningFailClosed": "passed",
+    "physicalCapturePreflight": {
+      "apkEmbeddedWebAssetsRecomputedAgainstLineage": "passed",
+      "undeclaredOrMismatchedApkWebAssetRejection": "passed",
+      "offlineTriadRequired": "passed",
+      "preCaptureNetworkStateRestoration": "passed"
+    },
     "cleanSignedApkAabCi": {
       "status": "passed",
       "revision": "13da172da283ce0b6399b256f06d22567d962013",

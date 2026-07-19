@@ -7,6 +7,7 @@ import {
   type AndroidWebLineageV1,
 } from "@aico8/contracts";
 import crypto from "node:crypto";
+import zlib from "node:zlib";
 import { verifyFinalizedManualDecisionBinding } from "./manual-decision-binding.js";
 
 export interface ConnectedAndroidDevice {
@@ -16,6 +17,141 @@ export interface ConnectedAndroidDevice {
 
 export function sha256(value: string | Uint8Array): string {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+export interface AndroidNetworkState {
+  readonly airplaneMode: 0 | 1;
+  readonly wifi: 0 | 1;
+  readonly mobileData: 0 | 1;
+}
+
+function binarySetting(value: string, label: string): 0 | 1 {
+  const normalized = value.trim();
+  if (normalized !== "0" && normalized !== "1") {
+    throw new Error(`${label} did not report a binary Android setting`);
+  }
+  return Number(normalized) as 0 | 1;
+}
+
+export function parseAndroidNetworkState(input: {
+  readonly airplaneMode: string;
+  readonly wifi: string;
+  readonly mobileData: string;
+}): AndroidNetworkState {
+  return {
+    airplaneMode: binarySetting(input.airplaneMode, "airplane mode"),
+    wifi: binarySetting(input.wifi, "Wi-Fi"),
+    mobileData: binarySetting(input.mobileData, "mobile data"),
+  };
+}
+
+export function androidNetworkStateIsOffline(state: AndroidNetworkState): boolean {
+  return state.airplaneMode === 1 && state.wifi === 0 && state.mobileData === 0;
+}
+
+export function androidNetworkRestoreCommands(state: AndroidNetworkState): readonly (readonly string[])[] {
+  return [
+    ["shell", "cmd", "connectivity", "airplane-mode", state.airplaneMode === 1 ? "enable" : "disable"],
+    ["shell", "svc", "wifi", state.wifi === 1 ? "enable" : "disable"],
+    ["shell", "svc", "data", state.mobileData === 1 ? "enable" : "disable"],
+  ];
+}
+
+interface ZipEntry {
+  readonly path: string;
+  readonly compression: number;
+  readonly compressedBytes: number;
+  readonly uncompressedBytes: number;
+  readonly localHeaderOffset: number;
+  readonly flags: number;
+}
+
+function readApkZipEntries(apkBytes: Uint8Array): readonly { readonly path: string; readonly bytes: Uint8Array }[] {
+  const apk = Buffer.from(apkBytes);
+  const minimumEndRecordBytes = 22;
+  const searchStart = Math.max(0, apk.length - 65_557);
+  let endOffset = -1;
+  for (let offset = apk.length - minimumEndRecordBytes; offset >= searchStart; offset -= 1) {
+    if (apk.readUInt32LE(offset) === 0x06054b50) {
+      endOffset = offset;
+      break;
+    }
+  }
+  if (endOffset < 0) throw new Error("APK is not a supported ZIP archive");
+  const entryCount = apk.readUInt16LE(endOffset + 10);
+  const centralDirectoryBytes = apk.readUInt32LE(endOffset + 12);
+  const centralDirectoryOffset = apk.readUInt32LE(endOffset + 16);
+  if (entryCount === 0xffff || centralDirectoryBytes === 0xffffffff || centralDirectoryOffset === 0xffffffff) {
+    throw new Error("ZIP64 APK archives are not supported by the offline lineage verifier");
+  }
+  if (centralDirectoryOffset + centralDirectoryBytes > endOffset) {
+    throw new Error("APK central directory exceeds archive bounds");
+  }
+  const entries: ZipEntry[] = [];
+  let offset = centralDirectoryOffset;
+  for (let index = 0; index < entryCount; index += 1) {
+    if (offset + 46 > apk.length || apk.readUInt32LE(offset) !== 0x02014b50) {
+      throw new Error("APK central directory is malformed");
+    }
+    const nameBytes = apk.readUInt16LE(offset + 28);
+    const extraBytes = apk.readUInt16LE(offset + 30);
+    const commentBytes = apk.readUInt16LE(offset + 32);
+    const end = offset + 46 + nameBytes + extraBytes + commentBytes;
+    if (end > apk.length) throw new Error("APK central-directory entry exceeds archive bounds");
+    entries.push({
+      path: apk.subarray(offset + 46, offset + 46 + nameBytes).toString("utf8"),
+      flags: apk.readUInt16LE(offset + 8),
+      compression: apk.readUInt16LE(offset + 10),
+      compressedBytes: apk.readUInt32LE(offset + 20),
+      uncompressedBytes: apk.readUInt32LE(offset + 24),
+      localHeaderOffset: apk.readUInt32LE(offset + 42),
+    });
+    offset = end;
+  }
+  return entries.map((entry) => {
+    if ((entry.flags & 1) !== 0) throw new Error(`APK entry is encrypted: ${entry.path}`);
+    const local = entry.localHeaderOffset;
+    if (local + 30 > apk.length || apk.readUInt32LE(local) !== 0x04034b50) {
+      throw new Error(`APK local entry is malformed: ${entry.path}`);
+    }
+    const dataOffset = local + 30 + apk.readUInt16LE(local + 26) + apk.readUInt16LE(local + 28);
+    const compressedEnd = dataOffset + entry.compressedBytes;
+    if (compressedEnd > apk.length) throw new Error(`APK entry exceeds archive bounds: ${entry.path}`);
+    const compressed = apk.subarray(dataOffset, compressedEnd);
+    const bytes = entry.compression === 0
+      ? compressed
+      : entry.compression === 8
+        ? zlib.inflateRawSync(compressed)
+        : undefined;
+    if (bytes === undefined) throw new Error(`APK entry uses unsupported compression ${entry.compression}: ${entry.path}`);
+    if (bytes.length !== entry.uncompressedBytes) throw new Error(`APK entry size is inconsistent: ${entry.path}`);
+    return { path: entry.path, bytes };
+  });
+}
+
+export function verifyAndroidApkWebAssets(apkBytes: Uint8Array, lineage: AndroidWebLineageV1): void {
+  const prefix = "assets/public/";
+  const entries = readApkZipEntries(apkBytes)
+    .filter((entry) => entry.path.startsWith(prefix) && !entry.path.endsWith("/"))
+    .map((entry) => ({ ...entry, path: entry.path.slice(prefix.length) }));
+  const duplicates = entries.find((entry, index) => entries.findIndex((candidate) => candidate.path === entry.path) !== index);
+  if (duplicates) throw new Error(`APK contains duplicate Web asset ${duplicates.path}`);
+  const allowed = new Set<string>(lineage.host.allowedGeneratedAssetPaths);
+  const packaged = entries.filter((entry) => !allowed.has(entry.path)).sort((left, right) => left.path.localeCompare(right.path));
+  const expected = [...lineage.webAssets.files].sort((left, right) => left.path.localeCompare(right.path));
+  if (packaged.length !== expected.length) {
+    throw new Error(`APK Web asset count ${packaged.length} does not match lineage count ${expected.length}`);
+  }
+  for (let index = 0; index < expected.length; index += 1) {
+    const actual = packaged[index]!;
+    const declared = expected[index]!;
+    if (actual.path !== declared.path) throw new Error(`APK Web assets differ from lineage at ${declared.path}`);
+    if (actual.bytes.length !== declared.bytes || sha256(actual.bytes) !== declared.sha256) {
+      throw new Error(`APK Web asset bytes differ from lineage at ${declared.path}`);
+    }
+  }
+  const unexpectedGenerated = entries.find((entry) => !expected.some((file) => file.path === entry.path) && !allowed.has(entry.path));
+  if (unexpectedGenerated) throw new Error(`APK contains undeclared Web asset ${unexpectedGenerated.path}`);
 }
 
 export const ANDROID_DEVICE_ARTIFACT_FILES = {
@@ -52,6 +188,7 @@ export function verifyAndroidDeviceEvidenceBindings(
   for (const [actual, expected, label] of exactBindings) {
     if (actual !== expected) throw new Error(`${label} does not match the device report`);
   }
+  verifyAndroidApkWebAssets(apkBytes, lineage);
   for (const field of Object.keys(ANDROID_DEVICE_ARTIFACT_FILES) as (keyof typeof ANDROID_DEVICE_ARTIFACT_FILES)[]) {
     if (sha256(artifactBytes[field]) !== report.artifacts[field]) {
       throw new Error(`${ANDROID_DEVICE_ARTIFACT_FILES[field]} does not match device report artifact hash ${field}`);
