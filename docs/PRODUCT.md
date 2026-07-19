@@ -131,11 +131,11 @@ Wasm kernel, presentation, and validated module for Android APK/AAB. Then suppor
 Linux handhelds through a compatible browser/PWA, adding a thin Web shell only
 when a named device cannot meet lifecycle, controller, storage, or offline needs
 directly. Platform adapters may not fork gameplay. Windows, macOS, and iOS are
-outside the current delivery roadmap. Android completion uses one retained CI bundle: the named API 35, 1024×1024 emulator proves signed-package/WebView behavior, simulated controller and audio-focus paths, lifecycle, offline, orientation, storage, touch, and startup; the same staged Web bytes separately pass a 60-second 1024×1024 Chromium simulation frame budget. Physical hardware is a non-blocking compatibility follow-up.
+outside the current delivery roadmap. Android completion uses one retained CI bundle: the named API 35, 1024×1024 emulator proves signed-package/WebView behavior, simulated controller and audio-focus paths, lifecycle, offline, orientation, storage, touch, and startup; the same staged Web bytes separately pass a 60-second 1024×1024 Chromium simulation frame budget. Linux completion uses the unchanged public Web tree in a fresh Ubuntu/X11 Chromium session at 1024×1024 and proves controller input through the product adapter, storage, offline service-worker reload, lifecycle resume, audio unlock, fullscreen, Wasm, WebGL2, startup, and a 60-second frame budget. Physical hardware is a non-blocking compatibility follow-up for both platforms.
 
 Contracts: `API-HOST-001`, `API-GAME-MODULE-001`,
 `DATA-TARGET-PROFILE-001`, `DATA-ANDROID-WEB-LINEAGE-001`,
-`DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`, `JOB-VALIDATE-001`,
+`DATA-LINUX-SIMULATOR-001`, `DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`, `JOB-VALIDATE-001`,
 `JOB-PACKAGE-001`.
 
 ### REQ-EMBEDDED-001 — Constrained ESP32-P4 profile after Web

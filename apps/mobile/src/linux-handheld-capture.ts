@@ -18,7 +18,7 @@ export function evaluateLinuxHandheldPerformance(
   const target = targetValue as LinuxHandheldTargetProfileV1;
   if (target.target !== "linux-handheld-web") throw new Error("Linux capture requires a linux-handheld-web target profile");
   const { warmupFrames, sampleFrames, droppedFrameThresholdMilliseconds } = target.measurementEnvironment;
-  const sample = frameDurationsMilliseconds.slice(warmupFrames, warmupFrames + sampleFrames);
+  const sample = frameDurationsMilliseconds.slice(warmupFrames);
   const sorted = [...sample].sort((left, right) => left - right);
   const p95 = sorted.length === 0 ? 0 : sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)]!;
   const droppedRatio = sample.length === 0

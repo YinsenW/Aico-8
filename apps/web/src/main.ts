@@ -301,6 +301,12 @@ function measureReleasePerformance(profile: WebTargetProfileV1): void {
 
 const input = new InputController();
 input.bindTouchControls(touchControls);
+if (new URL(window.location.href).searchParams.get("platform-validation") === "1") {
+  Object.defineProperty(window, "__aico8PlatformValidation", {
+    configurable: true,
+    value: Object.freeze({ inputMask: (): number => input.mask() }),
+  });
+}
 const audioOutput = new KernelAudioOutput();
 const audioFrame = frame;
 function syncAudioDiagnostics(): void {

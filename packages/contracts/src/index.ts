@@ -42,6 +42,13 @@ export {
 } from "./linux-handheld-validation.js";
 
 export {
+  LINUX_HANDHELD_SIMULATOR_VALIDATION_SCHEMA_VERSION,
+  expectedLinuxHandheldSimulatorStatus,
+  validateLinuxHandheldSimulatorValidation,
+  type LinuxHandheldSimulatorValidationV1,
+} from "./linux-handheld-simulator-validation.js";
+
+export {
   BATCH_SCHEMA_VERSION,
   acceptedBatchGameIds,
   batchWorkspaceId,

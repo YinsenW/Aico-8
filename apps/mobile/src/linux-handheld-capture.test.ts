@@ -116,6 +116,14 @@ describe("Linux handheld evidence builder", () => {
     });
   });
 
+  it("evaluates every retained post-warmup frame instead of truncating at the minimum", () => {
+    const result = evaluateLinuxHandheldPerformance([99, 10, 20, 20, 100], target, 60);
+    expect(result.requiredSampleFrames).toBe(3);
+    expect(result.observedSampleFrames).toBe(4);
+    expect(result.p95FrameMilliseconds).toBe(100);
+    expect(result.budgetPassed).toBe(false);
+  });
+
   it("builds a pending-human report and applies a content-bound decision", () => {
     const performance = evaluateLinuxHandheldPerformance([99, 10, 20, 24], target, 60);
     const report = buildPendingLinuxHandheldReport(input(performance));
