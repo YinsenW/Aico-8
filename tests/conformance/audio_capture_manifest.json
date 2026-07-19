@@ -1,13 +1,39 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "normative_oracle": {
-    "runtime": "Licensed official desktop PICO-8",
+    "runtime": "Capability-scoped official PICO-8 channel",
     "minimum_version": "0.2.7",
     "manual": "https://www.lexaloffle.com/dl/docs/pico-8_manual.html",
-    "rule": "Normative PCM/export evidence remains on licensed desktop PICO-8 until an authorized official Web channel exposes equivalent capture; do not bless files from FAKE-08 or another independent runtime as goldens."
+    "rule": "Lexaloffle Education 0.2.7 is normative for browser-observable status and PCM. Licensed desktop PICO-8 remains required only for native exporters and capabilities absent from Education. Never bless an independent runtime as an official golden."
   },
-  "fixture": "probes/audio_status.p8",
+  "fixture": "probes/audio_web.p8",
   "captures": [
+    {
+      "id": "education_web_pcm_and_stable_status",
+      "method": "Run the public browser-safe fixture in Education 0.2.7, bind PCM collection to audio_0..audio_150, and compare stable stat(24/54/57) events exactly plus the named single-channel PCM window.",
+      "outputs": ["private PCM16 stream", "private event log"],
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/audio_web.p8 --output captures/official/0.2.7-education/audio_web-candidate.json --host-ticks 150 --audio-artifact audio_web.wav",
+      "durable_evidence": "../../governance/evidence/official-education-audio-web-differential.json",
+      "purpose": [
+        "music start/stop and exact 500ms fade boundary",
+        "explicit channel playback and live SFX RAM copy",
+        "stat(24), stat(54), and stat(57)",
+        "built-in triangle pitch and output level"
+      ]
+    },
+    {
+      "id": "education_p8scii_audio_control",
+      "method": "Run the public Appendix A control-7 probe in Education 0.2.7 and compare the nine temporary-SFX RAM and dispatch events exactly. Bind the resulting built-in SFX playback to the already-qualified Education Web PCM boundary.",
+      "outputs": ["private event log", "candidate PCM16 WAV"],
+      "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/p8scii_audio.p8 --output captures/official/0.2.7-education/p8scii_audio-candidate.json --host-ticks 10 --audio-artifact p8scii_audio.wav",
+      "durable_evidence": "../../governance/evidence/official-education-p8scii-audio-differential.json",
+      "purpose": [
+        "existing P8SCII SFX playback",
+        "inline temporary-SFX grammar and slot selection",
+        "bare P8SCII audio command",
+        "playback dispatch through the qualified Web audio engine"
+      ]
+    },
     {
       "id": "all_sfx_wav",
       "method": "Load the fixture in the SFX editor, then run EXPORT P8_AUDIO_SFX%D.WAV, or use the equivalent -export command-line form.",
@@ -31,7 +57,7 @@
         "explicit channel playback",
         "loop release",
         "live SFX RAM copying",
-        "stat(46..57) tick-history transitions"
+        "stat(46..56) callback-history transitions unavailable as deterministic Web logical-update goldens"
       ]
     },
     {
@@ -57,8 +83,9 @@
   ],
   "comparison_layers": [
     "raw SFX/music bytes must match exactly",
-    "stat trace must match per logical update",
-    "PCM length and transition positions must match exactly before resampling",
-    "sample-level comparison is preferred; any tolerance must be justified by measured official-runtime variation"
+    "stable Web stat(24/54/57) trace must match per logical update",
+    "Web PCM must use the named 22050 Hz mono window and recorded pitch/level tolerances",
+    "callback-block tail length is diagnostic rather than logical-update exact",
+    "desktop-only stat(46..56), exporters, filters, and custom instruments remain fail-closed until separately qualified"
   ]
 }

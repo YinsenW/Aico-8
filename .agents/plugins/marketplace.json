@@ -1,0 +1,20 @@
+{
+  "name": "aico8",
+  "interface": {
+    "displayName": "Aico 8"
+  },
+  "plugins": [
+    {
+      "name": "aico8",
+      "source": {
+        "source": "local",
+        "path": "./plugins/aico8"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

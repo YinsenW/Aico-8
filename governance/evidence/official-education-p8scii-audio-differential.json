@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "aico8.official-p8scii-audio-differential-evidence.v1",
+  "recordedAt": "2026-07-19T17:57:00+08:00",
+  "status": "matched-through-qualified-web-audio-boundary",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser, Chromium 150.0.0.0",
+    "loadMethod": "Official page file-selection data path followed by the visible PICO-8 run command"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only public compatibility probes; no private carts, workspaces, or game assets.",
+    "publicationRightsGranted": false
+  },
+  "probe": {
+    "path": "tests/conformance/probes/p8scii_audio.p8",
+    "sha256": "1e6050a058a100889db2744299a949d2b470564b2d9feb659431bf9e3989dd3d",
+    "purpose": "Appendix A control 7: existing, inline-generated, and bare P8SCII audio commands"
+  },
+  "stateDifferential": {
+    "status": "matched",
+    "officialEventCount": 9,
+    "candidateEventCount": 9,
+    "eventMismatchCount": 0,
+    "officialAndCandidateEventLogSha256": "7323a3570ebb4bf0639c5b369321b1124548c8d1446cfd96ebfb9705b3db681d",
+    "generatedTemporarySfxSlot": 63,
+    "generatedTemporarySfxBytes": "4c5b505b535b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000",
+    "bareCommandSfxSlot": 62,
+    "bareCommandSfxBytes": "2e0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000",
+    "unusedSlotsPreserved": [60, 61]
+  },
+  "audioBoundary": {
+    "reasoning": "The public P8SCII probe proves byte-exact command parsing, temporary-slot selection, RAM mutation, and playback dispatch. Playback then enters the same built-in SFX engine already matched against official Education PCM by official-education-audio-web-differential.json. The candidate probe additionally records non-silent PCM from that dispatch.",
+    "sharedQualifiedEvidence": "governance/evidence/official-education-audio-web-differential.json",
+    "candidateRuntimeSha256": "96b86f326e55edb0e2ead47e2a3b7ee708603eee4512dc21818a96518ab02f75",
+    "candidateWavSha256": "56ee1764d2ac1c3021e4cfc60946f45f9d3d07e109cdd33cea7d173e8a09ee03",
+    "sampleRate": 22050,
+    "sampleCount": 3675,
+    "nonzeroSampleCount": 2929,
+    "minimumSample": -17225,
+    "maximumSample": 16380,
+    "rms": 5070.879272357994
+  },
+  "implementation": [
+    "runtime/core/src/text.cpp",
+    "runtime/core/src/audio.cpp",
+    "scripts/lib/p8-probe-cart.mjs",
+    "scripts/capture-implementation-probe.ts"
+  ],
+  "regression": [
+    "runtime/core/tests/core_tests.cpp",
+    "runtime/core/tests/vm_tests.cpp",
+    "scripts/lib/p8-probe-cart.test.mjs",
+    "scripts/capture-implementation-probe.test.mjs"
+  ],
+  "privateArtifactsCommitted": false,
+  "claims": {
+    "provesP8sciiAudioCommandCompatibility": true,
+    "provesP8sciiAudioPlaybackThroughQualifiedWebEngine": true,
+    "provesAllPico8AudioFeatures": false,
+    "grantsCartPublicationRights": false
+  }
+}

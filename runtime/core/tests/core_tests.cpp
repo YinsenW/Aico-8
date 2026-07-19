@@ -334,15 +334,45 @@ void test_resumable_text_jobs_expose_exact_delay_budgets()
                                                  0, 0, 7, 0);
     assert(audio_job);
     assert(!p8_text_job_requires_frames(audio_job));
-    assert(p8_text_job_unsupported(audio_job) == P8_TEXT_UNSUPPORTED_AUDIO);
+    assert(p8_text_job_unsupported(audio_job) == P8_TEXT_UNSUPPORTED_NONE);
     uint32_t wait_frames = 0;
     p8_text_result result{};
     assert(p8_text_job_step(audio_job, &wait_frames, &result) == P8_TEXT_STEP_COMPLETE);
-    assert(result.unsupported == P8_TEXT_UNSUPPORTED_AUDIO);
-    assert(p8_core_peek(core, 0x5f25) == 3);
-    assert(p8_core_peek(core, 0x5f26) == 9);
-    assert(p8_core_peek(core, 0x5f27) == 10);
+    assert(result.unsupported == P8_TEXT_UNSUPPORTED_NONE);
+    bool played_sfx_12 = false;
+    for (unsigned channel = 0; channel < 4; ++channel) {
+        played_sfx_12 |= p8_audio_current_sfx(core, channel) == 12;
+    }
+    assert(played_sfx_12);
+    assert(p8_core_peek(core, 0x5f25) == 7);
+    assert(p8_core_peek(core, 0x5f26) == 0);
+    assert(p8_core_peek(core, 0x5f27) == 6);
     p8_text_job_destroy(audio_job);
+
+    constexpr uint8_t generated[] = {7, 's', '4', 'x', '5', 'c', '1', 'e', 'g'};
+    p8_text_result generated_result{};
+    assert(p8_text_print(core, generated, sizeof(generated), 0, 0, 7, 0,
+                         &generated_result));
+    assert(generated_result.unsupported == P8_TEXT_UNSUPPORTED_NONE);
+    int generated_sfx = -1;
+    for (unsigned channel = 0; channel < 4; ++channel) {
+        const int current = p8_audio_current_sfx(core, channel);
+        if (current >= 60) generated_sfx = current;
+    }
+    assert(generated_sfx >= 60 && generated_sfx <= 63);
+    const size_t generated_address = 0x3200 + static_cast<size_t>(generated_sfx) * 68;
+    assert(p8_core_peek(core, static_cast<uint16_t>(generated_address + 65)) == 4);
+    assert((p8_core_peek(core, static_cast<uint16_t>(generated_address)) & 0x3f) == 12);
+    assert(((p8_core_peek(core, static_cast<uint16_t>(generated_address + 1)) >> 4)
+            & 0x07) == 5);
+
+    constexpr uint8_t malformed[] = {7, 's'};
+    p8_core_poke(core, 0x5f25, 3);
+    p8_text_result malformed_result{};
+    assert(p8_text_print(core, malformed, sizeof(malformed), 0, 0, 7, 0,
+                         &malformed_result));
+    assert(malformed_result.unsupported == P8_TEXT_UNSUPPORTED_AUDIO);
+    assert(p8_core_peek(core, 0x5f25) == 3);
     p8_core_destroy(core);
 }
 
@@ -890,6 +920,14 @@ void test_audio_is_deterministic_and_rejects_unqualified_features()
     assert(p8_audio_stat(core, 24, &current_pattern) && current_pattern == -1);
     assert(p8_audio_stat(core, 54, &current_pattern) && current_pattern == -1);
 
+    assert(p8_core_load_rom(core, rom.data(), rom.size()));
+    assert(p8_audio_music(core, 0, 0, 0x0f));
+    assert(p8_audio_music(core, -1, 500, 0x0f));
+    for (int tick = 0; tick < 29; ++tick) p8_audio_host_tick60(core);
+    assert(p8_audio_stat(core, 57, &music_active) && music_active == 1);
+    p8_audio_host_tick60(core);
+    assert(p8_audio_stat(core, 57, &music_active) && music_active == 0);
+
     rom[0x3240] = 3; // editor flag plus noiz filter
     assert(p8_core_load_rom(core, rom.data(), rom.size()));
     assert(p8_audio_sfx(core, 0, 0, 0, 0) == -1);
@@ -974,7 +1012,7 @@ void test_custom_audio_diagnostic_subset_is_explicit_bounded_and_deterministic()
            == waveform_samples.size());
     assert(std::any_of(waveform_samples.begin(), waveform_samples.end(),
                        [](int16_t sample) { return sample != 0; }));
-    assert(waveform_samples[0] == -1984); // shared non-music gain applies after custom rendering
+    assert(waveform_samples[0] == -2976); // official-qualified shared 3/4 output gain
     assert(waveform_samples[0] != waveform_samples[183]);
     assert(p8_audio_diagnostic_flags(core) == P8_AUDIO_DIAGNOSTIC_CUSTOM_WAVEFORM);
     assert((p8_audio_capabilities(core) & P8_AUDIO_CAP_CUSTOM_WAVEFORMS) == 0);

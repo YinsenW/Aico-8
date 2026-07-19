@@ -222,7 +222,7 @@ bool validate_custom_reference(p8_core *core, int owner_sfx, int reference,
     return true;
 }
 
-bool validate_sfx(p8_core *core, int sfx)
+bool validate_sfx_impl(p8_core *core, int sfx)
 {
     p8_audio_state &state = p8_core_audio_state(core);
     if ((kCapabilities & P8_AUDIO_CAP_FILTERS) == 0
@@ -369,6 +369,10 @@ bool set_music_pattern(p8_core *core, int pattern)
         state.music.mask = 0;
         state.music.elapsed_samples = 0;
         state.music.duration_samples = 0;
+        state.music.fade_start_volume = state.music.volume;
+        state.music.fade_target_volume = state.music.volume;
+        state.music.fade_total_samples = 0;
+        state.music.fade_remaining_samples = 0;
         if (previous_pattern >= 0) {
             append_event(state, state.sample_clock, P8_AUDIO_EVENT_MUSIC_STOP,
                          -1, -1, -1, previous_pattern);
@@ -378,7 +382,7 @@ bool set_music_pattern(p8_core *core, int pattern)
     for (unsigned channel = 0; channel < 4; ++channel) {
         if ((state.music.mask & (1u << channel)) == 0) continue;
         const uint8_t value = song_byte(core, pattern, channel);
-        if (!song_channel_silent(value) && !validate_sfx(core, value & 0x3f)) return false;
+        if (!song_channel_silent(value) && !validate_sfx_impl(core, value & 0x3f)) return false;
     }
     state.music.pattern = static_cast<int16_t>(pattern);
     state.music.elapsed_samples = 0;
@@ -657,9 +661,12 @@ int32_t render_channel(p8_core *core, unsigned index)
         sample = static_cast<int32_t>((static_cast<int64_t>(waveform(channel.oscillator, note.waveform, increment))
             * volume) >> 15);
     }
-    if (playback.is_music) sample = static_cast<int32_t>((static_cast<int64_t>(sample)
-        * state.music.volume) >> 17);
-    else sample /= 2;
+    if (playback.is_music) {
+        sample = static_cast<int32_t>((static_cast<int64_t>(sample)
+            * state.music.volume * 3) >> 18);
+    } else {
+        sample = sample * 3 / 4;
+    }
     advance_playback(core, state, index, state.sample_clock + 1);
     return sample;
 }
@@ -668,11 +675,21 @@ void advance_music(p8_core *core)
 {
     p8_audio_state &state = p8_core_audio_state(core);
     if (state.music.pattern < 0) return;
-    if (state.music.fade_step != 0) {
-        state.music.volume = std::clamp(state.music.volume + state.music.fade_step, 0, 65536);
-        if (state.music.fade_step < 0 && state.music.volume == 0) {
-            set_music_pattern(core, -1);
-            return;
+    if (state.music.fade_total_samples != 0) {
+        if (state.music.fade_remaining_samples > 0) --state.music.fade_remaining_samples;
+        const int64_t distance = static_cast<int64_t>(state.music.fade_start_volume)
+            - state.music.fade_target_volume;
+        state.music.volume = state.music.fade_target_volume + static_cast<int32_t>(
+            distance * static_cast<int64_t>(state.music.fade_remaining_samples)
+            / static_cast<int64_t>(state.music.fade_total_samples));
+        if (state.music.fade_remaining_samples == 0) {
+            const bool stop = state.music.fade_target_volume == 0;
+            state.music.fade_total_samples = 0;
+            state.music.fade_start_volume = state.music.volume;
+            if (stop) {
+                set_music_pattern(core, -1);
+                return;
+            }
         }
     }
     ++state.music.elapsed_samples;
@@ -704,6 +721,13 @@ void push_sample(p8_audio_state &state, int16_t sample)
 }
 
 } // namespace
+
+bool p8_audio_validate_sfx_internal(p8_core *core, int sfx)
+{
+    if (!core || sfx < 0 || sfx > 63) return false;
+    clear_error(p8_core_audio_state(core));
+    return validate_sfx_impl(core, sfx);
+}
 
 extern "C" {
 
@@ -747,7 +771,7 @@ int p8_audio_sfx(p8_core *core, int sfx, int channel, int offset, int length)
         }
         return -1;
     }
-    if (!validate_sfx(core, sfx)) return -1;
+    if (!p8_audio_validate_sfx_internal(core, sfx)) return -1;
     if (channel == -1) {
         for (unsigned index = 0; index < 4; ++index) {
             if ((state.music.mask & (1u << index)) == 0
@@ -809,21 +833,29 @@ int p8_audio_music(p8_core *core, int pattern, int fade_milliseconds,
     }
     if (pattern < 0) {
         if (fade_milliseconds <= 0) return set_music_pattern(core, -1) ? 1 : 0;
-        const int64_t samples = std::max<int64_t>(1,
-            static_cast<int64_t>(fade_milliseconds) * P8_AUDIO_SAMPLE_RATE / 1000);
-        state.music.fade_step = -std::max<int32_t>(1,
-            static_cast<int32_t>(state.music.volume / samples));
+        const uint64_t samples = static_cast<uint64_t>(std::max<int64_t>(1,
+            static_cast<int64_t>(fade_milliseconds) * P8_AUDIO_SAMPLE_RATE / 1000));
+        state.music.fade_start_volume = state.music.volume;
+        state.music.fade_target_volume = 0;
+        state.music.fade_total_samples = samples;
+        state.music.fade_remaining_samples = samples;
         return 1;
     }
     state.music.count = 0;
     state.music.mask = channel_mask & 0x0f;
-    state.music.fade_step = 0;
+    state.music.fade_start_volume = 65536;
+    state.music.fade_target_volume = 65536;
+    state.music.fade_total_samples = 0;
+    state.music.fade_remaining_samples = 0;
     state.music.volume = 65536;
     if (fade_milliseconds > 0) {
-        const int64_t samples = std::max<int64_t>(1,
-            static_cast<int64_t>(fade_milliseconds) * P8_AUDIO_SAMPLE_RATE / 1000);
+        const uint64_t samples = static_cast<uint64_t>(std::max<int64_t>(1,
+            static_cast<int64_t>(fade_milliseconds) * P8_AUDIO_SAMPLE_RATE / 1000));
         state.music.volume = 0;
-        state.music.fade_step = std::max<int32_t>(1, static_cast<int32_t>(65536 / samples));
+        state.music.fade_start_volume = 0;
+        state.music.fade_target_volume = 65536;
+        state.music.fade_total_samples = samples;
+        state.music.fade_remaining_samples = samples;
     }
     return set_music_pattern(core, pattern) ? 1 : 0;
 }

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 import { validateOfficialProbeArtifactFiles } from './lib/official-probe-capture.mjs'
 import { validateImplementationProbeCapture } from './lib/official-probe-comparison.mjs'
+import { decodePngRgba } from './lib/png-rgba.mjs'
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const probes = [
@@ -62,6 +63,68 @@ for (const probe of probes) {
     }
   })
 }
+
+test('generic candidate capture can bind an exact 128-square framebuffer artifact', () => {
+  const directory = path.join(
+    repository,
+    'captures/official',
+    `public-wasm-p8scii-full-${process.pid}-${Date.now()}`,
+  )
+  const output = path.join(directory, 'candidate.json')
+  try {
+    const result = spawnSync('corepack', [
+      'pnpm', 'exec', 'tsx', 'scripts/capture-implementation-probe.ts',
+      '--cart', 'tests/conformance/probes/p8scii_full.p8',
+      '--output', output,
+      '--framebuffer-artifact', 'p8scii_full.png',
+    ], { cwd: repository, encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+    const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
+    assert.deepEqual(validateImplementationProbeCapture(capture), [])
+    assert.deepEqual(validateOfficialProbeArtifactFiles(capture, output), [])
+    assert.equal(capture.events.length, 17)
+    assert.equal(capture.events.at(-1)[1], '240-glyphs')
+    assert.equal(capture.attachments.length, 1)
+    assert.equal(capture.attachments[0].sourceRelativePath, 'p8scii_full.png')
+    const png = decodePngRgba(fs.readFileSync(path.join(
+      path.dirname(output), capture.attachments[0].relativePath)))
+    assert.deepEqual([png.width, png.height], [128, 128])
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('generic candidate capture can bind deterministic mono PCM', () => {
+  const directory = path.join(
+    repository,
+    'captures/official',
+    `public-wasm-audio-web-${process.pid}-${Date.now()}`,
+  )
+  const output = path.join(directory, 'candidate.json')
+  try {
+    const result = spawnSync('corepack', [
+      'pnpm', 'exec', 'tsx', 'scripts/capture-implementation-probe.ts',
+      '--cart', 'tests/conformance/probes/audio_web.p8',
+      '--output', output,
+      '--host-ticks', '150',
+      '--audio-artifact', 'audio_web.wav',
+    ], { cwd: repository, encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+    const capture = JSON.parse(fs.readFileSync(output, 'utf8'))
+    assert.equal(capture.events.length, 151)
+    assert.equal(capture.attachments.length, 1)
+    assert.equal(capture.attachments[0].mediaType, 'audio/wav')
+    const wav = fs.readFileSync(path.join(
+      path.dirname(output), capture.attachments[0].relativePath))
+    assert.equal(wav.toString('ascii', 0, 4), 'RIFF')
+    assert.equal(wav.readUInt32LE(24), 22050)
+    assert.equal(wav.readUInt16LE(22), 1)
+    assert.equal(wav.readUInt16LE(34), 16)
+    assert.ok(wav.readUInt32LE(40) > 0)
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
 
 for (const [probe, expectedName, hostTicks] of temporalProbes) {
   test(`production Wasm emits a deterministic ${probe} host-tick candidate`, () => {

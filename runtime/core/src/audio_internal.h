@@ -44,7 +44,10 @@ struct p8_audio_music_state {
     uint64_t elapsed_samples = 0;
     uint64_t duration_samples = 0;
     int32_t volume = 65536;
-    int32_t fade_step = 0;
+    int32_t fade_start_volume = 65536;
+    int32_t fade_target_volume = 65536;
+    uint64_t fade_total_samples = 0;
+    uint64_t fade_remaining_samples = 0;
 };
 
 struct p8_audio_state {
@@ -69,5 +72,6 @@ struct p8_audio_state {
 
 p8_audio_state &p8_core_audio_state(p8_core *core);
 const p8_audio_state &p8_core_audio_state(const p8_core *core);
+bool p8_audio_validate_sfx_internal(p8_core *core, int sfx);
 
 #endif

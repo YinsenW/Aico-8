@@ -1,133 +1,96 @@
 # Aico 8
 
-Aico 8 is an end-to-end system for turning legally supplied PICO-8 cartridges
-into modern, high-fidelity 1024×1024 game remakes while preserving original game
-logic, timing, input feel, memory behavior, music, and sound effects. It ships one
-statically bound standalone Web game first, then may assemble several independently
-validated internal game modules into a fixed collection.
+把你有权使用的 PICO-8 卡带重制成现代高清游戏。玩法、操作、时序、
+音乐和音效保持不变；画面以 1024×1024 为主要目标重新设计。
 
-This is larger than a single AI Skill. Aico 8 is the toolchain and runtime; a
-future Skill will be a thin intelligent entry point that invokes its tested
-commands, evaluates results, and requests human review where artistic or legal
-judgment is required.
+主要输出：
 
-Aico 8 is TypeScript-first: the browser Web/PWA, Android WebView shell, Linux
-handheld Web host, 1024 presentation, product CLI, asset pipeline, and validation UI use TypeScript. The current
-prototype has a narrow C++ compatibility kernel; a gated Rust replacement spike
-must prove native, browser, and ESP32-P4 delivery before the language decision
-changes. See [ADR 0001](docs/decisions/0001-language-boundary.md) and the
-[proposed ADR 0002](docs/decisions/0002-rust-kernel-spike.md).
+- **Web 版**：在浏览器中直接玩，也可作为 PWA 安装。
+- **Android APK**：安装到安卓手机或安卓掌机。
+- **两种都要**：Web 与 APK 使用同一套游戏内核和资源。
 
-> Status: early research and executable runtime prototype. Do not use it to
-> redistribute cartridges without permission from their authors and contributors.
+> Aico 8 只处理你有权研究或改编的卡带。生成物默认用于私人研究，
+> 不会自动上传或公开发布。
 
-For AI development, start at [AGENTS.md](AGENTS.md). Product wording, current
-status, contracts, evidence, tests, and open work follow the ownership rules in
-[the governance policy](docs/GOVERNANCE.md); README is not a status ledger.
+## 先回答最容易混淆的问题
 
-## Why 1024×1024 is the reference target
+**Aico 8 不只是一个 Skill。**
 
-PICO-8 keeps its authoritative simulation at 128×128 logical units. Aico 8's
-default HD profile renders to 1024×1024 without changing those coordinates:
+可以把它理解为一台机器：
 
-- one logical unit is exactly 8×8 output pixels;
-- one common 8×8 PICO tile becomes exactly 64×64 HD pixels;
-- sixteen tiles span exactly 1024 pixels;
-- collision, timing, map access, and replay data stay in original coordinates;
-- modern art, vector UI, particles, lighting, and accessibility run at 1024-native quality.
+- **Skill 是操作面板**：让你用自然语言告诉 Agent 要重制哪个游戏。
+- **工具链是机器本体**：负责读取卡带、改写代码、重绘、验证和打包。
+- **运行时是游戏内核**：保证原来的玩法、手感和声音不被高清画面改变。
 
-The diagnostic compatibility path scales the original 128×128 framebuffer by
-exactly 8×, filling the same 1024×1024 surface with no fractional source pixels.
-720×720 remains a supported delivery profile derived from the reference target.
+所以最终发布物应当是一个“可安装的 Aico 8 Agent 包”。用户从 Skill
+进入，但真正完成重制的是包内的工具链和运行时，不是一段提示词。
 
-## System shape
+## 普通用户应该怎样使用
 
-```mermaid
-flowchart LR
-    A["Authorized cart"] --> B["Ingest & lossless workspace"]
-    B --> C["Isolated TypeScript Jobs"]
-    C --> D["Compatibility kernel / Wasm"]
-    D --> E["Semantic command stream"]
-    E --> F["TypeScript + PixiJS 1024 presentation"]
-    F --> K["Validated internal game module"]
-    K --> G["Standalone Web/PWA first"]
-    K --> L["Fixed collection after multi-game proof"]
-    H["Official-runtime goldens"] --> I["Differential validation"]
-    D --> I
-    F --> I
-    J["Future Aico 8 Skill"] --> B
-    J --> C
-    J --> I
+理想的使用过程只有三步：
+
+1. 在 Agent 中添加 `YinsenW/Aico-8` 插件源并安装 **Aico 8**。
+2. 把 `.p8` 或 `.p8.png` 卡带拖给 Agent。
+3. 对 Agent 说：
+
+```text
+用 Aico 8 重制这个卡带，输出 Web 版。
 ```
 
-## Repository areas
+也可以说：
 
-| Area | Responsibility |
-| --- | --- |
-| `tools/` | Research cart tools being migrated behind the TypeScript product CLI. |
-| `pipeline/` | Contracts for ingest, analysis, remake planning, asset production, validation, and release. |
-| `runtime/core/` | Narrow portable compatibility kernel prototype: memory, scheduler, input, VM, reference raster/audio, and semantic stream. |
-| `runtime/kernel-rs/` | Gated non-production Rust proof: deterministic state, native z8lua link, browser Wasm identity, and embedded `no_std` build. |
-| `runtime/third_party/` | Pinned and audited third-party runtime components. |
-| `apps/web/` | TypeScript/PixiJS 1024×1024 presentation bootstrap and future PWA host. |
-| `apps/mobile/` | Planned Capacitor Android packaging and lifecycle adapter over the unchanged Web build. |
-| `platform/esp32/` | Planned ESP-IDF/ESP32-P4 host and renderer. |
-| `specs/` | Machine-readable and human-readable cross-layer contracts. |
-| `tests/` | Official semantic probes, secondary runtime captures, and deterministic replay definitions. |
-| `research/` | Evidence, technical decisions, compatibility gaps, and representative-cart findings. |
-| `skills/` | Future thin orchestration layer; deliberately not created as the runtime itself. |
-
-Internal game modules are versioned build inputs, not a public cartridge format.
-The `.aico8`/general Player decision is deferred until at least three materially
-different games prove compatibility, migration, security, and product demand.
-
-## Status and evidence
-
-Machine-linked current status is in `governance/project.json`. Research claims,
-private corpus results, official/secondary captures, implementation paths, and
-test selectors are distinguished there so implementation is not mistaken for
-verified acceptance. Private carts and the bulk corpus remain excluded.
-
-## Quick start
-
-Build and run the public core tests:
-
-```sh
-make -C runtime/core test
+```text
+用 Aico 8 重制这个卡带，输出 Web 版和 Android APK。
 ```
 
-Run the proposed Rust-kernel proof with the pinned rustup toolchain:
+安装后请新建一个任务，让 Agent 加载刚安装的 Skill。Agent 应当自己
+寻找文件、运行工具、使用浏览器或安卓模拟器验证，并把
+最终文件交给你。普通用户不需要输入路径，不需要运行命令，也不需要
+了解 TypeScript、C++、Wasm、Gradle 或 Android Studio。
 
-```sh
-pnpm verify:rust-spike
-```
+## 你仍然需要参与什么
 
-Create a private lossless workspace from an authorized cart:
+高清重制不是机械放大。Agent 会在关键节点给你看原版与高清版的对照，
+请你依次确认：
 
-```sh
-mkdir -p private/workspaces
-python3 tools/p8_workbench.py unpack /path/to/game.p8.png private/workspaces/game
-```
+1. **神似还原**：角色、物体、场景和玩法有没有认错或变味。
+2. **画质跃升**：是否真正消除了粗糙像素感，并增加了合理的细节。
+3. **审美进化**：色彩、材质、光影和整体风格是否适合现代玩家。
 
-Private representative-cart adapters, replays, and evidence live in the private
-research archive. They consume the same public contracts but are never required
-by public CI.
+如果你指出问题，Agent 应先修复，再生成新的对照页。它不能替你批准
+美术，也不能因为“代码已经写完”就宣称游戏已经完成。
 
-See [the architecture](docs/ARCHITECTURE.md),
-[product requirements](docs/PRODUCT.md), [cross-layer contracts](docs/CONTRACTS.md),
-[1024 display contract](specs/display-1024.md), and [roadmap](ROADMAP.md).
+## 当前能不能直接这样用
 
-## Content and licensing policy
+**安装和自动入口已经在隔离环境中跑通，但公开版本尚未发布。**
 
-Aico 8 does not grant rights to a cartridge or its assets. Ingested carts,
-extracted workspaces, official-runtime captures, and generated remakes are
-private by default. Publication is a separate release gate requiring verified
-license terms or permission, attribution, and compatible dependency notices.
+当前构建已经通过插件结构校验、Codex 市场发现、隔离安装、依赖启动、
+附件导入、Web 环境自检、Web/APK 成品交付和最后的 P8SCII 音频兼容
+测试。剩余发布工作只有：合并主分支、建立固定版本标签，并从公开
+GitHub 地址重跑一次全新安装。
 
-Aico 8 project source is licensed under [Apache-2.0](LICENSE). Third-party files
-retain their own notices under `runtime/third_party/`. This license does not
-grant rights to PICO-8, any cartridge, or a generated remake.
+在公开版本发布前，开发者可以让能访问本仓库的 Coding Agent 读取
+[`aico8-remake/SKILL.md`](plugins/aico8/skills/aico8-remake/SKILL.md) 来执行流程，
+但这不是面向普通用户的最终使用方式。
 
-The Dust Bunny cart page declares CC BY-NC-SA 4.0. Its cartridge, private HD
-adapter, evidence, and test package remain outside this Apache-2.0 repository,
-and the current owner decision is not to make a formal game release.
+## 生成的文件是什么
+
+| 选择 | 用户拿到的文件 | 用法 |
+| --- | --- | --- |
+| Web | 一个可离线运行的 Web/PWA 游戏包 | 用浏览器打开或安装为 PWA |
+| Android | `app-debug.apk` | 安装到安卓手机或安卓掌机 |
+| 两种都要 | Web 游戏包和 APK | 两者共享同一份游戏内容 |
+
+安卓版本不是重新开发的另一款游戏。它只是把已经验证通过的 Web 版本
+封装到安卓应用中，因此 Web、Android 和 Linux 掌机可以尽量保持一致。
+真机不是硬性验收条件；没有设备时使用浏览器和安卓模拟器验证。
+
+## 给项目维护者
+
+普通用户不需要阅读后面的工程文档。开发、恢复、测试和治理入口见
+[`AGENTS.md`](AGENTS.md) 与 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)。
+当前进度、证据和未完成项只以
+[`governance/project.json`](governance/project.json) 为准。
+
+本仓库代码使用 [Apache-2.0](LICENSE)。该许可证不包括 PICO-8 本身，
+也不包括第三方卡带、素材或生成的重制游戏。

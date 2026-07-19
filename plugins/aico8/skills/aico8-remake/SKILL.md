@@ -1,6 +1,6 @@
 ---
 name: aico8-remake
-description: Guide an authorized PICO-8 cart through the Aico 8 human-reviewed HD Web remake workflow. Use when Codex must inspect a cart workspace, preserve unchanged-cart gameplay, create source-relative HD presentation, collect representative evidence, pause for human semantic and art decisions, or package and verify a private Web/PWA research build.
+description: Guide an authorized PICO-8 cart through the Aico 8 human-reviewed HD remake workflow and package a private Web/PWA build, Android APK, or both. Use when Codex must inspect a cart workspace, preserve unchanged-cart gameplay, create source-relative HD presentation, collect representative evidence, pause for human semantic and art decisions, or produce and verify Web or Android research artifacts.
 ---
 
 # Aico 8 remake
@@ -8,20 +8,44 @@ description: Guide an authorized PICO-8 cart through the Aico 8 human-reviewed H
 Operate the repository's versioned Jobs. Keep compatibility, policy, validation,
 and packaging logic in ordinary software; keep this Skill as a thin coordinator.
 
+## Serve the non-technical user
+
+The ordinary entry is one attached cart plus a plain-language request for Web,
+Android APK, or both. Never ask the user to run a command, discover a repository
+path, install a compiler, or locate a generated artifact. Run the product entry
+commands from [references/job-catalog.md](references/job-catalog.md) yourself and
+translate blockers into one short, actionable explanation.
+
+1. Resolve the plugin root containing `.codex-plugin/plugin.json` from this Skill.
+2. Ask only when the output target or private-research authorization is missing.
+3. Bootstrap the isolated engine and retain the returned `engineRoot`.
+4. Run the target-aware doctor. Repair safe local prerequisites yourself; if an
+   external license or system authorization is required, ask only for that action.
+5. Import the explicitly attached cart through the private intake command. Use
+   the returned session manifest and copied cart path from then on; never expose
+   internal paths to the user.
+6. After all authorized validation passes, run the handoff command and attach or
+   link the returned Web directory and APK directly in the final response.
+
 ## Start safely
 
-1. Locate the Aico 8 repository containing `governance/project.json`.
+1. Use the bootstrapped Aico 8 engine containing `governance/project.json`.
 2. Read `AGENTS.md`, then read the current focus, exits, open items, and selector
    catalog in `governance/project.json`.
 3. Read only the linked portions of `docs/PRODUCT.md`,
    `docs/ARCHITECTURE.md`, `docs/CONTRACTS.md`, and `docs/DEVELOPMENT.md`.
-4. Require one exact repository-relative cart path from the user or an existing
-   authorized manifest. Never choose among carts by name, metadata, or apparent
-   suitability. Stop before any Job if the path is absent, ambiguous, escapes
-   the repository, or names a directory. Confirm separate authorization for the
-   requested research, packaging, and publication scope; keep private material
-   outside public history.
+4. Accept one attached or explicitly selected `.p8` or `.p8.png` cart through
+   the private intake command; never require a non-technical user to invent a
+   repository-relative path. Do not choose among multiple carts by name,
+   metadata, or apparent suitability. Ask the user to select one only when the
+   attachment or selection is genuinely ambiguous. Stop before any Job if the
+   file is inaccessible, escapes the allowed workspace after resolution, or is
+   a directory. Confirm authorization for private research and the requested
+   packaging scope; publication always requires a separate explicit decision.
 5. Run `pnpm verify:governance` before changing code.
+6. Ask in plain language whether the user wants Web, Android APK, or both.
+   Default to Web when they do not request Android. Android always derives from
+   the already-validated Web package; never build a separate game implementation.
 
 Read [references/job-catalog.md](references/job-catalog.md) before invoking a
 Job. Use the exact commands and inputs owned by the current checkout; do not
@@ -83,7 +107,7 @@ For `final-scope`, accept only one explicit disposition:
 
 Never self-accept or self-release. Never infer rights from technical readiness.
 
-## Build the HD Web candidate
+## Build the selected candidate
 
 1. Reuse shared presentation primitives only where source lineage supports them.
 2. Bind identity contours, protected counters, material layers, composition, and
@@ -92,8 +116,15 @@ Never self-accept or self-release. Never infer rights from technical readiness.
    bundled deterministic fonts.
 4. Verify the active 1024×1024 square layout, visible touch controls, relative
    deployment URLs, and service-worker cache isolation.
-5. Build a private research package with `JOB-PACKAGE-001`; do not publish it
-   unless the independent rights exit is verified.
+5. Build and verify the private Web/PWA package with `JOB-PACKAGE-001` for every
+   target. For `android` or `both`, stage those exact Web bytes through the
+   Capacitor host, verify lineage, and build a debug APK. Do not silently require
+   physical hardware: the named emulator and shared-Web simulator are the
+   acceptance path; a physical-device run is optional.
+6. Materialize only the selected, verified artifacts through the Agent handoff
+   command. Return them to the user instead of reporting internal build paths.
+7. Do not build a release-signed APK/AAB or publish any artifact unless the user
+   supplies the external signing inputs and the independent rights exit passes.
 
 ## Validate proportionately
 

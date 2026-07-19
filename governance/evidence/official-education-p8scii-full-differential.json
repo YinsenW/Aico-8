@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "aico8.official-differential-evidence.v1",
+  "recordedAt": "2026-07-19T19:40:00+08:00",
+  "status": "complete-printable-raster-matched",
+  "channel": {
+    "provider": "Lexaloffle",
+    "product": "PICO-8 Education Edition",
+    "version": "0.2.7",
+    "runtimeAssetUrl": "https://www.pico-8-edu.com/play/pico8_edu_0207.js",
+    "runtimeAssetSha256": "e657e14c1cda226bf1c9875981170eb79551f141f428c6fc12d06b9b2a69442c",
+    "browser": "Codex In-app Browser, Chromium 150.0.0.0",
+    "loadMethod": "Official drag/drop data path followed by the visible PICO-8 run command"
+  },
+  "authorization": {
+    "status": "granted",
+    "scope": "Upload only public compatibility probes; no private carts, workspaces, or game assets.",
+    "publicationRightsGranted": false
+  },
+  "probe": {
+    "path": "tests/conformance/probes/p8scii_full.p8",
+    "sha256": "b81920638a9e50b8a9efd627dcbac58aee9bff14fda920dd72bdaa72f0be2069",
+    "printableBytes": 240,
+    "range": "0x10..0xff",
+    "layout": "Fixed 16-column cells on the 128x128 backing store"
+  },
+  "differential": {
+    "status": "matched",
+    "eventCount": 17,
+    "eventMismatchCount": 0,
+    "framebufferWidth": 128,
+    "framebufferHeight": 128,
+    "decodedRgbaPixelCount": 16384,
+    "decodedRgbaMismatchCount": 0,
+    "officialPngSha256": "601d33c3ecc09d84b2f1934fdcf61608a3363a6383eda240e30306636a20a406",
+    "candidateRuntimeSha256": "cecbd3ee9ea8f968c19964e46365fa723c3ebe61e73ec1b3c993a19c11a88b8f",
+    "officialCaptureSha256": "b5d34133d12aa0e19829bf9e9972dae8218fd73a60b5287c75c66ec94969d7d3",
+    "candidateCaptureSha256": "7111fc200611528d758280960e362a8c9a4828ec543839829a5c36711c9cdf3b",
+    "comparisonSha256": "a5932cb89e86542b26bcff44647b99d5200c5bf55ae03448d656fb45f757963f"
+  },
+  "remediation": {
+    "rootCause": "The prior kernel font table was an approximate independent-runtime table and explicit-position print completion did not advance the memory cursor like the official runtime.",
+    "implementation": ["runtime/core/src/text.cpp", "runtime/core/src/vm_z8lua.cpp"],
+    "regression": ["runtime/core/tests/vm_tests.cpp", "scripts/capture-implementation-probe.test.mjs"]
+  },
+  "privateArtifactsCommitted": false,
+  "claims": {
+    "provesCompletePrintableBuiltInRasterCompatibility": true,
+    "provesCapturedMetricsAndCursorCompatibility": true,
+    "provesP8sciiAudioCommandCompatibility": false,
+    "grantsCartPublicationRights": false
+  }
+}

@@ -45,8 +45,9 @@ Contracts: `JOB-INGEST-001`, `DATA-CART-001`, `DATA-WORKSPACE-001`.
 Run unchanged cart Lua with compatible fixed-point, RAM/ROM, draw, input, audio,
 persistence, and 30/60 Hz behavior. Native and WebAssembly builds must produce
 identical versioned checkpoints. The authorized official oracle has two
-capability-scoped channels: licensed desktop PICO-8 and Lexaloffle's accountless
-Education Edition. Neither channel grants cart-publication rights.
+capability-scoped channels: licensed desktop PICO-8 and Lexaloffle's accountless Education Edition.
+Education owns browser-observable gameplay and post-render Web Audio; desktop is needed only for native-only exporters or capabilities absent from Web. Neither grants cart-publication rights.
+Unsupported audio selectors, filters, and custom synthesis remain fail-closed and cannot be used by a canonically qualified game.
 
 Contracts: `API-CORE-001`, `API-RASTER-001`, `API-AUDIO-001`, `DATA-REPLAY-001`,
 `DATA-CHECKPOINT-001`, `JOB-CAPTURE-001`, `JOB-VALIDATE-001`.
@@ -133,8 +134,7 @@ when a named device cannot meet lifecycle, controller, storage, or offline needs
 directly. Platform adapters may not fork gameplay. Windows, macOS, and iOS are
 outside the current delivery roadmap. Android completion uses one retained CI bundle: the named API 35, 1024×1024 emulator proves signed-package/WebView behavior, simulated controller and audio-focus paths, lifecycle, offline, orientation, storage, touch, and startup; the same staged Web bytes separately pass a 60-second 1024×1024 Chromium simulation frame budget. Linux completion uses the unchanged public Web tree in a fresh Ubuntu/X11 Chromium session at 1024×1024 and proves controller input through the product adapter, storage, offline service-worker reload, lifecycle resume, audio unlock, fullscreen, Wasm, WebGL2, startup, and a 60-second frame budget. Physical hardware is a non-blocking compatibility follow-up for both platforms.
 
-Contracts: `API-HOST-001`, `API-GAME-MODULE-001`,
-`DATA-TARGET-PROFILE-001`, `DATA-ANDROID-WEB-LINEAGE-001`,
+Contracts: `API-HOST-001`, `API-GAME-MODULE-001`, `DATA-TARGET-PROFILE-001`, `DATA-ANDROID-WEB-LINEAGE-001`,
 `DATA-LINUX-SIMULATOR-001`, `DATA-VALIDATION-001`, `JOB-ASSEMBLE-001`, `JOB-VALIDATE-001`,
 `JOB-PACKAGE-001`.
 
@@ -220,11 +220,11 @@ publish any generated remake.
 Contracts: `DATA-GOVERNANCE-001`, `DATA-RELEASE-001`.
 
 ### REQ-SKILL-001 — Human-guided orchestration after supervised transfer
-Create the final Skill only after the reference and supervised transfer trial
-stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for
-human approval of semantics, art direction, representative gameplay, and final
-scope, and cannot self-accept or self-release. Runtime and policy stay in software.
-An explicit project-owner decision bound to the frozen proposal may advance the human-guided research workflow when its decision and scope are recorded in durable evidence. Detached signatures are optional for future remote review, not a prerequisite for local conversion. No approval mode grants publication rights or proves complete-game validation.
+Create the final Skill only after trials stabilize reusable Jobs and pause contracts. It invokes versioned Jobs, pauses for human approval of semantics, art direction,
+gameplay, and scope, and cannot self-accept or self-release. Runtime and policy
+stay in software. Its installable Agent package accepts an attached cart, hides
+paths and commands, asks only for output and human art choices, checks its environment, and returns Web/APK artifacts. A proposal-bound owner
+decision may advance recorded research; no approval grants publication rights.
 Contracts: all `JOB-*` pipeline contracts, `DATA-SUPERVISED-REVIEW-PROPOSAL-001`, `DATA-TRANSFER-FINDINGS-001`, and `DATA-GOVERNANCE-001`.
 ## Private Dust Bunny acceptance boundary
 The detailed behavioral reference, input replay, captures, and cart-specific

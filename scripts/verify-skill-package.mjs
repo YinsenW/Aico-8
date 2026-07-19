@@ -77,6 +77,9 @@ export function verifySkillPackage(skillDirectory) {
   }
   if (markdown.split("\n").length > 220) errors.push("SKILL.md exceeds the 220-line context budget");
   if (!markdown.includes("references/job-catalog.md")) errors.push("SKILL.md must route detailed commands to the Job catalog");
+  if (!markdown.includes("Never ask the user to run a command") || !markdown.includes("private intake command")) {
+    errors.push("Skill must preserve the non-technical attachment entry");
+  }
   if (!markdown.includes("Never create, infer, edit, or replace a human decision.")) {
     errors.push("Skill must forbid Agent-created or inferred human decisions");
   }
@@ -105,6 +108,10 @@ export function verifySkillPackage(skillDirectory) {
     "pnpm verify:supervised-transfer",
     "pnpm verify:web-package",
     "pnpm verify:skill",
+    "scripts/bootstrap.mjs",
+    "aico8-agent.mjs doctor",
+    "aico8-agent.mjs intake",
+    "aico8-agent.mjs handoff",
   ]) if (!catalog.includes(command)) errors.push(`Job catalog must include ${command}`);
   if (!catalog.includes("cannot approve") || !catalog.includes("signs outside the Agent")) {
     errors.push("Job catalog must preserve the human authority boundary");
@@ -122,7 +129,7 @@ export function verifySkillPackage(skillDirectory) {
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const skill = process.argv[2] ? path.resolve(process.argv[2]) : path.join(repository, "skills/aico8-remake");
+  const skill = process.argv[2] ? path.resolve(process.argv[2]) : path.join(repository, "plugins/aico8/skills/aico8-remake");
   const result = verifySkillPackage(skill);
   if (!result.valid) {
     process.stderr.write(`${result.errors.join("\n")}\n`);

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { verifySkillPackage } from "./verify-skill-package.mjs";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const source = path.join(repository, "skills/aico8-remake");
+const source = path.join(repository, "plugins/aico8/skills/aico8-remake");
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "aico8-skill-"));

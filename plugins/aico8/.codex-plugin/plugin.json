@@ -1,0 +1,29 @@
+{
+  "name": "aico8",
+  "version": "0.1.0",
+  "description": "Human-guided PICO-8 HD remakes for Web and Android",
+  "author": {
+    "name": "Aico 8 Project",
+    "url": "https://github.com/YinsenW"
+  },
+  "homepage": "https://github.com/YinsenW/Aico-8",
+  "repository": "https://github.com/YinsenW/Aico-8",
+  "license": "Apache-2.0",
+  "keywords": ["pico-8", "game-remake", "web", "android"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Aico 8",
+    "shortDescription": "Turn an authorized PICO-8 cart into an HD game",
+    "longDescription": "Attach an authorized PICO-8 cart, choose Web or Android, and let an Agent run the human-reviewed Aico 8 remake workflow.",
+    "developerName": "Aico 8 Project",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/YinsenW/Aico-8",
+    "defaultPrompt": [
+      "Remake my attached authorized PICO-8 cart for Web.",
+      "Remake my cart for Web and Android APK.",
+      "Resume my Aico 8 remake and show the next review."
+    ],
+    "brandColor": "#FF77A8"
+  }
+}

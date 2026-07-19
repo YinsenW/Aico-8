@@ -109,8 +109,10 @@
     },
     {
       "id": "p8scii",
-      "status": "partially_executable",
+      "status": "event_raster_and_audio_control_golden_matched",
       "probe": "probes/p8scii.p8",
+      "printable_probe": "probes/p8scii_full.p8",
+      "audio_probe": "probes/p8scii_audio.p8",
       "expected": "expected/p8scii.json",
       "covers": [
         "cursor and color controls",
@@ -124,12 +126,10 @@
       "education_capture_command": "pnpm import:official-education-probe -- --authorized-official-education-runtime --operator-artifact-declaration --runtime-version 0.2.7 --runtime-asset /private/staging/pico8_edu_0207.js --runtime-asset-url https://www.pico-8-edu.com/play/pico8_edu_0207.js --browser-name Chromium --browser-version <version> --load-method local-cart-file-selection --cart tests/conformance/probes/p8scii.p8 --source-dir /private/staging/p8scii --event-log events.txt --output captures/official/0.2.7-education/p8scii.json",
       "candidate_command": "pnpm capture:implementation-probe -- --cart tests/conformance/probes/p8scii.p8 --output captures/official/0.2.7-education/p8scii-candidate.json",
       "comparison_command": "pnpm compare:official-probe -- --official captures/official/0.2.7-education/p8scii.json --candidate captures/official/0.2.7-education/p8scii-candidate.json --output captures/official/0.2.7-education/p8scii-comparison.json",
-      "golden_status": "Authorized Education 0.2.7 matches all 14 static events from the production-Wasm candidate: metrics, inline/custom pixels, cursor and colour/background state, repeat/termination, raw writes, outline, and underline. The probe executes from _init() and uses an empty __gfx__ terminator to satisfy the Education cart lifecycle without changing text semantics. Delayed execution, exact built-in font bitmaps beyond the sampled metrics, runtime memory checkpoints beyond emitted values, and PCM/audio commands still require licensed desktop evidence.",
+      "golden_status": "The original 14-event probe remains exact. The complete printable 0x10..0xff probe additionally matches 17/17 events and all 16,384 decoded RGBA backing-store pixels. The public Appendix A control-7 probe matches all 9 official events for existing, inline-generated, and bare P8SCII audio commands; its playback dispatch uses the separately official-PCM-qualified Web audio engine and emits non-silent candidate PCM. Delay scheduling remains pinned by native/Wasm tests.",
       "deferred": [
         "frame-delayed printing and exact scheduler timing",
-        "complete built-in font bitmap fixtures",
-        "non-emitted memory checkpoints",
-        "P8SCII audio commands and PCM"
+        "non-emitted memory checkpoints"
       ]
     },
     {
@@ -165,20 +165,25 @@
     },
     {
       "id": "audio",
-      "status": "capture_spec_ready",
-      "probe": "probes/audio_status.p8",
+      "status": "web_capability_golden_matched",
+      "probe": "probes/audio_web.p8",
       "capture_manifest": "audio_capture_manifest.json",
       "corpus_analyzer": "../../tools/analyze_p8_audio.py",
-      "golden_status": "Official PICO-8 WAV and stat(46..57) captures required; independent runtimes are not normative.",
+      "golden_status": "Authorized Education 0.2.7 and production Wasm match all 151 stat(24/54/57) events. A stable 3,000-sample 22050 Hz mono window matches 71 zero crossings and 260.925 Hz exactly; peak and RMS differ by under 2% inside explicit 3% limits. The oracle corrected fade duration and output gain. stat(46..56), filters, custom instruments/waveforms, and desktop exporters remain fail-closed rather than guessed.",
       "covers": [
-        "eight base waveforms",
-        "custom SFX instruments",
-        "custom waveform instruments",
-        "all note effects",
-        "filters and raw property bits",
+        "built-in triangle pitch and level",
         "loop and release",
         "music flow and channel masks",
-        "audio stat history"
+        "stat(24), stat(54), and stat(57)",
+        "exact 500ms fade boundary",
+        "explicit channel playback and live SFX RAM copy"
+      ],
+      "deferred": [
+        "stat(46..56) callback-history selectors",
+        "remaining built-in waveforms and note effects",
+        "filters and raw property bits",
+        "custom SFX and waveform instruments",
+        "desktop WAV exporters"
       ]
     },
     {
