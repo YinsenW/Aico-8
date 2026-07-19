@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "aico8.portable-agent-skill-evidence.v1",
+  "subject": {
+    "name": "aico8-remake",
+    "version": "0.1.2",
+    "release": "https://github.com/YinsenW/Aico-8/releases/tag/v0.1.2",
+    "asset": "https://github.com/YinsenW/Aico-8/releases/download/v0.1.2/aico8-remake.zip",
+    "assetSha256": "ee29f83d35bec268f59172691b8dd65f3b7e793d6293dfc4c25aa1a2b3bf8fe9",
+    "assetBytes": 8933
+  },
+  "hostContracts": {
+    "claudeCode": {
+      "location": "~/.claude/skills/aico8-remake/SKILL.md",
+      "authority": "https://code.claude.com/docs/en/slash-commands#where-skills-live"
+    },
+    "codex": {
+      "location": "~/.agents/skills/aico8-remake/SKILL.md",
+      "adapter": "optional .codex-plugin wrapper retained"
+    },
+    "openCode": {
+      "location": "~/.config/opencode/skills/aico8-remake/SKILL.md",
+      "authority": "https://opencode.ai/docs/skills/#place-files"
+    },
+    "cherryStudio": {
+      "location": "app-managed Skill library",
+      "import": "ZIP or directory containing SKILL.md",
+      "authority": "https://github.com/CherryHQ/cherry-studio/blob/61ac59406c76b577f07c18bacf3a330cbb67284c/src/renderer/components/resourceCatalog/dialogs/skill/ImportSkillDialog.tsx"
+    }
+  },
+  "checks": {
+    "agentSkillsQuickValidator": "passed",
+    "codexPluginValidator": "passed",
+    "projectSkillSelector": "passed: 10/10 tests",
+    "governance": "passed: five dimensions 10.0/10",
+    "publicRepository": "passed",
+    "publicReleaseAssetDownloaded": "passed",
+    "publicAssetDigestMatched": true,
+    "claudeCodeLayout": "passed",
+    "codexLayout": "passed",
+    "openCodeLayout": "passed",
+    "cherryStudioZipLayout": "passed",
+    "standaloneBootstrapOutsidePlugin": "passed with dependencies from the public v0.1.2 tag",
+    "standaloneWebDoctor": "passed with zero required blockers"
+  },
+  "boundaries": [
+    "The portable Skill is one shared package; host-specific folders and import UI are discovery adapters only.",
+    "Client executables unavailable on the probe host were qualified against their primary discovery contracts rather than simulated command names.",
+    "Per-cart human semantic, art-direction, representative-gameplay, and final-scope decisions remain mandatory."
+  ],
+  "status": "passed"
+}
