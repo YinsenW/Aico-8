@@ -131,7 +131,7 @@ Wasm kernel, presentation, and validated module for Android APK/AAB. Then suppor
 Linux handhelds through a compatible browser/PWA, adding a thin Web shell only
 when a named device cannot meet lifecycle, controller, storage, or offline needs
 directly. Platform adapters may not fork gameplay. Windows, macOS, and iOS are
-outside the current delivery roadmap.
+outside the current delivery roadmap. Android completion uses one retained CI bundle: the named API 35, 1024×1024 emulator proves signed-package/WebView behavior, simulated controller and audio-focus paths, lifecycle, offline, orientation, storage, touch, and startup; the same staged Web bytes separately pass a 60-second 1024×1024 Chromium simulation frame budget. Physical hardware is a non-blocking compatibility follow-up.
 
 Contracts: `API-HOST-001`, `API-GAME-MODULE-001`,
 `DATA-TARGET-PROFILE-001`, `DATA-ANDROID-WEB-LINEAGE-001`,

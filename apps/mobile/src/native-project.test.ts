@@ -70,6 +70,10 @@ describe("Capacitor Android host project", () => {
     expect(squareTest).toContain('result = observed == null ? "<callback-timeout>" : observed');
     expect(squareTest).toContain("tryEvaluateJavascript(webView, expression, 5, TimeUnit.SECONDS)");
     expect(squareTest).toContain('captureReadyHostEvidence(scenario, "square-host.png")');
+    expect(squareTest).toContain("simulatedDpadReachesTheWebInputBoundary");
+    expect(squareTest).toContain("KeyEvent.KEYCODE_DPAD_LEFT");
+    expect(squareTest).toContain("simulatedAudioFocusLossAndRecoveryReachTheWebHost");
+    expect(squareTest).toContain("AudioManager.AUDIOFOCUS_LOSS_TRANSIENT");
     expect(squareTest).toContain("getUiAutomation()");
     expect(squareTest).toContain("new File(activity.getFilesDir(), filename)");
 
@@ -89,15 +93,41 @@ describe("Capacitor Android host project", () => {
     expect(emulatorRunner).toContain('avdmanager list avd | awk');
     expect(emulatorRunner).toContain('export ANDROID_AVD_HOME="$(dirname "$avd_path")"');
     expect(emulatorRunner).toContain("adb shell wm size 1024x1024");
+    expect(emulatorRunner).toContain("adb shell input keyevent KEYCODE_WAKEUP");
+    expect(emulatorRunner).toContain("adb shell svc power stayon true");
+    expect(emulatorRunner).toContain("mWakefulness=Awake");
     expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
     expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
     expect(emulatorRunner).toContain('instrumentation_outcome="passed"');
+    expect(emulatorRunner).toContain("same-build-shared-web-chromium-simulator");
+    expect(emulatorRunner).toContain('evidence_dir="$(cd "$evidence_dir" && pwd)"');
     expect(emulatorRunner).toContain("adb exec-out run-as dev.aico8.research");
     expect(emulatorRunner).toContain("PNG image data, 1024 x 1024");
     expect(emulatorRunner).toContain("adb shell am start -W -n dev.aico8.research/.MainActivity");
+    expect(emulatorRunner).toContain("startup_budget_milliseconds=4000");
+    expect(emulatorRunner).toContain('$1 == "TotalTime:"');
+    expect(emulatorRunner).toContain('$cold_launch_milliseconds -le $startup_budget_milliseconds');
+    expect(emulatorRunner).toContain('echo "cold_launch_milliseconds=$cold_launch_milliseconds"');
+    expect(emulatorRunner).toContain('echo "startup_outcome=$startup_outcome"');
     expect(emulatorRunner).toContain('diagnostics_outcome="partial"');
     expect(emulatorRunner).toContain('echo "logcat_status=$logcat_status"');
     expect(emulatorRunner).toContain("exit 0");
+
+    const performanceSimulator = read("../../scripts/run-android-web-performance-simulator.ts");
+    expect(performanceSimulator).toContain("CAPTURE_SECONDS = 60");
+    expect(performanceSimulator).toContain("evaluateAndroidPerformance");
+    expect(performanceSimulator).toContain("webAssetTreeSha256");
+    expect(performanceSimulator).toContain("1024");
+    expect(performanceSimulator).toContain('"--remote-debugging-port=0"');
+    expect(performanceSimulator).toContain('path.join(userData, "DevToolsActivePort")');
+    expect(performanceSimulator).toContain("attempt < 600");
+    expect(performanceSimulator).toContain("Chrome exited before CDP became ready");
+    const ci = read("../../.github/workflows/ci.yml");
+    expect(ci).toContain("Run same-build 1024-square shared Web performance simulator");
+    expect(ci).toContain("AICO8_CHROME_HEADFUL");
+    expect(ci).toContain("xvfb-run --auto-servernum");
+    expect(ci).toContain("pnpm capture:android-web-simulator");
+    expect(ci.indexOf("pnpm capture:android-web-simulator")).toBeLessThan(ci.indexOf("cap sync android"));
   });
 
   it("pins Capacitor-generated Java and Gradle toolchain inputs", () => {

@@ -8,7 +8,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.graphics.Bitmap;
+import android.media.AudioManager;
 import android.util.DisplayMetrics;
+import android.view.KeyEvent;
 import android.webkit.WebView;
 
 import androidx.test.core.app.ActivityScenario;
@@ -80,6 +82,53 @@ public final class SquareEmulatorAcceptanceTest {
         }
     }
 
+    @Test
+    public void simulatedDpadReachesTheWebInputBoundary() throws Exception {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            AtomicReference<WebView> webView = captureSquareWebView(scenario);
+            awaitJavascriptTrue(webView.get(), "document.querySelector('.player-shell') !== null");
+            assertEquals(
+                "[]",
+                evaluateJavascript(
+                    webView.get(),
+                    "window.__aico8DpadKeys = []; " +
+                        "window.addEventListener('keydown', event => window.__aico8DpadKeys.push(event.key)); " +
+                        "window.__aico8DpadKeys"
+                )
+            );
+            scenario.onActivity(activity -> activity.getBridge().getWebView().requestFocus());
+            InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_LEFT);
+            awaitJavascriptTrue(webView.get(), "window.__aico8DpadKeys.includes('ArrowLeft')");
+        }
+    }
+
+    @Test
+    public void simulatedAudioFocusLossAndRecoveryReachTheWebHost() throws Exception {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            AtomicReference<WebView> webView = captureSquareWebView(scenario);
+            awaitJavascriptTrue(webView.get(), "document.querySelector('.player-shell') !== null");
+            assertEquals(
+                "0",
+                evaluateJavascript(
+                    webView.get(),
+                    "window.__aico8AudioFocus = []; " +
+                        "window.addEventListener('aico8:audio-focus', event => " +
+                        "window.__aico8AudioFocus.push(event.detail.hasFocus)); " +
+                        "window.__aico8AudioFocus.length"
+                )
+            );
+            scenario.onActivity(activity -> {
+                activity.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT);
+                activity.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN);
+            });
+            awaitJavascriptTrue(
+                webView.get(),
+                "window.__aico8AudioFocus.length === 2 && " +
+                    "window.__aico8AudioFocus[0] === false && window.__aico8AudioFocus[1] === true"
+            );
+        }
+    }
+
     static void captureReadyHostEvidence(
         ActivityScenario<MainActivity> scenario,
         String filename
@@ -123,7 +172,11 @@ public final class SquareEmulatorAcceptanceTest {
     }
 
     static void awaitJavascriptTrue(WebView webView, String expression) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        awaitJavascriptTrue(webView, expression, 30);
+    }
+
+    static void awaitJavascriptTrue(WebView webView, String expression, int timeoutSeconds) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         String result = "false";
         while (System.nanoTime() < deadline) {
             String observed = tryEvaluateJavascript(webView, expression, 5, TimeUnit.SECONDS);

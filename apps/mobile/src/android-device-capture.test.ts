@@ -8,6 +8,7 @@ import {
   evaluateAndroidPerformance,
   instrumentationPassed,
   orientationEvidencePassed,
+  parseAndroidFrameDurationCsv,
   parseColdLaunchMilliseconds,
   parseAndroidNetworkState,
   parseConnectedAndroidDevices,
@@ -162,7 +163,7 @@ describe("Android physical-device capture helpers", () => {
   });
 
   it("parses gfxinfo frame rows and enforces the target performance budget", () => {
-    const milliseconds = [10, 12, 20, 30];
+    const milliseconds = [10, 12, 20, 30, 40];
     const rows = milliseconds.map((duration, index) => {
       const intended = 1_000_000_000 + index * 40_000_000;
       return `0,${intended},${intended + duration * 1_000_000}`;
@@ -178,15 +179,21 @@ describe("Android physical-device capture helpers", () => {
       captureSeconds: 60,
       warmupFrames: 1,
       requiredSampleFrames: 3,
-      observedSampleFrames: 3,
+      observedSampleFrames: 4,
       droppedFrameThresholdMilliseconds: 25,
       startupMillisecondsMax: 4000,
       p95FrameMillisecondsMax: 25,
       droppedFrameRatioMax: 0.34,
-      p95FrameMilliseconds: 30,
-      droppedFrameRatio: 0.333333,
+      p95FrameMilliseconds: 40,
+      droppedFrameRatio: 0.5,
       budgetPassed: false,
     });
+  });
+
+  it("parses retained emulator frame-duration CSV fail-closed", () => {
+    expect(parseAndroidFrameDurationCsv("duration_milliseconds\n16.7\n18\n")).toEqual([16.7, 18]);
+    expect(() => parseAndroidFrameDurationCsv("wrong_header\n16.7\n")).toThrow(/header/);
+    expect(() => parseAndroidFrameDurationCsv("duration_milliseconds\nNaN\n")).toThrow(/duration/);
   });
 
   it("builds pending-human evidence and hashes the private serial", () => {

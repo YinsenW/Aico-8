@@ -115,6 +115,11 @@ jobs:
         run: pnpm --filter @aico8/web build
       - name: Stage public Web host for native compile
         run: rsync -a --delete apps/web/dist/ apps/mobile/www/
+      - name: Run same-build 1024-square shared Web performance simulator
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+          AICO8_CHROME_HEADFUL: "1"
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1024x1024x24 -ac +extension GLX +render -noreset" pnpm capture:android-web-simulator -- --product apps/mobile/www --target apps/mobile/target-profile.json --evidence artifacts/test-reports/android-square-api35
       - name: Copy Web host through Capacitor
         run: pnpm --filter @aico8/mobile exec cap sync android
       - name: Create disposable research-only CI signing key

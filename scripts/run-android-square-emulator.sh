@@ -12,10 +12,13 @@ debug_apk="$1"
 test_apk="$2"
 profile_id="aico8-square-api35"
 avd_name="aico8_square_api35"
+startup_budget_milliseconds=4000
 evidence_dir="${AICO8_ANDROID_EMULATOR_EVIDENCE_DIR:-artifacts/test-reports/android-square-api35}"
 emulator_log="$evidence_dir/emulator.log"
 
 mkdir -p "$evidence_dir"
+evidence_dir="$(cd "$evidence_dir" && pwd)"
+emulator_log="$evidence_dir/emulator.log"
 {
   echo "profile_id=$profile_id"
   echo "avd_name=$avd_name"
@@ -87,6 +90,11 @@ fi
 adb shell settings put system accelerometer_rotation 0
 adb shell wm size 1024x1024
 adb shell wm density 320
+adb shell input keyevent KEYCODE_WAKEUP
+adb shell wm dismiss-keyguard || true
+adb shell locksettings set-disabled true || true
+adb shell svc power stayon true
+adb shell settings put system screen_off_timeout 2147483647
 adb shell cmd connectivity airplane-mode enable || true
 adb shell svc wifi disable || true
 adb shell svc data disable || true
@@ -94,12 +102,18 @@ adb shell svc data disable || true
 wm_size="$(adb shell wm size | tr -d '\r')"
 wm_density="$(adb shell wm density | tr -d '\r')"
 api_level="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+adb shell dumpsys power > "$evidence_dir/power-state.txt"
+adb shell dumpsys window policy > "$evidence_dir/keyguard-state.txt"
 if [[ "$wm_size" != *"1024x1024"* ]]; then
   echo "Square display override was not applied: $wm_size" >&2
   exit 1
 fi
 if [[ "$api_level" != "35" ]]; then
   echo "Expected API 35 emulator, found API $api_level" >&2
+  exit 1
+fi
+if ! grep -q 'mWakefulness=Awake' "$evidence_dir/power-state.txt"; then
+  echo "Square emulator is not awake; sustained rendering evidence would be invalid" >&2
   exit 1
 fi
 
@@ -134,11 +148,20 @@ fi
 # The instrumentation result and the lineage-bound 1024-square screenshot are
 # the acceptance boundary. These commands collect post-acceptance diagnostics;
 # an adb transport closing while logcat drains must remain visible in evidence,
-# but must not relabel four successful instrumentation tests as a product
+# but must not relabel successful functional instrumentation tests as a product
 # failure.
 set +e
 adb shell am start -W -n dev.aico8.research/.MainActivity > "$evidence_dir/host-launch.txt"
 host_launch_status=$?
+cold_launch_milliseconds="$(
+  awk '$1 == "TotalTime:" { print $2; exit }' "$evidence_dir/host-launch.txt" | tr -d '\r'
+)"
+startup_outcome="failed"
+if [[ $host_launch_status -eq 0 \
+  && "$cold_launch_milliseconds" =~ ^[0-9]+$ \
+  && $cold_launch_milliseconds -le $startup_budget_milliseconds ]]; then
+  startup_outcome="passed"
+fi
 sleep 3
 
 adb shell dumpsys window displays > "$evidence_dir/window-displays.txt"
@@ -164,6 +187,11 @@ fi
   echo "network_mode=airplane-wifi-off-data-off"
   echo "instrumentation_process_status=$instrumentation_process_status"
   echo "instrumentation_outcome=$instrumentation_outcome"
+  echo "performance_scope=same-build-shared-web-chromium-simulator"
+  echo "performance_evidence=web-performance-simulator.json"
+  echo "startup_budget_milliseconds=$startup_budget_milliseconds"
+  echo "cold_launch_milliseconds=$cold_launch_milliseconds"
+  echo "startup_outcome=$startup_outcome"
   echo "diagnostics_outcome=$diagnostics_outcome"
   echo "host_launch_status=$host_launch_status"
   echo "window_displays_status=$window_displays_status"
@@ -171,7 +199,7 @@ fi
   echo "logcat_status=$logcat_status"
 } > "$evidence_dir/device-profile.txt"
 
-if [[ "$instrumentation_outcome" != "passed" ]]; then
+if [[ "$instrumentation_outcome" != "passed" || "$startup_outcome" != "passed" ]]; then
   exit 1
 fi
 

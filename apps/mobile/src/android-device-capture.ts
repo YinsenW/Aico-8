@@ -290,13 +290,29 @@ export function parseGfxFrameDurationsMilliseconds(output: string): readonly num
   return durations;
 }
 
+export function parseAndroidFrameDurationCsv(output: string): readonly number[] {
+  const lines = output.split(/\r?\n/u);
+  if (lines.shift() !== "duration_milliseconds") {
+    throw new Error("Android frame evidence has an invalid CSV header");
+  }
+  const durations = lines.filter((value) => value.length > 0).map(Number);
+  if (durations.some((value) => !Number.isFinite(value) || value < 0)) {
+    throw new Error("Android frame evidence contains an invalid duration");
+  }
+  return durations;
+}
+
 export function evaluateAndroidPerformance(
   frameDurationsMilliseconds: readonly number[],
   target: AndroidTargetProfileV1,
   captureSeconds: number,
 ): AndroidPhysicalDeviceValidationV2["automatedChecks"]["performance"] {
   const { warmupFrames, sampleFrames, droppedFrameThresholdMilliseconds } = target.measurementEnvironment;
-  const sample = frameDurationsMilliseconds.slice(warmupFrames, warmupFrames + sampleFrames);
+  // The minimum sample count is an admission threshold, not a truncation
+  // boundary. A declared 60-second capture must derive its budget from every
+  // retained post-warmup frame so a good first three seconds cannot hide a
+  // degraded remainder.
+  const sample = frameDurationsMilliseconds.slice(warmupFrames);
   const sorted = [...sample].sort((left, right) => left - right);
   const p95 = sorted.length === 0 ? 0 : sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)]!;
   const dropped = sample.filter((duration) => duration > droppedFrameThresholdMilliseconds).length;

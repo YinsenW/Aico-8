@@ -167,7 +167,7 @@ The detailed mapping is defined in `specs/display-1024.md` and
 - Android next: a Capacitor/WebView shell packages the unchanged Web build as
   APK/AAB and adds only lifecycle, storage, controller, audio-focus, and store adapters.
   One inventory/tree hash binds source, ignored `www/`, and Android assets; only
-  declared Capacitor shims may differ. Gradle fails closed without external keys.
+  declared Capacitor shims may differ. Gradle fails closed without external keys. The named API 35 1024-square emulator owns host integration acceptance; a same-build 1024-square Chromium simulator owns the strict 60-second shared-Web frame budget because an unaccelerated cloud emulator's SwiftShader throughput is not a device-performance oracle. Both retained results are required, while physical-device runs are non-blocking compatibility probes.
 - Linux handhelds later use the same content-addressed browser/PWA artifact first. A named-device report binds exact Web/target bytes, capabilities, controller/offline/storage/lifecycle evidence, a 60-second performance window, and human play review.
   Only an exactly enumerated failed capability with retained evidence may propose a thin Web shell. Windows, macOS, and iOS are not targets.
 - ESP32-P4 is future independent work: ESP-IDF host, native core, fixed-memory
