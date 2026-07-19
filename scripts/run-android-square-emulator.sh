@@ -16,6 +16,8 @@ evidence_dir="${AICO8_ANDROID_EMULATOR_EVIDENCE_DIR:-artifacts/test-reports/andr
 emulator_log="$evidence_dir/emulator.log"
 
 mkdir -p "$evidence_dir"
+evidence_dir="$(cd "$evidence_dir" && pwd)"
+emulator_log="$evidence_dir/emulator.log"
 {
   echo "profile_id=$profile_id"
   echo "avd_name=$avd_name"
@@ -87,6 +89,11 @@ fi
 adb shell settings put system accelerometer_rotation 0
 adb shell wm size 1024x1024
 adb shell wm density 320
+adb shell input keyevent KEYCODE_WAKEUP
+adb shell wm dismiss-keyguard || true
+adb shell locksettings set-disabled true || true
+adb shell svc power stayon true
+adb shell settings put system screen_off_timeout 2147483647
 adb shell cmd connectivity airplane-mode enable || true
 adb shell svc wifi disable || true
 adb shell svc data disable || true
@@ -94,12 +101,18 @@ adb shell svc data disable || true
 wm_size="$(adb shell wm size | tr -d '\r')"
 wm_density="$(adb shell wm density | tr -d '\r')"
 api_level="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+adb shell dumpsys power > "$evidence_dir/power-state.txt"
+adb shell dumpsys window policy > "$evidence_dir/keyguard-state.txt"
 if [[ "$wm_size" != *"1024x1024"* ]]; then
   echo "Square display override was not applied: $wm_size" >&2
   exit 1
 fi
 if [[ "$api_level" != "35" ]]; then
   echo "Expected API 35 emulator, found API $api_level" >&2
+  exit 1
+fi
+if ! grep -q 'mWakefulness=Awake' "$evidence_dir/power-state.txt"; then
+  echo "Square emulator is not awake; sustained rendering evidence would be invalid" >&2
   exit 1
 fi
 
@@ -135,12 +148,14 @@ if [[ $performance_process_status -eq 0 ]] \
   && ! grep -q '^FAILURES!!!' "$evidence_dir/performance-instrumentation.txt"; then
   performance_outcome="passed"
 fi
-if [[ "$performance_outcome" == "passed" ]]; then
-  adb exec-out run-as dev.aico8.research \
-    cat files/emulator-frame-durations.csv > "$evidence_dir/emulator-frame-durations.csv"
-else
-  : > "$evidence_dir/emulator-frame-durations.csv"
-fi
+set +e
+adb exec-out run-as dev.aico8.research \
+  cat files/emulator-frame-durations.csv > "$evidence_dir/emulator-frame-durations.csv"
+frame_evidence_status=$?
+adb exec-out run-as dev.aico8.research \
+  cat files/emulator-animation-summary.txt > "$evidence_dir/emulator-animation-summary.txt"
+animation_summary_status=$?
+set -e
 
 if [[ "$instrumentation_outcome" == "passed" ]]; then
   adb exec-out run-as dev.aico8.research \
@@ -204,6 +219,8 @@ fi
   echo "instrumentation_outcome=$instrumentation_outcome"
   echo "performance_instrumentation_process_status=$performance_process_status"
   echo "performance_instrumentation_outcome=$performance_outcome"
+  echo "frame_evidence_status=$frame_evidence_status"
+  echo "animation_summary_status=$animation_summary_status"
   echo "performance_verifier_status=$performance_verifier_status"
   echo "performance_budget_outcome=$performance_budget_outcome"
   echo "diagnostics_outcome=$diagnostics_outcome"
@@ -215,6 +232,8 @@ fi
 
 if [[ "$instrumentation_outcome" != "passed" \
   || "$performance_outcome" != "passed" \
+  || $frame_evidence_status -ne 0 \
+  || $animation_summary_status -ne 0 \
   || "$performance_budget_outcome" != "passed" ]]; then
   exit 1
 fi

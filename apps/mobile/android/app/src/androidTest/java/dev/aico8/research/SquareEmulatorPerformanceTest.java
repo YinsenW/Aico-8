@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.FrameMetrics;
 import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.WebView;
 
 import androidx.test.core.app.ActivityScenario;
@@ -39,6 +40,8 @@ public final class SquareEmulatorPerformanceTest {
             Handler metricsHandler = new Handler(metricsThread.getLooper());
             AtomicReference<Window.OnFrameMetricsAvailableListener> listener = new AtomicReference<>();
             scenario.onActivity(activity -> {
+                activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                webView.get().setKeepScreenOn(true);
                 Window.OnFrameMetricsAvailableListener value = (window, metrics, dropped) -> {
                     long duration = metrics.getMetric(FrameMetrics.TOTAL_DURATION);
                     if (duration > 0) {
@@ -56,44 +59,61 @@ public final class SquareEmulatorPerformanceTest {
                     "window.__aico8PerformanceDone = false; " +
                     "const marker = document.createElement('span'); " +
                     "marker.id = 'aico8-emulator-performance-marker'; " +
-                    "marker.style.cssText = 'position:fixed;left:0;top:0;opacity:0.01'; " +
+                    "marker.style.cssText = 'position:fixed;left:8px;top:8px;width:8px;height:8px;' + " +
+                    "'background:#ff5d9e;opacity:0.25;z-index:2147483647;will-change:transform'; " +
                     "document.body.appendChild(marker); " +
                     "const started = performance.now(); " +
                     "const sample = now => { " +
                     "window.__aico8PerformanceFrames += 1; " +
-                    "marker.textContent = String(window.__aico8PerformanceFrames); " +
+                    "marker.style.transform = 'translateX(' + " +
+                    "String(window.__aico8PerformanceFrames % 48) + 'px)'; " +
                     "if (now - started >= " + CAPTURE_MILLISECONDS + ") { " +
                     "window.__aico8PerformanceDone = true; return; } " +
                     "requestAnimationFrame(sample); }; requestAnimationFrame(sample); true"
             );
-            SquareEmulatorAcceptanceTest.awaitJavascriptTrue(
-                webView.get(),
-                "window.__aico8PerformanceDone === true",
-                75
-            );
-            int frames = Integer.parseInt(
-                SquareEmulatorAcceptanceTest.evaluateJavascript(
+            int frames = 0;
+            try {
+                SquareEmulatorAcceptanceTest.awaitJavascriptTrue(
                     webView.get(),
-                    "String(window.__aico8PerformanceFrames)"
-                ).replace("\"", "")
-            );
-            assertTrue("Expected at least 210 requestAnimationFrame callbacks in 60 seconds", frames >= 210);
-            scenario.onActivity(activity -> {
-                activity.getWindow().removeOnFrameMetricsAvailableListener(listener.get());
-                StringBuilder evidence = new StringBuilder("duration_milliseconds\n");
-                synchronized (frameDurationsMilliseconds) {
-                    for (double duration : frameDurationsMilliseconds) {
-                        evidence.append(duration).append('\n');
+                    "window.__aico8PerformanceDone === true",
+                    75
+                );
+                frames = Integer.parseInt(
+                    SquareEmulatorAcceptanceTest.evaluateJavascript(
+                        webView.get(),
+                        "String(window.__aico8PerformanceFrames)"
+                    ).replace("\"", "")
+                );
+            } finally {
+                final int observedAnimationFrames = frames;
+                scenario.onActivity(activity -> {
+                    Window.OnFrameMetricsAvailableListener value = listener.get();
+                    if (value != null) {
+                        activity.getWindow().removeOnFrameMetricsAvailableListener(value);
                     }
-                }
-                File output = new File(activity.getFilesDir(), "emulator-frame-durations.csv");
-                try (FileOutputStream stream = new FileOutputStream(output)) {
-                    stream.write(evidence.toString().getBytes(StandardCharsets.UTF_8));
-                } catch (Exception error) {
-                    throw new AssertionError("Unable to retain emulator frame evidence", error);
-                }
-            });
-            metricsThread.quitSafely();
+                    StringBuilder evidence = new StringBuilder("duration_milliseconds\n");
+                    synchronized (frameDurationsMilliseconds) {
+                        for (double duration : frameDurationsMilliseconds) {
+                            evidence.append(duration).append('\n');
+                        }
+                    }
+                    File output = new File(activity.getFilesDir(), "emulator-frame-durations.csv");
+                    File summary = new File(activity.getFilesDir(), "emulator-animation-summary.txt");
+                    try (FileOutputStream stream = new FileOutputStream(output);
+                         FileOutputStream summaryStream = new FileOutputStream(summary)) {
+                        stream.write(evidence.toString().getBytes(StandardCharsets.UTF_8));
+                        summaryStream.write(
+                            ("request_animation_frame_callbacks=" + observedAnimationFrames + "\n" +
+                                "window_seconds=60\n").getBytes(StandardCharsets.UTF_8)
+                        );
+                    } catch (Exception error) {
+                        throw new AssertionError("Unable to retain emulator frame evidence", error);
+                    }
+                });
+                metricsThread.quitSafely();
+                metricsThread.join(5_000);
+            }
+            assertTrue("Expected at least 210 requestAnimationFrame callbacks in 60 seconds", frames >= 210);
         }
     }
 }

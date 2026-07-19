@@ -93,11 +93,16 @@ describe("Capacitor Android host project", () => {
     expect(emulatorRunner).toContain('avdmanager list avd | awk');
     expect(emulatorRunner).toContain('export ANDROID_AVD_HOME="$(dirname "$avd_path")"');
     expect(emulatorRunner).toContain("adb shell wm size 1024x1024");
+    expect(emulatorRunner).toContain("adb shell input keyevent KEYCODE_WAKEUP");
+    expect(emulatorRunner).toContain("adb shell svc power stayon true");
+    expect(emulatorRunner).toContain("mWakefulness=Awake");
     expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
     expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
     expect(emulatorRunner).toContain('instrumentation_outcome="passed"');
     expect(emulatorRunner).toContain("SquareEmulatorPerformanceTest");
     expect(emulatorRunner).toContain("emulator-frame-durations.csv");
+    expect(emulatorRunner).toContain("emulator-animation-summary.txt");
+    expect(emulatorRunner).toContain('evidence_dir="$(cd "$evidence_dir" && pwd)"');
     expect(emulatorRunner).toContain("verify:emulator-performance");
     expect(emulatorRunner).toContain("adb exec-out run-as dev.aico8.research");
     expect(emulatorRunner).toContain("PNG image data, 1024 x 1024");
@@ -111,6 +116,8 @@ describe("Capacitor Android host project", () => {
     expect(performanceTest).toContain("window.__aico8PerformanceFrames");
     expect(performanceTest).toContain("frames >= 210");
     expect(performanceTest).toContain("FrameMetrics.TOTAL_DURATION");
+    expect(performanceTest).toContain("FLAG_KEEP_SCREEN_ON");
+    expect(performanceTest).toContain("emulator-animation-summary.txt");
     const performanceVerifier = read("src/verify-android-emulator-performance.ts");
     expect(performanceVerifier).toContain("evaluateAndroidPerformance");
     expect(performanceVerifier).toContain("startupBudgetPassed");
