@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "aico8.governance-evidence.linux-handheld-square-simulator.v1",
+  "requirementId": "REQ-PLATFORM-001",
+  "exitId": "EXIT-PLATFORM-LINUX-HANDHELD",
+  "status": "verified",
+  "observedAt": "2026-07-19",
+  "implementation": {
+    "pullRequest": 55,
+    "headRevision": "9d71571111ca98c043d7cc58872fb2ffd887309f",
+    "mergeRevision": "191ea7523428d18d3f53304b934b6750879a11f8"
+  },
+  "authoritativeCi": {
+    "runId": 29674175529,
+    "jobId": 88158299678,
+    "testedMergeRevision": "43ee438278dea1d546410c7fa1af08918b6e3bb6",
+    "artifactId": 8438287746,
+    "artifactName": "linux-square-chromium-43ee438278dea1d546410c7fa1af08918b6e3bb6",
+    "artifactDigestSha256": "696e4b3ed414f1c9bf36bc693b05f48445fecd9ac518b717a5cfb373872d4fc3",
+    "reportSha256": "b187f69188cba8810c9f62b430fc2ab3fd1e7a47a16c2b7d6e705efc93d09c72",
+    "reportStatus": "passed",
+    "independentVerifier": "passed"
+  },
+  "subject": {
+    "webReleaseTreeSha256": "f4cae833aa5ea1f1dfb4321c149f63d8aa95c876beef2dcfd532619d811e966e",
+    "assetManifestSha256": "0793f5f455f26933225bf21ff24af03142b712dc7665f5c4c39c89a2ed0575bc",
+    "entryModuleSha256": "3660244a088e3edae893ee577e66ad9732b0d782c15a161742641501a0639458",
+    "targetProfileId": "linux-handheld-web-private-research-v1",
+    "targetProfileSha256": "218bae877b35671b6bddff197ce6930fe29d7a551947963e3aaada88fecd04e9"
+  },
+  "simulator": {
+    "profileId": "linux-chromium-1024-square-v1",
+    "environmentClass": "linux-chromium-square-simulator",
+    "os": "Linux x64",
+    "kernelVersion": "6.17.0-1020-azure",
+    "sessionType": "x11",
+    "physicalPixels": "1024x1024",
+    "displayMode": "xvfb-windowed",
+    "browser": "Chrome/150.0.7871.114",
+    "graphicsRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "automatedChecks": {
+    "freshBrowserProfile": "passed",
+    "exactWebArtifact": "passed",
+    "squareViewport": "passed",
+    "serviceWorkerOfflineReload": "passed",
+    "persistentStorageRoundTrip": "passed",
+    "productPathControllerMasks": {
+      "leftAndO": 17,
+      "rightAndX": 34,
+      "released": 0,
+      "status": "passed"
+    },
+    "audioUnlock": "passed",
+    "fullscreenApi": "passed",
+    "lifecycleFreezeResume": "passed",
+    "wasm": "passed",
+    "isolatedWebgl2SwiftShaderProbe": "passed",
+    "readyScreenshot": "passed-1024x1024-png",
+    "coldLaunchMilliseconds": 1765.55,
+    "startupBudgetMilliseconds": 4000,
+    "captureSeconds": 60,
+    "requestAnimationFrameCallbacks": 3601,
+    "requiredSampleFrames": 180,
+    "observedSampleFrames": 3570,
+    "p95FrameMillisecondsMax": 25,
+    "p95FrameMilliseconds": 16.7,
+    "droppedFrameRatioMax": 0.02,
+    "droppedFrameRatio": 0,
+    "performanceBudget": "passed"
+  },
+  "retainedArtifactHashes": {
+    "screenshotSha256": "a28f1a2bbd13c577ab51f546ca468396f640a500762480db5251326ac66c3401",
+    "capabilityReportSha256": "a320217a57785a1d1a6b34c9664db0965c3458807af60bdff31cdd9f15a6400c",
+    "offlineReportSha256": "27c01243f2040e5de42f3d5eadcadc008a51f591351f92c8e07fd9a1ae50eeb6",
+    "storageReportSha256": "0f357a15f712299cf7b73efa76406b4188a5e698a5d669c037985de20d5c8838",
+    "controllerReportSha256": "0d6ccbb0d625680b31986e6fe546ecab6d76afc918c85240a93bdfae284e08c8",
+    "lifecycleReportSha256": "5734fc7a735fad3624976f914f093effdb2570e8ca90cf7bb964ed56068e24ad",
+    "performanceReportSha256": "049cc440bfb381d9614e7626fddc3b28b82dd3dcdd399677547e8ca7ce78c6a3"
+  },
+  "physicalHardwareRequired": false,
+  "optionalCompatibilityFollowUp": [
+    "repeat controller, suspend/resume, audio-output, and sustained-play checks on a physical Linux handheld when hardware becomes available"
+  ],
+  "acceptanceStillRequired": [],
+  "completionClaim": true
+}
