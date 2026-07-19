@@ -5,7 +5,8 @@
     "version": "0.1.1",
     "marketplace": "aico8",
     "engineRepository": "https://github.com/YinsenW/Aico-8.git",
-    "engineRef": "v0.1.1"
+    "engineRef": "v0.1.1",
+    "releaseTagUrl": "https://github.com/YinsenW/Aico-8/tree/v0.1.1"
   },
   "sourceIdentities": {
     "marketplaceSha256": "7e1fb405277d329a1bb50e78aeb12487dab1d470ba458c9a967209fb97124efc",
@@ -26,16 +27,31 @@
     "privateAttachmentIntake": "passed",
     "targetBoundArtifactHandoff": "passed",
     "governance": "passed",
-    "skillSelector": "passed"
+    "skillSelector": "passed",
+    "publicGitTag": "v0.1.1",
+    "publicGitMarketplaceDiscovery": "passed",
+    "publicGitPluginInstall": "passed",
+    "publicGitEngineBootstrapWithDependencies": "passed",
+    "publicGitWebDoctor": "passed",
+    "publicGitBothTargetIntake": "passed",
+    "publicGitProductionWebBuild": "passed",
+    "publicGitWebArtifactHandoff": "passed",
+    "androidApi35SquareSimulator": "passed in GitHub Actions run 29682801713"
   },
   "privacy": {
     "sourcePathsRetainedInSession": false,
     "publicationAuthorityGranted": false,
     "privateOrGeneratedPathsInPlugin": false
   },
+  "remediation": {
+    "firstPublicProbe": "v0.1.0 exposed dependency-manager progress on the JSON protocol stdout and was rejected.",
+    "rootCause": "The engine bootstrap inherited pnpm stdout into the child Agent process captured by the lightweight plugin.",
+    "fix": "v0.1.1 captures successful dependency output internally, exposes it only on failure, and adds a noisy fake-pnpm regression.",
+    "regression": "scripts/agent/aico8-agent.test.mjs"
+  },
   "limitations": [
-    "The Git marketplace install was proven from an isolated local checkout; the pinned public GitHub ref can be tested only after these changes are merged, pushed, and tagged.",
-    "Synthetic attachment and artifact handoff prove the product boundary but do not replace the existing per-game human review and complete-game validation exits."
+    "Each new cart still requires the declared human semantics, art-direction, representative-gameplay, and final-scope approvals.",
+    "A clean host without Java or the Android SDK can produce Web immediately but must use an Agent build host with the verified Android toolchain for APK output."
   ],
-  "status": "passed-with-release-followup"
+  "status": "passed"
 }

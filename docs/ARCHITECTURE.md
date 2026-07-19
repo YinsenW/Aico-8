@@ -223,7 +223,7 @@ The detailed mapping is defined in `specs/display-1024.md` and
 
 ## Stable contracts
 
-The core, presentation, pipeline, and future Skill communicate through versioned
+The core, presentation, pipeline, and released Skill communicate through versioned
 contracts rather than shared implementation details:
 
 - cart workspace manifest;
