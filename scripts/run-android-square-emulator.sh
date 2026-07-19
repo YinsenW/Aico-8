@@ -12,6 +12,7 @@ debug_apk="$1"
 test_apk="$2"
 profile_id="aico8-square-api35"
 avd_name="aico8_square_api35"
+startup_budget_milliseconds=4000
 evidence_dir="${AICO8_ANDROID_EMULATOR_EVIDENCE_DIR:-artifacts/test-reports/android-square-api35}"
 emulator_log="$evidence_dir/emulator.log"
 
@@ -152,6 +153,15 @@ fi
 set +e
 adb shell am start -W -n dev.aico8.research/.MainActivity > "$evidence_dir/host-launch.txt"
 host_launch_status=$?
+cold_launch_milliseconds="$(
+  awk '$1 == "TotalTime:" { print $2; exit }' "$evidence_dir/host-launch.txt" | tr -d '\r'
+)"
+startup_outcome="failed"
+if [[ $host_launch_status -eq 0 \
+  && "$cold_launch_milliseconds" =~ ^[0-9]+$ \
+  && $cold_launch_milliseconds -le $startup_budget_milliseconds ]]; then
+  startup_outcome="passed"
+fi
 sleep 3
 
 adb shell dumpsys window displays > "$evidence_dir/window-displays.txt"
@@ -179,6 +189,9 @@ fi
   echo "instrumentation_outcome=$instrumentation_outcome"
   echo "performance_scope=same-build-shared-web-chromium-simulator"
   echo "performance_evidence=web-performance-simulator.json"
+  echo "startup_budget_milliseconds=$startup_budget_milliseconds"
+  echo "cold_launch_milliseconds=$cold_launch_milliseconds"
+  echo "startup_outcome=$startup_outcome"
   echo "diagnostics_outcome=$diagnostics_outcome"
   echo "host_launch_status=$host_launch_status"
   echo "window_displays_status=$window_displays_status"
@@ -186,7 +199,7 @@ fi
   echo "logcat_status=$logcat_status"
 } > "$evidence_dir/device-profile.txt"
 
-if [[ "$instrumentation_outcome" != "passed" ]]; then
+if [[ "$instrumentation_outcome" != "passed" || "$startup_outcome" != "passed" ]]; then
   exit 1
 fi
 

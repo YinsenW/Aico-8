@@ -104,6 +104,11 @@ describe("Capacitor Android host project", () => {
     expect(emulatorRunner).toContain("adb exec-out run-as dev.aico8.research");
     expect(emulatorRunner).toContain("PNG image data, 1024 x 1024");
     expect(emulatorRunner).toContain("adb shell am start -W -n dev.aico8.research/.MainActivity");
+    expect(emulatorRunner).toContain("startup_budget_milliseconds=4000");
+    expect(emulatorRunner).toContain('$1 == "TotalTime:"');
+    expect(emulatorRunner).toContain('$cold_launch_milliseconds -le $startup_budget_milliseconds');
+    expect(emulatorRunner).toContain('echo "cold_launch_milliseconds=$cold_launch_milliseconds"');
+    expect(emulatorRunner).toContain('echo "startup_outcome=$startup_outcome"');
     expect(emulatorRunner).toContain('diagnostics_outcome="partial"');
     expect(emulatorRunner).toContain('echo "logcat_status=$logcat_status"');
     expect(emulatorRunner).toContain("exit 0");
