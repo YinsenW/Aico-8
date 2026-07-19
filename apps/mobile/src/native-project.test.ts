@@ -118,6 +118,10 @@ describe("Capacitor Android host project", () => {
     expect(performanceSimulator).toContain("evaluateAndroidPerformance");
     expect(performanceSimulator).toContain("webAssetTreeSha256");
     expect(performanceSimulator).toContain("1024");
+    expect(performanceSimulator).toContain('"--remote-debugging-port=0"');
+    expect(performanceSimulator).toContain('path.join(userData, "DevToolsActivePort")');
+    expect(performanceSimulator).toContain("attempt < 600");
+    expect(performanceSimulator).toContain("Chrome exited before CDP became ready");
     const ci = read("../../.github/workflows/ci.yml");
     expect(ci).toContain("Run same-build 1024-square shared Web performance simulator");
     expect(ci).toContain("AICO8_CHROME_HEADFUL");

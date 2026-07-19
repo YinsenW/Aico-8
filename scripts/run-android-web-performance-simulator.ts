@@ -5,7 +5,6 @@ import { createHash } from "node:crypto";
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import http from "node:http";
-import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
@@ -67,15 +66,6 @@ const server = http.createServer(async (request, response) => {
     response.end("not found");
   }
 });
-
-async function freePort(): Promise<number> {
-  const probe = net.createServer();
-  await new Promise<void>((resolve) => probe.listen(0, "127.0.0.1", resolve));
-  const address = probe.address();
-  assert.ok(address && typeof address !== "string");
-  await new Promise<void>((resolve, reject) => probe.close((error) => error ? reject(error) : resolve()));
-  return address.port;
-}
 
 class Cdp {
   readonly socket: WebSocket;
@@ -143,7 +133,6 @@ const chromeLog = await fs.open(path.join(evidenceRoot, "web-performance-chrome.
 let chrome: ChildProcess | undefined;
 
 try {
-  const cdpPort = await freePort();
   const chromeArguments = [
     "--no-sandbox",
     "--disable-dev-shm-usage",
@@ -155,7 +144,8 @@ try {
     "--disable-renderer-backgrounding",
     "--disable-features=CalculateNativeWinOcclusion",
     `--window-size=${VIEWPORT_EDGE},${VIEWPORT_EDGE}`,
-    `--remote-debugging-port=${cdpPort}`,
+    "--remote-debugging-address=127.0.0.1",
+    "--remote-debugging-port=0",
     `--user-data-dir=${userData}`,
     "about:blank",
   ];
@@ -163,17 +153,24 @@ try {
   chrome = spawn(await chromeExecutable(), chromeArguments, {
     stdio: ["ignore", chromeLog.fd, chromeLog.fd],
   });
-  const endpoint = `http://127.0.0.1:${cdpPort}`;
+  const activePortPath = path.join(userData, "DevToolsActivePort");
+  let endpoint: string | undefined;
   let version: any;
-  for (let attempt = 0; attempt < 200; attempt += 1) {
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    if (chrome.exitCode !== null) {
+      throw new Error(`Chrome exited before CDP became ready (exit ${chrome.exitCode})`);
+    }
     try {
+      const [port] = (await fs.readFile(activePortPath, "utf8")).trim().split("\n");
+      if (!port || !/^\d+$/.test(port)) throw new Error("Chrome has not published a valid CDP port");
+      endpoint = `http://127.0.0.1:${port}`;
       version = await (await fetch(`${endpoint}/json/version`)).json();
       break;
     } catch {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
-  assert.ok(version?.Browser, "Chrome CDP did not become ready");
+  assert.ok(endpoint && version?.Browser, "Chrome CDP did not become ready within 60 seconds");
   const page = await (await fetch(`${endpoint}/json/new?${encodeURIComponent("about:blank")}`, {
     method: "PUT",
   })).json() as any;
