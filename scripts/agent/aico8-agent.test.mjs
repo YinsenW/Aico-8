@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -67,4 +67,22 @@ test("bootstrap produces a reusable isolated engine without private input", () =
   assert.equal(spawnSync("test", ["-e", path.join(engine, "private")]).status, 1);
   const second = run(["bootstrap", "--engine-root", engine, "--skip-dependencies"]);
   assert.equal(second.reused, true);
+});
+
+test("bootstrap keeps dependency-manager progress out of its JSON protocol", () => {
+  if (process.platform === "win32") return;
+  const directory = mkdtempSync(path.join(tmpdir(), "aico8-agent-bootstrap-json-"));
+  const bin = path.join(directory, "bin");
+  mkdirSync(bin);
+  const fakePnpm = path.join(bin, "pnpm");
+  writeFileSync(fakePnpm, "#!/bin/sh\necho dependency progress\n");
+  chmodSync(fakePnpm, 0o755);
+  const output = execFileSync(process.execPath, [cli, "bootstrap", "--engine-root", path.join(directory, "engine")], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}` },
+  });
+  const result = JSON.parse(output);
+  assert.equal(result.status, "ready");
+  assert.doesNotMatch(output, /dependency progress/);
 });

@@ -141,8 +141,14 @@ async function bootstrap(options) {
   try {
     await cp(repositoryRoot, stage, { recursive: true, filter: copyFilter, errorOnExist: true });
     if (!options["skip-dependencies"]) {
-      const install = spawnSync("pnpm", ["install", "--frozen-lockfile"], { cwd: stage, encoding: "utf8", stdio: "inherit" });
-      if (install.error || install.status !== 0) throw new Error("dependency installation failed");
+      // The Agent CLI is a JSON protocol. Dependency-manager progress must not
+      // leak into stdout, because the lightweight plugin parses this command's
+      // complete stdout as one JSON document.
+      const install = spawnSync("pnpm", ["install", "--frozen-lockfile"], { cwd: stage, encoding: "utf8" });
+      if (install.error || install.status !== 0) {
+        const detail = (install.stderr || install.stdout || install.error?.message || "unknown error").trim();
+        throw new Error(`dependency installation failed: ${detail}`);
+      }
     }
     await writeJson(path.join(stage, ".aico8-engine.json"), {
       schemaVersion: "aico8.engine-install.v1",
