@@ -5,7 +5,7 @@
 3. Select the matching `ROADMAP.md` work package, requirement, and exit/open-item set. Do not invent a parallel status list in a plan, README, PR body, or research note.
 4. Read the owner documents and only the evidence linked by those exits.
 5. Confirm private fixtures exist when a selector declares `private` availability.
-The complete browser remake unlocks Android; finish that shared-Web-host boundary before Linux. Collection, ESP32, and final Skill remain later unless focus changes.
+The complete browser remake unlocks Android; finish that shared-Web-host boundary before Linux. The released Skill stays a thin orchestration entry; collection and ESP32 remain later unless focus changes.
 ## Implementation loop
 1. Write or adjust the smallest failing test/checkpoint that represents the exit.
 2. Change code behind the owning API or data contract.
