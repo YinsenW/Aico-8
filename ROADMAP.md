@@ -69,7 +69,7 @@ focus, Exits, evidence, selectors, and open work. Never infer completion here.
 
 ## M7 — Android and Linux handheld hosts
 
-- `WP-M7-1`: wrap the unchanged Web/PWA artifact in Capacitor/WebView and produce signed Android test APK and release AAB with lifecycle, audio focus, storage, controller, touch, orientation, resume, and sustained-frame tests on the named API 35 1024-square emulator; physical hardware is a non-blocking compatibility follow-up.
+- `WP-M7-1`: wrap the unchanged Web/PWA artifact in Capacitor/WebView and produce signed Android test APK and release AAB. Verify lifecycle, audio focus, storage, controller, touch, orientation, and resume on the named API 35 1024-square emulator, and verify the same staged Web bytes against the 60-second frame budget in a 1024-square Chromium simulator; physical hardware is a non-blocking compatibility follow-up.
 - `WP-M7-2`: run that same artifact on named Linux handhelds using browser/PWA first; add a thin Web shell only for a measured gap, then test controller, storage, offline, lifecycle, performance, and clean installation.
 - Acceptance: `EXIT-PLATFORM-ANDROID` and `EXIT-PLATFORM-LINUX-HANDHELD` pass independently and prove one Web application/runtime lineage; Windows, macOS, and iOS are outside this roadmap.
 

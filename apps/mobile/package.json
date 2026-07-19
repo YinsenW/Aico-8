@@ -9,7 +9,6 @@
     "assemble:web": "tsx src/assemble-android-host.ts",
     "capture:device": "tsx src/capture-android-device.ts",
     "verify:device": "tsx src/verify-android-device.ts",
-    "verify:emulator-performance": "tsx src/verify-android-emulator-performance.ts",
     "capture:linux": "tsx src/capture-linux-handheld.ts",
     "finalize:device": "tsx src/finalize-android-device.ts",
     "verify:linux": "tsx src/verify-linux-handheld.ts",

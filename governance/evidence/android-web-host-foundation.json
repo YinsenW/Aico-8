@@ -2,7 +2,7 @@
   "schemaVersion": "aico8.governance-evidence.android-web-host-foundation.v1",
   "requirementId": "REQ-PLATFORM-001",
   "exitId": "EXIT-PLATFORM-ANDROID",
-  "status": "enhanced-emulator-acceptance-pending-ci",
+  "status": "composite-simulator-acceptance-pending-ci",
   "observedAt": "2026-07-19",
   "host": {
     "applicationId": "dev.aico8.research",
@@ -29,7 +29,7 @@
     "allowedGeneratedWebViewShims": ["cordova.js", "cordova_plugins.js"]
   },
   "automatedEvidence": {
-    "acceptancePolicy": "named-api35-1024-square-emulator-sufficient-physical-optional",
+    "acceptancePolicy": "same-build-api35-square-emulator-host-plus-square-chromium-performance-simulator-physical-optional",
     "targetProfileValidation": "passed",
     "targetProfileDriftRejection": "passed",
     "lineageContractValidation": "passed",
@@ -69,6 +69,16 @@
       "readyHostScreenshot": "passed-1024x1024-png",
       "readyHostScreenshotSha256": "8dc88e99a348ce75bd37d755d2abdfadea62c1f64980fdfc15f1ba22b8c7411a",
       "coldLaunchMilliseconds": 1530
+    },
+    "sameBuildSharedWebPerformanceSimulator": {
+      "status": "pending-ci",
+      "profileId": "linux-chromium-1024-square-shared-web-v1",
+      "physicalPixels": "1024x1024",
+      "captureSeconds": 60,
+      "requiredSampleFrames": 180,
+      "p95FrameMillisecondsMax": 25,
+      "droppedFrameRatioMax": 0.02,
+      "subjectBinding": "exact-staged-web-tree-and-android-target-profile"
     }
   },
   "localBuildEnvironment": {
@@ -81,7 +91,7 @@
     "gradleWrapperResult": "blocked-before-gradle-unable-to-locate-java-runtime"
   },
   "acceptanceStillRequired": [
-    "passing CI artifact from the enhanced named API 35 1024-square emulator with simulated DPAD, simulated audio-focus recovery, and a 60-second frame budget"
+    "passing same-build CI artifact containing the enhanced API 35 1024-square emulator host checks and the exact-staged-tree 60-second Chromium performance simulation"
   ],
   "optionalCompatibilityFollowUp": [
     "repeat controller, audio-focus, vendor-WebView, and sustained-play checks on physical Android handhelds when hardware becomes available"

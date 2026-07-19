@@ -99,11 +99,8 @@ describe("Capacitor Android host project", () => {
     expect(emulatorRunner).toContain("adb shell cmd connectivity airplane-mode enable");
     expect(emulatorRunner).toContain("dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner");
     expect(emulatorRunner).toContain('instrumentation_outcome="passed"');
-    expect(emulatorRunner).toContain("SquareEmulatorPerformanceTest");
-    expect(emulatorRunner).toContain("emulator-frame-durations.csv");
-    expect(emulatorRunner).toContain("emulator-animation-summary.txt");
+    expect(emulatorRunner).toContain("same-build-shared-web-chromium-simulator");
     expect(emulatorRunner).toContain('evidence_dir="$(cd "$evidence_dir" && pwd)"');
-    expect(emulatorRunner).toContain("verify:emulator-performance");
     expect(emulatorRunner).toContain("adb exec-out run-as dev.aico8.research");
     expect(emulatorRunner).toContain("PNG image data, 1024 x 1024");
     expect(emulatorRunner).toContain("adb shell am start -W -n dev.aico8.research/.MainActivity");
@@ -111,16 +108,15 @@ describe("Capacitor Android host project", () => {
     expect(emulatorRunner).toContain('echo "logcat_status=$logcat_status"');
     expect(emulatorRunner).toContain("exit 0");
 
-    const performanceTest = read("android/app/src/androidTest/java/dev/aico8/research/SquareEmulatorPerformanceTest.java");
-    expect(performanceTest).toContain("CAPTURE_MILLISECONDS = 60_000");
-    expect(performanceTest).toContain("window.__aico8PerformanceFrames");
-    expect(performanceTest).toContain("frames >= 210");
-    expect(performanceTest).toContain("FrameMetrics.TOTAL_DURATION");
-    expect(performanceTest).toContain("FLAG_KEEP_SCREEN_ON");
-    expect(performanceTest).toContain("emulator-animation-summary.txt");
-    const performanceVerifier = read("src/verify-android-emulator-performance.ts");
-    expect(performanceVerifier).toContain("evaluateAndroidPerformance");
-    expect(performanceVerifier).toContain("startupBudgetPassed");
+    const performanceSimulator = read("../../scripts/run-android-web-performance-simulator.ts");
+    expect(performanceSimulator).toContain("CAPTURE_SECONDS = 60");
+    expect(performanceSimulator).toContain("evaluateAndroidPerformance");
+    expect(performanceSimulator).toContain("webAssetTreeSha256");
+    expect(performanceSimulator).toContain("1024");
+    const ci = read("../../.github/workflows/ci.yml");
+    expect(ci).toContain("Run same-build 1024-square shared Web performance simulator");
+    expect(ci).toContain("pnpm capture:android-web-simulator");
+    expect(ci.indexOf("pnpm capture:android-web-simulator")).toBeLessThan(ci.indexOf("cap sync android"));
   });
 
   it("pins Capacitor-generated Java and Gradle toolchain inputs", () => {

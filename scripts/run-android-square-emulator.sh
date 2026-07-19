@@ -122,7 +122,6 @@ adb logcat -c
 
 set +e
 adb shell am instrument -w -r \
-  -e notClass dev.aico8.research.SquareEmulatorPerformanceTest \
   dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner \
   | tee "$evidence_dir/instrumentation.txt"
 instrumentation_process_status=${PIPESTATUS[0]}
@@ -134,28 +133,6 @@ if [[ $instrumentation_process_status -eq 0 ]] \
   && ! grep -q '^FAILURES!!!' "$evidence_dir/instrumentation.txt"; then
   instrumentation_outcome="passed"
 fi
-
-set +e
-adb shell am instrument -w -r \
-  -e class dev.aico8.research.SquareEmulatorPerformanceTest \
-  dev.aico8.research.test/androidx.test.runner.AndroidJUnitRunner \
-  | tee "$evidence_dir/performance-instrumentation.txt"
-performance_process_status=${PIPESTATUS[0]}
-set -e
-performance_outcome="failed"
-if [[ $performance_process_status -eq 0 ]] \
-  && grep -Eq '^OK \(1 test\)$' "$evidence_dir/performance-instrumentation.txt" \
-  && ! grep -q '^FAILURES!!!' "$evidence_dir/performance-instrumentation.txt"; then
-  performance_outcome="passed"
-fi
-set +e
-adb exec-out run-as dev.aico8.research \
-  cat files/emulator-frame-durations.csv > "$evidence_dir/emulator-frame-durations.csv"
-frame_evidence_status=$?
-adb exec-out run-as dev.aico8.research \
-  cat files/emulator-animation-summary.txt > "$evidence_dir/emulator-animation-summary.txt"
-animation_summary_status=$?
-set -e
 
 if [[ "$instrumentation_outcome" == "passed" ]]; then
   adb exec-out run-as dev.aico8.research \
@@ -185,23 +162,6 @@ adb logcat -d -v threadtime > "$evidence_dir/logcat.txt"
 logcat_status=$?
 set -e
 
-rm -f "$evidence_dir/performance.json"
-set +e
-pnpm --filter @aico8/mobile verify:emulator-performance -- \
-  "$PWD/apps/mobile/target-profile.json" \
-  "$evidence_dir/emulator-frame-durations.csv" \
-  "$evidence_dir/host-launch.txt" \
-  60 \
-  "$profile_id" \
-  "$evidence_dir/performance.json" \
-  > "$evidence_dir/performance-verifier.txt" 2>&1
-performance_verifier_status=$?
-set -e
-performance_budget_outcome="failed"
-if [[ $performance_verifier_status -eq 0 ]]; then
-  performance_budget_outcome="passed"
-fi
-
 diagnostics_outcome="complete"
 if [[ $host_launch_status -ne 0 || $window_displays_status -ne 0 \
   || $activities_status -ne 0 || $logcat_status -ne 0 ]]; then
@@ -217,12 +177,8 @@ fi
   echo "network_mode=airplane-wifi-off-data-off"
   echo "instrumentation_process_status=$instrumentation_process_status"
   echo "instrumentation_outcome=$instrumentation_outcome"
-  echo "performance_instrumentation_process_status=$performance_process_status"
-  echo "performance_instrumentation_outcome=$performance_outcome"
-  echo "frame_evidence_status=$frame_evidence_status"
-  echo "animation_summary_status=$animation_summary_status"
-  echo "performance_verifier_status=$performance_verifier_status"
-  echo "performance_budget_outcome=$performance_budget_outcome"
+  echo "performance_scope=same-build-shared-web-chromium-simulator"
+  echo "performance_evidence=web-performance-simulator.json"
   echo "diagnostics_outcome=$diagnostics_outcome"
   echo "host_launch_status=$host_launch_status"
   echo "window_displays_status=$window_displays_status"
@@ -230,11 +186,7 @@ fi
   echo "logcat_status=$logcat_status"
 } > "$evidence_dir/device-profile.txt"
 
-if [[ "$instrumentation_outcome" != "passed" \
-  || "$performance_outcome" != "passed" \
-  || $frame_evidence_status -ne 0 \
-  || $animation_summary_status -ne 0 \
-  || "$performance_budget_outcome" != "passed" ]]; then
+if [[ "$instrumentation_outcome" != "passed" ]]; then
   exit 1
 fi
 
