@@ -144,8 +144,7 @@ let chrome: ChildProcess | undefined;
 
 try {
   const cdpPort = await freePort();
-  chrome = spawn(await chromeExecutable(), [
-    "--headless=new",
+  const chromeArguments = [
     "--no-sandbox",
     "--disable-dev-shm-usage",
     "--no-first-run",
@@ -159,7 +158,11 @@ try {
     `--remote-debugging-port=${cdpPort}`,
     `--user-data-dir=${userData}`,
     "about:blank",
-  ], { stdio: ["ignore", chromeLog.fd, chromeLog.fd] });
+  ];
+  if (process.env.AICO8_CHROME_HEADFUL !== "1") chromeArguments.unshift("--headless=new");
+  chrome = spawn(await chromeExecutable(), chromeArguments, {
+    stdio: ["ignore", chromeLog.fd, chromeLog.fd],
+  });
   const endpoint = `http://127.0.0.1:${cdpPort}`;
   let version: any;
   for (let attempt = 0; attempt < 200; attempt += 1) {
@@ -177,6 +180,9 @@ try {
   const cdp = await Cdp.connect(page.webSocketDebuggerUrl);
   await cdp.send("Page.enable");
   await cdp.send("Runtime.enable");
+  await cdp.send("Page.bringToFront");
+  await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+  await cdp.send("Emulation.setIdleOverride", { isUserActive: true, isScreenUnlocked: true });
   await cdp.send("Emulation.setDeviceMetricsOverride", {
     width: VIEWPORT_EDGE,
     height: VIEWPORT_EDGE,
@@ -192,6 +198,16 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   assert.ok(ready, "Shared Web host did not become ready in the simulator");
+  await cdp.send("Page.bringToFront");
+  const foreground = await cdp.evaluate<{ visibilityState: string; hasFocus: boolean }>(`({
+    visibilityState: document.visibilityState,
+    hasFocus: document.hasFocus(),
+  })`);
+  assert.deepEqual(
+    foreground,
+    { visibilityState: "visible", hasFocus: true },
+    "Shared Web performance simulation requires an active foreground page",
+  );
   const coldLaunchMilliseconds = Number((performance.now() - navigationStarted).toFixed(3));
   const measurement = await cdp.evaluate<{ callbacks: number; intervals: number[] }>(`new Promise(resolve => {
     const marker = document.createElement('span');
@@ -229,6 +245,8 @@ try {
       renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : 'unavailable',
       serviceWorkerAvailable: 'serviceWorker' in navigator,
       wasmAvailable: typeof WebAssembly === 'object',
+      visibilityState: document.visibilityState,
+      hasFocus: document.hasFocus(),
     };
   })()`);
   const files = await inventoryWebAssets(productRoot);
@@ -242,6 +260,7 @@ try {
     },
     environment: {
       class: "linux-chromium-shared-web-simulator",
+      displayMode: process.env.AICO8_CHROME_HEADFUL === "1" ? "xvfb-windowed" : "headless",
       browser: version.Browser,
       viewport: { width: VIEWPORT_EDGE, height: VIEWPORT_EDGE },
       ...browserEnvironment,

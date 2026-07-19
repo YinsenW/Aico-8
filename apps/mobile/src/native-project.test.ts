@@ -115,6 +115,8 @@ describe("Capacitor Android host project", () => {
     expect(performanceSimulator).toContain("1024");
     const ci = read("../../.github/workflows/ci.yml");
     expect(ci).toContain("Run same-build 1024-square shared Web performance simulator");
+    expect(ci).toContain("AICO8_CHROME_HEADFUL");
+    expect(ci).toContain("xvfb-run --auto-servernum");
     expect(ci).toContain("pnpm capture:android-web-simulator");
     expect(ci.indexOf("pnpm capture:android-web-simulator")).toBeLessThan(ci.indexOf("cap sync android"));
   });
