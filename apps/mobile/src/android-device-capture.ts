@@ -308,7 +308,11 @@ export function evaluateAndroidPerformance(
   captureSeconds: number,
 ): AndroidPhysicalDeviceValidationV2["automatedChecks"]["performance"] {
   const { warmupFrames, sampleFrames, droppedFrameThresholdMilliseconds } = target.measurementEnvironment;
-  const sample = frameDurationsMilliseconds.slice(warmupFrames, warmupFrames + sampleFrames);
+  // The minimum sample count is an admission threshold, not a truncation
+  // boundary. A declared 60-second capture must derive its budget from every
+  // retained post-warmup frame so a good first three seconds cannot hide a
+  // degraded remainder.
+  const sample = frameDurationsMilliseconds.slice(warmupFrames);
   const sorted = [...sample].sort((left, right) => left - right);
   const p95 = sorted.length === 0 ? 0 : sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)]!;
   const dropped = sample.filter((duration) => duration > droppedFrameThresholdMilliseconds).length;
