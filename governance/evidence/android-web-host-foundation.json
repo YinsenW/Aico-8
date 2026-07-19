@@ -2,7 +2,7 @@
   "schemaVersion": "aico8.governance-evidence.android-web-host-foundation.v1",
   "requirementId": "REQ-PLATFORM-001",
   "exitId": "EXIT-PLATFORM-ANDROID",
-  "status": "composite-simulator-acceptance-pending-ci",
+  "status": "verified",
   "observedAt": "2026-07-19",
   "host": {
     "applicationId": "dev.aico8.research",
@@ -48,36 +48,58 @@
     },
     "cleanSignedApkAabCi": {
       "status": "passed",
-      "revision": "e03d033ba5ae4461f0dafde538bf1395487948de",
-      "runId": 29667991479
+      "revision": "27af703e713ed4fe6bc51d1160c62d6ae0bcc75f",
+      "testedMergeRevision": "96593d22b5cfd833d0a315f8334f5c6726df1baf",
+      "runId": 29672307070
     },
     "namedSquareApi35Emulator": {
       "status": "passed",
-      "revision": "e03d033ba5ae4461f0dafde538bf1395487948de",
-      "runId": 29667991479,
-      "jobId": 88141808931,
-      "artifactId": 8436424264,
-      "artifactName": "android-square-api35-4c7abfe58f11c197ce96cfcffb8d8567ab85fd80",
-      "artifactDigestSha256": "e20bd9274c7e411b6080b1ba2c7b14ef886104bdeefac8b3c34799998ed30518",
+      "revision": "27af703e713ed4fe6bc51d1160c62d6ae0bcc75f",
+      "testedMergeRevision": "96593d22b5cfd833d0a315f8334f5c6726df1baf",
+      "runId": 29672307070,
+      "jobId": 88153439661,
+      "artifactId": 8437774893,
+      "artifactName": "android-square-api35-96593d22b5cfd833d0a315f8334f5c6726df1baf",
+      "artifactDigestSha256": "f5fb838e683020a31293ccb30a68a5ebc027d61390de052329e48c69b8ea6e70",
       "profileId": "aico8-square-api35",
       "apiLevel": 35,
       "physicalPixels": "1024x1024",
       "densityDpi": 320,
       "networkMode": "airplane-wifi-off-data-off",
-      "instrumentationTests": 4,
+      "instrumentationTests": 6,
       "instrumentationOutcome": "passed",
       "readyHostScreenshot": "passed-1024x1024-png",
-      "readyHostScreenshotSha256": "8dc88e99a348ce75bd37d755d2abdfadea62c1f64980fdfc15f1ba22b8c7411a",
-      "coldLaunchMilliseconds": 1530
+      "readyHostScreenshotSha256": "e7812235c2811f01b1ffad97af29c94adde9dba48c4730816fc924ecc0b612ee",
+      "startupBudgetMilliseconds": 4000,
+      "coldLaunchMilliseconds": 1513,
+      "startupOutcome": "passed"
     },
     "sameBuildSharedWebPerformanceSimulator": {
-      "status": "pending-ci",
+      "status": "passed",
+      "revision": "27af703e713ed4fe6bc51d1160c62d6ae0bcc75f",
+      "testedMergeRevision": "96593d22b5cfd833d0a315f8334f5c6726df1baf",
+      "runId": 29672307070,
+      "jobId": 88153439661,
+      "artifactId": 8437774893,
+      "artifactDigestSha256": "f5fb838e683020a31293ccb30a68a5ebc027d61390de052329e48c69b8ea6e70",
       "profileId": "linux-chromium-1024-square-shared-web-v1",
       "physicalPixels": "1024x1024",
+      "displayMode": "xvfb-windowed",
+      "browser": "Chrome/150.0.7871.114",
       "captureSeconds": 60,
       "requiredSampleFrames": 180,
+      "observedSampleFrames": 3557,
+      "requestAnimationFrameCallbacks": 3588,
       "p95FrameMillisecondsMax": 25,
+      "p95FrameMilliseconds": 16.7,
       "droppedFrameRatioMax": 0.02,
+      "droppedFrameRatio": 0.000281,
+      "budgetPassed": true,
+      "webAssetTreeSha256": "e01bf78ad2722c1b83accf0b52f62d9418a25955242f66001fa9756a201bccfe",
+      "androidTargetProfileSha256": "d056c1849fada0d7abb4d6cdf7b64b555fca4ce83b8dad97f725c9a56405f961",
+      "screenshotSha256": "88a4a8ff86748adbe225ba639d49a8dfd914eeba31cb2fd0361e52c54855ba86",
+      "frameDurationsSha256": "0c9fab70cbf5412df17c38010c02d51d391a7ae8c19e97041741972f987cffd1",
+      "reportSha256": "350284173ade93b1e0b7509292bdc4220e04677c63629209bc278e11d5466e6e",
       "subjectBinding": "exact-staged-web-tree-and-android-target-profile"
     }
   },
@@ -90,11 +112,9 @@
     "bundletool": "missing",
     "gradleWrapperResult": "blocked-before-gradle-unable-to-locate-java-runtime"
   },
-  "acceptanceStillRequired": [
-    "passing same-build CI artifact containing the enhanced API 35 1024-square emulator host checks and the exact-staged-tree 60-second Chromium performance simulation"
-  ],
+  "acceptanceStillRequired": [],
   "optionalCompatibilityFollowUp": [
     "repeat controller, audio-focus, vendor-WebView, and sustained-play checks on physical Android handhelds when hardware becomes available"
   ],
-  "completionClaim": false
+  "completionClaim": true
 }
