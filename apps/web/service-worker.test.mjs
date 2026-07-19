@@ -34,6 +34,7 @@ function defaultFetch(scope) {
       });
     }
     if (url === `${scope}private/game.json`) return new Response(null, { status: 404 });
+    if (url === `${scope}collection-runtime.json`) return new Response(null, { status: 404 });
     return new Response(url === scope ? "cached shell" : `asset:${url}`, { status: 200 });
   };
 }
@@ -251,6 +252,32 @@ test("allows only an explicit private manifest 404 to omit the private module", 
     });
     await assert.rejects(harness.install(), /private module asset orbit\/game\.rom \(503\)/);
   });
+});
+
+test("installs every declared fixed-collection game package", async () => {
+  const scope = "https://example.test/catalog/collection/";
+  const fallback = defaultFetch(scope);
+  const harness = createHarness({
+    scope,
+    fetchImpl: async (input, init) => {
+      const url = requestUrl(input);
+      if (url === `${scope}collection-runtime.json`) return jsonResponse({
+        modules: [{ launchPath: "games/orbit/" }, { launchPath: "games/steps/" }],
+      });
+      for (const moduleId of ["orbit", "steps"]) {
+        if (url === `${scope}games/${moduleId}/release-manifest.json`) {
+          return jsonResponse({ artifacts: [{ path: "assets/game.js" }, { path: "private/game.json" }] });
+        }
+      }
+      return fallback(input, init);
+    },
+  });
+  await harness.install();
+  for (const moduleId of ["orbit", "steps"]) {
+    assert.ok(harness.fetchedUrls.includes(`${scope}games/${moduleId}/index.html`));
+    assert.ok(harness.fetchedUrls.includes(`${scope}games/${moduleId}/assets/game.js`));
+    assert.ok(harness.fetchedUrls.includes(`${scope}games/${moduleId}/private/game.json`));
+  }
 });
 
 test("rejects traversal and absolute asset-manifest paths", async (t) => {

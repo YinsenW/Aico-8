@@ -6,6 +6,8 @@ import {
 
 import "./collection-style.css";
 
+const collectionStartupStartedAt = performance.now();
+
 const mount = document.querySelector<HTMLElement>("#collection-app");
 if (!mount) throw new Error("Aico 8 collection mount is missing");
 
@@ -48,6 +50,22 @@ try {
       for (const button of buttons.values()) button.disabled = false;
     }
   };
+  const validationUrl = new URL(window.location.href);
+  const validationMode = validationUrl.searchParams.get("validation-collection") === "1";
+  if (validationMode) {
+    Object.assign(window, {
+      __aico8CollectionValidation: {
+        activate,
+        manifest,
+        snapshot: () => ({
+          activeModuleId: controller.activeModuleId ?? null,
+          resetCount: host.resetCount,
+          identity: host.activeIdentity ?? null,
+          startupMilliseconds: performance.now() - collectionStartupStartedAt,
+        }),
+      },
+    });
+  }
   for (const module of manifest.modules) {
     const button = document.createElement("button");
     button.type = "button";
@@ -56,7 +74,12 @@ try {
     buttons.set(module.moduleId, button);
     games.append(button);
   }
-  await activate(manifest.initialModuleId);
+  const requestedInitialModule = validationMode
+    ? validationUrl.searchParams.get("validation-initial-module")
+    : null;
+  await activate(requestedInitialModule && manifest.modules.some(({ moduleId }) => moduleId === requestedInitialModule)
+    ? requestedInitialModule
+    : manifest.initialModuleId);
   window.addEventListener("pagehide", () => void controller.destroy(), { once: true });
 } catch (error) {
   title.textContent = "Collection unavailable";

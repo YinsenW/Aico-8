@@ -99,11 +99,16 @@ async function readRegularTree(root: string, label: string): Promise<ReadonlyMap
 }
 
 async function readCollectionShell(root: string): Promise<ReadonlyMap<string, Buffer>> {
-  const files = await readRegularTree(root, "Collection shell");
+  const files = new Map(await readRegularTree(root, "Collection shell"));
+  const collectionEntry = files.get("collection.html");
+  if (collectionEntry) {
+    files.set("index.html", collectionEntry);
+    files.delete("collection.html");
+  }
   for (const required of ["index.html", "asset-manifest.json", "manifest.webmanifest", "service-worker.js"]) {
     if (!files.has(required)) throw new Error(`Collection shell is missing ${required}`);
   }
-  for (const reserved of ["collection-runtime.json", "collection.json", "target-profile.json", "assembly-plan.json", "collection-build.json", "THIRD-PARTY-NOTICES.json"]) {
+  for (const reserved of ["collection-runtime.json", "collection.json", "assembly-plan.json", "collection-build.json", "THIRD-PARTY-NOTICES.json"]) {
     if (files.has(reserved)) throw new Error(`Collection shell occupies reserved output path: ${reserved}`);
   }
   if ([...files.keys()].some((relative) => relative.startsWith("games/") || relative.startsWith("modules/"))) {
@@ -190,11 +195,17 @@ export async function assembleFixedCollection(
       moduleRoots.set(source.moduleId, await fs.realpath(path.resolve(source.moduleRoot)));
       standalonePackages.set(source.moduleId, await verifyStandaloneWebPackage(source.standalonePackageRoot));
     }
-    const [collectionBytes, targetProfileBytes, collectionShell] = await Promise.all([
+    const [collectionBytes, targetProfileBytes, rawCollectionShell] = await Promise.all([
       fs.readFile(path.resolve(options.collectionManifestPath)),
       fs.readFile(path.resolve(options.targetProfilePath)),
       readCollectionShell(options.collectionShellRoot),
     ]);
+    const emittedTargetProfile = rawCollectionShell.get("target-profile.json");
+    if (emittedTargetProfile && !emittedTargetProfile.equals(targetProfileBytes)) {
+      throw new Error("Collection shell target-profile.json differs from the assembly target profile");
+    }
+    const collectionShell = new Map(rawCollectionShell);
+    collectionShell.delete("target-profile.json");
     const collectionValue = JSON.parse(collectionBytes.toString("utf8"));
     const planned = planFixedCollectionAssembly(collectionValue, moduleInputs, targetProfileBytes);
     if (!planned.ok || !planned.plan) {

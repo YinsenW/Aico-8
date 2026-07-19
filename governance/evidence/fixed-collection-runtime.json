@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "subject": "three-game fixed private-research Web/PWA collection",
+  "status": "passed",
+  "rights_scope": "Private research and testing evidence only; this record does not authorize formal publication of any game.",
+  "collection": {
+    "collection_id": "aico8-private-research-trilogy",
+    "collection_manifest_sha256": "a8a874ab55ef767502942b742e86cd7c6e22c3882cbb202fd72cff334c310cdb",
+    "launcher_manifest_sha256": "ab7eae9e066b0d152d9065696e138958f3fb4793b168cd58594668a0a840f71b",
+    "assembled_product_tree_sha256": "72f97541f967e45d537e8df307dc1aae53976aa18988cb1c7f6230d8dfc40e72",
+    "module_count": 3,
+    "packaged_artifact_bytes": 7093776,
+    "declared_persistent_bytes": 768
+  },
+  "runtime_evidence": {
+    "sha256": "2e3dc70c2d5a3f703180c5fe69cab7cd9fe912ea00904c2c829d6de3625918fb",
+    "browser": "Google Chrome 150.0.7871.127",
+    "max_startup_milliseconds": 1057.2000000476837,
+    "max_switch_milliseconds": 561.5999999046326,
+    "max_js_heap_bytes": 21582378,
+    "unique_child_document_and_runtime_identities": true,
+    "isolated_save_round_trips": 3,
+    "failed_switch_clears_active_state": true,
+    "budget_status": "passed"
+  },
+  "module_packages": [
+    {
+      "module_id": "dust-bunny-private-research",
+      "release_manifest_sha256": "648bbe2cb44519357ac0ee57756a824f9fe78db09ba1f849b473835375ed8ac8",
+      "package_tree_sha256": "136ef7757c14598579983bffe009e2370055bbb75e10c6133f52645d90e07dea"
+    },
+    {
+      "module_id": "tiny-golf-puzzles",
+      "release_manifest_sha256": "789bac3ba235a1f3c6a9a5ff956656826aded59c9761640f0b50c792fc1b95cb",
+      "package_tree_sha256": "4a2bc383a35270daa43f3f1b32c5af03a6dbe96f958791ef7da397b78617b2bd"
+    },
+    {
+      "module_id": "steps-private-research",
+      "release_manifest_sha256": "69a9ceae2d8c7840c39890ae6846d1cc3a430a06c172de89f444fd12c53c8bb4",
+      "package_tree_sha256": "0292d3c8719610df2a90bb0db5e74de6b174d0a35ec070cbb13e6e153eca8896"
+    }
+  ]
+}
